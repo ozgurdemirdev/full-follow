@@ -82,7 +82,7 @@ export function peopleList(ctx: Ctx, o: ListOpts): Rows {
   }
   for (const k of ["company_id", "referred_by_id", "post_id"]) if (f[k]) list = list.filter((p) => p[k] === Number(f[k]));
   if (bool(f.follow_up_due)) list = list.filter((p) => p.next_follow_up_at && p.next_follow_up_at <= ctx.clock.today());
-  list = list.filter((p) => has(o.q, p.name, p.email, p.handle, p.phone, p.company_name, p.instagram, p.linkedin, p.sector_path, p.tags.join(" ")));
+  list = list.filter((p) => has(o.q, p.name, p.role, p.email, p.handle, p.phone, p.company_name, p.instagram, p.linkedin, p.sector_path, p.tags.join(" ")));
   return page(list, o.limit, o.offset);
 }
 

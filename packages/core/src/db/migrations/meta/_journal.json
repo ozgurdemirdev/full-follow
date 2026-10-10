@@ -57,6 +57,13 @@
       "when": 1791599833965,
       "tag": "0007_idea_parent",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791602539665,
+      "tag": "0008_person_role",
+      "breakpoints": true
     }
   ]
 }

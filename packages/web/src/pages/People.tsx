@@ -36,7 +36,7 @@ export default function People() {
     const n = norm(q.trim());
     const st = STATES.find((s) => s.value === state)!.test;
     const list = people.rows.filter((p) => st(p) && matchLabels(p, f, sectors.rows) &&
-      (!n || [p.name, p.company_name, p.sector_path, p.email, p.instagram, p.linkedin, p.tags.join(" ")].some((x) => norm(x).includes(n))));
+      (!n || [p.name, p.company_name, p.role, p.sector_path, p.email, p.instagram, p.linkedin, p.tags.join(" ")].some((x) => norm(x).includes(n))));
     if (state === "awaiting") list.sort((a, b) => (b.awaiting?.days ?? 0) - (a.awaiting?.days ?? 0));
     if (state === "cooling") list.sort((a, b) => b.days_since - a.days_since);
     return list;
@@ -93,7 +93,7 @@ function PersonRow({ p, active, onPick }: { p: Person; active: boolean; onPick: 
       <Avatar name={p.name} size="list" />
       <span className="flex min-w-0 flex-grow flex-col gap-0.5">
         <span className="truncate text-base font-medium">{p.name}</span>
-        <span className="truncate text-base-sm text-text-secondary">{[p.company_name, p.sector_path].filter(Boolean).join(" · ") || p.handle || p.email || ""}</span>
+        <span className="truncate text-base-sm text-text-secondary">{[p.role, p.company_name, p.sector_path].filter(Boolean).join(" · ") || p.handle || p.email || ""}</span>
         {st ? (
           <span className={`flex items-center gap-2 truncate text-sm ${st.late ? "text-status-text-attention" : "text-text-muted"}`}>
             {p.last_channel ? <span className={`dot ${CHANNEL_DOT[p.awaiting?.channel ?? p.last_channel] ?? "bg-accent-neutral"}`} /> : null}
@@ -136,7 +136,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
         <div className="flex min-w-0 flex-grow flex-col gap-1">
           <h2 className="m-0 text-lg font-semibold">{p.name}</h2>
           <span className="text-base-sm text-text-secondary">
-            {p.company_id ? <Link href={`${PATHS.companies}/${p.company_id}`}>{p.company_name}</Link> : "Firma yok"}
+            {p.role ? `${p.role} · ` : ""}{p.company_id ? <Link href={`${PATHS.companies}/${p.company_id}`}>{p.company_name}</Link> : "Firma yok"}
           </span>
           <div className="mt-1 flex flex-wrap gap-2">
             <Who actor={p.created_by} />

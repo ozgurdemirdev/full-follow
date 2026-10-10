@@ -32,6 +32,7 @@ export interface Person extends Base, Labeled {
   name: string;
   company_id: number | null;
   company_name: string | null;
+  role: string | null;
   email: string | null;
   phone: string | null;
   instagram: string | null;

@@ -56,6 +56,7 @@ export const companyUpdate = patch(companyShape).extend(labels);
 const personShape = {
   name: text,
   company_id: id.nullable(),
+  role: optText,
   email: optText,
   phone: optText,
   instagram: optText,

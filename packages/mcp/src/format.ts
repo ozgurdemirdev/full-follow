@@ -20,7 +20,7 @@ type Row = Record<string, any>;
 
 const LINE: Record<string, (r: Row) => string> = {
   person: (r) => join(
-    `#${r.id} ${r.name}`, r.tags?.join(","), r.sector_path, r.company_name, r.contact_status && r.contact_status !== "yazilmadi" && label(r.contact_status),
+    `#${r.id} ${r.name}`, r.tags?.join(","), r.sector_path, r.role, r.company_name, r.contact_status && r.contact_status !== "yazilmadi" && label(r.contact_status),
     r.source_name && `kaynak ${r.source_name}`,
     r.awaiting ? `CEVAP BEKLİYOR ${r.awaiting.days}g ${label(r.awaiting.channel)}${r.awaiting.attempts > 1 ? ` ${r.awaiting.attempts} deneme` : ""}` : r.last_touch_at && `son ${label(r.last_channel)} ${r.days_since}g önce`,
     r.cooling && "SOĞUYOR", r.next_follow_up_at && `takip ${d(r.next_follow_up_at)}`, r.handle, r.email, r.phone,

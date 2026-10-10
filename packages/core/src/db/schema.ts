@@ -47,6 +47,8 @@ export const people = sqliteTable("people", {
   ...common(),
   name: text("name").notNull(),
   company_id: integer("company_id").references(() => companies.id),
+  /** Job title at the company (CEO, design); sectors describe the business, not the person */
+  role: text("role"),
   email: text("email"),
   phone: text("phone"),
   instagram: text("instagram"),

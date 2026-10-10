@@ -207,6 +207,7 @@ export function PersonForm(p: FormProps) {
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState<Ref>(() => ({ id: pre?.company_id ?? null, text: "" }));
+  const [role, setRole] = useState("");
   const [email, setEmail] = useState(conv.email ?? "");
   const [phone, setPhone] = useState("");
   const [handle, setHandle] = useState(conv.handle ?? "");
@@ -230,6 +231,7 @@ export function PersonForm(p: FormProps) {
     if (!row) return;
     setName(row.name);
     setCompany({ id: row.company_id, text: row.company_name ?? "" });
+    setRole(row.role ?? "");
     setEmail(row.email ?? "");
     setPhone(row.phone ?? "");
     setHandle(row.handle ?? "");
@@ -244,7 +246,7 @@ export function PersonForm(p: FormProps) {
   const submit = useSubmit(p, async () => {
     const company_id = await ensureCompany(company);
     const body = {
-      name: name.trim(), company_id, email, phone, handle, instagram, linkedin, ...labels.body,
+      name: name.trim(), company_id, role, email, phone, handle, instagram, linkedin, ...labels.body,
       referred_by_id: referrer.id, next_follow_up_at: follow || null, notes,
       post_id: postId ? Number(postId) : null,
     };
@@ -260,6 +262,9 @@ export function PersonForm(p: FormProps) {
         </Field>
         <Field label="Firma" htmlFor="p-company">
           <Combo id="p-company" value={company} onChange={setCompany} options={companyOptions} placeholder="Firma adı" />
+        </Field>
+        <Field label="Rol" htmlFor="p-role">
+          <input id="p-role" className="inp" placeholder="CEO, tasarım, satın alma" value={role} onChange={(e) => setRole(e.target.value)} />
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
