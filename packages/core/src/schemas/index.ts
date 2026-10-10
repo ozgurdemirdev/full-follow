@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
   ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
-  CONTACT_STATUSES, TAG_COLORS,
+  CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
 
@@ -301,3 +301,32 @@ export const stageMove = z.strictObject({
 
 export const oppStageEnum = z.enum(OPP_STAGES);
 export const projectStageEnum = z.enum(PROJECT_STAGES);
+
+// ---- Günlük iş planı ----
+/** Tekrar günleri: ISO numaraları dizisi (1 = pazartesi) ya da "her_gun" | "hafta_ici" | "hafta_sonu"; veritabanında virgüllü metin */
+const goalDays = z.union([z.enum(Object.keys(GOAL_DAY_PRESETS) as [keyof typeof GOAL_DAY_PRESETS, ...(keyof typeof GOAL_DAY_PRESETS)[]]), z.array(z.coerce.number().int().min(1).max(7)).min(1)])
+  .transform((v) => [...new Set(typeof v === "string" ? GOAL_DAY_PRESETS[v] : v)].sort().join(","));
+
+export const goalCreate = z.strictObject({
+  title: text,
+  target: z.coerce.number().int().positive(),
+  days: goalDays.default("1,2,3,4,5,6,7"),
+  channel: z.enum(CHANNELS).nullish(),
+  note: optText,
+});
+export const goalUpdate = patch({
+  title: text,
+  target: z.coerce.number().int().positive(),
+  days: goalDays,
+  channel: z.enum(CHANNELS).nullable(),
+  note: optText,
+});
+
+/** Bir günün elle girilen sayısı: add = üstüne ekle, count = o günün sayısını belirle; note = o güne not */
+export const goalLogInput = z.strictObject({
+  goal_id: id,
+  date: date.optional(),
+  add: z.coerce.number().int().optional(),
+  count: z.coerce.number().int().min(0).optional(),
+  note: z.string().trim().nullish(),
+});

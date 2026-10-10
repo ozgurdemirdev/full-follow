@@ -12,6 +12,7 @@ import { requireRow } from "./shared";
 import { postStats } from "./posts";
 import { templateStats } from "./templates";
 import { ideaPeople, ideaStats } from "./ideas";
+import { goalsService } from "./goals";
 
 type Rows = { rows: any[]; total: number };
 
@@ -232,7 +233,7 @@ export function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
     task: tasks, draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, interest: interests, tag: tags,
+    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
@@ -251,6 +252,20 @@ export function queriesService(ctx: Ctx) {
     }
     list = list.filter((l) => has(o.q, l.label, l.url));
     return page(list, o.limit, o.offset);
+  }
+
+  function goals(o: ListOpts): Rows {
+    return page(goalsService(ctx).list().filter((g) => has(o.q, g.title, g.note)), o.limit, o.offset);
+  }
+
+  /** Manual counts and day notes per goal and day; filter: {goal_id, from, to} */
+  function goalLogs(o: ListOpts): Rows {
+    const f = o.filter ?? {};
+    let list = rows(ctx, "SELECT l.*, g.title AS goal_title FROM goal_logs l JOIN daily_goals g ON g.id = l.goal_id ORDER BY l.date DESC, l.id DESC");
+    if (f.goal_id) list = list.filter((l) => l.goal_id === Number(f.goal_id));
+    if (f.from) list = list.filter((l) => l.date >= f.from);
+    if (f.to) list = list.filter((l) => l.date <= f.to);
+    return page(list.filter((l) => has(o.q, l.goal_title, l.note)), o.limit, o.offset);
   }
 
   function find(type: RecordType, o: ListOpts = {}) {
@@ -288,6 +303,8 @@ export function queriesService(ctx: Ctx) {
       case "tag": rowData = own(find("tag", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "trash": throw new FFError("validation", "çöp kutusu için find(type: trash) kullan");
       case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
+      case "goal": rowData = own(goals({ limit: 100000 }).rows.find((p) => p.id === id)); break;
+      case "goal_log": rowData = own(goalLogs({ limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
       case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;

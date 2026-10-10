@@ -252,6 +252,27 @@ export const comments = sqliteTable("comments", {
   resolved_at: text("resolved_at"),
 }, (t) => [index("comments_target").on(t.target_type, t.target_id), index("comments_parent").on(t.parent_id)]);
 
+/** Günlük iş planı: tekrarlı hedef (örn. günde 20 cold mail). channel doluysa o kanaldaki giden mesajlar kendiliğinden sayılır. */
+export const daily_goals = sqliteTable("daily_goals", {
+  ...common(),
+  title: text("title").notNull(),
+  target: integer("target").notNull(),
+  /** ISO hafta günleri, virgüllü: "1,2,3,4,5" */
+  days: text("days").notNull().default("1,2,3,4,5,6,7"),
+  channel: text("channel", { enum: CHANNELS }),
+  /** kalıcı not (örn. kişiye özel not yaz) */
+  note: text("note"),
+});
+
+/** Hedefin bir günlük elle girilen sayısı ve o güne not */
+export const goal_logs = sqliteTable("goal_logs", {
+  ...common(),
+  goal_id: integer("goal_id").notNull().references(() => daily_goals.id),
+  date: text("date").notNull(),
+  count: integer("count").notNull().default(0),
+  note: text("note"),
+}, (t) => [uniqueIndex("goal_logs_day").on(t.goal_id, t.date)]);
+
 /** Labelled links on an opportunity or project (roadmap, proposal deck, Figma, repo) */
 export const links = sqliteTable("links", {
   ...common(),

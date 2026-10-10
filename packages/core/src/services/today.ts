@@ -4,6 +4,7 @@ import type { Ctx } from "../context";
 import { networkLists, weekStats } from "./network";
 import { queriesService } from "./queries";
 import { followupsDue } from "./followups";
+import { goalsService } from "./goals";
 
 /** "Bugün" ekranı: her bölüm {total, rows}, bölüm başına en fazla `limit` satır */
 export function todayService(ctx: Ctx) {
@@ -27,11 +28,15 @@ export function todayService(ctx: Ctx) {
     };
   }
 
+  const goals = goalsService(ctx);
+
   return function today(limit = 10) {
     const date = ctx.clock.today();
     const o = { limit };
     return {
       date,
+      // günlük iş planı: hedefler ve o günün görevleri
+      plan: goals.plan(date),
       // Claude'un cevap vermesi gereken yorumlar (son yorum Özgür'den)
       comments: q.comments({ ...o, filter: { unanswered: true } }),
       drafts: q.drafts({ ...o, filter: { status: "bekliyor" } }),

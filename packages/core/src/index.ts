@@ -13,6 +13,7 @@ import { projectsService } from "./services/projects";
 import { queriesService } from "./services/queries";
 import { networkLists } from "./services/network";
 import { linksService } from "./services/links";
+import { goalsService } from "./services/goals";
 import { notesService } from "./services/notes";
 import { normalizeType, resolveId } from "./services/records";
 import { sectorsService } from "./services/sectors";
@@ -77,6 +78,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const sectors = sectorsService(ctx);
   const notes = notesService(ctx);
   const links = linksService(ctx);
+  const goals = goalsService(ctx);
   const settings = settingsService(ctx);
   const queries = queriesService(ctx);
   const reports = reportsService(ctx);
@@ -119,6 +121,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "sector": return nid ? sectors.update(nid, d) : sectors.create(d);
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
       case "link": return nid ? links.update(nid, d) : links.create(d);
+      case "goal": return nid ? goals.update(nid, d) : goals.create(d);
+      case "goal_log": return goals.log(nid ? { ...d, goal_id: nid } : d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
       case "post": return nid ? posts.update(nid, d) : posts.create(d);
@@ -179,6 +183,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
+      case "goal": return goals.remove(nid);
+      case "goal_log": throw new FFError("validation", "ilerleme silinmez; count:0 ile sıfırla");
       case "post": return posts.remove(nid);
       case "template": return templates.remove(nid);
       case "idea": return ideas.remove(nid);
@@ -226,7 +232,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   return {
     actor,
     // yazma servisleri (REST controller'ları ve testler kullanır)
-    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links,
+    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
     posts, templates, ideas,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },

@@ -9,7 +9,7 @@ export const TARGET_TABLE: Record<CommentTarget, string> = {
 export const TABLE_LABEL: Record<string, string> = {
   people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
   drafts: "taslak", payments: "ödeme", sources: "kaynak", comments: "yorum", touches: "temas",
-  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", idea_people: "fikir ilgisi", tags: "etiket", links: "link",
+  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", idea_people: "fikir ilgisi", tags: "etiket", links: "link", daily_goals: "hedef",
 };
 
 export function requireRow<T = any>(ctx: Ctx, table: string, id: number, what = TABLE_LABEL[table] ?? table): T {
@@ -100,6 +100,7 @@ const REF_TABLES = {
   idea: { table: "ideas", col: "title", label: "fikir" },
   template: { table: "templates", col: "name", label: "şablon" },
   tag: { table: "tags", col: "name", label: "etiket" },
+  goal: { table: "daily_goals", col: "title", label: "hedef" },
 } as const;
 export type RefType = keyof typeof REF_TABLES;
 export const isRefType = (t: string): t is RefType => t in REF_TABLES;
@@ -128,7 +129,7 @@ const INPUT_REFS: Record<string, [string, RefType]> = {
   person: ["person_id", "person"], company: ["company_id", "company"], source: ["source_id", "source"],
   opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
   project: ["project_id", "project"], referred_by: ["referred_by_id", "person"],
-  post: ["post_id", "post"], idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], template: ["template_id", "template"],
+  goal: ["goal_id", "goal"], post: ["post_id", "post"], idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], template: ["template_id", "template"],
 };
 
 /** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template) *_id'ye çevirir */

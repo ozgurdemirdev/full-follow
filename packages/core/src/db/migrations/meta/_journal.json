@@ -64,6 +64,13 @@
       "when": 1791602539665,
       "tag": "0008_person_role",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791615085021,
+      "tag": "0009_daily_goals",
+      "breakpoints": true
     }
   ]
 }
