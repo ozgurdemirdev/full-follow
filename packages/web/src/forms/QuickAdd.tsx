@@ -337,7 +337,7 @@ function TaskForm(p: FormProps) {
   const editId = pre?.edit;
   const existing = useQuery<Detail<Task>>(editId ? `/tasks/${editId}` : null);
   const [title, setTitle] = useState("");
-  const [due, setDue] = useState(todayIso());
+  const [due, setDue] = useState(pre?.date ?? todayIso());
   const [person, setPerson] = useState<Ref>(emptyRef);
   const row = existing.data?.row;
   useEffect(() => {
@@ -361,7 +361,7 @@ function TaskForm(p: FormProps) {
   return (
     <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
       <Field label="Görev" htmlFor="k-title">
-        <input id="k-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. teklifi güncelle" />
+        <input id="k-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. muhasebeci ile görüş, toplantı" />
       </Field>
       <Field label="Tarih" htmlFor="k-due">
         <input id="k-due" className="inp" type="date" value={due} onChange={(e) => setDue(e.target.value)} />

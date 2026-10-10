@@ -72,6 +72,9 @@ export function DayPlan({ plan, title = "Günün planı", rank = 0 }: { plan: Pl
         <span className="flex items-center gap-4 text-sm text-text-secondary">
           {isToday && plan.streak ? <span>{plan.streak} gün seri</span> : null}
           {isToday && plan.week_ratio !== null ? <span>Hafta {pct(plan.week_ratio)}</span> : null}
+          <button type="button" className="btn btn-sec btn-sm" onClick={() => openSheet("task", { date: plan.date })}>
+            <Icon name="plus" className="size-icon-sm" /> Görev
+          </button>
           <button type="button" className="btn btn-sec btn-sm" onClick={() => openSheet("goal")}>
             <Icon name="plus" className="size-icon-sm" /> Hedef
           </button>

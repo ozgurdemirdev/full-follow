@@ -11,7 +11,7 @@ export interface SheetState {
     /** Paket 2: düzenlenecek kayıt ya da ön seçim */
     post_id?: number; idea_id?: number; template_id?: number; channel?: string;
     /** Paket 3: düzenlenecek kayıt (fırsat, görev, temas, firma), firma muhatap ve sadece adresli muhatap */
-    edit?: number; company_id?: number; contact?: string;
+    edit?: number; date?: string; company_id?: number; contact?: string;
   };
 }
 interface UI {
