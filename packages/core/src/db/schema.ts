@@ -3,7 +3,7 @@ import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
-  TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES,
+  TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -317,9 +317,15 @@ export const ideas = sqliteTable("ideas", {
   problem: text("problem"),
   stage: text("stage", { enum: IDEA_STAGES }).notNull().default("fikir"),
   notes: text("notes"),
-  /** Own project this idea belongs to (one level: a parent has no parent) */
+  /** Sub idea grouping inside general ideas only (one level: a parent has no parent) */
   parent_id: integer("parent_id").references((): AnySQLiteColumn => ideas.id),
-});
+  /** Own project this idea belongs to; null = general money idea */
+  own_project_id: integer("own_project_id").references((): AnySQLiteColumn => own_projects.id),
+  /** Only meaningful inside a project */
+  priority: text("priority", { enum: IDEA_PRIORITIES }).notNull().default("orta"),
+  position: integer("position").notNull().default(0),
+  done_at: text("done_at"),
+}, (t) => [index("ideas_own_project").on(t.own_project_id, t.priority, t.position)]);
 
 export const idea_sectors = sqliteTable("idea_sectors", {
   idea_id: integer("idea_id").notNull().references(() => ideas.id),
@@ -327,6 +333,27 @@ export const idea_sectors = sqliteTable("idea_sectors", {
   created_at: text("created_at").notNull(),
   created_by: text("created_by", { enum: ACTORS }).notNull(),
 }, (t) => [primaryKey({ columns: [t.idea_id, t.sector_id] })]);
+
+// ---------------------------------------------------------------- Kendi projelerim
+
+/** Own products Özgür builds for himself (Full Follow); not client work, no payments */
+export const own_projects = sqliteTable("own_projects", {
+  ...common(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status", { enum: OWN_PROJECT_STATUSES }).notNull().default("aktif"),
+  sellable: text("sellable", { enum: SELLABLE }).notNull().default("belki"),
+  /** who could buy it and how */
+  sellable_note: text("sellable_note"),
+  notes: text("notes"),
+}, (t) => [index("own_projects_status").on(t.status)]);
+
+export const own_project_sectors = sqliteTable("own_project_sectors", {
+  own_project_id: integer("own_project_id").notNull().references(() => own_projects.id),
+  sector_id: integer("sector_id").notNull().references(() => sectors.id),
+  created_at: text("created_at").notNull(),
+  created_by: text("created_by", { enum: ACTORS }).notNull(),
+}, (t) => [primaryKey({ columns: [t.own_project_id, t.sector_id] }), index("own_project_sectors_sector").on(t.sector_id)]);
 
 /** Fikir kime anlatıldı, ilgilendi mi (kişi başına bir satır) */
 export const idea_people = sqliteTable("idea_people", {

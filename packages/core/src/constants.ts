@@ -11,7 +11,7 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir */
-export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal"] as const;
+export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -30,10 +30,10 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number];
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
 export const ASSIGNEES = ACTORS;
-export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea"] as const;
+export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea", "own_project"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
 /** Records that carry labelled links (roadmap, proposal deck, Figma, repo) */
-export const LINK_TARGETS = ["opportunity", "project"] as const;
+export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 export const RECORD_TYPES = [
@@ -43,6 +43,8 @@ export const RECORD_TYPES = [
   "goal", "goal_log",
   // Paket 2: pazarlama
   "post", "template", "idea", "interest",
+  // kendi projelerim
+  "own_project",
 ] as const;
 export type RecordType = (typeof RECORD_TYPES)[number];
 
@@ -56,6 +58,7 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   hedef: "goal", hedefler: "goal", goals: "goal", ilerleme: "goal_log", progress: "goal_log",
+  own: "own_project", own_projects: "own_project", kendi_proje: "own_project", "kendi projem": "own_project", projelerim: "own_project", urunum: "own_project",
   etiket: "tag", tags: "tag", companies: "company", firmalar: "company", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
 };
 
@@ -65,6 +68,12 @@ export const POST_PLATFORMS = ["r10", "linkedin", "instagram", "diger"] as const
 export const PLATFORM_LABEL: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 /** Mesaj şablonu türü: ilk mesaj, takip, teklif sonrası, diğer */
 export const TEMPLATE_KINDS = ["ilk", "takip", "teklif", "diger"] as const;
+/** Own product lifecycle */
+export const OWN_PROJECT_STATUSES = ["aktif", "beklemede", "tamamlandi", "birakildi"] as const;
+/** Could this own product be sold later */
+export const SELLABLE = ["evet", "belki", "hayir"] as const;
+/** Project idea priority, in display order */
+export const IDEA_PRIORITIES = ["yuksek", "orta", "dusuk"] as const;
 export const IDEA_STAGES = ["fikir", "dogrulaniyor", "demo", "urun"] as const;
 /** Fikir anlatılan kişinin ilgisi */
 export const INTEREST_LEVELS = ["anlatildi", "ilgilendi", "ilgilenmedi"] as const;
@@ -96,6 +105,8 @@ export const LABELS: Record<string, string> = {
   linkedin: "LinkedIn", whatsapp: "WhatsApp", r10: "R10",
   dogrulaniyor: "doğrulanıyor", urun: "ürün", anlatildi: "anlatıldı", ilk: "ilk mesaj", diger: "diğer",
   yazilmadi: "yazılmadı", yazildi: "yazıldı", cevap_geldi: "cevap geldi", gorusuldu: "görüşüldü", es_gecildi: "es geçildi", tanidik: "tanıdık", arkadas: "arkadaş",
+  aktif: "aktif", beklemede: "beklemede", tamamlandi: "tamamlandı", birakildi: "bırakıldı",
+  yuksek: "yüksek", orta: "orta", dusuk: "düşük", evet: "evet", belki: "belki", hayir: "hayır",
 };
 export const label = (k: string) => LABELS[k] ?? k;
 
