@@ -648,3 +648,10 @@ Web: sidebar "Pazarlama" bölümü (Paylaşımlar `/paylasimlar`, Fikirler `/fik
 19. Firma: doğrudan ve çalışan temasları durumu ilerletir, `olumsuz` değişmez, adresli temas sonradan açılan kayda bağlanır, takip dizisi ve şablon firmada çalışır, filtreler çalışır, silinen kaynak seçilemez.
 
 Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
+
+## 12. Günlük iş planı (fikir #22)
+
+- `daily_goals` (başlık, günlük sayı, tekrar günleri ISO "1,2,3,4,5", isteğe bağlı kanal, kalıcı not) ve `goal_logs` (hedef + gün başına elle sayı + gün notu).
+- Kanalı olan hedefte o günkü giden mesaj temasları kendiliğinden sayılır; kalanı elle (+1, +5, sayı).
+- Seri (üst üste tamamlanan gün) ve haftalık oran core'da hesaplanır; görevler mevcut `tasks.due_date` ile takvimde görünür.
+- Web: Dashboard üstünde Günün planı, `/takvim` hafta ve ay görünümü. MCP: `plan` aracı, `save goal`, `save goal_log`, `today` içinde plan.
