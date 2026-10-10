@@ -102,3 +102,15 @@ export const STAGE_BG: Record<OppStage, string> = {
 export const STAGE_TONE: Record<OppStage, Tone> = {
   bulundu: "neutral", temas: "opportunity", cevap: "opportunity", gorusme: "source", teklif: "payment", kazanildi: "success", kaybedildi: "warning",
 };
+
+/** Günlük iş planı: hafta günü kısa adları (ISO sırası, pazartesi önde) ve hazır tekrarlar */
+export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+export const GOAL_PRESETS: { value: string; label: string; days: number[] }[] = [
+  { value: "her_gun", label: "Her gün", days: [1, 2, 3, 4, 5, 6, 7] },
+  { value: "hafta_ici", label: "Hafta içi", days: [1, 2, 3, 4, 5] },
+];
+/** "1,2,3,4,5" → "Hafta içi" ya da "Pzt Çar" */
+export function daysLabel(days: string): string {
+  const preset = GOAL_PRESETS.find((p) => p.days.join(",") === days);
+  return preset ? preset.label : days.split(",").map((n) => WEEKDAY_SHORT[Number(n) - 1]).join(" ");
+}

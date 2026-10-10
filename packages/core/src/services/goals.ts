@@ -25,7 +25,10 @@ export interface GoalDay {
   auto: number;
   done: number;
   complete: boolean;
+  /** the day's note */
   note: string | null;
+  /** the goal's permanent note */
+  goal_note: string | null;
 }
 
 /** Longest calendar range in one call (about three months) */
@@ -71,7 +74,7 @@ export function goalsService(ctx: Ctx) {
         const log = logs.get(`${g.id}|${d}`);
         const a = g.channel ? (auto.get(`${g.channel}|${d}`) ?? 0) : 0;
         const manual = log?.count ?? 0;
-        return { id: g.id, title: g.title, target: g.target, channel: g.channel, manual, auto: a, done: manual + a, complete: manual + a >= g.target, note: log?.note ?? null };
+        return { id: g.id, title: g.title, target: g.target, channel: g.channel, manual, auto: a, done: manual + a, complete: manual + a >= g.target, note: log?.note ?? null, goal_note: g.note };
       });
       out.push({ date: d, goals: list });
     }

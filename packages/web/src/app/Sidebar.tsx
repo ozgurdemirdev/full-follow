@@ -67,6 +67,7 @@ export function Sidebar() {
   // Network önce: kime yazdım, kim döndü; satış ve projeler ikinci planda
   const main: NavItem[] = [
     { key: "today", label: "Dashboard", icon: "grid" },
+    { key: "calendar", label: "Takvim", icon: "calendar" },
     { key: "people", label: "Kişiler", icon: "people", count: today.data?.network.awaiting.total, tone: "opportunity" },
     { key: "companies", label: "Firmalar", icon: "building" },
     { key: "referrals", label: "Referanslar", icon: "referral" },

@@ -5,7 +5,9 @@ import { api, ApiError } from "./client";
 import { invalidate } from "./store";
 import type { Mutation } from "./types";
 
-const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats"];
+/** Plan ekranları: günün planı ve takvim (giden temaslar hedeflere kendiliğinden sayılır) */
+const PLAN = ["/plan", "/calendar"];
+const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", ...PLAN];
 
 /** Her yazma işleminden sonra hangi listelerin tazeleneceği */
 const AFFECTS: Record<string, string[]> = {
@@ -19,7 +21,8 @@ const AFFECTS: Record<string, string[]> = {
   opportunities: ["/opportunities", "/today", "/timeline", "/projects", "/people", "/companies", "/report", "/payments", "/sources", "/trash"],
   projects: ["/projects", "/timeline", "/today", "/payments", "/trash"],
   payments: ["/payments", "/projects", "/today", "/report", "/timeline", "/trash"],
-  tasks: ["/tasks", "/today", "/projects", "/timeline", "/trash"],
+  tasks: ["/tasks", "/today", "/projects", "/timeline", "/trash", ...PLAN],
+  goals: ["/goals", "/today", "/timeline", "/trash", ...PLAN],
   drafts: ["/drafts", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
   touches: [...CONTACTS, "/opportunities", "/ideas", "/followups", "/trash"],
   comments: ["/comments", "/today", "/timeline", "/people", "/companies", "/trash"],

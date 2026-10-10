@@ -27,6 +27,7 @@ const TITLES: Record<SheetState["kind"], string> = {
   idea: "Fikir",
   template: "Mesaj şablonu",
   project: "Yeni proje",
+  goal: "Günlük hedef",
 };
 
 // Pazarlama formları ayrı parçada (ilk açılışta yüklenir)
@@ -38,6 +39,7 @@ const TemplateForm = lazy(() => import("./MarketingForms").then((m) => ({ defaul
 const PersonForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.PersonForm })));
 const CompanyForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.CompanyForm })));
 const TouchForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.TouchForm })));
+const GoalForm = lazy(() => import("./GoalForm").then((m) => ({ default: m.GoalForm })));
 const ProjectForm = lazy(() => import("./ProjectForm").then((m) => ({ default: m.ProjectForm })));
 
 /** Hızlı ekle menüsünden ya da sayfalardan açılan tüm formlar */
@@ -107,6 +109,8 @@ function FormBody(p: FormProps) {
       return <TemplateForm {...p} />;
     case "project":
       return <ProjectForm {...p} />;
+    case "goal":
+      return <GoalForm {...p} />;
   }
 }
 

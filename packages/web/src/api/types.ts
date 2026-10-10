@@ -384,6 +384,7 @@ export interface TimelineEvent {
 }
 export interface Today {
   date: string;
+  plan: Plan;
   comments: List<Thread>;
   drafts: List<Draft>;
   follow_ups: { people: List<Person>; opportunities: List<Opportunity> };
@@ -437,4 +438,46 @@ export interface Detail<T, R = { [k: string]: unknown[] | undefined }> {
   row: T;
   related: R;
   comments_open?: number;
+}
+
+// ---- Günlük iş planı ----
+export interface GoalDay {
+  id: number;
+  title: string;
+  target: number;
+  channel: string | null;
+  manual: number;
+  auto: number;
+  done: number;
+  complete: boolean;
+  note: string | null;
+  goal_note: string | null;
+}
+export interface PlanTask {
+  id: number;
+  title: string;
+  assignee: Actor;
+  due_date: string | null;
+  done_at: string | null;
+}
+export interface Plan {
+  date: string;
+  weekday: number;
+  goals: GoalDay[];
+  tasks: PlanTask[];
+  streak: number;
+  week_ratio: number | null;
+}
+export interface CalendarDay {
+  date: string;
+  goals: GoalDay[];
+  tasks: PlanTask[];
+  ratio: number | null;
+}
+export interface Goal extends Base {
+  title: string;
+  target: number;
+  days: string;
+  channel: string | null;
+  note: string | null;
 }

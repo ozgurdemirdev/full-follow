@@ -42,6 +42,7 @@ export function App() {
               <Suspense fallback={<Fallback />}>
                 <Switch>
                   <Route path={PATHS.today} component={pages.today} />
+                  <Route path={PATHS.calendar} component={pages.calendar} />
                   <Route path={PATHS.pipeline} component={pages.pipeline} />
                   <Route path={`${PATHS.people}/:id?`} component={pages.people} />
                   <Route path={`${PATHS.companies}/:id?`} component={pages.companies} />

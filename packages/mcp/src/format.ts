@@ -1,5 +1,5 @@
 /** Kısa düz metin çıktılar: boş alan yazılmaz, tek satır = tek kayıt */
-import { label, PLATFORM_LABEL } from "@fullfollow/core";
+import { label, PLATFORM_LABEL, WEEKDAY_SHORT } from "@fullfollow/core";
 
 const thisYear = () => new Date().getFullYear();
 
@@ -18,8 +18,7 @@ const join = (...p: (string | number | null | undefined | false)[]) => p.filter(
 
 type Row = Record<string, any>;
 
-const DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-const dayNames = (days: string) => (days === "1,2,3,4,5,6,7" ? "her gün" : days === "1,2,3,4,5" ? "hafta içi" : days.split(",").map((n) => DAY_NAMES[Number(n) - 1]).join(" "));
+const dayNames = (days: string) => (days === "1,2,3,4,5,6,7" ? "her gün" : days === "1,2,3,4,5" ? "hafta içi" : days.split(",").map((n) => WEEKDAY_SHORT[Number(n) - 1]).join(" "));
 
 const LINE: Record<string, (r: Row) => string> = {
   person: (r) => join(
@@ -141,7 +140,7 @@ export function planText(p: any): string {
 
 /** Takvim: gün başına tek satır */
 export function calendarText(days: Row[]): string {
-  return days.map((c) => join(`${d(c.date)} ${DAY_NAMES[(new Date(`${c.date}T12:00:00Z`).getUTCDay() + 6) % 7]}`,
+  return days.map((c) => join(`${d(c.date)} ${WEEKDAY_SHORT[(new Date(`${c.date}T12:00:00Z`).getUTCDay() + 6) % 7]}`,
     c.ratio === null ? "hedef yok" : `hedef %${Math.round(c.ratio * 100)}`, c.tasks.length && `görev ${c.tasks.filter((t: Row) => t.done_at).length}/${c.tasks.length}`)).join("\n");
 }
 

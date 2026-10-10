@@ -13,6 +13,11 @@ export class GoalsController {
     return this.core.find("goal", listOpts(query));
   }
 
+  @Get("goals/:id")
+  one(@Param("id") id: string) {
+    return this.core.get("goal", intId(id));
+  }
+
   @Post("goals")
   create(@Body() b: unknown) {
     return this.core.goals.create(b);

@@ -3,6 +3,7 @@ import { lazy, type ComponentType } from "react";
 
 const loaders = {
   today: () => import("../pages/Today"),
+  calendar: () => import("../pages/Calendar"),
   pipeline: () => import("../pages/Pipeline"),
   people: () => import("../pages/People"),
   companies: () => import("../pages/Companies"),
@@ -32,6 +33,7 @@ export function preload(k: PageKey) {
 
 export const PATHS: Record<PageKey, string> = {
   today: "/",
+  calendar: "/takvim",
   pipeline: "/huni",
   people: "/kisiler",
   companies: "/firmalar",

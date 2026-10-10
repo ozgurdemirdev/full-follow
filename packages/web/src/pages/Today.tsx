@@ -1,22 +1,22 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { remove, run } from "../api/actions";
+import { run } from "../api/actions";
 import { K, useBoard, usePeople, useThreads } from "../api/keys";
-import { mutate, useQuery } from "../api/store";
-import type { Draft, FollowupDue, List, Person, Post, Task, Today as TodayData } from "../api/types";
+import { useQuery } from "../api/store";
+import type { Draft, FollowupDue, List, Person, Post, Today as TodayData } from "../api/types";
 import { Page } from "../app/Page";
 import { PATHS, timelinePath } from "../app/routes";
 import { GlobalSearch } from "../app/Search";
 import { Icon } from "../components/icons";
 import { Avatar, CardHead, Chip, ErrorBox, order, PageSkeleton, Who } from "../components/ui";
-import { ago, fmtDay, fmtToday, followNote, tl, todayIso } from "../lib/format";
+import { ago, fmtDay, fmtToday, followNote, tl } from "../lib/format";
 import { BOARD_STAGES, CHANNEL, CHANNEL_DOT, MILESTONE, STAGE, STAGE_BG, TARGET } from "../lib/labels";
 import { channelName, netStatus } from "../lib/network";
 import { PLATFORM, PLATFORM_DOT } from "../lib/labels";
 import { refreshNote } from "../lib/marketing";
 import { openSheet } from "../app/ui";
 import { DashboardActivity } from "./DashboardActivity";
-import { EditDelete } from "../components/contact";
+import { DayPlan } from "../components/DayPlan";
 
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
@@ -32,6 +32,7 @@ export default function Today() {
         !today.error && <PageSkeleton />
       ) : (
         <>
+          <DayPlan plan={d.plan} />
           <DashboardActivity d={d} />
           <div className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] desk:gap-9">
             <div className="flex flex-col gap-7 desk:gap-9">
@@ -43,7 +44,6 @@ export default function Today() {
             <div className="flex flex-col gap-7 desk:gap-9">
               <PostsDue list={d.posts_due} />
               <Cooling list={d.network.cooling} days={d.network.settings.cooling_days} />
-              <Tasks list={d.tasks} />
               <Comments />
               <Payments data={d} />
             </div>
@@ -299,49 +299,6 @@ function FollowUps({ data }: { data: TodayData }) {
           {it.stage ? <Chip tone="opportunity">{it.stage}</Chip> : null}
         </Link>
       ))}
-    </section>
-  );
-}
-
-// ------------------------------------------------------------ görevler
-function Tasks({ list }: { list: List<Task> }) {
-  const toggle = async (t: Task) => {
-    const done = !t.done_at;
-    const flip = (prev?: TodayData) =>
-      prev && { ...prev, tasks: { ...prev.tasks, rows: prev.tasks.rows.map((x) => (x.id === t.id ? { ...x, done_at: done ? new Date().toISOString() : null } : x)) } };
-    const before = mutate<TodayData>(K.today, flip);
-    try {
-      await run("patch", `/tasks/${t.id}`, { done }, { silent: true });
-    } catch {
-      mutate<TodayData>(K.today, () => before);
-    }
-  };
-  const doneCount = list.rows.filter((t) => t.done_at).length;
-
-  return (
-    <section className="card rise overflow-hidden" style={order(3)} aria-label="Bugünkü görevler">
-      <CardHead title="Bugünkü görevler">
-        <span className="text-sm text-text-secondary">{doneCount} / {list.rows.length}</span>
-      </CardHead>
-      <div className="px-3 py-2">
-        {list.rows.length === 0 ? <p className="empty">Bugün için görev yok.</p> : null}
-        {list.rows.map((t) => {
-          const late = t.due_date && t.due_date < todayIso();
-          return (
-            <div key={t.id} className="row flex items-center gap-5 rounded-xl border-0 px-5 py-4">
-              <button type="button" role="checkbox" aria-checked={!!t.done_at} aria-label="Tamamlandı olarak işaretle" className="chk" onClick={() => toggle(t)}>
-                <Icon name="check" className="size-icon-sm" stroke={3} />
-              </button>
-              <span className="flex min-w-0 flex-grow flex-col">
-                <span className={`text-base transition-colors dur-fade ${t.done_at ? "text-text-disabled line-through" : ""}`}>{t.title}</span>
-                {late && !t.done_at ? <span className="text-sm text-status-text-attention">{fmtDay(t.due_date)} tarihliydi</span> : null}
-              </span>
-              <Who actor={t.created_by} />
-              <EditDelete label="Görev" onEdit={() => openSheet("task", { edit: t.id })} onDelete={() => void remove(`/tasks/${t.id}`, "Görev").catch(() => {})} />
-            </div>
-          );
-        })}
-      </div>
     </section>
   );
 }
