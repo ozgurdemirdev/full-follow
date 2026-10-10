@@ -55,9 +55,12 @@ const LINE: Record<string, (r: Row) => string> = {
   ),
   template: (r) => join(`#${r.id} ${r.name}`, label(r.kind), r.channel ? label(r.channel) : "tüm kanallar", r.sector_path ?? "tüm sektörler",
     !!r.used && `${r.used} kullanım`, !!r.sent && `${r.replied}/${r.sent} dönüş`, `"${cut(r.body, 50)}"`),
-  idea: (r) => join(`#${r.id} ${r.title}`, label(r.stage), r.sectors?.map((x: Row) => x.path).join(", "),
+  idea: (r) => r.own_project_id
+    ? join(`#${r.id} ${r.title}`, `proje: ${r.own_project_title}`, label(r.priority), r.done_at && "yapıldı", r.problem && `açıklama: ${cut(r.problem, 50)}`)
+    : join(`#${r.id} ${r.title}`, label(r.stage), r.sectors?.map((x: Row) => x.path).join(", "),
     `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
     !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${cut(r.problem, 50)}`),
+  own_project: (r) => join(`#${r.id} ${r.name}`, label(r.status), `satılabilir: ${label(r.sellable)}`, `${r.open_ideas} açık fikir`, r.sectors?.map((x: Row) => x.path).join(", ")),
   goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
   goal_log: (r) => join(`#${r.id} ${r.goal_title} ${d(r.date)}`, `elle ${r.count}`, r.note && `not: ${cut(r.note, 50)}`),
   interest: (r) => join(`#${r.id} ${r.person_name}`, r.idea_title, label(r.interest), r.note && cut(r.note, 50)),
@@ -80,6 +83,7 @@ const SKIP = new Set(["updated_at", "position", "tag_list", "created_at", "perso
   "opp_count", "won", "won_value", "used", "sent", "replied", "reply_rate", "problem", "told", "interested", "not_interested", "interest_rate", "touch_count", "post_count", "post_people", "sectors", "interest", "note", "person_id", "idea_stage", "score",
   "tag_ids", "source_id", "source_name", "contact_status", "deleted_at", "slug", "color", "company_count", "open_opps", "touch_count", "to_name", "contact",
   "company_id", "source_url", "source_date",
+  "description", "sellable", "sellable_note", "open_ideas", "done_ideas", "own_project_title", "own_project_id", "priority",
   "sector_name", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "days_since", "awaiting", "cooling", "referral_count", "referral_value", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"]);
 
 /** Tek kaydın tam hali + istenen ilişkili kayıtlar */
@@ -103,6 +107,10 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     out.push(`referans değeri: ${v.direct} tanıttı (ağ ${v.network}) · ${v.opps} fırsat · ${v.won} kazanıldı ${tl(v.won_value)}${v.open_value ? ` · açık ${tl(v.open_value)}` : ""}${v.collected ? ` · tahsil ${tl(v.collected)}` : ""}`);
   }
   if (row.post_title) out.push(`kaynak paylaşım: #${row.post_id} ${row.post_title}`);
+  if (type === "own_project") {
+    if (row.description) out.push(`ne yapıyor: ${row.description}`);
+    if (row.sellable_note) out.push(`satış: ${row.sellable_note}`);
+  }
   if (type === "idea" && row.problem) out.push(`sorun: ${row.problem}`);
   if (type === "post" && row.refresh_days) out.push(`yenileme: ${row.refresh_days} günde bir${row.refreshed_at ? ` · son ${d(row.refreshed_at)}` : ""}`);
   if (type === "interest" && row.note) out.push(`not: ${row.note}`);
@@ -116,7 +124,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
       continue;
     }
     const t = name === "people" && type === "idea" ? "interest"
-      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post" } as Record<string, string>)[name];
+      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -195,7 +203,7 @@ export function reportText(r: any): string {
 export const KIND_NAME: Record<string, string> = {
   person: "kişi", company: "firma", source: "kaynak", opportunity: "fırsat", project: "proje", task: "görev",
   draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",
-  post: "paylaşım", template: "şablon", idea: "fikir", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu", goal: "hedef", goal_log: "ilerleme",
+  post: "paylaşım", template: "şablon", idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu", goal: "hedef", goal_log: "ilerleme",
 };
 
 /** Toplu kayıt özeti: eklenen sayısı, mükerrer diye atlananlar (hangi kayıtla çakıştı), hatalılar */
