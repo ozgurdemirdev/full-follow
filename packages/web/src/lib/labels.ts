@@ -44,7 +44,7 @@ export const STATUS_DOT: Record<string, string> = {
 
 export const TARGET: Record<string, string> = {
   person: "Kişi", company: "Firma", opportunity: "Fırsat", project: "Proje", task: "Görev", draft: "Taslak", payment: "Ödeme",
-  post: "Paylaşım", idea: "Fikir",
+  post: "Paylaşım", idea: "Fikir", own_project: "Kendi projesi",
 };
 
 export const ACTOR: Record<Actor, string> = { ozgur: "Özgür", claude: "Claude" };
@@ -58,6 +58,16 @@ export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
 export const IDEA_STAGE: Record<string, string> = { fikir: "Fikir", dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" };
 export const IDEA_STAGES = Object.keys(IDEA_STAGE);
 export const IDEA_TONE: Record<string, Tone> = { fikir: "neutral", dogrulaniyor: "payment", demo: "opportunity", urun: "success" };
+// ---- Kendi projelerim ----
+export const OWN_STATUS: Record<string, string> = { aktif: "Aktif", beklemede: "Beklemede", tamamlandi: "Tamamlandı", birakildi: "Bırakıldı" };
+export const OWN_STATUSES = Object.keys(OWN_STATUS);
+export const OWN_STATUS_TONE: Record<string, Tone> = { aktif: "success", beklemede: "payment", tamamlandi: "opportunity", birakildi: "neutral" };
+export const SELLABLE: Record<string, string> = { evet: "Satılabilir", belki: "Belki satılır", hayir: "Satılmaz" };
+export const SELLABLES = Object.keys(SELLABLE);
+export const SELLABLE_TONE: Record<string, Tone> = { evet: "success", belki: "payment", hayir: "neutral" };
+export const PRIORITY: Record<string, string> = { yuksek: "Yüksek", orta: "Orta", dusuk: "Düşük" };
+export const PRIORITIES = Object.keys(PRIORITY);
+export const PRIORITY_TONE: Record<string, Tone> = { yuksek: "warning", orta: "payment", dusuk: "neutral" };
 export const INTEREST: Record<string, string> = { anlatildi: "Anlatıldı", ilgilendi: "İlgilendi", ilgilenmedi: "İlgilenmedi" };
 export const INTEREST_TONE: Record<string, Tone> = { anlatildi: "neutral", ilgilendi: "success", ilgilenmedi: "warning" };
 

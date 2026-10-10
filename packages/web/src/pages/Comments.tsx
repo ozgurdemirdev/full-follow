@@ -5,7 +5,7 @@ import { K } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { List, Thread } from "../api/types";
 import { Page } from "../app/Page";
-import { timelinePath } from "../app/routes";
+import { PATHS, timelinePath } from "../app/routes";
 import { Chip, Empty, ErrorBox, Filters, order, PageSkeleton, Who } from "../components/ui";
 import { ago } from "../lib/format";
 import { TARGET, type Tone } from "../lib/labels";
@@ -77,6 +77,8 @@ function ThreadCard({ t, i }: { t: Thread; i: number }) {
         <Chip tone={KIND_TONE[t.target_type] ?? "neutral"}>{TARGET[t.target_type] ?? t.target_type}</Chip>
         {LINKABLE.has(t.target_type) ? (
           <Link href={timelinePath(t.target_type as "person", t.target_id)} className="text-md font-semibold text-text-primary">{t.target_label}</Link>
+        ) : t.target_type === "own_project" ? (
+          <Link href={`${PATHS.ownProjects}/${t.target_id}`} className="text-md font-semibold text-text-primary">{t.target_label}</Link>
         ) : (
           <span className="text-md font-semibold">{t.target_label}</span>
         )}

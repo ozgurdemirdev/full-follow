@@ -2,14 +2,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { run } from "../api/actions";
-import { useCompanies, useIdeas, usePeople, useSectors } from "../api/keys";
+import { useCompanies, useIdeas, useOwnProjects, usePeople, useSectors } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Detail, Idea, Post, Template } from "../api/types";
 import { Combo } from "../components/Combo";
 import { ChipRadio, Field } from "../components/Sheet";
 import { Chip } from "../components/ui";
 import { todayIso } from "../lib/format";
-import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PLATFORMS, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
+import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PRIORITIES, PRIORITY, PLATFORMS, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
 import { SubmitGuard, useSubmit, usePersonOptions, type FormProps } from "./QuickAdd";
 import { emptyRef, ensureCompany, ensurePerson, type Ref } from "./helpers";
 
@@ -206,6 +206,9 @@ export function IdeaForm(p: FormProps) {
   const existing = useQuery<Detail<Idea>>(editId ? `/ideas/${editId}` : null);
   const sectors = useSectors();
   const ideas = useIdeas();
+  const projects = useOwnProjects();
+  const [projectId, setProjectId] = useState(p.sheet.preset?.own_project_id ? String(p.sheet.preset.own_project_id) : "");
+  const [priority, setPriority] = useState("orta");
   const [parentId, setParentId] = useState("");
   const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
@@ -218,6 +221,8 @@ export function IdeaForm(p: FormProps) {
   useEffect(() => {
     if (!row) return;
     setTitle(row.title);
+    setProjectId(row.own_project_id ? String(row.own_project_id) : "");
+    setPriority(row.priority);
     setParentId(row.parent_id ? String(row.parent_id) : "");
     setProblem(row.problem ?? "");
     setStage(row.stage);
@@ -234,7 +239,10 @@ export function IdeaForm(p: FormProps) {
   const submit = useSubmit(p, async () => {
     const all = sectorText.trim() && !chosen.includes(sectorText.trim()) ? [...chosen, sectorText.trim()] : chosen;
     // "Sağlık > Diş hekimi" yazılırsa eksik sektörler açılır
-    const data = { title: title.trim(), problem, stage, notes, sectors: all, parent_id: parentId ? Number(parentId) : null };
+    // inside a project: priority only; general idea: stage, sectors and optional parent
+    const data = projectId
+      ? { title: title.trim(), problem, notes, own_project_id: Number(projectId), priority }
+      : { title: title.trim(), problem, stage, notes, sectors: all, parent_id: parentId ? Number(parentId) : null, ...(row?.own_project_id ? { own_project_id: null } : {}) };
     if (editId) await run("patch", `/ideas/${editId}`, data, { ok: "Fikir güncellendi" });
     else await run("post", "/ideas", data, { ok: "Fikir eklendi" });
   });
@@ -244,35 +252,51 @@ export function IdeaForm(p: FormProps) {
       <Field label="Ürün fikri" htmlFor="i-title">
         <input id="i-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. klinik randevu botu" />
       </Field>
-      <Field label="Ait olduğu proje (isteğe bağlı)" htmlFor="i-parent">
-        <select id="i-parent" className="inp" value={parentId} onChange={(e) => setParentId(e.target.value)}>
-          <option value="">Yok, kendi başına bir proje</option>
-          {ideas.rows.filter((x) => !x.parent_id && x.id !== editId).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+      <Field label="Nerede" htmlFor="i-where">
+        <select id="i-where" className="inp" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+          <option value="">Para kazanma fikirleri</option>
+          {projects.rows.filter((x) => x.status !== "birakildi" || String(x.id) === projectId).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
       </Field>
-      <Field label="Çözdüğü sorun" htmlFor="i-problem">
-        <textarea id="i-problem" className="inp" value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="Kimin hangi derdini çözüyor" />
+      {projectId ? (
+        <Field label="Öncelik">
+          <ChipRadio label="Öncelik" items={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
+        </Field>
+      ) : (
+        <Field label="Üst fikir (isteğe bağlı)" htmlFor="i-parent">
+          <select id="i-parent" className="inp" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+            <option value="">Yok, kendi başına bir fikir</option>
+            {ideas.rows.filter((x) => !x.parent_id && !x.own_project_id && x.id !== editId).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+          </select>
+        </Field>
+      )}
+      <Field label={projectId ? "Açıklama" : "Çözdüğü sorun"} htmlFor="i-problem">
+        <textarea id="i-problem" className="inp" value={problem} onChange={(e) => setProblem(e.target.value)} placeholder={projectId ? "Bu fikir ne yapacak" : "Kimin hangi derdini çözüyor"} />
       </Field>
-      <Field label="Aşama">
-        <ChipRadio label="Aşama" items={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} value={stage} onChange={setStage} />
-      </Field>
-      <Field label="Hedef sektörler (Ana > Alt)" htmlFor="i-sector">
-        <div className="flex gap-3">
-          <input id="i-sector" className="inp min-w-0 flex-1" list="i-sector-list" value={sectorText} placeholder="Sağlık > Diş hekimi"
-            onChange={(e) => setSectorText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSector())} />
-          <button type="button" className="btn btn-sec" disabled={!sectorText.trim()} onClick={addSector}>Ekle</button>
-        </div>
-        <datalist id="i-sector-list">{sectors.rows.map((x) => <option key={x.id} value={x.path} />)}</datalist>
-        {chosen.length ? (
-          <div className="flex flex-wrap gap-2">
-            {chosen.map((s) => (
-              <button key={s} type="button" className="chip bg-chip-neutral-bg text-chip-neutral-fg border-0" title="Kaldır" onClick={() => setChosen((c) => c.filter((x) => x !== s))}>
-                {s} ×
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </Field>
+      {projectId ? null : (
+        <>
+          <Field label="Aşama">
+            <ChipRadio label="Aşama" items={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} value={stage} onChange={setStage} />
+          </Field>
+          <Field label="Hedef sektörler (Ana > Alt)" htmlFor="i-sector">
+            <div className="flex gap-3">
+              <input id="i-sector" className="inp min-w-0 flex-1" list="i-sector-list" value={sectorText} placeholder="Sağlık > Diş hekimi"
+                onChange={(e) => setSectorText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSector())} />
+              <button type="button" className="btn btn-sec" disabled={!sectorText.trim()} onClick={addSector}>Ekle</button>
+            </div>
+            <datalist id="i-sector-list">{sectors.rows.map((x) => <option key={x.id} value={x.path} />)}</datalist>
+            {chosen.length ? (
+              <div className="flex flex-wrap gap-2">
+                {chosen.map((x) => (
+                  <button key={x} type="button" className="chip bg-chip-neutral-bg text-chip-neutral-fg border-0" title="Kaldır" onClick={() => setChosen((c) => c.filter((y) => y !== x))}>
+                    {x} ×
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </Field>
+        </>
+      )}
       <Field label="Notlar" htmlFor="i-notes">
         <textarea id="i-notes" className="inp" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Field>

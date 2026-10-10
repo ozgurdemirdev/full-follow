@@ -76,16 +76,17 @@ export function Sidebar() {
   ];
   const marketing: NavItem[] = [
     { key: "posts", label: "Paylaşımlar", icon: "megaphone", count: today.data?.posts_due.total, tone: "opportunity" },
-    { key: "ideas", label: "Fikirler", icon: "bulb" },
+    { key: "ideas", label: "Para fikirleri", icon: "bulb" },
     { key: "templates", label: "Şablonlar", icon: "template" },
   ];
   const second: NavItem[] = [
     { key: "pipeline", label: "Satış hunisi", icon: "funnel", count: openOpps, tone: "opportunity" },
-    { key: "projects", label: "Projeler", icon: "folder" },
+    { key: "projects", label: "Müşteri projeleri", icon: "folder" },
+    { key: "ownProjects", label: "Kendi projelerim", icon: "cube" },
     { key: "timeline", label: "Zaman çizelgesi", icon: "clock" },
     { key: "report", label: "Rapor", icon: "chart" },
   ];
-  const isActive = (k: PageKey) => (k === "today" ? path === "/" : path.startsWith(PATHS[k]));
+  const isActive = (k: PageKey) => (k === "today" ? path === "/" : path === PATHS[k] || path.startsWith(`${PATHS[k]}/`));
 
   return (
     <>

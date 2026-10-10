@@ -87,7 +87,7 @@ export interface TrashItem {
   trash_id: number | null;
 }
 export interface LinkRow extends Base {
-  target_type: "opportunity" | "project";
+  target_type: "opportunity" | "project" | "own_project";
   target_id: number;
   label: string;
   url: string;
@@ -195,10 +195,30 @@ export interface Idea extends Base {
   touch_count: number;
   post_count: number;
   post_people: number;
-  /** own project this idea belongs to */
+  /** sub idea grouping inside general ideas */
   parent_id: number | null;
   parent_title: string | null;
   child_count: number;
+  /** own project this idea belongs to; null = general money idea */
+  own_project_id: number | null;
+  own_project_title: string | null;
+  priority: IdeaPriority;
+  position: number;
+  done_at: string | null;
+}
+export type OwnProjectStatus = "aktif" | "beklemede" | "tamamlandi" | "birakildi";
+export type Sellable = "evet" | "belki" | "hayir";
+export type IdeaPriority = "yuksek" | "orta" | "dusuk";
+export interface OwnProject extends Base {
+  name: string;
+  description: string | null;
+  status: OwnProjectStatus;
+  sellable: Sellable;
+  sellable_note: string | null;
+  notes: string | null;
+  open_ideas: number;
+  done_ideas: number;
+  sectors: { id: number; path: string }[];
 }
 export interface Interest extends Base {
   idea_id: number;

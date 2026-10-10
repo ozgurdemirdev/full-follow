@@ -141,7 +141,7 @@ export function ideasService(ctx: Ctx) {
       if (scopeChanged && !projectId) { set.done_at = null; set.position = 0; }
 
       const priority = d.priority ?? cur.priority;
-      const reorder = d.own_project_id !== undefined || d.priority !== undefined || d.position !== undefined || done !== undefined;
+      const reorder = scopeChanged || (d.priority !== undefined && d.priority !== cur.priority) || d.position !== undefined || (done !== undefined && done !== wasDone);
       if (Object.keys(set).length || sector_ids) tx.update(ideas).set({ ...set, updated_at: now }).where(eq(ideas.id, id)).run();
 
       if (reorder) {

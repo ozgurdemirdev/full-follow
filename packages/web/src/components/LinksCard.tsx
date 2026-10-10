@@ -4,8 +4,8 @@ import { useQuery } from "../api/store";
 import type { LinkRow, List } from "../api/types";
 import { Empty } from "./ui";
 
-/** Labelled links on an opportunity or project (roadmap, proposal deck, Figma, repo) */
-export function LinksCard({ type, id }: { type: "opportunity" | "project"; id: number }) {
+/** Labelled links on an opportunity, project or own project (roadmap, proposal deck, Figma, repo) */
+export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own_project"; id: number }) {
   const links = useQuery<List<LinkRow>>(`/links?${type}_id=${id}&limit=200`);
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");

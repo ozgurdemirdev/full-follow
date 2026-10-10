@@ -1,7 +1,7 @@
 /** Hook'lar on=false ile çağrılırsa istek yapılmaz (ör. arama ilk odaklanana kadar). */
 // Ekranlar arası paylaşılan sorgu anahtarları: aynı anahtar = tek istek, tek önbellek kaydı
 import { useMemo } from "react";
-import type { Company, Idea, List, Opportunity, Person, Post, Project, Sector, Source, Tag, Task, Template, Thread, TrashItem } from "./types";
+import type { Company, Idea, List, OwnProject, Opportunity, Person, Post, Project, Sector, Source, Tag, Task, Template, Thread, TrashItem } from "./types";
 import { useQuery } from "./store";
 
 const ALL = 1000;
@@ -27,6 +27,7 @@ export const K = {
   posts: `/posts?limit=${ALL}`,
   templates: `/templates?limit=${ALL}`,
   ideas: `/ideas?limit=${ALL}`,
+  ownProjects: `/own-projects?limit=${ALL}`,
 };
 
 function useIndex<T extends { id: number }>(key: string | null) {
@@ -54,3 +55,4 @@ export const useThreads = (on = true) => useIndex<Thread>(on ? K.threads : null)
 export const usePosts = (on = true) => useIndex<Post>(on ? K.posts : null);
 export const useTemplates = (on = true) => useIndex<Template>(on ? K.templates : null);
 export const useIdeas = (on = true) => useIndex<Idea>(on ? K.ideas : null);
+export const useOwnProjects = (on = true) => useIndex<OwnProject>(on ? K.ownProjects : null);

@@ -15,6 +15,7 @@ const loaders = {
   comments: () => import("../pages/Comments"),
   posts: () => import("../pages/Posts"),
   ideas: () => import("../pages/Ideas"),
+  ownProjects: () => import("../pages/OwnProjects"),
   templates: () => import("../pages/Templates"),
   settings: () => import("../pages/Settings"),
 };
@@ -45,6 +46,7 @@ export const PATHS: Record<PageKey, string> = {
   comments: "/yorumlar",
   posts: "/paylasimlar",
   ideas: "/fikirler",
+  ownProjects: "/projelerim",
   templates: "/sablonlar",
   settings: "/ayarlar",
 };

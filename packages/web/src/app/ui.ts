@@ -2,14 +2,14 @@
 import { useSyncExternalStore } from "react";
 import type { OppStage } from "../lib/labels";
 
-export type SheetKind = "opportunity" | "person" | "company" | "touch" | "task" | "comment" | "draft" | "post" | "idea" | "template" | "project" | "goal";
+export type SheetKind = "opportunity" | "person" | "company" | "touch" | "task" | "comment" | "draft" | "post" | "idea" | "template" | "project" | "goal" | "own_project";
 export interface SheetState {
   kind: SheetKind;
   /** forma önceden doldurulacak değerler */
   preset?: {
     stage?: OppStage; person_id?: number; opportunity_id?: number; project_id?: number; target?: { type: string; id: number; label: string };
     /** Paket 2: düzenlenecek kayıt ya da ön seçim */
-    post_id?: number; idea_id?: number; template_id?: number; channel?: string;
+    post_id?: number; idea_id?: number; template_id?: number; channel?: string; own_project_id?: number;
     /** Paket 3: düzenlenecek kayıt (fırsat, görev, temas, firma), firma muhatap ve sadece adresli muhatap */
     edit?: number; date?: string; company_id?: number; contact?: string;
   };

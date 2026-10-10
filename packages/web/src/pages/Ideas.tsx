@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { remove as trash, run } from "../api/actions";
 import { useIdeas } from "../api/keys";
@@ -17,7 +17,9 @@ import { channelName } from "../lib/network";
 
 // Ürün fikirleri: hangi sorunu çözüyor, hangi sektöre; kaç kişiye anlatıldı, kaçı ilgilendi
 export default function Ideas() {
-  const ideas = useIdeas();
+  const all = useIdeas();
+  // project ideas live on their project's page; this list is only the general money ideas
+  const ideas = useMemo(() => ({ ...all, rows: all.rows.filter((i) => !i.own_project_id) }), [all]);
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [stage, setStage] = useState("");
@@ -29,12 +31,16 @@ export default function Ideas() {
       .flatMap((i) => [i, ...matching.filter((c) => c.parent_id === i.id)]);
   }, [matching]);
   const selId = Number(params.id) || shown[0]?.id;
+  const inProject = params.id ? all.byId.get(Number(params.id))?.own_project_id : null;
+  useEffect(() => {
+    if (inProject) navigate(`${PATHS.ownProjects}/${inProject}`, { replace: true });
+  }, [inProject, navigate]);
   const told = ideas.rows.reduce((a, i) => a + i.told, 0);
   const interested = ideas.rows.reduce((a, i) => a + i.interested, 0);
 
   return (
     <Page
-      title="Fikirler ve projelerim"
+      title="Para kazanma fikirleri"
       sub={ideas.data ? `${ideas.rows.length} fikir · ${told} kişiye anlatıldı, ${interested} ilgilendi` : ""}
       right={<button type="button" className="btn btn-pri" onClick={() => openSheet("idea")}>Fikir ekle</button>}
       className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] desk:gap-9"
@@ -68,7 +74,7 @@ export default function Ideas() {
               ))}
             </div>
           </section>
-          {selId ? <IdeaCard key={selId} id={selId} /> : null}
+          {selId && !inProject ? <IdeaCard key={selId} id={selId} /> : null}
         </>
       )}
     </Page>
@@ -78,6 +84,7 @@ export default function Ideas() {
 type Related = { people?: Interest[]; touches?: Touch[]; posts?: Post[] };
 
 function IdeaCard({ id }: { id: number }) {
+  const [, navigate] = useLocation();
   const d = useQuery<Detail<Idea, Related>>(`/ideas/${id}?with=people,touches,posts`);
   const i = d.data?.row;
   if (!i) {
@@ -94,6 +101,14 @@ function IdeaCard({ id }: { id: number }) {
   const remove = () => {
     void trash(`/ideas/${i.id}`, `“${i.title}” fikri`).catch(() => {});
   };
+  const toProject = async () => {
+    try {
+      const r = await run<{ id: number }>("post", `/own-projects/from-idea/${i.id}`, {}, { ok: "Proje açıldı" });
+      if (r.row) navigate(`${PATHS.ownProjects}/${(r.row as { id: number }).id}`);
+    } catch {
+      /* bildirim run() içinde */
+    }
+  };
 
   return (
     <aside className="card slide-in flex flex-col gap-8 p-9" aria-label="Fikir">
@@ -102,10 +117,11 @@ function IdeaCard({ id }: { id: number }) {
           <h2 className="m-0 text-lg font-semibold">{i.title}</h2>
           <Who actor={i.created_by} />
           <span className="flex-grow" />
+          {!i.parent_id ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => void toProject()}>Projeye dönüştür</button> : null}
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("idea", { idea_id: i.id })}>Düzenle</button>
           <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
         </div>
-        {i.parent_id ? <Link href={`${PATHS.ideas}/${i.parent_id}`} className="text-base-sm">Proje: {i.parent_title}</Link> : null}
+        {i.parent_id ? <Link href={`${PATHS.ideas}/${i.parent_id}`} className="text-base-sm">Üst fikir: {i.parent_title}</Link> : null}
         {i.problem ? <p className="m-0 text-base leading-normal text-text-body">{i.problem}</p> : <span className="text-base-sm text-text-muted">Çözdüğü sorun yazılmadı</span>}
         {i.sectors.length ? <div className="mt-1 flex flex-wrap gap-2">{i.sectors.map((s) => <Chip key={s.id} tone="source">{s.path}</Chip>)}</div> : null}
       </div>

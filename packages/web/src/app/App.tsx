@@ -54,6 +54,7 @@ export function App() {
                   <Route path={PATHS.comments} component={pages.comments} />
                   <Route path={`${PATHS.posts}/:id?`} component={pages.posts} />
                   <Route path={`${PATHS.ideas}/:id?`} component={pages.ideas} />
+                  <Route path={`${PATHS.ownProjects}/:id?`} component={pages.ownProjects} />
                   <Route path={PATHS.templates} component={pages.templates} />
                   <Route path={PATHS.settings} component={pages.settings} />
                   <Route component={pages.today} />

@@ -28,6 +28,7 @@ const TITLES: Record<SheetState["kind"], string> = {
   template: "Mesaj şablonu",
   project: "Yeni proje",
   goal: "Günlük hedef",
+  own_project: "Kendi projesi",
 };
 
 // Pazarlama formları ayrı parçada (ilk açılışta yüklenir)
@@ -40,6 +41,7 @@ const PersonForm = lazy(() => import("./ContactForms").then((m) => ({ default: m
 const CompanyForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.CompanyForm })));
 const TouchForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.TouchForm })));
 const GoalForm = lazy(() => import("./GoalForm").then((m) => ({ default: m.GoalForm })));
+const OwnProjectForm = lazy(() => import("./OwnProjectForm").then((m) => ({ default: m.OwnProjectForm })));
 const ProjectForm = lazy(() => import("./ProjectForm").then((m) => ({ default: m.ProjectForm })));
 
 /** Hızlı ekle menüsünden ya da sayfalardan açılan tüm formlar */
@@ -53,7 +55,7 @@ export default function QuickAdd() {
   }, [sheet]);
 
   const editing = sheet && ((sheet.kind === "person" && sheet.preset?.person_id) || (sheet.kind === "post" && sheet.preset?.post_id)
-    || (sheet.kind === "idea" && sheet.preset?.idea_id) || (sheet.kind === "template" && sheet.preset?.template_id) || sheet.preset?.edit);
+    || (sheet.kind === "idea" && sheet.preset?.idea_id) || (sheet.kind === "own_project" && sheet.preset?.own_project_id) || (sheet.kind === "template" && sheet.preset?.template_id) || sheet.preset?.edit);
   const title = sheet ? `${TITLES[sheet.kind]}${editing ? " · düzenle" : ""}` : "";
   const formId = "quick-form";
   const footer = done ? null : (
@@ -111,6 +113,8 @@ function FormBody(p: FormProps) {
       return <ProjectForm {...p} />;
     case "goal":
       return <GoalForm {...p} />;
+    case "own_project":
+      return <OwnProjectForm {...p} />;
   }
 }
 
