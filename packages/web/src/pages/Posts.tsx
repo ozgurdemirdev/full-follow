@@ -108,7 +108,7 @@ function PostRow({ p, open, toggle }: { p: Post; open: boolean; toggle: () => vo
           </button>
         ) : null}
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("post", { post_id: p.id })}>Düzenle</button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={remove}>Sil</button>
+        <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
       </div>
     </article>
   );

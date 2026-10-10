@@ -101,6 +101,9 @@ function IdeaCard({ id }: { id: number }) {
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="m-0 text-lg font-semibold">{i.title}</h2>
           <Who actor={i.created_by} />
+          <span className="flex-grow" />
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("idea", { idea_id: i.id })}>Düzenle</button>
+          <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
         </div>
         {i.parent_id ? <Link href={`${PATHS.ideas}/${i.parent_id}`} className="text-base-sm">Proje: {i.parent_title}</Link> : null}
         {i.problem ? <p className="m-0 text-base leading-normal text-text-body">{i.problem}</p> : <span className="text-base-sm text-text-muted">Çözdüğü sorun yazılmadı</span>}
@@ -132,8 +135,6 @@ function IdeaCard({ id }: { id: number }) {
       <div className="flex flex-wrap gap-3">
         <button type="button" className="btn btn-pri" onClick={() => openSheet("touch", { idea_id: i.id })}>Anlattığım teması ekle</button>
         <button type="button" className="btn btn-sec" onClick={() => openSheet("post", { idea_id: i.id })}>Paylaşım ekle</button>
-        <button type="button" className="btn btn-sec" onClick={() => openSheet("idea", { idea_id: i.id })}>Düzenle</button>
-        <button type="button" className="btn btn-ghost" onClick={remove}>Sil</button>
       </div>
 
       <LinkPerson ideaId={i.id} />
