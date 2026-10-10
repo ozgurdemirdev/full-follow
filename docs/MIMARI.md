@@ -289,6 +289,8 @@ Ayrı tablo yok. Cevap bekleyen kuralının (§3/10) verisinden hesaplanır; ür
 **idea_people**: fikir kime anlatıldı. `idea_id`, `person_id` (çift tekil), `interest` (`anlatildi`, `ilgilendi`, `ilgilenmedi`), `note`, `touch_id` (anlatıldığı temas).
 `touches.idea_id`: temas bir fikir hakkındaysa.
 
+Kapsam (Kendi projelerim, §13): `own_project_id` boşsa genel para kazanma fikri, doluysa o kendi projesinin fikri; projede `priority` (`yuksek|orta|dusuk`), `position` (grup içi sıra) ve `done_at` anlamlıdır. `parent_id` sadece genel fikirlerde üst fikirdir.
+
 İlgi ölçümü (hesaplanır): kaç kişiye anlatıldı, kaçı ilgilendi, oran; fikre bağlı temas ve paylaşım sayısı.
 
 ### 2.18 Pazarlama ayarları (Paket 2)
@@ -445,6 +447,13 @@ Paket 2 (pazarlama çekirdek kuralları):
 13. **Takip dizisi**: ayar süreleri uygulanır; 3. gün 1. takip taslağı (Claude adına, nedenli, şablon yoksa varsayılan metin), bekleyen taslak varken ikinci kez üretilmez, gönderilince 7. gün 2. takip (uygun `takip` şablonuyla), reddedilen adım tekrar üretilmez, gelen temas diziyi durdurur, boş ayar kapatır.
 14. **Paylaşım**: yenileme zamanı gelince Bugün'de görünür, "güncelledim" düşürür ve aralık sonra tekrar çıkar; paylaşımdan gelen kişinin fırsat ve kazanılan tutarı paylaşıma sayılır; paylaşım silinince kişi kalır.
 15. **Fikir ve şablon**: fikir temasla anlatıldı olur, ilgi sayısı ve oranı doğru, ana sektör filtresi alt sektörleri kapsar, aşama olayı yazılır; şablon önerisi kanal ve sektör önceliğine uyar, şablonla açılan taslağın metni kişiye uygulanır.
+
+Kendi projelerim (`packages/core/test/own-projects.test.ts`):
+
+20. **Kendi projesi**: sektörle açılır, `sellable` varsayılanı `belki`, durum değişince olay yazılır, `status`, `sellable` ve `sector` filtreleri bulur.
+21. **Fikir kapsamı**: proje fikri üst fikir almaz, alt fikri olan fikir projeye girmez, proje fikri üst fikir olamaz, genele dönünce `done_at` silinir, genel fikirde `priority` hata verir.
+22. **Sıralama**: öncelik grubunda sıra 0..n, `position` ile sürükleme, öncelik değişince iki grup yeniden numaralanır, `done` gruptan çıkarır ve geri açınca sona koyar.
+23. **Fikirden proje**: alt fikirler projeye taşınır, kaynak fikir çöpe gider (geri yüklenince alt fikirsiz genel fikir); proje silinince fikirleri genele döner, geri yüklenince yeniden bağlanır.
 
 **Opsiyonel (gerekirse):**
 
@@ -655,3 +664,14 @@ Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
 - Kanalı olan hedefte o günkü giden mesaj temasları kendiliğinden sayılır; kalanı elle (+1, +5, sayı).
 - Seri (üst üste tamamlanan gün) ve haftalık oran core'da hesaplanır; görevler mevcut `tasks.due_date` ile takvimde görünür.
 - Web: Dashboard üstünde Günün planı, `/takvim` hafta ve ay görünümü. MCP: `plan` aracı, `save goal`, `save goal_log`, `today` içinde plan.
+
+## 13. Kendi projelerim (2026-10-10)
+
+Özgür'ün kendi ürünleri (Full Follow gibi) müşteri projelerinden ayrı izlenir. Ayrıntılı plan: [plan-kendi-projelerim.md](plan-kendi-projelerim.md).
+
+- **Ayrı tablo** `own_projects` (`name`, `description`, `status` aktif|beklemede|tamamlandi|birakildi, `sellable` evet|belki|hayir, `sellable_note`, `notes`) ve `own_project_sectors`. Müşteri `projects` tablosuna dokunulmaz: ciro, ödeme ve "kazanıldı" kuralları değişmez.
+- **Fikirler tek tabloda**: `ideas.own_project_id` kapsamı belirler; `priority`, `position`, `done_at` proje fikrinde anlamlıdır. Sıralama satış hunisiyle aynı yardımcıyı kullanır (`placeInGroup`, `renumberGroup`).
+- **Kurallar** (core): proje fikri üst fikir almaz, alt fikri olan fikir projeye girmez, `priority/position/done` sadece proje fikrinde; kapsam değişince `idea.moved`, yapılınca `idea.done` olayı.
+- **Projeye dönüştür** (`save own_project {from_idea}` ya da `POST /api/own-projects/from-idea/:id`): fikir proje olur, alt fikirleri projenin fikirleri olur, kaynak fikir çöp kutusuna gider. Proje silinince fikirleri genele döner, geri yüklenince bağlanır.
+- **REST**: `/api/own-projects` (liste, detay `?with=ideas,links,comments`, ekle, düzenle, sil, `from-idea/:id`). **MCP**: yeni araç yok; `find|get|save|move|delete` `own_project` türünü tanır.
+- **Web**: `/projelerim` (Kendi projelerim) liste + detay, öncelik gruplu fikirler (masaüstünde sürükle, telefonda yukarı/aşağı), `Yapılanlar`. `/fikirler` artık "Para kazanma fikirleri".
