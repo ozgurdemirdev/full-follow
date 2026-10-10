@@ -95,7 +95,6 @@ export function GlobalSearch() {
           }}
           className="min-w-0 flex-grow border-0 bg-transparent text-base-sm text-text-primary outline-0 placeholder:text-text-muted [&::-webkit-search-cancel-button]:hidden"
         />
-        <kbd className="rounded-xs border border-border-default px-1 font-mono text-xs">⌘K</kbd>
       </label>
       {open && hits.length > 0 ? (
         <ul id="search-results" role="listbox" className="absolute right-0 top-full z-sheet mt-2 flex w-full flex-col rounded-card border border-border-menu bg-surface-menu p-2 shadow-menu">
