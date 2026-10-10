@@ -19,6 +19,7 @@ import { TouchesController } from "./controllers/touches.controller";
 import { PostsController } from "./controllers/posts.controller";
 import { TemplatesController } from "./controllers/templates.controller";
 import { IdeasController } from "./controllers/ideas.controller";
+import { OwnProjectsController } from "./controllers/own-projects.controller";
 import { MarketingController } from "./controllers/marketing.controller";
 import { TagsController, TrashController } from "./controllers/tags.controller";
 import { coreProvider, followupsProvider } from "./core.provider";
@@ -29,7 +30,7 @@ import { ErrorFilter } from "./http";
     AuthController, MiscController, PeopleController, CompaniesController, SourcesController,
     OpportunitiesController, ProjectsController, PaymentsController, TasksController, DraftsController,
     TouchesController, CommentsController, SectorsController, NotesController, LinksController, GoalsController,
-    PostsController, TemplatesController, IdeasController, MarketingController, TagsController, TrashController,
+    PostsController, TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController,
   ],
   providers: [
     coreProvider,
