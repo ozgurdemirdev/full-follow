@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
+import { emit, FFError, parse, row, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { opportunities } from "../db/schema";
 import { label, OPEN_OPP_STAGES, type OppStage } from "../constants";
 import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "../schemas";
 import { addTagBySlug, checkSource } from "./categories";
 import { createProjectFromOpportunity } from "./projects";
-import { link, requireRow } from "./shared";
+import { link, placeInGroup, requireRow } from "./shared";
 import { Bin } from "./trash";
 
 const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
@@ -28,9 +28,7 @@ export function applyStage(q: Q, ctx: Ctx, cur: any, stage: OppStage, o: { reaso
 
   // hedef sütunda sıra: araya ya da sona koy, sütunu yeniden numarala
   if (changed || o.position !== undefined) {
-    const ids = rows<{ id: number }>(ctx, "SELECT id FROM opportunities WHERE stage = ? AND id != ? ORDER BY position, id", stage, cur.id).map((r) => r.id);
-    ids.splice(Math.min(o.position ?? ids.length, ids.length), 0, cur.id);
-    ids.forEach((id, i) => q.update(opportunities).set({ position: i }).where(eq(opportunities.id, id)).run());
+    placeInGroup(q, ctx, "opportunities", "stage = ?", [stage], cur.id, o.position);
   }
   if (changed) {
     emit(q, ctx, {

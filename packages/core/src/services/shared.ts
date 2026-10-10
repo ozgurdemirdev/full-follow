@@ -1,4 +1,7 @@
+import { eq } from "drizzle-orm";
 import { FFError, norm, row, rows, type Ctx } from "../context";
+import type { Q } from "../db/client";
+import { ideas, opportunities } from "../db/schema";
 import type { CommentTarget } from "../constants";
 
 export const TARGET_TABLE: Record<CommentTarget, string> = {
@@ -142,4 +145,23 @@ export function resolveInput<T extends Record<string, any>>(ctx: Ctx, data: T): 
     if (out[idKey] === undefined) out[idKey] = v === null || v === "" ? null : resolveRef(ctx, type, v);
   }
   return out;
+}
+
+// ---- Sıralı gruplar (kanban sütunu, öncelik grubu) ----
+
+const GROUP_TABLES = { opportunities, ideas } as const;
+
+/** `id`'yi `where` ile seçilen grupta `position`'a (varsayılan: sona) koyar, grubu 0..n yeniden numaralar */
+export function placeInGroup(q: Q, ctx: Ctx, table: keyof typeof GROUP_TABLES, where: string, args: unknown[], id: number, position?: number) {
+  const ids = rows<{ id: number }>(ctx, `SELECT id FROM ${table} WHERE ${where} AND id != ? ORDER BY position, id`, ...args, id).map((r) => r.id);
+  ids.splice(Math.min(position ?? ids.length, ids.length), 0, id);
+  const t = GROUP_TABLES[table];
+  ids.forEach((x, i) => q.update(t).set({ position: i }).where(eq(t.id, x)).run());
+}
+
+/** Gruptan çıkan kaydın bıraktığı boşluğu kapatır (grubu 0..n yeniden numaralar) */
+export function renumberGroup(q: Q, ctx: Ctx, table: keyof typeof GROUP_TABLES, where: string, args: unknown[]) {
+  const t = GROUP_TABLES[table];
+  rows<{ id: number }>(ctx, `SELECT id FROM ${table} WHERE ${where} ORDER BY position, id`, ...args)
+    .forEach((r, i) => q.update(t).set({ position: i }).where(eq(t.id, r.id)).run());
 }

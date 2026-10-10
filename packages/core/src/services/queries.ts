@@ -7,10 +7,18 @@ import { paymentStatus } from "./payments";
 import { settingsService } from "./settings";
 import { channelSummary, networkSettings, referralValues } from "./network";
 import { sectorIds } from "./sectors";
+
 import { trashList } from "./trash";
 import { requireRow } from "./shared";
 import { postStats } from "./posts";
 import { templateStats } from "./templates";
+
+/** Sektör id ya da adı → o sektörün ve alt sektörlerinin id'leri (bilinmeyen sektör: boş) */
+function sectorMatch(ctx: Ctx, sector: string | number): number[] {
+  const sid = /^\d+$/.test(String(sector)) ? Number(sector)
+    : rows<{ id: number; name: string }>(ctx, "SELECT id, name FROM sectors").find((x) => norm(x.name) === norm(String(sector)))?.id;
+  return sid ? sectorIds(ctx, sid) : [];
+}
 import { ideaPeople, ideaStats } from "./ideas";
 import { goalsService } from "./goals";
 
@@ -193,9 +201,7 @@ export function queriesService(ctx: Ctx) {
     if (f.kind) list = list.filter((t) => t.kind === f.kind);
     if (f.channel) list = list.filter((t) => !t.channel || t.channel === f.channel);
     if (f.sector) {
-      const sid = /^\d+$/.test(String(f.sector)) ? Number(f.sector)
-        : rows<{ id: number; name: string }>(ctx, "SELECT id, name FROM sectors").find((x) => norm(x.name) === norm(String(f.sector)))?.id;
-      const ids = sid ? sectorIds(ctx, sid) : [];
+      const ids = sectorMatch(ctx, f.sector);
       list = list.filter((t) => !t.sector_id || ids.includes(t.sector_id));
     }
     list = list.filter((t) => has(o.q, t.name, t.body, t.sector_path));
@@ -207,9 +213,7 @@ export function queriesService(ctx: Ctx) {
     let list = ideaStats(ctx);
     if (f.stage) list = list.filter((i) => i.stage === f.stage);
     if (f.sector) {
-      const sid = /^\d+$/.test(String(f.sector)) ? Number(f.sector)
-        : rows<{ id: number; name: string }>(ctx, "SELECT id, name FROM sectors").find((x) => norm(x.name) === norm(String(f.sector)))?.id;
-      const ids = sid ? sectorIds(ctx, sid) : [];
+      const ids = sectorMatch(ctx, f.sector);
       list = list.filter((i) => i.sectors.some((s: { id: number }) => ids.includes(s.id)));
     }
     list = list.filter((i) => has(o.q, i.title, i.problem, i.notes));

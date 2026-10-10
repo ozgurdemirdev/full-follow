@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { emit, FFError, norm, parse, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
-import { sectors } from "../db/schema";
+import { idea_sectors, own_project_sectors, sectors } from "../db/schema";
 import { sectorCreate, sectorUpdate } from "../schemas";
 import { duplicate } from "./dupes";
 import { requireRow } from "./shared";
@@ -76,6 +76,25 @@ export function ensureSector(q: Q, ctx: Ctx, input: string | number | null): num
   }
   const parent = findChild(ctx, parts[0], null)?.id ?? insert(q, ctx, parts[0], null).id;
   return findChild(ctx, parts[1], parent)?.id ?? insert(q, ctx, parts[1], parent).id;
+}
+
+/** Girdideki `sectors: ["Sağlık > Diş hekimi", "Kafe"]` → sector_ids (eksik sektörler açılır) */
+export function sectorInput(q: Q, ctx: Ctx, input: unknown): unknown {
+  if (!input || typeof input !== "object" || !("sectors" in input)) return input;
+  const { sectors, ...rest } = input as Record<string, any>;
+  if (rest.sector_ids !== undefined) return rest;
+  const list = Array.isArray(sectors) ? sectors : String(sectors ?? "").split(",");
+  return { ...rest, sector_ids: list.map((s) => ensureSector(q, ctx, typeof s === "number" ? s : String(s).trim())).filter((x): x is number => !!x) };
+}
+
+/** Fikrin ya da kendi projenin sektör bağlarını verilen listeyle değiştirir */
+export function setSectorLinks(q: Q, ctx: Ctx, owner: "idea" | "own_project", ownerId: number, ids: number[]) {
+  const [table, col] = owner === "idea" ? ([idea_sectors, idea_sectors.idea_id] as const) : ([own_project_sectors, own_project_sectors.own_project_id] as const);
+  q.delete(table).where(eq(col, ownerId)).run();
+  for (const sid of [...new Set(ids)]) {
+    requireRow(ctx, "sectors", sid, "sektör");
+    q.insert(table as any).values({ [owner === "idea" ? "idea_id" : "own_project_id"]: ownerId, sector_id: sid, created_at: ctx.clock.now(), created_by: ctx.actor }).run();
+  }
 }
 
 export function sectorsService(ctx: Ctx) {

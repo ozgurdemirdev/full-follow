@@ -4,26 +4,9 @@ import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { idea_people, idea_sectors, ideas } from "../db/schema";
 import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "../schemas";
-import { ensureSector } from "./sectors";
+import { sectorInput, setSectorLinks } from "./sectors";
 import { requireRow, truncate } from "./shared";
 import { Bin } from "./trash";
-
-/** Girdideki `sectors: ["Sağlık > Diş hekimi", "Kafe"]` → sector_ids (eksik sektörler açılır) */
-function withSectors(q: Q, ctx: Ctx, input: unknown): unknown {
-  if (!input || typeof input !== "object" || !("sectors" in input)) return input;
-  const { sectors, ...rest } = input as Record<string, any>;
-  if (rest.sector_ids !== undefined) return rest;
-  const list = Array.isArray(sectors) ? sectors : String(sectors ?? "").split(",");
-  return { ...rest, sector_ids: list.map((s) => ensureSector(q, ctx, typeof s === "number" ? s : String(s).trim())).filter((x): x is number => !!x) };
-}
-
-function setSectors(q: Q, ctx: Ctx, ideaId: number, ids: number[]) {
-  q.delete(idea_sectors).where(eq(idea_sectors.idea_id, ideaId)).run();
-  for (const sid of [...new Set(ids)]) {
-    requireRow(ctx, "sectors", sid, "sektör");
-    q.insert(idea_sectors).values({ idea_id: ideaId, sector_id: sid, created_at: ctx.clock.now(), created_by: ctx.actor }).run();
-  }
-}
 
 /**
  * Kişiyi fikre bağlar (yoksa "anlatıldı" olarak). Fikir hakkındaki temas da bunu çağırır.
@@ -96,10 +79,10 @@ export function ideasService(ctx: Ctx) {
 
   function create(input: unknown) {
     return ctx.db.transaction((tx) => {
-      const { sector_ids, ...d } = parse(ideaCreate, withSectors(tx, ctx, input));
+      const { sector_ids, ...d } = parse(ideaCreate, sectorInput(tx, ctx, input));
       checkParent(d.parent_id);
       const r = tx.insert(ideas).values({ ...d, ...stamp(ctx) }).returning().get();
-      if (sector_ids?.length) setSectors(tx, ctx, r.id, sector_ids);
+      if (sector_ids?.length) setSectorLinks(tx, ctx, "idea", r.id, sector_ids);
       emit(tx, ctx, { type: "idea.created", summary: `Fikir: ${truncate(d.title, 60)}`, data: { idea_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
@@ -107,12 +90,12 @@ export function ideasService(ctx: Ctx) {
 
   function update(id: number, input: unknown) {
     return ctx.db.transaction((tx) => {
-      const { sector_ids, ...d } = parse(ideaUpdate, withSectors(tx, ctx, input));
+      const { sector_ids, ...d } = parse(ideaUpdate, sectorInput(tx, ctx, input));
       const cur = requireRow(ctx, "ideas", id);
       checkParent(d.parent_id, id);
       const effects: string[] = [];
       if (Object.keys(d).length || sector_ids) tx.update(ideas).set({ ...d, updated_at: ctx.clock.now() }).where(eq(ideas.id, id)).run();
-      if (sector_ids) setSectors(tx, ctx, id, sector_ids);
+      if (sector_ids) setSectorLinks(tx, ctx, "idea", id, sector_ids);
       if (d.stage && d.stage !== cur.stage) {
         emit(tx, ctx, { type: "idea.stage", summary: `Fikir ${label(cur.stage)} → ${label(d.stage)}: ${truncate(cur.title, 50)}`, data: { idea_id: id, from: cur.stage, to: d.stage } });
         effects.push(`fikir → ${label(d.stage)}`);
