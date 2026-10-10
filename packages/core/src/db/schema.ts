@@ -1,7 +1,9 @@
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
-  ACTORS, TAGS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
+  ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS,
+  POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
+  TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -12,12 +14,34 @@ const common = () => ({
   created_by: text("created_by", { enum: ACTORS }).notNull(),
 });
 
+/** Kategori silinince yerinde gizlenir: kayıtlarda kalır, yenisine seçilemez (Çöp kutusundan geri gelir) */
+const deletedAt = () => ({ deleted_at: text("deleted_at") });
+
+/**
+ * Mükerrer kontrol anahtarları (*_key): küçük harf, Türkçe karakter ve boşluk duyarsız, adresten kullanıcı adına
+ * indirgenmiş değer (services/keys.ts). Ham alan değişince core yeniden hesaplar.
+ */
 export const companies = sqliteTable("companies", {
   ...common(),
   name: text("name").notNull(),
   website: text("website"),
+  email: text("email"),
+  phone: text("phone"),
+  instagram: text("instagram"),
+  linkedin: text("linkedin"),
+  /** Nereden buldum (kaynak listesi) */
+  source_id: integer("source_id").references((): AnySQLiteColumn => sources.id),
+  contact_status: text("contact_status", { enum: CONTACT_STATUSES }).notNull().default("yazilmadi"),
   notes: text("notes"),
-});
+  name_key: text("name_key"),
+  domain_key: text("domain_key"),
+  email_key: text("email_key"),
+  instagram_key: text("instagram_key"),
+  linkedin_key: text("linkedin_key"),
+}, (t) => [
+  index("companies_name_key").on(t.name_key), index("companies_domain_key").on(t.domain_key), index("companies_email_key").on(t.email_key),
+  index("companies_instagram_key").on(t.instagram_key), index("companies_linkedin_key").on(t.linkedin_key), index("companies_status").on(t.contact_status),
+]);
 
 export const people = sqliteTable("people", {
   ...common(),
@@ -25,24 +49,98 @@ export const people = sqliteTable("people", {
   company_id: integer("company_id").references(() => companies.id),
   email: text("email"),
   phone: text("phone"),
+  instagram: text("instagram"),
+  linkedin: text("linkedin"),
   handle: text("handle"),
   referred_by_id: integer("referred_by_id").references((): AnySQLiteColumn => people.id),
+  /** Paket 2: kişiyi getiren paylaşım (kaynak) */
+  post_id: integer("post_id").references((): AnySQLiteColumn => posts.id),
+  /** Paket 3: nereden buldum (kaynak listesi) */
+  source_id: integer("source_id").references((): AnySQLiteColumn => sources.id),
+  contact_status: text("contact_status", { enum: CONTACT_STATUSES }).notNull().default("yazilmadi"),
   next_follow_up_at: text("next_follow_up_at"),
   notes: text("notes"),
-}, (t) => [index("people_follow_up").on(t.next_follow_up_at)]);
+  email_key: text("email_key"),
+  instagram_key: text("instagram_key"),
+  linkedin_key: text("linkedin_key"),
+}, (t) => [
+  index("people_follow_up").on(t.next_follow_up_at), index("people_referred").on(t.referred_by_id), index("people_post").on(t.post_id),
+  index("people_company").on(t.company_id), index("people_email_key").on(t.email_key), index("people_instagram_key").on(t.instagram_key),
+  index("people_linkedin_key").on(t.linkedin_key),
+]);
+
+/** İki seviyeli sektör: parent_id boşsa ana sektör (Sağlık), doluysa alt sektör (Diş hekimi) */
+export const sectors = sqliteTable("sectors", {
+  ...common(),
+  name: text("name").notNull(),
+  parent_id: integer("parent_id").references((): AnySQLiteColumn => sectors.id),
+  ...deletedAt(),
+}, (t) => [index("sectors_parent").on(t.parent_id)]);
+
+/** Paket 3: etiketler (Ayarlar'dan eklenir, adı değişir, silinir). slug ilk addan türer ve değişmez. */
+export const tags = sqliteTable("tags", {
+  ...common(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  color: text("color", { enum: TAG_COLORS }).notNull().default("aday"),
+  ...deletedAt(),
+}, (t) => [uniqueIndex("tags_slug").on(t.slug)]);
+
+export const company_tags = sqliteTable("company_tags", {
+  company_id: integer("company_id").notNull().references(() => companies.id),
+  tag_id: integer("tag_id").notNull().references(() => tags.id),
+  created_at: text("created_at").notNull(),
+  created_by: text("created_by", { enum: ACTORS }).notNull(),
+}, (t) => [primaryKey({ columns: [t.company_id, t.tag_id] }), index("company_tags_tag").on(t.tag_id)]);
+
+export const person_sectors = sqliteTable("person_sectors", {
+  person_id: integer("person_id").notNull().references(() => people.id),
+  sector_id: integer("sector_id").notNull().references(() => sectors.id),
+  created_at: text("created_at").notNull(),
+  created_by: text("created_by", { enum: ACTORS }).notNull(),
+}, (t) => [primaryKey({ columns: [t.person_id, t.sector_id] }), index("person_sectors_sector").on(t.sector_id)]);
+
+export const company_sectors = sqliteTable("company_sectors", {
+  company_id: integer("company_id").notNull().references(() => companies.id),
+  sector_id: integer("sector_id").notNull().references(() => sectors.id),
+  created_at: text("created_at").notNull(),
+  created_by: text("created_by", { enum: ACTORS }).notNull(),
+}, (t) => [primaryKey({ columns: [t.company_id, t.sector_id] }), index("company_sectors_sector").on(t.sector_id)]);
+
+/**
+ * Paket 3: çöp kutusu. Silinen kayıt ve onunla giden alt kayıtlar (temaslar, notlar, yorumlar...) payload'da
+ * JSON olarak durur; geri yüklenince aynı id'lerle yerine konur. keys: mükerrer kontrolü için anahtarlar.
+ */
+export const trash = sqliteTable("trash", {
+  ...common(),
+  type: text("type", { enum: TRASH_TYPES }).notNull(),
+  record_id: integer("record_id").notNull(),
+  label: text("label").notNull(),
+  payload: text("payload").notNull(),
+  keys: text("keys"),
+}, (t) => [index("trash_type").on(t.type, t.record_id)]);
+
+/** Kişi hakkında tarihli notlar (yorumdan farkı: cevap beklemez) */
+export const notes = sqliteTable("notes", {
+  ...common(),
+  person_id: integer("person_id").notNull().references(() => people.id),
+  body: text("body").notNull(),
+}, (t) => [index("notes_person").on(t.person_id)]);
 
 export const person_tags = sqliteTable("person_tags", {
   person_id: integer("person_id").notNull().references(() => people.id),
-  tag: text("tag", { enum: TAGS }).notNull(),
+  tag_id: integer("tag_id").notNull().references(() => tags.id),
   created_at: text("created_at").notNull(),
   created_by: text("created_by", { enum: ACTORS }).notNull(),
-}, (t) => [primaryKey({ columns: [t.person_id, t.tag] })]);
+}, (t) => [primaryKey({ columns: [t.person_id, t.tag_id] }), index("person_tags_tag").on(t.tag_id)]);
 
+/** Kaynaklar: fırsatın kaynağı ve kişi/firmanın "nereden buldum" alanı (aynı liste) */
 export const sources = sqliteTable("sources", {
   ...common(),
   name: text("name").notNull(),
   kind: text("kind", { enum: SOURCE_KINDS }).notNull().default("diger"),
   notes: text("notes"),
+  ...deletedAt(),
 }, (t) => [uniqueIndex("sources_name").on(t.name)]);
 
 export const opportunities = sqliteTable("opportunities", {
@@ -56,11 +154,21 @@ export const opportunities = sqliteTable("opportunities", {
   next_follow_up_at: text("next_follow_up_at"),
   closed_at: text("closed_at"),
   position: integer("position").notNull().default(0),
+  /** Paket 3: ilanın ya da konunun linki ve tarihi (R10 ilanı gibi) */
+  source_url: text("source_url"),
+  source_date: text("source_date"),
 }, (t) => [index("opps_stage").on(t.stage, t.position), index("opps_person").on(t.person_id)]);
 
+/**
+ * Temasın muhatabı üçünden biri: kişi, firma (info@ gibi genel adres) ya da sadece adres/hesap (contact).
+ * Sadece adresli temas, aynı adresle kişi ya da firma açılınca ona bağlanır (contact_key eşleşmesi).
+ */
 export const touches = sqliteTable("touches", {
   ...common(),
-  person_id: integer("person_id").notNull().references(() => people.id),
+  person_id: integer("person_id").references(() => people.id),
+  company_id: integer("company_id").references(() => companies.id),
+  contact: text("contact"),
+  contact_key: text("contact_key"),
   opportunity_id: integer("opportunity_id").references(() => opportunities.id),
   project_id: integer("project_id").references((): AnySQLiteColumn => projects.id),
   channel: text("channel", { enum: CHANNELS }).notNull(),
@@ -69,18 +177,33 @@ export const touches = sqliteTable("touches", {
   summary: text("summary").notNull(),
   outcome: text("outcome"),
   happened_at: text("happened_at").notNull(),
+  /** giden temas cevap bekliyor mu (cevap bekleyenler listesi) */
+  expects_reply: integer("expects_reply", { mode: "boolean" }).notNull().default(false),
   draft_id: integer("draft_id").references((): AnySQLiteColumn => drafts.id),
-}, (t) => [index("touches_person").on(t.person_id, t.happened_at)]);
+  /** Paket 2: temas bir ürün fikri hakkındaysa (ilgi ölçümü) */
+  idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
+}, (t) => [
+  index("touches_person").on(t.person_id, t.happened_at), index("touches_happened").on(t.happened_at),
+  index("touches_company").on(t.company_id, t.happened_at), index("touches_contact").on(t.contact_key),
+]);
 
+/** Muhatap temastaki gibi: kişi, firma ya da sadece adres */
 export const drafts = sqliteTable("drafts", {
   ...common(),
-  person_id: integer("person_id").notNull().references(() => people.id),
+  person_id: integer("person_id").references(() => people.id),
+  company_id: integer("company_id").references(() => companies.id),
+  contact: text("contact"),
   opportunity_id: integer("opportunity_id").references(() => opportunities.id),
   project_id: integer("project_id").references((): AnySQLiteColumn => projects.id),
   channel: text("channel", { enum: CHANNELS }).notNull(),
   body: text("body").notNull(),
   status: text("status", { enum: DRAFT_STATUSES }).notNull().default("bekliyor"),
   reject_note: text("reject_note"),
+  /** Claude neden bu taslağı önerdi (kısa) */
+  reason: text("reason"),
+  /** Paket 2: kullanılan şablon ve takip dizisindeki adım (1 = ilk takip) */
+  template_id: integer("template_id").references((): AnySQLiteColumn => templates.id),
+  followup_step: integer("followup_step"),
 });
 
 export const projects = sqliteTable("projects", {
@@ -126,6 +249,59 @@ export const comments = sqliteTable("comments", {
   /** Sadece kök yorumda dolar: konu kapatıldı */
   resolved_at: text("resolved_at"),
 }, (t) => [index("comments_target").on(t.target_type, t.target_id), index("comments_parent").on(t.parent_id)]);
+
+// ---------------------------------------------------------------- Paket 2: pazarlama
+
+/** Paylaşımlar: R10 konusu, LinkedIn/Instagram gönderisi. Yenileme aralığı dolunca Bugün'de "güncelle" hatırlatması. */
+export const posts = sqliteTable("posts", {
+  ...common(),
+  platform: text("platform", { enum: POST_PLATFORMS }).notNull(),
+  title: text("title").notNull(),
+  url: text("url"),
+  body: text("body"),
+  posted_at: text("posted_at").notNull(),
+  /** gün; boşsa hatırlatma yok */
+  refresh_days: integer("refresh_days"),
+  refreshed_at: text("refreshed_at"),
+  idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
+  notes: text("notes"),
+}, (t) => [index("posts_posted").on(t.posted_at)]);
+
+/** Mesaj şablonları: kanal ve sektöre göre; boş kanal/sektör = hepsi */
+export const templates = sqliteTable("templates", {
+  ...common(),
+  name: text("name").notNull(),
+  kind: text("kind", { enum: TEMPLATE_KINDS }).notNull().default("ilk"),
+  channel: text("channel", { enum: CHANNELS }),
+  sector_id: integer("sector_id").references(() => sectors.id),
+  body: text("body").notNull(),
+});
+
+/** Ürün fikirleri: sorun, aşama, hedef sektörler, anlatılan kişiler */
+export const ideas = sqliteTable("ideas", {
+  ...common(),
+  title: text("title").notNull(),
+  problem: text("problem"),
+  stage: text("stage", { enum: IDEA_STAGES }).notNull().default("fikir"),
+  notes: text("notes"),
+});
+
+export const idea_sectors = sqliteTable("idea_sectors", {
+  idea_id: integer("idea_id").notNull().references(() => ideas.id),
+  sector_id: integer("sector_id").notNull().references(() => sectors.id),
+  created_at: text("created_at").notNull(),
+  created_by: text("created_by", { enum: ACTORS }).notNull(),
+}, (t) => [primaryKey({ columns: [t.idea_id, t.sector_id] })]);
+
+/** Fikir kime anlatıldı, ilgilendi mi (kişi başına bir satır) */
+export const idea_people = sqliteTable("idea_people", {
+  ...common(),
+  idea_id: integer("idea_id").notNull().references(() => ideas.id),
+  person_id: integer("person_id").notNull().references(() => people.id),
+  interest: text("interest", { enum: INTEREST_LEVELS }).notNull().default("anlatildi"),
+  note: text("note"),
+  touch_id: integer("touch_id").references(() => touches.id),
+}, (t) => [uniqueIndex("idea_people_pair").on(t.idea_id, t.person_id), index("idea_people_person").on(t.person_id)]);
 
 /** Zaman çizelgesi; kayıt silinse de olay kalır (FK yok) */
 export const events = sqliteTable("events", {

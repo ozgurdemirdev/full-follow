@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { emit, FFError, parse, stamp, type Ctx } from "../context";
-import { comments, tasks } from "../db/schema";
+import { tasks } from "../db/schema";
 import { taskCreate, taskUpdate } from "../schemas";
 import { link, requireRow, truncate } from "./shared";
+import { Bin } from "./trash";
 
 function checkTargets(ctx: Ctx, d: { person_id?: number | null; opportunity_id?: number | null; project_id?: number | null }) {
   const set = [d.person_id, d.opportunity_id, d.project_id].filter(Boolean).length;
@@ -42,12 +43,14 @@ export function tasksService(ctx: Ctx) {
 
   function remove(id: number) {
     const cur = requireRow(ctx, "tasks", id);
-    ctx.db.transaction((tx) => {
-      tx.delete(comments).where(and(eq(comments.target_type, "task"), eq(comments.target_id, id))).run();
-      tx.delete(tasks).where(eq(tasks.id, id)).run();
+    return ctx.db.transaction((tx) => {
+      const bin = new Bin(ctx);
+      bin.take("comments", "target_type = 'task' AND target_id = ?", id);
+      bin.take("tasks", "id = ?", id);
+      bin.commit(tx, "task", id, cur.title);
       emit(tx, ctx, { type: "task.deleted", ...link(ctx, cur), summary: `Görev silindi: ${truncate(cur.title, 60)}` });
+      return { effects: [] as string[], trash: { type: "task", id } };
     });
-    return { effects: [] as string[] };
   }
 
   return { create, update, remove };

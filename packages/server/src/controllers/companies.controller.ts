@@ -11,9 +11,15 @@ export class CompaniesController {
     return this.core.find("company", listOpts(query));
   }
 
+  /** Firma kartı tek istekte: çalışanlar, temaslar (firmaya ve çalışanlarına), fırsatlar, taslaklar, yorumlar */
+  @Get(":id/card")
+  card(@Param("id") id: string) {
+    return this.core.companyCard(intId(id));
+  }
+
   @Get(":id")
   one(@Param("id") id: string, @Query("with") w?: string) {
-    return this.core.get("company", intId(id), withList(w));
+    return this.core.get("company", intId(id), withList(w), 50);
   }
 
   @Post()

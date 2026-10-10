@@ -39,7 +39,7 @@ docs/        MIMARI.md
 
 ## Testler
 
-- Sadece core'daki çekirdek kurallar için test yazılır (liste: docs/MIMARI.md §6, 9 test). Çalıştır: `npm test`.
+- Sadece core'daki çekirdek kurallar için test yazılır (liste: docs/MIMARI.md §6, 15 test). Çalıştır: `npm test`.
 - Gerisini Özgür elle test eder; gereksiz test yazma.
 
 ## Çalıştırma

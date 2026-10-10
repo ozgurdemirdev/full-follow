@@ -1,0 +1,319 @@
+/* OTOMATİK ÜRETİLDİ: src/styles/tokens.json → npm run tokens. Elle düzenleme. */
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --font-weight-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --spacing-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --ease-*: initial;
+  --breakpoint-*: initial;
+  --container-*: initial;
+  --animate-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+  --color-bg-canvas: #1A1918;
+  --color-bg-sidebar: #161514;
+  --color-bg-overlay-backdrop: #0F0E0D;
+  --color-bg-scrim: rgba(10,9,8,.55);
+  --color-surface-1: #232220;
+  --color-surface-2: #2A2926;
+  --color-surface-inset: #1F1E1C;
+  --color-surface-hover: #292826;
+  --color-surface-nav-hover: #211F1D;
+  --color-surface-menu: #2A2926;
+  --color-surface-menu-hover: #34322E;
+  --color-surface-track: #34322E;
+  --color-surface-track-alt: #2E2C29;
+  --color-border: #36342F;
+  --color-border-subtle: #2E2C29;
+  --color-border-sidebar: #2C2A27;
+  --color-border-strong: #4A4740;
+  --color-border-menu: #3A3833;
+  --color-text-primary: #ECE9E2;
+  --color-text-body: #D8D4CC;
+  --color-text-secondary: #ACA79D;
+  --color-text-muted: #8A857C;
+  --color-text-disabled: #7D786F;
+  --color-text-neutral-chip: #CFCAC0;
+  --color-primary: #5FBF6E;
+  --color-primary-on: #0F1A11;
+  --color-primary-text: #7FD08C;
+  --color-primary-text-soft: #C3EBC8;
+  --color-primary-soft-bg: #1F3324;
+  --color-primary-soft-border: #2E4D35;
+  --color-primary-shimmer: #8FDA9B;
+  --color-accent-opportunity: #7C9CC4;
+  --color-accent-source: #B48AAE;
+  --color-accent-payment: #D4B483;
+  --color-accent-warning: #CF7B6E;
+  --color-accent-claude: #D97757;
+  --color-accent-neutral: #5A564F;
+  --color-chip-opportunity-bg: #252D38;
+  --color-chip-opportunity-fg: #AFC4DF;
+  --color-chip-source-bg: #33262F;
+  --color-chip-source-fg: #D9B6D3;
+  --color-chip-payment-bg: #383022;
+  --color-chip-payment-fg: #E8CFA6;
+  --color-chip-warning-bg: #3A2620;
+  --color-chip-warning-fg: #EBA595;
+  --color-chip-neutral-bg: #2E2C29;
+  --color-chip-neutral-fg: #CFCAC0;
+  --color-chip-success-bg: #1F3324;
+  --color-chip-success-fg: #A6E0AF;
+  --color-author-ozgur-bg: #1F3324;
+  --color-author-ozgur-fg: #A6E0AF;
+  --color-author-claude-bg: #3E2A22;
+  --color-author-claude-fg: #EFA88D;
+  --color-author-claude-border-on: #5A3A2C;
+  --color-tag-aday-bg: #2E2C29;
+  --color-tag-aday-fg: #CFCAC0;
+  --color-tag-musteri-bg: #1F3324;
+  --color-tag-musteri-fg: #A6E0AF;
+  --color-tag-ajans-bg: #252D38;
+  --color-tag-ajans-fg: #AFC4DF;
+  --color-tag-is-ortagi-bg: #33262F;
+  --color-tag-is-ortagi-fg: #D9B6D3;
+  --color-tag-network-bg: #383022;
+  --color-tag-network-fg: #E8CFA6;
+  --color-stage-bulundu: #5A564F;
+  --color-stage-temas: #7C9CC4;
+  --color-stage-cevap: #7C9CC4;
+  --color-stage-gorusme: #B48AAE;
+  --color-stage-teklif: #D4B483;
+  --color-stage-kazanildi: #5FBF6E;
+  --color-stage-kaybedildi: #CF7B6E;
+  --color-status-text-attention: #E8CFA6;
+  --color-status-text-danger: #EBA595;
+  --color-status-text-success: #7FD08C;
+  --font-sans: "Geist Variable", 'Geist', system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", 'Geist Mono', ui-monospace, monospace;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 24px;
+  --text-3xl: 28px;
+  --text-kpi: 30px;
+  --leading-tight: 1.4;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+  --tracking-title: -0.02em;
+  --tracking-kpi: -0.03em;
+  --tracking-subtitle: -0.01em;
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 6px;
+  --spacing-3: 8px;
+  --spacing-4: 10px;
+  --spacing-5: 12px;
+  --spacing-6: 14px;
+  --spacing-7: 16px;
+  --spacing-8: 18px;
+  --spacing-9: 20px;
+  --spacing-10: 24px;
+  --spacing-11: 28px;
+  --spacing-12: 32px;
+  --spacing-px: 1px;
+  --spacing-0_5: 2px;
+  --spacing-0_75: 3px;
+  --spacing-sidebar-width: 248px;
+  --spacing-sidebar-collapsed: 64px;
+  --spacing-drawer-width: 280px;
+  --spacing-content-max: 1240px;
+  --spacing-content-max-narrow: 920px;
+  --spacing-detail-panel: 360px;
+  --spacing-aside-panel: 320px;
+  --spacing-sheet-width: 520px;
+  --spacing-kanban-column: 272px;
+  --spacing-page-padding-x: 32px;
+  --spacing-page-padding-x-mobile: 16px;
+  --spacing-content-bottom-pad: 112px;
+  --spacing-touch-target-min: 36px;
+  --spacing-control-height-xs: 34px;
+  --spacing-control-height-sm: 32px;
+  --spacing-control-height-md: 36px;
+  --spacing-control-height-lg: 40px;
+  --spacing-nav-item-height: 38px;
+  --spacing-fab-size: 56px;
+  --spacing-fab-offset: 28px;
+  --spacing-fab-offset-mobile: 18px;
+  --spacing-avatar-sm: 32px;
+  --spacing-avatar-md: 34px;
+  --spacing-avatar-list: 36px;
+  --spacing-avatar-lg: 44px;
+  --spacing-avatar-xl: 48px;
+  --spacing-logo: 30px;
+  --spacing-icon-sm: 12px;
+  --spacing-icon-md: 16px;
+  --spacing-icon-lg: 18px;
+  --spacing-icon-xl: 20px;
+  --spacing-icon-2xl: 24px;
+  --spacing-check: 20px;
+  --spacing-dot: 8px;
+  --spacing-dot-lg: 10px;
+  --spacing-bar: 8px;
+  --spacing-bar-thin: 6px;
+  --spacing-meter: 10px;
+  --spacing-search-width: 260px;
+  --spacing-fab-menu-width: 208px;
+  --spacing-chart-height: 200px;
+  --spacing-chart-height-mobile: 170px;
+  --spacing-seg-tab: 140px;
+  --spacing-seg-tab-wide: 150px;
+  --spacing-seg-tab-mobile: 104px;
+  --spacing-seg-height: 32px;
+  --spacing-rail: 2px;
+  --spacing-tl-node: 32px;
+  --spacing-comment-who: 54px;
+  --spacing-input-num: 140px;
+  --spacing-input-num-sm: 72px;
+  --spacing-row-estimate: 61px;
+  --spacing-textarea-min: 72px;
+  --spacing-textarea-lg: 120px;
+  --spacing-tick: 64px;
+  --spacing-fab-menu-offset: 96px;
+  --spacing-fab-menu-offset-mobile: 84px;
+  --spacing-kanban-column-mobile: 84vw;
+  --container-content: 1240px;
+  --container-content-narrow: 920px;
+  --breakpoint-desk: 861px;
+  --radius-xs: 5px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 9px;
+  --radius-xl: 10px;
+  --radius-2xl: 11px;
+  --radius-card-sm: 12px;
+  --radius-card: 14px;
+  --radius-fab: 18px;
+  --radius-sheet-mobile: 18px;
+  --radius-pill: 999px;
+  --shadow-card-hover: 0 10px 24px rgba(0,0,0,.3);
+  --shadow-fab: 0 10px 28px rgba(0,0,0,.45);
+  --shadow-menu: 0 16px 40px rgba(0,0,0,.5);
+  --shadow-drawer: 24px 0 48px rgba(0,0,0,.45);
+  --shadow-sheet: -24px 0 60px rgba(0,0,0,.5);
+  --shadow-focus-ring: 0 0 0 3px rgba(127,163,107,.18);
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-pop: cubic-bezier(.2,1.4,.4,1);
+  --ease-standard: ease;
+}
+
+:root {
+  --dur-press: 120ms;
+  --dur-hover: 180ms;
+  --dur-fade: 200ms;
+  --dur-sidebar: 300ms;
+  --dur-segment: 350ms;
+  --dur-drawer: 340ms;
+  --dur-rise: 550ms;
+  --dur-rise-item: 450ms;
+  --dur-bar-grow: 800ms;
+  --dur-sheet: 450ms;
+  --stagger: 50ms;
+  --rise-distance: 10px;
+  --press-scale: 0.97;
+  --hover-lift: translateY(-2px);
+  --z-scrim: 25;
+  --z-sidebar: 30;
+  --z-fab: 40;
+  --z-sheet: 50;
+  --z-toast: 60;
+  --bw-default: 1px;
+  --bw-check: 1.5px;
+  --bw-strong: 2px;
+  --opacity-muted: 0.5;
+  --opacity-disabled: 0.45;
+}
+
+@utility dur-press {
+  transition-duration: var(--dur-press);
+}
+
+@utility dur-hover {
+  transition-duration: var(--dur-hover);
+}
+
+@utility dur-fade {
+  transition-duration: var(--dur-fade);
+}
+
+@utility dur-sidebar {
+  transition-duration: var(--dur-sidebar);
+}
+
+@utility dur-segment {
+  transition-duration: var(--dur-segment);
+}
+
+@utility dur-drawer {
+  transition-duration: var(--dur-drawer);
+}
+
+@utility dur-rise {
+  transition-duration: var(--dur-rise);
+}
+
+@utility dur-rise-item {
+  transition-duration: var(--dur-rise-item);
+}
+
+@utility dur-bar-grow {
+  transition-duration: var(--dur-bar-grow);
+}
+
+@utility dur-sheet {
+  transition-duration: var(--dur-sheet);
+}
+
+@utility z-scrim {
+  z-index: var(--z-scrim);
+}
+
+@utility z-sidebar {
+  z-index: var(--z-sidebar);
+}
+
+@utility z-fab {
+  z-index: var(--z-fab);
+}
+
+@utility z-sheet {
+  z-index: var(--z-sheet);
+}
+
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+
+@utility bw-default {
+  border-width: var(--bw-default);
+}
+
+@utility bw-check {
+  border-width: var(--bw-check);
+}
+
+@utility bw-strong {
+  border-width: var(--bw-strong);
+}
+
+@utility opacity-muted {
+  opacity: var(--opacity-muted);
+}
+
+@utility opacity-disabled {
+  opacity: var(--opacity-disabled);
+}

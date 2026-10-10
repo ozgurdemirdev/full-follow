@@ -1,20 +1,30 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { assertOzgur, emit, FFError, parse, stamp, type Ctx } from "../context";
-import { comments, drafts } from "../db/schema";
+import { drafts } from "../db/schema";
 import { draftCreate, draftUpdate } from "../schemas";
 import { z } from "zod";
 import { insertTouch } from "./touches";
 import { link, requireRow, truncate } from "./shared";
+import { resolveSubject } from "./subject";
+import { renderTemplate } from "./templates";
+import { Bin } from "./trash";
 
 /**
  * Taslak akışı: Claude (ya da Özgür) taslak bırakır → sadece Özgür onaylar / reddeder / "gönderdim" der.
  * Gönderildi: aynı bilgilerle giden temas oluşur (created_by = ozgur, draft_id dolu).
  */
 export function draftsService(ctx: Ctx) {
+  /** Muhatap kişi, firma ya da adres. Metin boşsa şablon muhataba uygulanarak doldurulur ({ad}, {firma}, {sektor}) */
   function create(input: unknown) {
-    const d = parse(draftCreate, input);
+    const p = parse(draftCreate, input);
     return ctx.db.transaction((tx) => {
-      requireRow(ctx, "people", d.person_id);
+      const sub = resolveSubject(ctx, p);
+      const s = { person_id: sub.person_id, company_id: sub.company_id, contact: sub.contact };
+      if (!s.person_id && (p.opportunity_id || p.project_id)) throw new FFError("validation", "fırsat ya da proje bağlantısı sadece kişiye yazılan taslakta olur");
+      const tpl = p.template_id ? requireRow(ctx, "templates", p.template_id, "şablon") : null;
+      const body = p.body ?? (tpl ? renderTemplate(ctx, tpl.body, s) : null);
+      if (!body) throw new FFError("validation", "body: taslak metni ya da şablon gerekli");
+      const d = { ...p, ...s, body };
       // gönderilince temas olacağı için bağlantılar şimdiden aynı kişiye ait olmalı
       for (const [key, table, what] of [["opportunity_id", "opportunities", "fırsat"], ["project_id", "projects", "proje"]] as const) {
         if (d[key] && requireRow(ctx, table, d[key]!).person_id !== d.person_id) throw new FFError("validation", `${what} #${d[key]} bu kişiye ait değil`);
@@ -64,7 +74,7 @@ export function draftsService(ctx: Ctx) {
       if (cur.status !== "bekliyor" && cur.status !== "onaylandi") throw new FFError("rule", `Taslak zaten ${cur.status}`);
       tx.update(drafts).set({ status: "gonderildi", updated_at: ctx.clock.now() }).where(eq(drafts.id, id)).run();
       const t = insertTouch(tx, ctx, {
-        person_id: cur.person_id, opportunity_id: cur.opportunity_id, project_id: cur.project_id,
+        person_id: cur.person_id, company_id: cur.company_id, contact: cur.contact, opportunity_id: cur.opportunity_id, project_id: cur.project_id,
         channel: cur.channel, direction: "giden", kind: "mesaj", summary: cur.body, outcome: null, draft_id: id,
       });
       emit(tx, ctx, { type: "draft.sent", ...link(ctx, cur), summary: `Taslak gönderildi (${cur.channel})`, data: { draft_id: id, touch_id: t.row.id } });
@@ -75,12 +85,14 @@ export function draftsService(ctx: Ctx) {
   function remove(id: number) {
     const cur = requireRow(ctx, "drafts", id);
     if (cur.status === "gonderildi") throw new FFError("rule", "Gönderilmiş taslak silinemez (temas kaydı ona bağlı)");
-    ctx.db.transaction((tx) => {
-      tx.delete(comments).where(and(eq(comments.target_type, "draft"), eq(comments.target_id, id))).run();
-      tx.delete(drafts).where(eq(drafts.id, id)).run();
+    return ctx.db.transaction((tx) => {
+      const bin = new Bin(ctx);
+      bin.take("comments", "target_type = 'draft' AND target_id = ?", id);
+      bin.take("drafts", "id = ?", id);
+      bin.commit(tx, "draft", id, `Taslak: ${truncate(cur.body, 60)}`);
       emit(tx, ctx, { type: "draft.deleted", ...link(ctx, cur), summary: `Taslak silindi: ${truncate(cur.body, 50)}`, data: { draft_id: id } });
+      return { effects: [] as string[], trash: { type: "draft", id } };
     });
-    return { effects: [] as string[] };
   }
 
   return { create, update, approve, reject, markSent, remove };

@@ -13,7 +13,7 @@ export class SourcesController {
 
   @Get(":id")
   one(@Param("id") id: string, @Query("with") w?: string) {
-    return this.core.get("source", intId(id), withList(w));
+    return this.core.get("source", intId(id), withList(w), 50);
   }
 
   @Post()

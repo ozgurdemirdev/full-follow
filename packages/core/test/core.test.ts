@@ -7,7 +7,8 @@ function setup(today = "2026-10-09") {
   const clock: Clock = { today: () => today, now: () => `${today}T10:00:00Z` };
   const ozgur = createCore(handle, "ozgur", clock);
   const claude = createCore(handle, "claude", clock);
-  const source = ozgur.sources.create({ name: "R10", kind: "forum" }).row;
+  // "R10" kaynağı migration'la gelir (nereden buldum listesi)
+  const source = ozgur.get("source", "R10").row;
   const person = ozgur.people.create({ name: "Ahmet Yılmaz" }).row;
   const opp = (title = "Ahmet e-ticaret", value: number | null = 50000, p = person.id, s = source.id) =>
     ozgur.opportunities.create({ title, person_id: p, source_id: s, estimated_value: value }).row;
@@ -36,7 +37,7 @@ describe("çekirdek kurallar", () => {
       { milestone: "tasarim_onayi", expected_amount: 15000 },
       { milestone: "yayin", expected_amount: 15000 },
     ]);
-    expect(t.sql("SELECT tag FROM person_tags WHERE person_id = ?", t.person.id)).toEqual([{ tag: "musteri" }]);
+    expect(t.sql("SELECT g.slug FROM person_tags x JOIN tags g ON g.id = x.tag_id WHERE x.person_id = ?", t.person.id)).toEqual([{ slug: "musteri" }]);
 
     // geri çekip tekrar kazanıldıya al: ikinci proje açılmaz
     t.ozgur.opportunities.move(o.id, { stage: "teklif" });
@@ -206,5 +207,218 @@ describe("çekirdek kurallar", () => {
     expect(() => t.claude.remove("comment", again.row.id)).toThrow(FFError);
     expect(() => t.claude.remove("comment", first.id)).toThrow(FFError);
     expect(t.claude.find("comment", { filter: { unanswered: true } }).total).toBe(1);
+  });
+
+  it("10. sektör iki seviye: yol açılır, üçüncü seviye ve döngü reddedilir, ana sektör alt sektörleri kapsar", () => {
+    const p = t.ozgur.people.create({ name: "Dt. Elif", sector: "Sağlık > Diş hekimi" } as any).row;
+    const sectorOf = (pid: number) => t.sql("SELECT sector_id FROM person_sectors WHERE person_id = ?", pid)[0].sector_id;
+    const sec = t.sql("SELECT s.name, p.name AS parent FROM sectors s LEFT JOIN sectors p ON p.id = s.parent_id WHERE s.id = ?", sectorOf(p.id))[0];
+    expect(sec).toEqual({ name: "Diş hekimi", parent: "Sağlık" });
+    // aynı yol yeni sektör açmaz; tek ad var olanı bulur (büyük/küçük harf duyarsız)
+    t.claude.save("person", { name: "Dt. Can", sector: "diş hekimi" });
+    expect(t.sql("SELECT COUNT(*) n FROM sectors")[0].n).toBe(2);
+    const vet = t.ozgur.people.create({ name: "Vet Ali", sector: "Sağlık > Veteriner" } as any).row;
+    t.ozgur.people.create({ name: "Kafe Ayşe", sector: "Yeme içme > Kafe" } as any);
+
+    expect(() => t.ozgur.people.create({ name: "X", sector: "A > B > C" } as any)).toThrow(/iki seviye/);
+    const dis = sectorOf(p.id);
+    expect(() => t.ozgur.sectors.create({ name: "Ortodonti", parent_id: dis })).toThrow(/iki seviye/);
+    const health = t.sql("SELECT id FROM sectors WHERE name = 'Sağlık'")[0].id;
+    const food = t.sql("SELECT id FROM sectors WHERE name = 'Yeme içme'")[0].id;
+    expect(() => t.ozgur.sectors.update(health, { parent_id: food })).toThrow(/iki seviye/);
+    expect(() => t.ozgur.sectors.update(health, { parent_id: health })).toThrow(/kendi/);
+
+    const names = t.ozgur.find("person", { filter: { sector: health } }).rows.map((x) => x.name).sort();
+    expect(names).toEqual(["Dt. Can", "Dt. Elif", "Vet Ali"]);
+    expect(t.ozgur.find("person", { filter: { sector: "Veteriner" } }).rows.map((x) => x.id)).toEqual([vet.id]);
+
+    // Paket 3: sektör silinince kayıtta kalır, yeni kayda seçilemez; geri yüklenince seçilir
+    t.ozgur.remove("sector", dis);
+    expect(t.ozgur.get("person", p.id).row.sector_path).toBe("Sağlık > Diş hekimi");
+    expect(() => t.ozgur.people.create({ name: "Yeni Dt", sectors: ["Sağlık > Diş hekimi"] })).toThrow(/silinmiş/);
+    t.ozgur.restore("sector", dis);
+    expect(t.ozgur.people.create({ name: "Yeni Dt", sectors: ["Sağlık > Diş hekimi"] }).row.id).toBeTruthy();
+  });
+
+  it("11. cevap bekleyen ve soğuyan bağlantılar (fırsatsız temas)", () => {
+    const at = (d: string) => `${d}T09:00:00Z`;
+    const ayse = t.ozgur.people.create({ name: "Ayşe" }).row;
+    // fırsatsız giden mesajlar: cevap bekliyor, kanal = son mesajın kanalı, gün = son mesajdan beri
+    t.ozgur.touches.create({ person_id: ayse.id, channel: "email", direction: "giden", summary: "tanışma", happened_at: at("2026-10-01") });
+    t.ozgur.touches.create({ person_id: ayse.id, channel: "linkedin", direction: "giden", summary: "hatırlatma", happened_at: at("2026-10-04") });
+    expect(t.sql("SELECT opportunity_id FROM touches WHERE person_id = ?", ayse.id).every((r) => r.opportunity_id === null)).toBe(true);
+    let net = t.ozgur.network();
+    const a = net.awaiting.rows.find((r) => r.id === ayse.id)!;
+    expect(a.awaiting).toMatchObject({ channel: "linkedin", days: 5, attempts: 2, late: true });
+    // arama cevap beklemez
+    const mert = t.ozgur.people.create({ name: "Mert" }).row;
+    t.ozgur.touches.create({ person_id: mert.id, channel: "telefon", kind: "arama", direction: "giden", summary: "aradım", happened_at: at("2026-10-08") });
+    expect(t.ozgur.network().awaiting.rows.map((r) => r.id)).toEqual([ayse.id]);
+    // gelen temas düşürür
+    t.ozgur.touches.create({ person_id: ayse.id, channel: "linkedin", direction: "gelen", summary: "döndü", happened_at: at("2026-10-06") });
+    expect(t.ozgur.network().awaiting.total).toBe(0);
+    // expects_reply kapatılınca da düşer
+    const thanks = t.ozgur.touches.create({ person_id: mert.id, channel: "whatsapp", direction: "giden", summary: "teşekkürler", happened_at: at("2026-10-09") }).row;
+    expect(t.ozgur.network().awaiting.total).toBe(1);
+    t.claude.save("touch", { expects_reply: false }, thanks.id);
+    expect(t.ozgur.network().awaiting.total).toBe(0);
+
+    // soğuyan: bağlantı (gelen teması var) + 30 günden eski son temas
+    const old = t.ozgur.people.create({ name: "Eski Dost" }).row;
+    t.ozgur.touches.create({ person_id: old.id, channel: "yuz_yuze", kind: "gorusme", direction: "gelen", summary: "kahve", happened_at: at("2026-08-20") });
+    // hiç cevap vermemiş soğuk aday soğuyan sayılmaz
+    const cold = t.ozgur.people.create({ name: "Soğuk Aday" }).row;
+    t.ozgur.touches.create({ person_id: cold.id, channel: "email", kind: "arama", direction: "giden", summary: "x", happened_at: at("2026-08-01") });
+    net = t.ozgur.network();
+    expect(net.cooling.rows.map((r) => r.id)).toEqual([old.id]);
+    expect(net.cooling.rows[0].days_since).toBe(50);
+    // takip tarihi girilince ya da yeni temas olunca düşer
+    t.ozgur.people.update(old.id, { next_follow_up_at: "2026-10-20" });
+    expect(t.ozgur.network().cooling.total).toBe(0);
+    t.ozgur.people.update(old.id, { next_follow_up_at: null });
+    expect(t.ozgur.network().cooling.total).toBe(1);
+    t.ozgur.touches.create({ person_id: old.id, channel: "instagram", direction: "gelen", summary: "story yanıtı", happened_at: at("2026-10-07") });
+    expect(t.ozgur.network().cooling.total).toBe(0);
+  });
+
+  it("12. referans değeri: tanıttıklarının (alt ağaç dahil) fırsat ve işleri", () => {
+    const ref = t.ozgur.people.create({ name: "Tanıtan" }).row;
+    const b = t.ozgur.people.create({ name: "B", referred_by_id: ref.id }).row;
+    const c = t.ozgur.people.create({ name: "C", referred_by_id: b.id }).row;
+    t.ozgur.people.create({ name: "D", referred_by_id: ref.id });
+    const ob = t.opp("B işi", 40000, b.id);
+    t.opp("B ikinci", 10000, b.id);
+    const oc = t.opp("C işi", 25000, c.id);
+    t.opp("C açık", 5000, c.id);
+    t.ozgur.opportunities.move(ob.id, { stage: "kazanildi" });
+    t.ozgur.opportunities.move(oc.id, { stage: "kaybedildi", reason: "bütçe" });
+    const dep = t.sql("SELECT id, expected_amount FROM payments WHERE milestone = 'pesinat'")[0];
+    t.ozgur.payments.pay(dep.id, dep.expected_amount);
+
+    const v = t.ozgur.reports.referrals().find((r) => r.person_id === ref.id)!;
+    expect(v).toMatchObject({ direct: 2, network: 3, opps: 4, won: 1, won_value: 40000, open_value: 15000, projects: 1, collected: 16000 });
+    expect(t.ozgur.reports.referrals().find((r) => r.person_id === b.id)).toMatchObject({ direct: 1, network: 1, opps: 2, won: 0, open_value: 5000 });
+    expect(t.ozgur.personCard(ref.id).referral_value).toMatchObject({ won_value: 40000 });
+  });
+});
+
+describe("Paket 2: pazarlama kuralları", () => {
+  // gün ilerleyebilen saat
+  let day = "2026-10-09";
+  const clock: Clock = { today: () => day, now: () => `${day}T10:00:00Z` };
+  const at = (d: string) => `${d}T09:00:00Z`;
+  let ozgur: ReturnType<typeof createCore>;
+  let claude: ReturnType<typeof createCore>;
+  let sql: <T = any>(q: string, ...a: unknown[]) => T[];
+  beforeEach(() => {
+    day = "2026-10-09";
+    const h = openDb(":memory:");
+    ozgur = createCore(h, "ozgur", clock);
+    claude = createCore(h, "claude", clock);
+    sql = (q, ...a) => h.sqlite.prepare(q).all(...a) as any[];
+  });
+
+  it("13. takip dizisi: 3. ve 7. günde takip taslağı, tekrar üretmez, cevap gelince durur, süre ayardan değişir", () => {
+    const co = ozgur.companies.create({ name: "Gülüş Diş" }).row;
+    const z = ozgur.people.create({ name: "Zeynep Kaya", company_id: co.id }).row;
+    const y = ozgur.people.create({ name: "Yeni" }).row;
+    ozgur.touches.create({ person_id: z.id, channel: "email", direction: "giden", summary: "tanışma", happened_at: at("2026-10-06") });
+    ozgur.touches.create({ person_id: y.id, channel: "linkedin", direction: "giden", summary: "selam", happened_at: at("2026-10-08") });
+
+    // ayar 5,10 iken 3 günlük mesaj henüz takip istemez
+    ozgur.save("setting", { followup_days: "5,10" });
+    expect(claude.followups.due()).toHaveLength(0);
+    ozgur.save("setting", { followup_days: [3, 7] });
+    expect(claude.followups.due().map((f) => [f.person_id, f.step, f.days])).toEqual([[z.id, 1, 3]]);
+
+    // 1. takip: şablon yoksa varsayılan metin, Claude adına, neden yazılı
+    const g1 = claude.followups.generate();
+    expect(g1.created).toHaveLength(1);
+    const d1 = sql("SELECT * FROM drafts")[0];
+    expect(d1).toMatchObject({ person_id: z.id, channel: "email", followup_step: 1, created_by: "claude", status: "bekliyor" });
+    expect(d1.body).toContain("Merhaba Zeynep");
+    expect(d1.reason).toContain("1/2");
+    // bekleyen taslak varken ikinci kez üretilmez
+    expect(claude.followups.generate().created).toHaveLength(0);
+
+    // gönderildi: 2. deneme olur; 7. güne kadar 2. takip gelmez
+    ozgur.drafts.markSent(d1.id);
+    expect(claude.followups.due()).toHaveLength(0);
+    day = "2026-10-13";
+    const tpl = ozgur.templates.create({ name: "E-posta takip", kind: "takip", channel: "email", body: "Selam {ad}, {firma} için son kez yazıyorum." }).row;
+    // Zeynep 7. gün → 2. takip (şablonla); Yeni'nin mesajı 5 günlük → 1. takip
+    const g2 = claude.followups.generate();
+    expect(g2.created.map((c) => [c.person_id, c.step])).toEqual([[z.id, 2], [y.id, 1]]);
+    const d2 = sql("SELECT * FROM drafts WHERE followup_step = 2")[0];
+    expect(d2).toMatchObject({ template_id: tpl.id, body: "Selam Zeynep, Gülüş Diş için son kez yazıyorum." });
+
+    // reddedilen adım tekrar üretilmez; dizi bitince (2 adım) yeni taslak yok
+    ozgur.drafts.reject(d2.id, "gerek yok");
+    expect(claude.followups.generate().created.filter((c) => c.person_id === z.id)).toHaveLength(0);
+
+    // gelen temas diziyi durdurur: Yeni'nin taslağı silinse de yeniden üretilmez
+    ozgur.touches.create({ person_id: y.id, channel: "linkedin", direction: "gelen", summary: "döndü", happened_at: at("2026-10-12") });
+    ozgur.remove("draft", sql("SELECT id FROM drafts WHERE person_id = ?", y.id)[0].id);
+    expect(claude.followups.due()).toHaveLength(0);
+    // takip kapatılabilir
+    ozgur.save("setting", { followup_days: "" });
+    expect(claude.followups.due()).toHaveLength(0);
+  });
+
+  it("14. paylaşım: yenileme hatırlatması, güncelledim düşürür, getirdiği kişi ve iş sayılır", () => {
+    const post = ozgur.posts.create({ platform: "r10", title: "Web sitesi yapıyorum", url: "https://r10.net/x", posted_at: "2026-10-01", refresh_days: 7 }).row;
+    ozgur.posts.create({ platform: "linkedin", title: "Tanıtım", posted_at: "2026-09-01" });
+    expect(ozgur.today().posts_due.rows.map((p: any) => p.id)).toEqual([post.id]);
+    const r = ozgur.save("post", { refreshed: true }, post.id);
+    expect(r.effects.join(" ")).toContain("2026-10-16");
+    expect(ozgur.today().posts_due.total).toBe(0);
+    day = "2026-10-16";
+    expect(ozgur.today().posts_due.total).toBe(1);
+
+    // paylaşımdan gelen kişi ve kazanılan iş
+    const src = ozgur.get("source", "R10").row;
+    const p = claude.save("person", { name: "Forumdan Ali", post: "Web sitesi" }).row;
+    expect(p.post_id).toBe(post.id);
+    const o = ozgur.opportunities.create({ title: "Ali sitesi", person_id: p.id, source_id: src.id, estimated_value: 30000 }).row;
+    ozgur.opportunities.create({ title: "Ali ikinci", person_id: p.id, source_id: src.id });
+    ozgur.opportunities.move(o.id, { stage: "kazanildi" });
+    const st = ozgur.find("post", { filter: { platform: "r10" } }).rows[0];
+    expect(st).toMatchObject({ people_count: 1, opp_count: 2, won: 1, won_value: 30000 });
+    expect(ozgur.personCard(p.id).post?.id).toBe(post.id);
+
+    // paylaşım silinince kişi kalır, bağ kopar
+    ozgur.remove("post", post.id);
+    expect(sql("SELECT post_id FROM people WHERE id = ?", p.id)[0].post_id).toBeNull();
+  });
+
+  it("15. fikir ilgi ölçümü ve sektör/kanala göre şablon seçimi", () => {
+    const idea = claude.save("idea", { title: "Klinik randevu botu", problem: "telefonla randevu kaçıyor", sectors: ["Sağlık > Diş hekimi"] }).row;
+    const ayse = ozgur.people.create({ name: "Ayşe Demir", sector: "Sağlık > Diş hekimi" } as any).row;
+    const can = ozgur.people.create({ name: "Can" }).row;
+    // fikir hakkındaki temas kişiyi "anlatıldı" olarak bağlar
+    ozgur.touches.create({ person_id: ayse.id, channel: "instagram", direction: "giden", summary: "botu anlattım", idea_id: idea.id });
+    claude.save("interest", { idea: "randevu botu", person: "Ayşe", interest: "ilgilendi", note: "demo istedi" });
+    claude.save("interest", { idea: idea.id, person: can.id });
+    let st = ozgur.find("idea").rows[0];
+    expect(st).toMatchObject({ told: 2, interested: 1, interest_rate: 0.5, touch_count: 1 });
+    expect(st.sectors.map((s: any) => s.path)).toEqual(["Sağlık > Diş hekimi"]);
+    expect(ozgur.find("idea", { filter: { sector: "Sağlık" } }).total).toBe(1);
+    ozgur.move("idea", idea.id, "demo");
+    expect(sql("SELECT type FROM events WHERE type = 'idea.stage'")).toHaveLength(1);
+    expect(() => ozgur.move("idea", idea.id, "uçuyor")).toThrow(/aşama/);
+
+    // şablon: aynı kanal + alt sektör > ana sektör > genel; başka kanal gelmez
+    const T = (name: string, channel: string | null, sector: string | null) => ozgur.save("template", { name, channel, sector, body: `Merhaba {ad}, ${name}` }).row;
+    const general = T("Genel", null, null);
+    T("E-posta", "email", null);
+    const parent = T("Sağlık LinkedIn", "linkedin", "Sağlık");
+    const sub = T("Diş LinkedIn", "linkedin", "Sağlık > Diş hekimi");
+    expect(ozgur.templates.suggest({ person_id: ayse.id }, "linkedin").map((t) => t.id)).toEqual([sub.id, parent.id, general.id]);
+    expect(ozgur.templates.suggest({ person_id: can.id }, "linkedin").map((t) => t.id)).toEqual([general.id]);
+    // şablonla taslak: metin kişiye uygulanır
+    const d = claude.save("draft", { person: "Ayşe", channel: "linkedin", template: sub.id }).row;
+    expect(d.body).toBe("Merhaba Ayşe, Diş LinkedIn");
+    st = ozgur.find("template", { filter: { channel: "linkedin" } }).rows.find((t: any) => t.id === sub.id);
+    expect(st.used).toBe(1);
   });
 });

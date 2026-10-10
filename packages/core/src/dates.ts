@@ -37,3 +37,24 @@ export function resolveRelativeDate(input: unknown, today = localDate()): unknow
 
 /** "2026-10" ya da tarih → "2026-10" */
 export const monthOf = (iso: string) => iso.slice(0, 7);
+
+/** ISO tarih ya da zaman → yerel gün (YYYY-MM-DD) */
+export function dayOf(iso: string): string {
+  return iso.length <= 10 ? iso : localDate(new Date(iso));
+}
+
+/** İki gün arası fark (b − a), gün olarak */
+export function daysBetween(a: string, b: string): number {
+  const t = (s: string) => {
+    const [y, m, d] = s.slice(0, 10).split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((t(b) - t(a)) / 86_400_000);
+}
+
+/** Haftanın pazartesisi */
+export function weekStart(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const day = (new Date(y, m - 1, d).getDay() + 6) % 7;
+  return addDays(iso, -day);
+}

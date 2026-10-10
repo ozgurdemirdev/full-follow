@@ -5,10 +5,25 @@ import { localDate, nowIso } from "./dates";
 import type { Db, Q } from "./db/client";
 import { events } from "./db/schema";
 
-export type ErrorCode = "validation" | "not_found" | "rule" | "ambiguous" | "forbidden";
+export type ErrorCode = "validation" | "not_found" | "rule" | "ambiguous" | "forbidden" | "duplicate";
+
+/** Mükerrer kayıt: var olan kayıt (çöp kutusundaysa geri yüklenebilir) */
+export interface DuplicateHit {
+  type: "person" | "company" | "tag" | "sector" | "source";
+  id: number;
+  label: string;
+  /** hangi alan çakıştı: e-posta, alan adı, firma adı, LinkedIn, Instagram, ad */
+  field: string;
+  in_trash: boolean;
+}
 
 export class FFError extends Error {
-  constructor(public code: ErrorCode, message: string, public candidates?: { id: number; label: string }[]) {
+  constructor(
+    public code: ErrorCode,
+    message: string,
+    public candidates?: { id: number; label: string }[],
+    public duplicate?: DuplicateHit,
+  ) {
     super(message);
     this.name = "FFError";
   }

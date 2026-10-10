@@ -3,12 +3,13 @@ import type { CommentTarget } from "../constants";
 
 export const TARGET_TABLE: Record<CommentTarget, string> = {
   person: "people", company: "companies", opportunity: "opportunities", project: "projects",
-  task: "tasks", draft: "drafts", payment: "payments",
+  task: "tasks", draft: "drafts", payment: "payments", post: "posts", idea: "ideas",
 };
 
 export const TABLE_LABEL: Record<string, string> = {
   people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
   drafts: "taslak", payments: "ödeme", sources: "kaynak", comments: "yorum", touches: "temas",
+  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", idea_people: "fikir ilgisi", tags: "etiket",
 };
 
 export function requireRow<T = any>(ctx: Ctx, table: string, id: number, what = TABLE_LABEL[table] ?? table): T {
@@ -46,7 +47,9 @@ export function targetLink(ctx: Ctx, type: CommentTarget, id: number): Required<
     case "person": return link(ctx, { person_id: id });
     case "opportunity": return link(ctx, { opportunity_id: id });
     case "project": return link(ctx, { project_id: id });
-    case "company": return link(ctx, {});
+    case "company":
+    case "post":
+    case "idea": return link(ctx, {});
     case "payment": {
       const p = row(ctx, "SELECT project_id FROM payments WHERE id = ?", id);
       return link(ctx, { project_id: p?.project_id });
@@ -74,6 +77,8 @@ export function targetLabel(ctx: Ctx, type: CommentTarget, id: number): string {
       const p = row(ctx, "SELECT milestone, project_id FROM payments WHERE id = ?", id);
       return p ? `ödeme #${id} (${p.milestone})` : `ödeme #${id}`;
     }
+    case "post": return row(ctx, "SELECT title FROM posts WHERE id = ?", id)?.title ?? `#${id}`;
+    case "idea": return row(ctx, "SELECT title FROM ideas WHERE id = ?", id)?.title ?? `#${id}`;
   }
 }
 
@@ -90,6 +95,11 @@ const REF_TABLES = {
   opportunity: { table: "opportunities", col: "title", label: "fırsat" },
   project: { table: "projects", col: "name", label: "proje" },
   source: { table: "sources", col: "name", label: "kaynak" },
+  sector: { table: "sectors", col: "name", label: "sektör" },
+  post: { table: "posts", col: "title", label: "paylaşım" },
+  idea: { table: "ideas", col: "title", label: "fikir" },
+  template: { table: "templates", col: "name", label: "şablon" },
+  tag: { table: "tags", col: "name", label: "etiket" },
 } as const;
 export type RefType = keyof typeof REF_TABLES;
 export const isRefType = (t: string): t is RefType => t in REF_TABLES;
@@ -118,9 +128,10 @@ const INPUT_REFS: Record<string, [string, RefType]> = {
   person: ["person_id", "person"], company: ["company_id", "company"], source: ["source_id", "source"],
   opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
   project: ["project_id", "project"], referred_by: ["referred_by_id", "person"],
+  post: ["post_id", "post"], idea: ["idea_id", "idea"], template: ["template_id", "template"],
 };
 
-/** Girdideki isim alanlarını (person, company, source, opp, project, referred_by) *_id'ye çevirir */
+/** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template) *_id'ye çevirir */
 export function resolveInput<T extends Record<string, any>>(ctx: Ctx, data: T): Record<string, any> {
   const out: Record<string, any> = { ...data };
   for (const [key, [idKey, type]] of Object.entries(INPUT_REFS)) {

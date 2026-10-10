@@ -7,6 +7,7 @@ const STATUS: Record<string, number> = {
   rule: HttpStatus.CONFLICT,
   ambiguous: HttpStatus.CONFLICT,
   forbidden: HttpStatus.FORBIDDEN,
+  duplicate: HttpStatus.CONFLICT,
 };
 
 /** Çekirdek hatalarını (FFError) anlamlı HTTP yanıtlarına çevirir: { error, code } */
@@ -15,7 +16,7 @@ export class ErrorFilter implements ExceptionFilter {
   catch(e: unknown, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse();
     if (e instanceof FFError) {
-      return res.status(STATUS[e.code] ?? 500).json({ error: e.message, code: e.code, candidates: e.candidates });
+      return res.status(STATUS[e.code] ?? 500).json({ error: e.message, code: e.code, candidates: e.candidates, duplicate: e.duplicate });
     }
     if (e instanceof HttpException) {
       const body = e.getResponse() as any;

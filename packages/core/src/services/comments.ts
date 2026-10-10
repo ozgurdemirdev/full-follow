@@ -1,9 +1,10 @@
-import { and, eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { comments } from "../db/schema";
 import type { Actor, CommentTarget } from "../constants";
 import { commentCreate, commentUpdate } from "../schemas";
 import { requireRow, targetLabel, targetLink, truncate, TARGET_TABLE } from "./shared";
+import { Bin } from "./trash";
 
 export interface Thread {
   id: number;                 // kök yorumun id'si
@@ -40,6 +41,8 @@ export interface ThreadFilter {
   last_by?: Actor;
   /** true: sadece kapalı, false (varsayılan): sadece açık, "all": hepsi */
   resolved?: boolean | "all";
+  /** true: her konunun tüm yorumları da gelir */
+  messages?: boolean;
 }
 
 export function listThreads(ctx: Ctx, f: ThreadFilter = {}): Thread[] {
@@ -48,7 +51,7 @@ export function listThreads(ctx: Ctx, f: ThreadFilter = {}): Thread[] {
   if (f.target_type) { where.push("target_type = ?"); params.push(f.target_type); }
   if (f.target_id) { where.push("target_id = ?"); params.push(f.target_id); }
   const roots = rows(ctx, `SELECT * FROM comments WHERE ${where.join(" AND ")} ORDER BY id`, ...params);
-  let threads = roots.map((r) => threadOf(ctx, r));
+  let threads = roots.map((r) => threadOf(ctx, r, !!f.messages));
   const res = f.resolved ?? false;
   if (res !== "all") threads = threads.filter((t) => (res ? !!t.resolved_at : !t.resolved_at));
   const lastBy = f.unanswered ? "ozgur" : f.last_by;
@@ -133,14 +136,17 @@ export function commentsService(ctx: Ctx) {
         || (!cur.parent_id && row(ctx, "SELECT 1 x FROM comments WHERE parent_id = ? AND created_by != ?", id, ctx.actor));
       if (foreign) throw new FFError("forbidden", "Claude sadece kendi yorumlarını silebilir");
     }
-    ctx.db.transaction((tx) => {
-      tx.delete(comments).where(cur.parent_id ? eq(comments.id, id) : or(eq(comments.id, id), eq(comments.parent_id, id))).run();
+    return ctx.db.transaction((tx) => {
+      const bin = new Bin(ctx);
+      if (!cur.parent_id) bin.take("comments", "parent_id = ?", id);
+      bin.take("comments", "id = ?", id);
+      bin.commit(tx, "comment", id, `Yorum: ${truncate(cur.body, 60)}`);
       emit(tx, ctx, {
         type: "comment.deleted", ...targetLink(ctx, cur.target_type, cur.target_id),
         summary: `Yorum silindi (${targetLabel(ctx, cur.target_type, cur.target_id)}): ${truncate(cur.body, 60)}`,
       });
+      return { effects: [] as string[], trash: { type: "comment", id } };
     });
-    return { effects: [] as string[] };
   }
 
   return { add, create: add, resolve, update, remove };

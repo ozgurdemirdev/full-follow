@@ -1,7 +1,9 @@
 import { monthOf } from "../dates";
 import { rows, type Ctx } from "../context";
+import { referralValues, weekStats } from "./network";
 import { collectedIn } from "./payments";
 import { settingsService } from "./settings";
+import { activity } from "./activity";
 
 export function reportsService(ctx: Ctx) {
   /** Kaynak bazında dönüşüm: kazanılan / kapanan (kazanılan + kaybedilen). Açık fırsatlar paydaya girmez. */
@@ -43,5 +45,5 @@ export function reportsService(ctx: Ctx) {
     return { sources: bySource(), month: month(m) };
   }
 
-  return { bySource, month, months, report };
+  return { bySource, month, months, report, referrals: () => referralValues(ctx), week: () => weekStats(ctx), activity: (period?: string) => activity(ctx, period) };
 }

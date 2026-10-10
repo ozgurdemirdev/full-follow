@@ -13,12 +13,18 @@ export class TouchesController {
 
   @Get(":id")
   one(@Param("id") id: string, @Query("with") w?: string) {
-    return this.core.get("touch", intId(id), withList(w));
+    return this.core.get("touch", intId(id), withList(w), 50);
   }
 
   @Post()
   create(@Body() b: unknown) {
     return this.core.touches.create(b);
+  }
+
+  /** Özet, sonuç, kanal, tarih ve cevap bekleme bayrağı */
+  @Patch(":id")
+  update(@Param("id") id: string, @Body() b: unknown) {
+    return this.core.touches.update(intId(id), b);
   }
 
   @Delete(":id")

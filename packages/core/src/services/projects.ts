@@ -1,12 +1,13 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { addDays } from "../dates";
-import { emit, FFError, money, parse, row, rows, stamp, type Ctx } from "../context";
+import { emit, FFError, money, parse, row, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
-import { comments, drafts, payments, projects, tasks, touches } from "../db/schema";
+import { payments, projects } from "../db/schema";
 import { label } from "../constants";
 import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "../schemas";
 import { link, requireRow } from "./shared";
 import { readTemplate } from "./settings";
+import { Bin } from "./trash";
 
 /** Şablondan ödeme planı üretir (zaten ödeme varsa ya da fiyat 0 ise üretmez). Üretilen sayıyı döner. */
 export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: number; started_at: string | null }): number {
@@ -113,18 +114,17 @@ export function projectsService(ctx: Ctx) {
     const cur = requireRow(ctx, "projects", id);
     const paid = row(ctx, "SELECT COALESCE(SUM(paid_amount),0) p FROM payments WHERE project_id = ?", id)?.p ?? 0;
     if (paid > 0) throw new FFError("rule", `${cur.name} silinemez: ${money(paid)} ödeme alınmış`);
-    ctx.db.transaction((tx) => {
-      const payIds = rows<{ id: number }>(ctx, "SELECT id FROM payments WHERE project_id = ?", id).map((p) => p.id);
-      if (payIds.length) tx.delete(comments).where(and(eq(comments.target_type, "payment"), inArray(comments.target_id, payIds))).run();
-      tx.delete(payments).where(eq(payments.project_id, id)).run();
-      tx.update(touches).set({ project_id: null }).where(eq(touches.project_id, id)).run();
-      tx.update(drafts).set({ project_id: null }).where(eq(drafts.project_id, id)).run();
-      tx.update(tasks).set({ project_id: null }).where(eq(tasks.project_id, id)).run();
-      tx.delete(comments).where(and(eq(comments.target_type, "project"), eq(comments.target_id, id))).run();
-      tx.delete(projects).where(eq(projects.id, id)).run();
+    return ctx.db.transaction((tx) => {
+      const bin = new Bin(ctx);
+      bin.take("comments", "target_type = 'payment' AND target_id IN (SELECT id FROM payments WHERE project_id = ?)", id);
+      bin.take("payments", "project_id = ?", id);
+      for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "project_id", id);
+      bin.take("comments", "target_type = 'project' AND target_id = ?", id);
+      bin.take("projects", "id = ?", id);
+      bin.commit(tx, "project", id, cur.name);
       emit(tx, ctx, { type: "project.deleted", ...link(ctx, { person_id: cur.person_id, opportunity_id: cur.opportunity_id }), summary: `Proje silindi: ${cur.name}` });
+      return { effects: [] as string[], trash: { type: "project", id } };
     });
-    return { effects: [] as string[] };
   }
 
   return { create, update, move, remove };

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_PAYMENT_TEMPLATE, MILESTONES, SETTING_KEYS } from "../constants";
+import { DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, SETTING_KEYS } from "../constants";
 import { emit, FFError, parse, row, type Ctx } from "../context";
 import { settings } from "../db/schema";
 
@@ -18,6 +18,26 @@ export function readTemplate(ctx: Ctx): PaymentTemplate {
   const raw = readSetting(ctx, "payment_template");
   if (!raw) return DEFAULT_PAYMENT_TEMPLATE.map((t) => ({ ...t }));
   return templateSchema.parse(JSON.parse(raw));
+}
+
+/** Takip dizisi günleri: artan, 1-90 gün, en fazla 5 adım. "3,7" ya da [3,7] kabul edilir. */
+const followupSchema = z.preprocess(
+  (v) => (typeof v === "string" ? v.split(/[,\s]+/).filter(Boolean).map(Number) : v),
+  z.array(z.coerce.number().int().min(1).max(90)).max(5),
+).refine((a) => a.every((n, i) => i === 0 || n > a[i - 1]), "takip günleri artan sırada olmalı (örn. 3,7)");
+
+/** Pazarlama ayarları (Paket 2): takip dizisi günleri ve haftalık giden mesaj hedefi */
+export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_target: number } {
+  let followup_days: number[] = [...MARKETING_DEFAULTS.followup_days];
+  const raw = readSetting(ctx, "followup_days");
+  if (raw !== undefined) {
+    try {
+      followup_days = followupSchema.parse(JSON.parse(raw));
+    } catch {
+      /* bozuk değer: varsayılan */
+    }
+  }
+  return { followup_days, weekly_target: Number(readSetting(ctx, "weekly_target") ?? MARKETING_DEFAULTS.weekly_target) || 0 };
 }
 
 const num = (ctx: Ctx, key: string) => Number(readSetting(ctx, key) ?? 0) || 0;
@@ -53,6 +73,8 @@ export function settingsService(ctx: Ctx) {
       const sum = t.reduce((a, x) => a + x.percent, 0);
       if (Math.abs(sum - 100) > 0.001) throw new FFError("validation", `ödeme şablonu yüzdeleri toplamı 100 olmalı (şu an ${sum})`);
       stored = JSON.stringify(t);
+    } else if (key === "followup_days") {
+      stored = JSON.stringify(parse(followupSchema, value));
     } else if (key === "tax_rate_percent") {
       const n = parse(z.coerce.number().min(0).lt(100), value);
       stored = String(n);

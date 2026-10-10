@@ -11,9 +11,15 @@ export class PeopleController {
     return this.core.find("person", listOpts(query));
   }
 
+  /** Kişi kartı tek istekte (temaslar, notlar, yorumlar mesajlarıyla, referans ağı ve değeri) */
+  @Get(":id/card")
+  card(@Param("id") id: string) {
+    return this.core.personCard(intId(id));
+  }
+
   @Get(":id")
   one(@Param("id") id: string, @Query("with") w?: string) {
-    return this.core.get("person", intId(id), withList(w));
+    return this.core.get("person", intId(id), withList(w), 50);
   }
 
   @Post()

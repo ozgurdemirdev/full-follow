@@ -1,7 +1,8 @@
 import { z } from "zod";
 import {
-  TAGS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  ASSIGNEES, COMMENT_TARGETS,
+  SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
+  ASSIGNEES, COMMENT_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
+  CONTACT_STATUSES, TAG_COLORS,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
 
@@ -23,16 +24,47 @@ const dateTime = z.preprocess(
 /** create şemasını güncellemeye çevirir: alanlar opsiyonel */
 const patch = <T extends z.ZodRawShape>(shape: T) => z.object(shape).partial();
 
-export const companyCreate = z.object({ name: text, website: optText, notes: optText });
-export const companyUpdate = patch({ name: text, website: optText, notes: optText });
+/** Etiket ya da sektör: id, ad ("Sıcak") ya da sektör yolu ("Sağlık > Diş hekimi") */
+const refList = z.array(z.union([z.number().int().positive(), z.string().trim().min(1)]));
+/** Kişi ve firmada ortak: etiketler (tags tümünü değiştirir, add_tags/remove_tags ekler/çıkarır) ve sektörler */
+const labels = {
+  tags: refList.optional(),
+  add_tags: refList.optional(),
+  remove_tags: refList.optional(),
+  sectors: refList.optional(),
+};
+
+const companyShape = {
+  name: text,
+  website: optText,
+  email: optText,
+  phone: optText,
+  instagram: optText,
+  linkedin: optText,
+  source_id: id.nullable(),
+  contact_status: z.enum(CONTACT_STATUSES),
+  notes: optText,
+};
+export const companyCreate = z.object({
+  ...companyShape,
+  source_id: companyShape.source_id.optional(),
+  contact_status: companyShape.contact_status.optional(),
+  ...labels,
+});
+export const companyUpdate = patch(companyShape).extend(labels);
 
 const personShape = {
   name: text,
   company_id: id.nullable(),
   email: optText,
   phone: optText,
+  instagram: optText,
+  linkedin: optText,
   handle: optText,
   referred_by_id: id.nullable(),
+  post_id: id.nullable(),
+  source_id: id.nullable(),
+  contact_status: z.enum(CONTACT_STATUSES),
   next_follow_up_at: date,
   notes: optText,
 };
@@ -40,14 +72,16 @@ export const personCreate = z.object({
   ...personShape,
   company_id: personShape.company_id.optional(),
   referred_by_id: personShape.referred_by_id.optional(),
+  post_id: personShape.post_id.optional(),
+  source_id: personShape.source_id.optional(),
+  contact_status: personShape.contact_status.optional(),
   next_follow_up_at: personShape.next_follow_up_at.optional(),
-  tags: z.array(z.enum(TAGS)).optional(),
+  ...labels,
 });
-export const personUpdate = patch(personShape).extend({
-  tags: z.array(z.enum(TAGS)).optional(),
-  add_tags: z.array(z.enum(TAGS)).optional(),
-  remove_tags: z.array(z.enum(TAGS)).optional(),
-});
+export const personUpdate = patch(personShape).extend(labels);
+
+export const tagCreate = z.object({ name: text, color: z.enum(TAG_COLORS).optional() });
+export const tagUpdate = patch({ name: text, color: z.enum(TAG_COLORS) });
 
 export const sourceCreate = z.object({ name: text, kind: z.enum(SOURCE_KINDS).default("diger"), notes: optText });
 export const sourceUpdate = patch({ name: text, kind: z.enum(SOURCE_KINDS), notes: optText });
@@ -59,6 +93,9 @@ export const oppCreate = z.object({
   stage: z.enum(["bulundu", "temas", "cevap", "gorusme", "teklif"]).default("bulundu"),
   estimated_value: tl.nullish(),
   next_follow_up_at: date.optional(),
+  /** ilanın/konunun linki ve tarihi */
+  source_url: optText,
+  source_date: date.optional(),
 });
 export const oppUpdate = patch({
   title: text,
@@ -66,6 +103,8 @@ export const oppUpdate = patch({
   source_id: id,
   estimated_value: tl.nullable(),
   next_follow_up_at: date,
+  source_url: optText,
+  source_date: date,
 });
 
 export const projectCreate = z.object({
@@ -84,8 +123,20 @@ export const projectUpdate = patch({
   maintenance_fee: tl.nullable(),
 });
 
+/**
+ * Temas ve taslağın muhatabı: kişi, firma ya da sadece adres/hesap (info@firma.com, @hesap).
+ * Biri yeterli; kişi verilirse firma ve adres yok sayılır, firma verilirse adres yok sayılır.
+ */
+const subject = {
+  person_id: id.nullish(),
+  company_id: id.nullish(),
+  contact: optText,
+};
+const needSubject = (d: { person_id?: number | null; company_id?: number | null; contact?: string | null }) => !!(d.person_id || d.company_id || d.contact);
+const subjectMsg = { message: "kişi, firma ya da adres (contact) gerekli", path: ["person_id"] };
+
 export const touchCreate = z.object({
-  person_id: id,
+  ...subject,
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
   channel: z.enum(CHANNELS),
@@ -94,16 +145,105 @@ export const touchCreate = z.object({
   summary: text,
   outcome: optText,
   happened_at: dateTime.optional(),
+  /** verilmezse: giden mesaj → evet, diğerleri → hayır */
+  expects_reply: z.boolean().optional(),
+  /** Paket 2: temas bir fikir hakkındaysa kişi fikre "anlatıldı" olarak bağlanır */
+  idea_id: id.nullish(),
+}).refine(needSubject, subjectMsg);
+export const touchUpdate = patch({
+  channel: z.enum(CHANNELS),
+  kind: z.enum(TOUCH_KINDS),
+  summary: text,
+  outcome: optText,
+  happened_at: dateTime,
+  expects_reply: z.boolean(),
+  idea_id: id.nullable(),
 });
 
+export const sectorCreate = z.object({ name: text, parent_id: id.nullish() });
+export const sectorUpdate = patch({ name: text, parent_id: id.nullable() });
+
+export const noteCreate = z.object({ person_id: id, body: text });
+export const noteUpdate = patch({ body: text });
+
 export const draftCreate = z.object({
-  person_id: id,
+  ...subject,
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
   channel: z.enum(CHANNELS),
+  /** boşsa şablondan doldurulur */
+  body: optText,
+  reason: optText,
+  template_id: id.nullish(),
+  followup_step: z.coerce.number().int().min(1).max(10).nullish(),
+}).refine(needSubject, subjectMsg);
+export const draftUpdate = patch({ channel: z.enum(CHANNELS), body: text, reason: optText, template_id: id.nullable() });
+
+// ---- Paket 2: pazarlama ----
+const days = z.coerce.number().int().min(1).max(365);
+
+export const postCreate = z.object({
+  platform: z.enum(POST_PLATFORMS),
+  title: text,
+  url: optText,
+  body: optText,
+  posted_at: date.optional(),
+  refresh_days: days.nullish(),
+  idea_id: id.nullish(),
+  notes: optText,
+});
+export const postUpdate = patch({
+  platform: z.enum(POST_PLATFORMS),
+  title: text,
+  url: optText,
+  body: optText,
+  posted_at: date,
+  refresh_days: days.nullable(),
+  idea_id: id.nullable(),
+  notes: optText,
+  /** true: "güncelledim" (yenileme tarihi bugün olur) */
+  refreshed: z.boolean(),
+});
+
+export const templateCreate = z.object({
+  name: text,
+  kind: z.enum(TEMPLATE_KINDS).default("ilk"),
+  channel: z.enum(CHANNELS).nullish(),
+  sector_id: id.nullish(),
   body: text,
 });
-export const draftUpdate = patch({ channel: z.enum(CHANNELS), body: text });
+export const templateUpdate = patch({
+  name: text,
+  kind: z.enum(TEMPLATE_KINDS),
+  channel: z.enum(CHANNELS).nullable(),
+  sector_id: id.nullable(),
+  body: text,
+});
+
+export const ideaCreate = z.object({
+  title: text,
+  problem: optText,
+  stage: z.enum(IDEA_STAGES).default("fikir"),
+  notes: optText,
+  sector_ids: z.array(id).optional(),
+});
+export const ideaUpdate = patch({
+  title: text,
+  problem: optText,
+  stage: z.enum(IDEA_STAGES),
+  notes: optText,
+  sector_ids: z.array(id),
+});
+
+/** Kişiyi fikre bağla ya da ilgisini güncelle (fikir + kişi başına tek satır) */
+export const interestSave = z.object({
+  idea_id: id,
+  person_id: id,
+  interest: z.enum(INTEREST_LEVELS).optional(),
+  note: optText.optional(),
+  touch_id: id.nullish(),
+});
+export const interestUpdate = patch({ interest: z.enum(INTEREST_LEVELS), note: optText });
 
 export const paymentCreate = z.object({
   project_id: id,

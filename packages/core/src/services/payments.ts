@@ -1,10 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { emit, FFError, money, parse, row, rows, stamp, type Ctx } from "../context";
-import { comments, payments } from "../db/schema";
+import { payments } from "../db/schema";
 import { label } from "../constants";
 import { paymentCreate, paymentUpdate } from "../schemas";
 import { z } from "zod";
 import { link, requireRow } from "./shared";
+import { Bin } from "./trash";
 
 export type PaymentStatus = "odendi" | "kismi" | "gecikmis" | "bekliyor";
 
@@ -119,12 +120,14 @@ export function paymentsService(ctx: Ctx) {
   function remove(id: number) {
     const cur = requireRow(ctx, "payments", id);
     if (cur.paid_amount > 0) throw new FFError("rule", "Ödeme alınmış kayıt silinemez; önce ödenen tutarı düzelt");
-    ctx.db.transaction((tx) => {
-      tx.delete(comments).where(and(eq(comments.target_type, "payment"), eq(comments.target_id, id))).run();
-      tx.delete(payments).where(eq(payments.id, id)).run();
+    return ctx.db.transaction((tx) => {
+      const bin = new Bin(ctx);
+      bin.take("comments", "target_type = 'payment' AND target_id = ?", id);
+      bin.take("payments", "id = ?", id);
+      bin.commit(tx, "payment", id, `Ödeme: ${label(cur.milestone)}`);
       emit(tx, ctx, { type: "payment.deleted", ...link(ctx, { project_id: cur.project_id }), summary: `Ödeme planı silindi: ${label(cur.milestone)}` });
+      return { effects: [] as string[], trash: { type: "payment", id } };
     });
-    return { effects: [] as string[] };
   }
 
   return { create, update, pay, remove };

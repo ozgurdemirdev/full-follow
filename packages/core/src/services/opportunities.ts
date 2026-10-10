@@ -1,12 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
-import { comments, drafts, opportunities, tasks, touches } from "../db/schema";
+import { opportunities } from "../db/schema";
 import { label, OPEN_OPP_STAGES, type OppStage } from "../constants";
 import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "../schemas";
-import { addTags } from "./people";
+import { addTagBySlug, checkSource } from "./categories";
 import { createProjectFromOpportunity } from "./projects";
 import { link, requireRow } from "./shared";
+import { Bin } from "./trash";
 
 const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
 
@@ -46,7 +47,7 @@ export function opportunitiesService(ctx: Ctx) {
     const d = parse(oppCreate, input);
     return ctx.db.transaction((tx) => {
       requireRow(ctx, "people", d.person_id);
-      requireRow(ctx, "sources", d.source_id);
+      checkSource(ctx, d.source_id);
       const pos = (row(ctx, "SELECT COALESCE(MAX(position), -1) + 1 p FROM opportunities WHERE stage = ?", d.stage)?.p ?? 0) as number;
       const r = tx.insert(opportunities).values({ ...d, position: pos, ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "opp.created", ...link(ctx, { opportunity_id: r.id }), summary: `Fırsat açıldı: ${r.title}` });
@@ -58,9 +59,9 @@ export function opportunitiesService(ctx: Ctx) {
     if (input && typeof input === "object" && ("stage" in input || "position" in input)) throw new FFError("rule", "Aşama için move kullan");
     const d = parse(oppUpdate, input);
     return ctx.db.transaction((tx) => {
-      requireRow(ctx, "opportunities", id);
+      const cur = requireRow(ctx, "opportunities", id);
       if (d.person_id) requireRow(ctx, "people", d.person_id);
-      if (d.source_id) requireRow(ctx, "sources", d.source_id);
+      if (d.source_id) checkSource(ctx, d.source_id, cur.source_id);
       if (Object.keys(d).length) {
         tx.update(opportunities).set({ ...d, updated_at: ctx.clock.now() }).where(eq(opportunities.id, id)).run();
         emit(tx, ctx, { type: "opp.updated", ...link(ctx, { opportunity_id: id }), summary: `Fırsat güncellendi (${Object.keys(d).join(", ")})` });
@@ -90,7 +91,7 @@ export function opportunitiesService(ctx: Ctx) {
           effects.push(`proje #${project.id} açıldı`);
           effects.push(planned ? `${planned} ödeme planlandı` : "fiyat girilmediği için ödeme planı yok");
         }
-        if (addTags(tx, ctx, cur.person_id, ["musteri"]).length) effects.push("müşteri etiketi eklendi");
+        if (addTagBySlug(tx, ctx, "person", cur.person_id, "musteri")) effects.push("müşteri etiketi eklendi");
       }
       return { row: requireRow(ctx, "opportunities", id), effects };
     });
@@ -99,15 +100,15 @@ export function opportunitiesService(ctx: Ctx) {
   function remove(id: number) {
     const cur = requireRow(ctx, "opportunities", id);
     if (row(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", id)) throw new FFError("rule", `${cur.title} silinemez: projesi var`);
-    ctx.db.transaction((tx) => {
-      tx.update(touches).set({ opportunity_id: null }).where(eq(touches.opportunity_id, id)).run();
-      tx.update(drafts).set({ opportunity_id: null }).where(eq(drafts.opportunity_id, id)).run();
-      tx.update(tasks).set({ opportunity_id: null }).where(eq(tasks.opportunity_id, id)).run();
-      tx.delete(comments).where(and(eq(comments.target_type, "opportunity"), eq(comments.target_id, id))).run();
-      tx.delete(opportunities).where(eq(opportunities.id, id)).run();
+    return ctx.db.transaction((tx) => {
+      const bin = new Bin(ctx);
+      for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "opportunity_id", id);
+      bin.take("comments", "target_type = 'opportunity' AND target_id = ?", id);
+      bin.take("opportunities", "id = ?", id);
+      bin.commit(tx, "opportunity", id, cur.title);
       emit(tx, ctx, { type: "opp.deleted", person_id: cur.person_id, summary: `Fırsat silindi: ${cur.title}` });
+      return { effects: [] as string[], trash: { type: "opportunity", id } };
     });
-    return { effects: [] as string[] };
   }
 
   return { create, update, move, remove, openStages: OPEN_OPP_STAGES };

@@ -1,9 +1,17 @@
 # Full Follow · Mimari Plan
 
-Durum: **kararlar verildi, arka uç yazıldı ve Opus ile gözden geçirildi (2026-10-09).** Ön yüz tasarım bitince yapılacak.
+Durum: **arka uç, ön yüz, Paket 1 (network paneli) ve Paket 2 (pazarlama, §11) yazıldı (2026-10-09).**
 Son güncelleme: 2026-10-09
 
-Amaç: müşteri bulmaktan işin teslimine kadar her şeyi tek sistemde, birbirine bağlı tutmak. Özgür web arayüzünden, Claude MCP üzerinden aynı veritabanını kullanır. Kayıtların üzerinde ikisinin de yazabildiği yorumlar vardır (§2.11).
+Amaç: **önce network ve pazarlama paneli.** Özgür ürün üretebiliyor; zorlandığı yer müşteri bulmak ve kendini duyurmak. Full Follow, kiminle hangi kanaldan temas kurduğunu, kimin döndüğünü, kimin soğuduğunu ve kimin kimi tanıttığını tek yerde tutar. Satış hunisi ve projeler (teslim, ödeme) küçük yan özellik olarak kalır. Özgür web arayüzünden, Claude MCP üzerinden aynı veritabanını kullanır. Kayıtların üzerinde ikisinin de yazabildiği yorumlar vardır (§2.11).
+
+### Ürün yönü (2026-10-09, Özgür)
+
+- **Kişi kartı ana merkez**: bir kişinin kanal kanal bütün temasları, notları, yorumları, sektörü, kimin tanıttığı ve tanıttıkları tek ekranda.
+- **Network'ü büyütme kanalları**: soğuk e-posta, Instagram DM, LinkedIn, telefon, yüz yüze (WhatsApp ve R10 da duruyor).
+- **Bugün ekranı network odaklı**: cevap bekleyenler (kanal, kaç gündür), takibi gelenler, soğuyan bağlantılar, haftalık temas sayıları.
+- **Referans değeri**: kimin tanıttığı kişilerden ne kadar fırsat ve iş geldiği.
+- **Paket 2 (pazarlama)**: paylaşımlar (yenileme hatırlatması, hangi paylaşım kişi ve iş getirdi), takip dizileri (cevapsız mesaja 3. ve 7. günde otomatik takip taslağı), sektör ve kanala göre mesaj şablonları, ürün fikirleri ve ilgi ölçümü (§2.14–2.17, §11).
 
 ---
 
@@ -68,7 +76,10 @@ Tarihler ISO metin (`2026-10-09` ya da `2026-10-09T20:55:00Z`). Tutarlar **tam s
 |---|---|---|
 | name | text, zorunlu | |
 | company_id | → companies | boş olabilir |
-| email, phone, handle | text | handle: Instagram/LinkedIn/R10 kullanıcı adı |
+| email, phone | text | |
+| instagram, linkedin | text | kullanıcı adı ya da profil adresi (Paket 1) |
+| handle | text | diğer kullanıcı adı (R10 vb.) |
+| sector_id | → sectors | iki seviyeli sektör (Paket 1, §2.12) |
 | referred_by_id | → people | **referans ağacı**: kimin tanıttığı |
 | next_follow_up_at | date | "takibi gelenler" buradan |
 | notes | text | |
@@ -102,13 +113,16 @@ Etiketler sabit liste: `aday`, `musteri`, `ajans`, `is_ortagi`, `network`. Bir k
 |---|---|---|
 | person_id | → people, zorunlu | |
 | opportunity_id, project_id | → ilgili kayıt | boş olabilir |
-| channel | enum | `whatsapp`, `email`, `telefon`, `yuz_yuze`, `r10`, `instagram`, `linkedin`, `diger` |
+| channel | enum | `email`, `instagram` (DM), `linkedin`, `telefon`, `yuz_yuze`, `whatsapp`, `r10`, `diger` |
 | direction | enum | `giden` / `gelen` |
 | kind | enum | `mesaj`, `arama`, `gorusme` |
 | summary | text | kısa özet ya da mesaj metni |
 | outcome | text | sonuç (opsiyonel) |
 | happened_at | datetime | |
+| expects_reply | bool | giden temas cevap bekliyor mu (Paket 1). Varsayılan: giden **mesaj** ise evet, arama/görüşme/gelen ise hayır. Sonradan kapatılabilir |
 | draft_id | → drafts | taslaktan geldiyse |
+
+Temas **fırsat açmadan** doğrudan kişiye eklenir; fırsat ve proje alanları opsiyoneldir.
 
 ### 2.5 Taslaklar
 
@@ -119,6 +133,7 @@ Etiketler sabit liste: `aday`, `musteri`, `ajans`, `is_ortagi`, `network`. Bir k
 | opportunity_id, project_id | | opsiyonel |
 | channel | enum | touches ile aynı liste |
 | body | text | |
+| reason | text | Claude'un bu taslağı neden hazırladığı (ör. "5 gündür cevap yok, ikinci mesaj") (Paket 1) |
 | status | enum | `bekliyor → onaylandi → gonderildi`, ya da `reddedildi` |
 | reject_note | text | reddedilirse neden |
 
@@ -180,6 +195,8 @@ Olay yazımı core'un içindedir; elle olay eklenmez.
 
 Ek ayar: `tax_rate_percent` (varsayılan 0).
 
+Network ayarları (Paket 1): `reply_wait_days` (varsayılan 3: bu kadar gün cevap gelmezse "gecikti" sayılır), `cooling_days` (varsayılan 30: bu kadar gün temas yoksa bağlantı soğuyor).
+
 **Fiyat tabanı (aylık)** = (Bağkur + muhasebe + diğer sabit giderler + hedeflenen net gelir) / (1 − vergi oranı). Vergi oranı 0 iken düz toplamdır.
 
 ### 2.11 Yorumlar (yeni)
@@ -203,15 +220,95 @@ Kurallar:
 - Her yorum `comment.created` olayı yazar; olay hedefin kişi/fırsat/proje bağlantılarını taşır, yani zaman çizelgesinde görünür.
 - Web'de yorum çipleri iki yazar için ayrı renk/etiket taşır (Özgür / Claude); kayıt sayfalarında yorum paneli, Bugün ekranında Özgür'ün cevap bekleyen konuları görünür.
 
+### 2.12 Sektörler (Paket 1)
+
+İki seviyeli liste, etiketlerden ayrı alan. Örnek: `Sağlık > Diş hekimi`, `Sağlık > Veteriner`, `Yeme içme > Kafe`.
+
+**sectors**
+| alan | tip | not |
+|---|---|---|
+| name | text, zorunlu | aynı üst altında tekil (büyük/küçük harf duyarsız) |
+| parent_id | → sectors | boşsa ana sektör; doluysa ana sektörün alt sektörü (en fazla iki seviye) |
+
+- Kişiye `sector_id` ile bağlanır. Girdi olarak `sector: "Sağlık > Diş hekimi"` ya da sadece `"Diş hekimi"` verilebilir: yol verilirse eksik sektörler açılır, tek ad verilirse var olan eşleşir (yoksa ana sektör olarak açılır).
+- Ana sektörle filtreleyince alt sektördeki kişiler de gelir.
+- Kullanılan ya da altı olan sektör silinmez. Paket 2'de mesaj şablonları ve fikirler de bu tabloya bağlanır.
+
+### 2.13 Notlar (Paket 1)
+
+Kişi kartındaki tarihli notlar ("2 kliniği var, Instagram'da aktif"). Yorumlardan farkı: cevap beklemez, Claude'a soru değildir; kişi hakkında bilgi birikir. `people.notes` kısa özet alanı olarak kalır.
+
+**notes**
+| alan | tip | not |
+|---|---|---|
+| person_id | → people, zorunlu | |
+| body | text, zorunlu | |
+
+Not ekleme `note.created` olayı yazar (kişinin zaman çizelgesinde görünür). Kişi silinince notları da gider.
+
+### 2.14 Paylaşımlar (Paket 2)
+
+R10 konusu, LinkedIn ya da Instagram gönderisi. Forum konuları belli aralıkla "güncellenir" (yukarı taşınır); aralık dolunca Bugün ekranında hatırlatma çıkar.
+
+**posts**
+| alan | tip | not |
+|---|---|---|
+| platform | enum | `r10`, `linkedin`, `instagram`, `diger` |
+| title | text, zorunlu | |
+| url, body, notes | text | |
+| posted_at | date | varsayılan bugün |
+| refresh_days | int | yenileme aralığı (gün); boşsa hatırlatma yok |
+| refreshed_at | date | son "güncelledim" |
+| idea_id | → ideas | paylaşım bir fikri tanıtıyorsa |
+
+- **Kaynak**: `people.post_id` kişiyi getiren paylaşım. Paylaşımın getirisi: kişi sayısı, o kişilerin fırsatları, kazanılan sayı ve tutar (hesaplanır).
+- Paylaşım silinince kişiler kalır, bağ kopar.
+
+### 2.15 Mesaj şablonları (Paket 2)
+
+**templates**
+| alan | tip | not |
+|---|---|---|
+| name | text, zorunlu | |
+| kind | enum | `ilk` (ilk mesaj), `takip`, `teklif`, `diger` |
+| channel | enum, boş olabilir | boş = tüm kanallar |
+| sector_id | → sectors, boş olabilir | boş = tüm sektörler; ana sektör alt sektörleri de kapsar |
+| body | text | yer tutucular: `{ad}` (ilk ad), `{ad_soyad}`, `{firma}`, `{sektor}` |
+
+- Taslakta `drafts.template_id` kullanılan şablonu tutar; şablon başarısı hesaplanır: kullanım, gönderilen, gönderildikten sonra cevap gelen (dönüş oranı).
+- Şablon silinince taslaklar kalır, bağ kopar.
+
+### 2.16 Takip dizisi (Paket 2)
+
+Ayrı tablo yok. Cevap bekleyen kuralının (§3/10) verisinden hesaplanır; üretilen taslaklar `drafts.followup_step` (1 = ilk takip) taşır. Süreler `settings.followup_days` (varsayılan `[3,7]`, en fazla 5 adım, boş = kapalı).
+
+### 2.17 Fikirler (Paket 2)
+
+**ideas**: `title`, `problem` (çözdüğü sorun), `stage` (`fikir → dogrulaniyor → demo → urun`), `notes`.
+**idea_sectors** `(idea_id, sector_id)`: hedef sektörler (iki seviyeli sektörlerden, `sectors: ["Sağlık > Diş hekimi"]` ile eksikler açılır).
+**idea_people**: fikir kime anlatıldı. `idea_id`, `person_id` (çift tekil), `interest` (`anlatildi`, `ilgilendi`, `ilgilenmedi`), `note`, `touch_id` (anlatıldığı temas).
+`touches.idea_id`: temas bir fikir hakkındaysa.
+
+İlgi ölçümü (hesaplanır): kaç kişiye anlatıldı, kaçı ilgilendi, oran; fikre bağlı temas ve paylaşım sayısı.
+
+### 2.18 Pazarlama ayarları (Paket 2)
+
+`followup_days` (JSON dizi, "3,7" de kabul edilir) ve `weekly_target` (haftalık giden mesaj hedefi, 0 = kapalı; Bugün ekranında ilerleme).
+
 ### İlişki özeti
 
 ```
 companies 1─* people *─* tags
 people 1─* people (referred_by)
+sectors 1─* sectors (parent) 1─* people
+people 1─* notes
 people 1─* opportunities *─1 sources
 opportunities 1─0..1 projects 1─* payments
 people/opportunities/projects 1─* touches, drafts, tasks, events
 drafts 1─0..1 touches
+posts 1─* people (post_id: kaynak) · ideas 1─* posts, touches
+templates 1─* drafts · sectors 1─* templates
+ideas *─* sectors (idea_sectors) · ideas *─* people (idea_people: ilgi)
 her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 ```
 
@@ -229,20 +326,43 @@ her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 8. **Kim yaptı** her zaman giriş noktasından gelir, girdiden değil.
 9. **Yorum konuları**: kök yorum + cevaplar; "cevapsız" = açık konu ve son yorum Özgür'den (bkz. §2.11). Claude MCP'den cevapsızları listeler ve cevap yazar.
 
+**Network kuralları (Paket 1)**
+
+10. **Cevap bekleyen**: kişinin son *gelen* temasından sonra `expects_reply` işaretli *giden* temas varsa kişi cevap bekliyor. Kanal = son giden temasın kanalı; gün = son giden temastan bu yana; deneme = cevapsız giden temas sayısı. Gün `reply_wait_days`'i aşınca "gecikti". Gelen temas girilince kişi listeden düşer; giden temasta `expects_reply` kapatılarak da düşürülür.
+11. **Soğuyan bağlantı**: bağlantı sayılan kişi (en az bir gelen teması olan ya da `musteri`, `is_ortagi`, `network`, `ajans` etiketli) son temasının üzerinden `cooling_days` geçtiyse, cevap beklemiyorsa ve takip tarihi (`next_follow_up_at`) boşsa soğuyor; takip tarihi girilmiş kişi zaten takip listesinde olduğu için soğuyanlarda gösterilmez. Hiç teması olmayan etiketli kişide kişinin eklenme tarihi sayılır.
+12. **Sektör iki seviye**: alt sektörün üstü ana sektör olmalı; altı olan sektör başka sektörün altına taşınamaz; kendi altına bağlanamaz.
+13. **Referans değeri**: bir kişinin tanıttıkları (doğrudan ve onların tanıttıkları, tüm alt ağaç) üzerinden gelen fırsat sayısı, kazanılan sayısı, kazanılan tutar (`estimated_value`) ve açık fırsat tutarı. Doğrudan tanıttığı kişi sayısı ayrıca verilir.
+
+**Pazarlama kuralları (Paket 2)**
+
+14. **Takip dizisi**: kişinin son gelen temasından sonraki cevap bekleyen giden mesajlar bir dizidir. k = cevapsız giden mesaj sayısı (ilk mesaj + gönderilen takipler); ilk cevapsız mesajın üzerinden `followup_days[k-1]` gün geçince k. takip zamanı gelir. Zamanı gelince onaya taslak açılır (`followup_step = k`, `reason` "Otomatik takip 1/2: 3 gündür cevap yok (LinkedIn)"). Metin: kişinin kanal ve sektörüne en uyan `takip` şablonu, yoksa varsayılan nazik metin. Bekleyen (onaylanmamış) taslağı olan kişiye ve bu dizide aynı adım için zaten taslak açılmış kişiye (reddedilmiş olsa bile) yeni taslak açılmaz. Gelen temas diziyi bitirir; adımlar bitince yeni taslak yok. Taslak gönderilince giden temas olur, deneme sayısı artar, sıradaki adım beklenir.
+15. **Otomatik üretim**: web sunucusu açılışta ve saatte bir, MCP `today()` her çağrıda zamanı gelen takip taslaklarını hazırlar. Bu taslaklar `created_by = claude` yazılır (Claude taslağı); onay ve gönderme yine sadece Özgür'de (§3/5). `FF_AUTO_FOLLOWUP=0` sunucudaki zamanlayıcıyı kapatır.
+16. **Paylaşım yenileme**: `refresh_days` girilmiş paylaşımda son yenileme (yoksa paylaşım günü) + aralık ≤ bugün ise "güncelle" hatırlatması çıkar. "Güncelledim" (`refreshed: true`) yenileme gününü bugüne alır, `post.refreshed` olayı yazar.
+17. **Şablon seçimi**: başka kanala ya da başka sektöre yazılmış şablon önerilmez. Puan: aynı kanal 4, tüm kanallar 1; aynı alt sektör 4, kişinin ana sektörü 3, tüm sektörler 1; eşitlikte dönüş oranı yüksek olan önde. Taslak metni boş verilip şablon seçilirse metin şablondan kişiye uygulanarak doldurulur.
+18. **Fikir ilgisi**: fikir hakkındaki temas (`idea_id`) kişiyi fikre "anlatıldı" olarak bağlar (zaten bağlıysa ilgisine dokunmaz). İlgi seviyesi elle (`interest` kaydı) değişir, `idea.interest` olayı yazar. Fikir aşaması `move("idea", id, stage)` ya da `save` ile değişir, `idea.stage` olayı yazar. Fikir silinince bağlı kişi ve sektör satırları gider, temas ve paylaşımlar kalır.
+
 ---
 
 ## 4. Ekranlar ve beslendikleri sorgular
 
 | Ekran | Veri |
 |---|---|
-| **Bugün** | `bekliyor` taslaklar · `next_follow_up_at <= bugün` olan kişi ve fırsatlar · bugün ve geçmiş tarihli açık görevler · 7 gün içinde beklenen ve gecikmiş ödemeler · (Claude tarafında) cevapsız yorumlar |
+| **Bugün** (network) | haftalık temas sayıları (`GET /api/stats/week`, haftalık hedef varsa ilerleme) · **cevap bekleyenler** (kanal, kaç gün, kaç deneme) · takibi gelen kişi ve fırsatlar · **soğuyan bağlantılar** · `bekliyor` taslaklar (nedeniyle; otomatik takipler "1. takip" çipiyle) · **takip zamanı gelenler** (taslağı henüz yoksa, "Şimdi hazırla") · **güncellenecek paylaşımlar** ("Güncelledim") · bugün ve geçmiş tarihli açık görevler · cevap bekleyen yorumlar · 7 gün içindeki ödemeler (küçük) |
+| **Paylaşımlar** (Paket 2) | Platform filtresi; her paylaşım: tarih, sonraki güncelleme, getirdiği kişi/fırsat/kazanılan tutar, bağlı fikir. Ekle/düzenle/güncelledim/sil, getirdiği kişiler |
+| **Fikirler** (Paket 2) | Aşama filtresi; her fikir: sorun, hedef sektörler, aşama, anlatılan/ilgilenen ve oran. Detayda kişiler (ilgi seviyesi değiştirme), kişi bağlama, paylaşımlar, notlar |
+| **Şablonlar** (Paket 2) | Tür ve kanal filtresi; şablon: kanal, sektör, metin, kullanım ve dönüş oranı. Ekle/düzenle/sil. Taslak formunda kişiye ve kanala göre önerilir |
+| **Taslak yaz** (form) | Kişi, kanal, önerilen şablonlar (seçince metin kişiye uygulanır), metin, neden. Kişi kartında "Taslak yaz" |
+| **Kişiler + kişi kartı** | Liste: etiket, sektör ve durum (cevap bekliyor / soğuyor / takip) filtreleri, son temas kanalı ve günü. Kart (`GET /api/people/:id/card`, tek istek): iletişim ve kanal hesapları, sektör, kanal kanal temas özeti ve geçmişi, notlar, yorum konuları mesajlarıyla, referans ağı ve referans değeri, fırsat ve projeler kısaca |
+| **Referanslar** | Kimin tanıttığı kişilerden ne kadar fırsat ve iş geldiği (`GET /api/report/referrals`) |
 | **Satış hunisi** | Aşamaya göre gruplu açık fırsatlar (kazanılan/kaybedilen sütunlar daraltılmış, son 30 gün) |
 | **Proje panosu** | Aşamaya göre projeler + her birinin sıradaki görevi ve sıradaki ödemesi |
 | **Zaman çizelgesi** | Bir kişi ya da projenin `events` kayıtları, eskiden yeniye |
 | **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı |
 | Kayıt sayfaları | Kişi, firma, fırsat, proje detay ve formlar; her birinde yorum paneli (ekran sayısına dahil değil ama gerekli) |
 
-Sidebar: Bugün, Huni, Projeler, Kişiler, Rapor, Ayarlar. Mobilde alttan açılan çekmece ya da alt sekme çubuğu (tasarımda karar).
+Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
+
+Kişi kartı (Paket 2): kaynak paylaşım, anlatılan fikirler (ilgi seviyesiyle), "Taslak yaz". Kişi formunda "Kaynak paylaşım", temas formunda "Fikir" seçimi.
 
 ---
 
@@ -265,17 +385,27 @@ Hedef: Claude, Özgür'ün arayüzde yapabildiği her şeyi yapabilsin, ama her 
 
 | Araç | Ne yapar | Örnek çıktı |
 |---|---|---|
-| `today()` | Bugün ekranının özeti | 4 kısa bölüm, her biri en fazla 10 satır |
-| `find(type, q?, filter?, limit?)` | Kişi, firma, fırsat, proje, görev, taslak, ödeme, kaynak, temas, yorum, ayar listeler. `filter` örn. `{stage:"teklif"}`, `{tag:"ajans"}`, `{overdue:true}`, `{unanswered:true}` (yorum) | satır başına bir kayıt |
-| `get(type, id, with?)` | Tek kaydın tamamı; `with: ["touches","tasks","payments","comments"]` ile ilgili kayıtlar. `type: "comment"` tüm konuyu verir; kaydın açık yorum konusu varsa belirtir | kompakt blok |
-| `save(type, data, id?)` | Oluştur ya da güncelle (kişi, firma, kaynak, fırsat alanları, proje alanları, görev, ödeme planı, ayar, **yorum**). Aşama değişikliği burada yapılmaz. Yorum: yeni konu `{target_type, target_id, body}`, cevap `{reply_to, body}`, kapatma `id + {resolved:true}` | `ok kişi #12` |
+| `today()` | Bugün ekranının özeti: cevapsız yorum, cevap bekleyen kişiler, takipler, soğuyanlar, taslaklar, görevler, ödemeler, haftalık sayılar | kısa bölümler, her biri en fazla 10 satır |
+| `find(type, q?, filter?, limit?)` | Kişi, firma, fırsat, proje, görev, taslak, ödeme, kaynak, temas, yorum, sektör, not, ayar listeler. `filter` örn. `{stage:"teklif"}`, `{tag:"ajans"}`, `{sector:"Sağlık"}`, `{awaiting:true}`, `{cooling:true}`, `{channel:"linkedin"}`, `{overdue:true}`, `{unanswered:true}` (yorum) | satır başına bir kayıt |
+| `get(type, id, with?)` | Tek kaydın tamamı; `with: ["touches","tasks","payments","comments","notes","channels"]` ile ilgili kayıtlar. Kişide son temas, cevap bekleme ve referans değeri satırı her zaman gelir. `type: "comment"` tüm konuyu verir | kompakt blok |
+| `save(type, data, id?)` | Oluştur ya da güncelle (kişi, firma, kaynak, sektör, not, fırsat alanları, proje alanları, görev, ödeme planı, ayar, **yorum**, temasın `expects_reply`/özet alanları). Aşama değişikliği burada yapılmaz. Kişi: `sector: "Sağlık > Diş hekimi"`. Not: `{person, body}`. Yorum: yeni konu `{target_type, target_id, body}`, cevap `{reply_to, body}`, kapatma `id + {resolved:true}` | `ok kişi #12` |
 | `move(type, id, stage, reason?)` | Fırsat ya da proje aşaması değiştirir, kuralları çalıştırır | yan etkiler |
 | `touch(person, channel, direction, summary, opp?, project?, at?)` | Temas kaydı | `ok temas #40 · fırsat #7 → cevap` |
-| `draft(person, channel, body, opp?, project?)` | Onaya taslak bırakır | `ok taslak #9 onay bekliyor` |
+| `draft(person, channel, body, reason?, opp?, project?)` | Onaya taslak bırakır; `reason` neden hazırlandığını söyler | `ok taslak #9 onay bekliyor` |
 | `pay(payment_id, amount, date?)` | Ödeme girer | `ok ödeme #5 · 15.000/15.000 ödendi` |
 | `timeline(type, id, limit?)` | Kişi/proje/fırsat olayları | `09.10 Claude · Taslak hazırlandı` |
-| `report(month?)` | Kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
+| `report(month?)` | Haftalık temas sayıları + referans değeri (ilk 5) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
 | `delete(type, id)` | Silme (aynı kurallarla, olay yazar) | `ok` |
+
+Paket 1 araç sayısını artırmadı (11): sektör ve not `save`/`find` ile, network listeleri `today` ve `find("person", {awaiting|cooling})` ile gelir.
+
+Paket 2 de araç sayısını artırmadı (11):
+
+- Yeni türler `post`, `template`, `idea`, `interest` (fikir ↔ kişi ilgisi) `find`/`get`/`save`/`delete` ile. Filtreler: `post {refresh_due, platform}`, `template {channel, sector, kind}`, `idea {stage, sector}`, `interest {idea_id, person_id}`.
+- `save("post", {refreshed:true}, id)` = güncelledim. Kişinin kaynağı: `save("person", {post: "başlık"})`. Fikir: `save("idea", {title, problem, sectors:["Sağlık > Diş hekimi"]})`, ilgi: `save("interest", {idea, person, interest:"ilgilendi"})`. `move("idea", id, "demo")`.
+- `touch(..., idea)` fikri anlatılan teması kaydeder; `draft(person, channel, template?, body?)` şablonla taslak (body boşsa şablon kişiye uygulanır).
+- `today()` önce zamanı gelen takip taslaklarını hazırlar (kural 15), çıktıda "Otomatik takip taslağı hazırlandı", "Takip zamanı", "Güncellenecek paylaşım" bölümleri ve haftalık hedef görünür. Claude otomatik taslağı kişiye göre `save("draft", {body}, id)` ile düzeltebilir.
+- `report()` pazarlama satırları ekler: paylaşım getirisi, fikir ilgisi, şablon dönüşü, kanal dönüşü (30 gün, kişi bazında), takip zamanı gelen sayısı.
 
 **Yorumlar için ayrı araç yok**: `find("comment", filter {unanswered:true})` Claude'un cevaplaması gereken konuları verir (aynı liste `today()` çıktısının en üstünde "Cevapsız yorum" olarak gelir), `get("comment", id)` konuyu tam okutur, `save("comment", ...)` cevap yazar. Böylece araç sayısı 11'de kalır.
 
@@ -304,6 +434,18 @@ Hepsi `core` paketinde, bellek içi SQLite ile, Vitest. Gerisi elle test edilir.
 8. **Peşinat bloğu**: peşinat ödenmeden proje `pesinat`tan ileri geçemez, ödenince geçer.
 9. **Yorum konuları**: Özgür'ün yorumu cevapsız listesine girer, Claude cevap yazınca ya da konu kapanınca düşer; yorumu sadece yazarı düzenler.
 
+Paket 1 (network çekirdek kuralları):
+
+10. **Sektör iki seviye**: yol ile açılan sektör iki seviye olur, üçüncü seviye ve döngü reddedilir; ana sektör filtresi alt sektördeki kişileri de getirir.
+11. **Cevap bekleyen ve soğuyan**: fırsatsız giden mesaj kişiyi cevap bekleyenlere sokar (kanal ve gün doğru), gelen temas düşürür; eski temaslı bağlantı soğuyanlarda görünür, takip tarihi ya da yeni temas düşürür.
+12. **Referans değeri**: tanıttığı kişilerin (alt ağaç dahil) fırsatları sayılır; kazanılan tutar ve açık tutar doğru.
+
+Paket 2 (pazarlama çekirdek kuralları):
+
+13. **Takip dizisi**: ayar süreleri uygulanır; 3. gün 1. takip taslağı (Claude adına, nedenli, şablon yoksa varsayılan metin), bekleyen taslak varken ikinci kez üretilmez, gönderilince 7. gün 2. takip (uygun `takip` şablonuyla), reddedilen adım tekrar üretilmez, gelen temas diziyi durdurur, boş ayar kapatır.
+14. **Paylaşım**: yenileme zamanı gelince Bugün'de görünür, "güncelledim" düşürür ve aralık sonra tekrar çıkar; paylaşımdan gelen kişinin fırsat ve kazanılan tutarı paylaşıma sayılır; paylaşım silinince kişi kalır.
+15. **Fikir ve şablon**: fikir temasla anlatıldı olur, ilgi sayısı ve oranı doğru, ana sektör filtresi alt sektörleri kapsar, aşama olayı yazılır; şablon önerisi kanal ve sektör önceliğine uyar, şablonla açılan taslağın metni kişiye uygulanır.
+
 **Opsiyonel (gerekirse):**
 
 9. Bugün sorgusu: dünkü açık görev gecikmiş olarak gelir, tamamlanan gelmez.
@@ -323,6 +465,17 @@ Hepsi `core` paketinde, bellek içi SQLite ile, Vitest. Gerisi elle test edilir.
 | 6 | **Peşinat kuralı** | Blok: peşinat tam ödenmeden proje ilerlemez |
 | 7 | **Telefondan erişim** | Sunucu yerel ağda (0.0.0.0) açılır, tek şifreli basit giriş (şifre `.env`'de, imzalı çerez, 30 gün) |
 | 8 | **Buluttaki Claude erişimi** | Şimdilik yok; MCP'yi Özgür'ün bilgisayarındaki Claude Desktop/Claude Code kullanır |
+| 9 | **Ürün yönü** (Paket 1) | Network + pazarlama önde; huni ve projeler yan özellik, menüde geride |
+| 10 | **Notlar** | Yorumdan ayrı `notes` tablosu: kişi hakkında tarihli bilgi; yorumlar Özgür–Claude yazışması olarak kalır |
+| 11 | **Sektör** | Ayrı `sectors` tablosu, iki seviye; etiketler (aday, müşteri…) ilişki türü olarak kalır |
+| 12 | **Cevap bekleme** | Hesaplanır, saklanmaz; sadece temasta `expects_reply` bayrağı tutulur (teşekkür mesajı gibi cevap beklemeyen mesaj kapatılabilir) |
+| 13 | **Soğuma eşiği** | 30 gün, cevap gecikmesi 3 gün; ikisi de Ayarlar'dan değişir |
+| 15 | **Takip dizisi** (Paket 2) | Ayrı "dizi" tablosu yok; cevap bekleyen verisinden hesaplanır, taslakta `followup_step`. Süreler tek ayar (`followup_days`, varsayılan 3 ve 7 gün), her kanalda aynı. Sayım ilk cevapsız mesajdan |
+| 16 | **Otomatik takip taslağının yazarı** | `claude`: ürün tanımı "Claude taslağı, Özgür onaylar". Sunucu zamanlayıcısı ve MCP `today()` üretir; girdi kimliği değil, sabit giriş noktası. Onay kuralı değişmedi |
+| 17 | **Şablon yer tutucuları** | `{ad}` `{ad_soyad}` `{firma}` `{sektor}`; bilinmeyen olduğu gibi kalır. Şablon yoksa varsayılan takip metni |
+| 18 | **Fikir ilgisi** | Kişi başına tek satır (`idea_people`), üç seviye; temasla otomatik "anlatıldı" |
+| 19 | **Ek pazarlama özellikleri** | Haftalık giden mesaj hedefi, şablon dönüş oranı, kanal dönüş oranı (30 gün, kişi bazında), paylaşım getirisi sıralaması, fikre ve paylaşıma yorum (Claude ile konuşma) |
+| 14 | **Sıkıştırma** | Web derlemesi `.br` ve `.gz` kopyalarını üretir; sunucu tarayıcı destekliyorsa hazır sıkıştırılmış dosyayı sunar (ek paket yok, çalışırken CPU harcamaz). API yanıtları küçük olduğu için sıkıştırılmaz |
 
 ## 8. Klasör yapısı
 
@@ -351,7 +504,7 @@ full-follow/
 
 `createCore(db, actor)`: core'u kimin adına çalıştığını bilerek kurar. NestJS `actor="ozgur"`, MCP `actor="claude"` ile çağırır.
 
-Gerçekleşen yapı (`packages/core/src` altında): `constants.ts`, `dates.ts`, `context.ts` (hata sınıfı, olay yazımı, ham SQL yardımcıları), `db/` (şema, client, `migrations/`), `schemas/index.ts` (Zod), `services/` (people, companies, opportunities, projects, payments, touches, drafts, tasks, comments, settings, queries, reports, today, records, shared), `index.ts` (`createCore`). Tablolar: 13 (companies, people, person_tags, sources, opportunities, touches, drafts, projects, payments, tasks, comments, events, settings).
+Gerçekleşen yapı (`packages/core/src` altında): `constants.ts`, `dates.ts`, `context.ts` (hata sınıfı, olay yazımı, ham SQL yardımcıları), `db/` (şema, client, `migrations/`), `schemas/index.ts` (Zod), `services/` (people, companies, opportunities, projects, payments, touches, drafts, tasks, comments, settings, queries, reports, today, records, shared), `index.ts` (`createCore`). Tablolar: 15 (companies, people, person_tags, sources, opportunities, touches, drafts, projects, payments, tasks, comments, events, settings + Paket 1: sectors, notes). Paket 1 servisleri: `services/network.ts` (cevap bekleyen, soğuyan, kişi kartı, haftalık sayılar, referans değeri), `services/sectors.ts`, `services/notes.ts`. Migration'lar: `0000` ilk şema, `0001_burly_bucky` (taslak `reason`, ön yüz thread'i), `0002_paket1_network` (sectors, notes, people.instagram/linkedin/sector_id, touches.expects_reply; mevcut giden mesajlar cevap bekliyor sayılır). Haftalık sayılar (`today.week`), taslak nedeni, yorumların mesajlarla tek istekte gelmesi, gzip/br ve günlük yedek ön yüz thread'inde yapıldı; Paket 1 bunları genişletti (kanal kırılımı, yeni kişi).
 
 ### Uygulama notları (arka uç)
 
@@ -375,3 +528,123 @@ Gerçekleşen yapı (`packages/core/src` altında): `constants.ts`, `dates.ts`, 
 4. Artboard'da tasarım sistemi ve ekranlar (paralel ya da önce). 
 5. Web ekranları: Bugün, Huni, Proje panosu, Zaman çizelgesi, Rapor, kayıt formları. (~60 dk)
 6. Elle uçtan uca deneme: kişi → fırsat → taslak → temas → kazanıldı → ödeme → rapor.
+7. Paket 1 network paneli: sektör, not, cevap bekleme, soğuma, kişi kartı, haftalık sayılar, referans değeri, menü sırası, API eksikleri. ✅ yapıldı
+8. Paket 2 pazarlama: paylaşımlar, takip dizisi, şablonlar, fikirler, haftalık hedef, pazarlama raporu (§11). ✅ yapıldı (Linux'ta derleme + 15 test; Windows doğrulaması ayrı)
+
+---
+
+## 10. Paket 1 uç noktaları ve Paket 2 hazırlığı
+
+Yeni REST uçları (Paket 1):
+
+| Uç | Ne verir |
+|---|---|
+| `GET /api/people/:id/card` | Kişi kartı tek istekte: kişi, sektör yolu, kanal özeti, temaslar (son 200), notlar, yorum konuları mesajlarıyla, referans eden, tanıttıkları, referans değeri, fırsat/proje/bekleyen taslak, cevap bekleme durumu |
+| `GET /api/people?awaiting=true` / `?cooling=true` / `?sector=3` / `?channel=linkedin` | Network filtreleri; her satırda `last_touch_at`, `last_channel`, `awaiting` |
+| `GET /api/network` | Bugün'ün network bölümleri: cevap bekleyenler, soğuyanlar |
+| `GET /api/stats/week` | Bu hafta ve geçen hafta: giden, gelen (dönüş), dönüş oranı, görüşme, yeni kişi, açık/sessiz teklif, kanal kırılımı |
+| `GET /api/report/referrals` | Referans değeri listesi |
+| `GET/POST/PATCH/DELETE /api/sectors` | Sektör listesi (ağaç için `parent_id`, `people_count`) |
+| `GET/POST/DELETE /api/notes` (`?person_id=`) | Notlar |
+| `PATCH /api/touches/:id` | Temasın özet, sonuç, kanal, tarih ve `expects_reply` alanları |
+| `GET /api/comments?messages=true` | Konular mesajlarıyla tek istekte |
+
+Paket 2 bu şemaya ekledi, mevcut alanları değiştirmedi (§11).
+
+---
+
+## 11. Paket 2: pazarlama (2026-10-09)
+
+Migration `0003_paket2_marketing`: tablolar `posts`, `templates`, `ideas`, `idea_sectors`, `idea_people`; sütunlar `people.post_id`, `touches.idea_id`, `drafts.template_id`, `drafts.followup_step`. Var olan veriye dokunmaz.
+
+Core servisleri: `services/posts.ts` (yenileme, getiri), `services/templates.ts` (yer tutucu, öneri, başarı), `services/ideas.ts` (fikir, sektör, ilgi), `services/followups.ts` (takip dizisi: zamanı gelenler, taslak üretimi), `services/marketing.ts` (pazarlama özeti, kanal dönüşü). `createCore` yeni alanlar: `posts`, `templates`, `ideas`, `followups.due()/generate()`, `marketing()`. Yorum hedeflerine `post` ve `idea` eklendi.
+
+REST uçları:
+
+| Uç | Ne verir |
+|---|---|
+| `GET/POST /api/posts`, `PATCH/DELETE /api/posts/:id`, `POST /api/posts/:id/refresh` | Paylaşımlar (`?platform=`, `?refresh_due=true`); her satırda `people_count`, `opp_count`, `won`, `won_value`, `next_refresh_at`, `refresh_due`. `GET /api/posts/:id?with=people` |
+| `GET/POST /api/templates`, `PATCH/DELETE /api/templates/:id` | Şablonlar (`?kind=&channel=&sector=`); `used`, `sent`, `replied`, `reply_rate` |
+| `GET /api/templates/suggest?person_id=&channel=&kind=` | Kişi ve kanala uyan şablonlar, en uygun önce |
+| `GET /api/templates/:id/render?person_id=` | Şablonun kişiye uygulanmış metni |
+| `GET/POST /api/ideas`, `PATCH/DELETE /api/ideas/:id` | Fikirler (`?stage=&sector=`); `told`, `interested`, `interest_rate`, `sectors`, `touch_count`, `post_count`. Girdi: `sector_ids` ya da `sectors: ["Ana > Alt"]` |
+| `GET /api/ideas/people?idea_id=&person_id=` · `POST /api/ideas/:id/people` · `PATCH/DELETE /api/ideas/people/:linkId` | Fikir ↔ kişi ilgisi |
+| `GET /api/followups` · `POST /api/followups/run` | Takip zamanı gelenler · şimdi hazırla (zamanlayıcının işini hemen yapar) |
+| `GET /api/report/marketing` | Paylaşım getirisi, güncellenecekler, fikir ilgisi, şablon dönüşü, kanal dönüşü (30 gün), takip zamanı gelenler |
+| `GET /api/today` | ek bölümler: `posts_due`, `followups`; `network.settings` içinde `followup_days`, `weekly_target` |
+| `POST /api/drafts` | `template_id` ile (metin boşsa şablondan doldurulur) |
+| `PUT /api/settings` | `followup_days` ("3,7" ya da dizi), `weekly_target` |
+
+Web: sidebar "Pazarlama" bölümü (Paylaşımlar `/paylasimlar`, Fikirler `/fikirler`, Şablonlar `/sablonlar`), Bugün'de "Takip zamanı" ve "Güncellenecek paylaşımlar" kartları ve haftalık hedef, Taslaklar'da otomatik takip çipi ve "Taslak yaz" formu (şablon önerili), kişi kartında kaynak paylaşım ve fikirler, kişi formunda kaynak paylaşım, temas formunda fikir, Ayarlar'da takip günleri ve haftalık hedef.
+
+## 12. Paket 3: firma, etiket, mükerrer kontrolü, çöp kutusu (2026-10-10)
+
+Özgür'ün onayladığı 12 madde. CSV içe aktarma ekranı yok: toplu listeler Claude'a verilir, Claude MCP'den tek çağrıda ekler.
+
+### 12.1 Veri modeli (migration 0004 + 0005)
+
+- **companies** artık tam kayıt: `email`, `phone`, `instagram`, `linkedin`, `source_id`, `contact_status`, `notes`. Kişiler `company_id` ile firmaya bağlanır.
+- **contact_status** (kişi ve firma): `yazilmadi → yazildi → cevap_geldi → gorusuldu`, ayrıca `olumsuz`. Temas kaydedilince core ileri taşır (giden mesaj: yazıldı, gelen: cevap geldi, arama/görüşme: görüşüldü), geri götürmez. `olumsuz` sadece elle verilir ve temasla değişmez. Kişiye yazılan temas kişinin firmasını da ilerletir. Migration mevcut temaslardan durumu doldurur.
+- **tags** tablosu (ad, değişmeyen `slug`, renk, `deleted_at`). Varsayılanlar: Aday, Müşteri, Ajans, İş ortağı, Network, R10, Sıcak, Fuar. `person_tags` ve `company_tags` etiketi id ile tutar. Soğuma kuralı ve "kazanınca müşteri" etiketi `slug` ile çalışır; ad değişse de bozulmaz.
+- **Çoklu sektör**: `person_sectors`, `company_sectors` (iki seviye kuralı aynı). `people.sector_id` kalktı, değeri `person_sectors`'a taşındı.
+- **sources** = "nereden buldum" listesi (fırsatın kaynağıyla aynı tablo). Migration yoksa LinkedIn, Instagram, R10, Referans, Web sitesi, Fuar, Diğer ekler. Kişi ve firmada `source_id`.
+- **Kategori soft delete**: `tags`, `sectors`, `sources` için `deleted_at`. Silinen kategori onu taşıyan kayıtlarda kalır (elle çıkarılana kadar), yeni kayda ya da yeni bağa seçilemez. Ana sektör silinince alt sektörleri de gizlenir; geri yüklenince birlikte döner.
+- **touches / drafts**: muhatap üçünden biri: `person_id`, `company_id` (info@ gibi firmaya doğrudan) ya da sadece `contact` (kayıtsız adres/hesap). Adres zaten bir kişinin ya da firmanın e-postası/hesabıysa temas ona bağlanır. Sadece adresli temas, o adresle kişi ya da firma açılınca otomatik ona taşınır (`contact_key`).
+- **opportunities**: `source_url` (ilanın ya da konunun linki) ve `source_date` (ilan tarihi).
+- **trash** (çöp kutusu): silinen kayıt ve alt kayıtları (temaslar, notlar, taslaklar, görevler, yorumlar, bağlar) JSON olarak; boşaltılan bağlar (ör. tanıttığı kişilerin `referred_by_id`'si) de saklanır. Geri yükleme aynı id'lerle yerine koyar. `keys`: mükerrer kontrolü için anahtarlar.
+- Mükerrer anahtar sütunları: kişide `email_key`, `instagram_key`, `linkedin_key`; firmada ayrıca `name_key`, `domain_key`. İndeksli; eski kayıtlarınki açılışta (`backfillKeys`) doldurulur.
+- `openDb` migration'ları foreign key kapalıyken uygular, sonra `foreign_key_check` ile doğrular (tablo yeniden kurulumu için SQLite'ın önerdiği sıra).
+
+### 12.2 Çekirdek kuralları
+
+- **Mükerrer kontrolü core'da** (web ve MCP aynı kuralı alır): e-posta, web sitesinin alan adı, firma adı, LinkedIn ve Instagram tektir. Karşılaştırma büyük/küçük harf, boşluk, Türkçe karakter, `https://`, `www.`, sondaki `/` ve adres biçimi farkını yok sayar; firma adında noktalama ve sondaki şirket ekleri (Ltd, Şti, A.Ş. vb.) atılır. E-posta ve hesaplar kişi ile firma arasında da tektir. Ad soyad tekrar edebilir. Güncellemede sadece değişen anahtar kontrol edilir. Çakışma `FFError("duplicate")` ve `duplicate: {type, id, label, field, in_trash}` döner; HTTP 409.
+- Çöp kutusundaki kaydın anahtarı da mükerrer sayılır (`in_trash: true`): yenisi açılmaz, geri yükleme önerilir. Geri yüklerken anahtar başka bir kayıtta kullanılıyorsa kayıt geri gelmez.
+- **Silme her yerde çöp kutusuna** (kişi, firma, fırsat, proje, görev, temas, not, taslak, ödeme, yorum, paylaşım, şablon, fikir, fikir ilgisi). Eski kurallar aynı: fırsatı ya da projesi olan kişi, projesi olan fırsat, ödeme alınmış proje/ödeme, gönderilmiş taslak silinmez. Firma silinince çalışanları kalır, firma bağı boşalır (geri yüklenince döner).
+- Şablon yer tutucuları firmada: `{ad}` ve `{firma}` firma adı, `{sektor}` firmanın ilk sektörü; kişinin sektörü yoksa firmasınınki kullanılır. Şablon önerisi muhatabın sektörlerinden en iyi eşleşeni seçer.
+- **Takip dizisi** muhatap bazında: kişi, firma ya da sadece adres. Firmanın herhangi bir çalışanından gelen cevap firma dizisini de durdurur.
+- **Toplu kayıt** `saveMany(type, items)`: tek transaction, her kayıt kendi savepoint'inde. Sonuç: `created`, `skipped` (mükerrer, hangi kayıtla çakıştığı), `failed`. Kişide `company: "ABC"` bulunamazsa firma açılır.
+
+### 12.3 Uç noktalar
+
+| Uç nokta | Ne yapar |
+|---|---|
+| `GET /api/companies?tag=&sector=&source=&status=&q=` | Firma listesi: kişi sayısı, son temas, temas sayısı, açık fırsat, etiket/sektör/kaynak |
+| `GET /api/companies/:id/card` | Firma kartı: çalışanlar, firmaya ve çalışanlarına temaslar, kanallar, fırsatlar, bekleyen taslaklar, yorumlar |
+| `GET /api/people?tag=&sector=&source=&status=` | Aynı filtreler kişide (etiket/sektör/kaynak id, slug ya da ad; virgülle çoklu) |
+| `GET/POST /api/tags`, `PATCH/DELETE /api/tags/:id` | Etiketler (`?all=true` silinenler dahil) |
+| `GET /api/sources?all=true`, `GET /api/sectors?all=true` | Silinenler dahil (kayıtlarda görünmeye devam ettikleri için) |
+| `GET /api/trash` · `POST /api/trash/restore {type, id}` | Çöp kutusu (kayıtlar ve gizlenen kategoriler) · geri yükleme |
+| `GET /api/touches?loose=true` · `?company_id=` | Sadece adresli temaslar · firmaya doğrudan temaslar |
+| `POST /api/touches`, `POST /api/drafts` | `person_id` ya da `company_id` ya da `contact` |
+| `GET /api/templates/suggest?company_id=` · `/:id/render?company_id=` | Firma için şablon önerisi ve önizleme |
+| `GET /api/stats/activity?period=day\|week\|month` | Dashboard: son 14 gün / 8 hafta / 6 ay dilimleri (giden, dönüş, görüşme, yeni kişi/firma), son dilimin kanal kırılımı, kişi ve firma temas durumu dağılımı |
+| `DELETE` uç noktaları | `{effects, trash: {type, id}}` döner (Geri al için) |
+
+### 12.4 MCP (yeni araç yok, mevcutlar genişledi)
+
+- `find`: `company`, `tag`, `trash` türleri; kişi ve firmada `{tag, sector, source, status}` filtreleri; temasta `{loose:true}`, `{company_id}`.
+- `get company with: people, touches, opportunities, drafts, comments, channels`.
+- `save`: `data` dizi ise toplu ekler; çıktı eklenen sayısı, atlanan mükerrerler (`[sıra] ad → kişi #4 Ali Veli (e-posta, çöp kutusunda)`) ve hatalar. Kişi/firma: `tags`, `add_tags`, `remove_tags` (ad ya da id), `sectors`, `source`, `contact_status`. `tag: {name, color}`. Fırsat: `source_url`, `source_date`.
+- `touch` ve `draft`: `person` ya da `company` ya da `contact`.
+- `delete`: çöp kutusuna gönderir; `restore: true` geri yükler (id ya da çöpteki ad).
+
+### 12.5 Web
+
+- Sidebar: "Bugün" → **Dashboard** (`/`), yeni **Firmalar** (`/firmalar/:id`).
+- Firmalar sayfası: filtreler (durum, etiket, sektör, kaynak, arama), firma kartı (çalışanlar, temaslar, fırsatlar, yorumlar, "Firmaya temas", "Taslak yaz", "Kişi ekle"), "Sadece adresle yazılanlar" listesinde tek tıkla **Kişi yap / Firma yap**.
+- Kişiler: aynı filtreler; kart başlığında durum, etiketler, sektörler, kaynak.
+- Formlar (`forms/ContactForms.tsx`): kişi ve firma formunda etiket seçici (yeni etiket yazılabilir), çoklu sektör, nereden buldum, temas durumu. Temas formunda "Kime: Kişi / Firma / Sadece adres". Taslak formu firmaya yazabilir.
+- Her kart türünde **Düzenle / Sil** (kişi, firma, fırsat, görev, temas, not, paylaşım, şablon, fikir). Silme onay sormaz; bildirimde **Geri al** çıkar. Mükerrer hatasında bildirimde **Kayda git** ya da (çöpteyse) **Geri yükle**.
+- Fırsat formunda **Kaynak linki** ve **İlan tarihi**; huni kartında ve fırsat detayında tıklanır link olarak görünür. Fırsat düzenleme formu: başlık, tutar, kaynak, link, ilan tarihi, takip tarihi.
+- **Satış hunisi telefonda**: yatay kaydırma yok, aşamalar alt alta bölümler halinde; kartın aşaması kart üzerindeki seçiciyle değişir (kaybedildi için neden sorulur). Masaüstünde sürükle bırak kanban aynı kalır.
+- Ayarlar: **Etiketler** (ekle, yerinde ad değiştir, renk, sil), **Sektörler**, **Kaynaklar**, **Çöp kutusu** (geri yükle).
+- Dashboard: **Günlük / Haftalık / Aylık** seçici (tercih tarayıcıda hatırlanır), özet kutuları (önceki dönemle fark, haftalık hedef), giden/dönüş çubuk grafiği ve kanal kırılımı, firma ve kişi temas durumu çubukları. Grafikler kütüphanesiz, sadece tasarım token'larıyla.
+
+### 12.6 Testler (`packages/core/test/paket3.test.ts`, 16-19)
+
+16. Mükerrer: e-posta, alan adı, firma adı, LinkedIn, Instagram normalize edilip tek; ad soyad tekrar edebilir; toplu eklemede mükerrerler atlanır ve raporlanır; çöpteki kayıt mükerrer sayılır.
+17. Silme çöp kutusuna gider, geri yükleme alt kayıtları ve bağlarıyla aynı id'lerle getirir.
+18. Etiket: eklenir, adı değişir (slug kalır), silinen kayıtta kalır ama yenisine seçilemez, geri yüklenince seçilir.
+19. Firma: doğrudan ve çalışan temasları durumu ilerletir, `olumsuz` değişmez, adresli temas sonradan açılan kayda bağlanır, takip dizisi ve şablon firmada çalışır, filtreler çalışır, silinen kaynak seçilemez.
+
+Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
