@@ -135,7 +135,6 @@
   --spacing-sidebar-width: 248px;
   --spacing-sidebar-collapsed: 64px;
   --spacing-drawer-width: 280px;
-  --spacing-content-max: 1240px;
   --spacing-content-max-narrow: 920px;
   --spacing-detail-panel: 360px;
   --spacing-aside-panel: 320px;
@@ -191,7 +190,7 @@
   --spacing-fab-menu-offset: 96px;
   --spacing-fab-menu-offset-mobile: 84px;
   --spacing-kanban-column-mobile: 84vw;
-  --container-content: 1240px;
+  --container-content: undefined;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
   --radius-xs: 5px;

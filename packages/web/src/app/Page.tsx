@@ -17,7 +17,7 @@ export function Page({
   width?: "wide" | "default" | "narrow";
   className?: string;
 }) {
-  const max = width === "wide" ? "" : width === "narrow" ? "max-w-content-narrow" : "max-w-content";
+  const max = width === "narrow" ? "max-w-content-narrow" : "";
   return (
     <main className="flex min-w-0 flex-1 flex-col">
       <header className="flex flex-wrap items-center gap-5 px-page-padding-x-mobile pb-1 pt-6 desk:px-page-padding-x desk:pb-3 desk:pt-9">
