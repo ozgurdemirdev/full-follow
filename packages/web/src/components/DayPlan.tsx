@@ -40,9 +40,9 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
           {sub ? <span className="truncate text-sm text-text-muted">{sub}</span> : null}
         </span>
         <span className={`font-mono text-base ${g.complete ? "text-status-text-success" : "text-text-secondary"}`}>{g.done} / {g.target}</span>
-        <button type="button" className="btn btn-ghost btn-sm" aria-label={`${g.title} -1`} disabled={g.manual < 1} onClick={() => void step(-1)}>−1</button>
+        <button type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} -1`} disabled={g.manual < 1} onClick={() => void step(-1)}>−1</button>
         {STEPS.map((n) => (
-          <button key={n} type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} +${n}`} onClick={() => void step(n)}>+{n}</button>
+          <button key={n} type="button" className="btn btn-pri btn-sm" aria-label={`${g.title} +${n}`} onClick={() => void step(n)}>+{n}</button>
         ))}
         <More open={more} onToggle={() => setMore(!more)} label={g.title} />
       </div>
