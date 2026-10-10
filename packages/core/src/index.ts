@@ -26,6 +26,7 @@ import { touchesService } from "./services/touches";
 import { postsService } from "./services/posts";
 import { templatesService } from "./services/templates";
 import { ideasService } from "./services/ideas";
+import { ownProjectsService } from "./services/ownProjects";
 import { followupsDue, generateFollowups } from "./services/followups";
 import { marketingReport } from "./services/marketing";
 import { isCategory, restoreFromTrash, trashList, TYPE_LABEL } from "./services/trash";
@@ -86,6 +87,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const posts = postsService(ctx);
   const templates = templatesService(ctx);
   const ideas = ideasService(ctx);
+  const ownProjects = ownProjectsService(ctx);
 
   /**
    * Kişinin firması adla verilip (`company: "ABC Ltd"`) bulunamazsa firma açılır: toplu listede firmalar ayrıca eklenmesin.
@@ -128,6 +130,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "post": return nid ? posts.update(nid, d) : posts.create(d);
       case "template": return nid ? templates.update(nid, d) : templates.create(d);
       case "idea": return nid ? ideas.update(nid, d) : ideas.create(d);
+      case "own_project":
+        return d.from_idea !== undefined ? ownProjects.fromIdea(resolveRef(ctx, "idea", d.from_idea)) : nid ? ownProjects.update(nid, d) : ownProjects.create(d);
       case "interest": return nid ? ideas.updateInterest(nid, d) : ideas.saveInterest(d);
       case "trash": throw new FFError("validation", "çöp kutusuna kayıt yazılmaz; geri yüklemek için restore");
     }
@@ -161,7 +165,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     if (t === "opportunity") return opportunities.move(nid, { stage, reason, position });
     if (t === "project") return projects.move(nid, { stage });
     if (t === "idea") return ideas.move(nid, stage);
-    throw new FFError("validation", "move sadece opportunity, project ve idea için");
+    if (t === "own_project") return ownProjects.move(nid, stage);
+    throw new FFError("validation", "move sadece opportunity, project, idea ve own_project için");
   }
 
   /** Silme: kayıt çöp kutusuna gider (restore ile geri gelir); etiket, sektör ve kaynak yerinde gizlenir */
@@ -188,6 +193,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "post": return posts.remove(nid);
       case "template": return templates.remove(nid);
       case "idea": return ideas.remove(nid);
+      case "own_project": return ownProjects.remove(nid);
       case "interest": return ideas.removeInterest(nid);
       case "setting": throw new FFError("validation", "ayar silinmez");
       case "trash": throw new FFError("validation", "çöp kutusundan kalıcı silme yok");
@@ -233,7 +239,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     actor,
     // yazma servisleri (REST controller'ları ve testler kullanır)
     companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
-    posts, templates, ideas,
+    posts, templates, ideas, ownProjects,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },
     marketing: () => marketingReport(ctx),
@@ -246,7 +252,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     companyCard: (id: string | number) => queries.companyCard(resolveId(ctx, "company", id)),
     // genel giriş (MCP araçları)
     find, get, save, saveMany, move, remove, restore, timeline,
-    resolveRef: (type: "person" | "company" | "opportunity" | "project" | "source" | "sector" | "post" | "idea" | "template" | "tag", ref: string | number) => resolveRef(ctx, type, ref),
+    resolveRef: (type: "person" | "company" | "opportunity" | "project" | "source" | "sector" | "post" | "idea" | "own_project" | "template" | "tag", ref: string | number) => resolveRef(ctx, type, ref),
   };
 }
 

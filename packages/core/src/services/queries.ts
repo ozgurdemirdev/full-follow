@@ -1,4 +1,4 @@
-import { OPP_STAGES, OPEN_OPP_STAGES, type RecordType } from "../constants";
+import { IDEA_PRIORITIES, OPP_STAGES, OPEN_OPP_STAGES, type RecordType } from "../constants";
 import { addDays } from "../dates";
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
 import { bool, companiesList, companyCard as buildCompanyCard, COMPANY_TOUCHES, has, peopleList, tagsList } from "./directory";
@@ -9,7 +9,7 @@ import { channelSummary, networkSettings, referralValues } from "./network";
 import { sectorIds } from "./sectors";
 
 import { trashList } from "./trash";
-import { requireRow } from "./shared";
+import { requireRow, resolveRef } from "./shared";
 import { postStats } from "./posts";
 import { templateStats } from "./templates";
 
@@ -21,6 +21,7 @@ function sectorMatch(ctx: Ctx, sector: string | number): number[] {
 }
 import { ideaPeople, ideaStats } from "./ideas";
 import { goalsService } from "./goals";
+import { ownProjectStats } from "./ownProjects";
 
 type Rows = { rows: any[]; total: number };
 
@@ -216,7 +217,26 @@ export function queriesService(ctx: Ctx) {
       const ids = sectorMatch(ctx, f.sector);
       list = list.filter((i) => i.sectors.some((s: { id: number }) => ids.includes(s.id)));
     }
+    if (f.own_project) {
+      const pid = resolveRef(ctx, "own_project", f.own_project);
+      list = list.filter((i) => i.own_project_id === pid);
+    }
+    if (f.general) list = list.filter((i) => i.own_project_id == null);
     list = list.filter((i) => has(o.q, i.title, i.problem, i.notes));
+    return page(list, o.limit, o.offset);
+  }
+
+  function ownProjects(o: ListOpts): Rows {
+    const f = o.filter ?? {};
+    let list = ownProjectStats(ctx);
+    for (const k of ["status", "sellable"] as const) {
+      if (f[k]) { const want = String(f[k]).split(",").map((x) => x.trim()); list = list.filter((p) => want.includes(p[k])); }
+    }
+    if (f.sector) {
+      const ids = sectorMatch(ctx, f.sector);
+      list = list.filter((p) => p.sectors.some((s: { id: number }) => ids.includes(s.id)));
+    }
+    list = list.filter((p) => has(o.q, p.name, p.description, p.notes));
     return page(list, o.limit, o.offset);
   }
 
@@ -237,7 +257,7 @@ export function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
     task: tasks, draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
+    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
@@ -249,6 +269,7 @@ export function queriesService(ctx: Ctx) {
     const f = o.filter ?? {};
     let list = rows(ctx, "SELECT * FROM links ORDER BY id");
     if (f.opportunity_id) list = list.filter((l) => l.target_type === "opportunity" && l.target_id === Number(f.opportunity_id));
+    if (f.own_project_id) list = list.filter((l) => l.target_type === "own_project" && l.target_id === Number(f.own_project_id));
     if (f.project_id) {
       const oppId = row<{ opportunity_id: number | null }>(ctx, "SELECT opportunity_id FROM projects WHERE id = ?", Number(f.project_id))?.opportunity_id;
       list = list.filter((l) => (l.target_type === "project" && l.target_id === Number(f.project_id)) || (oppId && l.target_type === "opportunity" && l.target_id === oppId))
@@ -278,7 +299,7 @@ export function queriesService(ctx: Ctx) {
   }
 
   // ---------- tek kayıt ----------
-  const COMMENT_TYPES = { person: "person", company: "company", opportunity: "opportunity", project: "project", task: "task", draft: "draft", payment: "payment", post: "post", idea: "idea" } as const;
+  const COMMENT_TYPES = { person: "person", company: "company", opportunity: "opportunity", project: "project", task: "task", draft: "draft", payment: "payment", post: "post", idea: "idea", own_project: "own_project" } as const;
 
   const relatedFor: Record<string, string[]> = {
     person: ["touches", "tasks", "opportunities", "projects", "comments", "referrals", "drafts", "notes", "channels"],
@@ -286,6 +307,7 @@ export function queriesService(ctx: Ctx) {
     opportunity: ["touches", "tasks", "comments", "drafts", "links"],
     project: ["payments", "tasks", "touches", "comments", "drafts", "links"],
     payment: ["comments"], task: ["comments"], draft: ["comments"],
+    own_project: ["ideas", "links", "comments"],
     post: ["people", "comments"], idea: ["people", "touches", "posts", "comments"], template: ["drafts"],
   };
 
@@ -313,6 +335,7 @@ export function queriesService(ctx: Ctx) {
       case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
       case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;
       case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;
+      case "own_project": rowData = own(ownProjectStats(ctx).find((p) => p.id === id)); break;
       case "interest": rowData = own(ideaPeople(ctx).find((p) => p.id === id)); break;
       case "comment": {
         const c = requireRow(ctx, "comments", id);
@@ -343,6 +366,13 @@ export function queriesService(ctx: Ctx) {
             : type === "post" ? cap(people({ filter: { post_id: id }, limit: n }))
             : cap(people({ filter: { company_id: id }, limit: n }));
           break;
+        case "ideas": {
+          const prio = (x: any) => IDEA_PRIORITIES.indexOf(x.priority);
+          related.ideas = ideaStats(ctx).filter((i) => i.own_project_id === id)
+            .sort((a, b) => Number(!!a.done_at) - Number(!!b.done_at) || (a.done_at ? b.done_at.localeCompare(a.done_at) : prio(a) - prio(b) || a.position - b.position || a.id - b.id))
+            .slice(0, n);
+          break;
+        }
         case "posts": related.posts = cap(posts({ filter: { idea_id: id }, limit: n })); break;
         case "referrals": related.referrals = cap(people({ filter: { referred_by_id: id }, limit: n })); break;
         case "links": related.links = cap(linkList({ filter: by, limit: n })); break;

@@ -5,7 +5,7 @@ import type { Q } from "../db/client";
 import { idea_people, idea_sectors, ideas } from "../db/schema";
 import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "../schemas";
 import { sectorInput, setSectorLinks } from "./sectors";
-import { requireRow, truncate } from "./shared";
+import { placeInGroup, renumberGroup, requireRow, truncate } from "./shared";
 import { Bin } from "./trash";
 
 /**
@@ -48,6 +48,7 @@ export function ideaStats(ctx: Ctx) {
       (SELECT COUNT(*) FROM posts p WHERE p.idea_id = i.id) AS post_count,
       (SELECT COUNT(*) FROM people x JOIN posts p ON p.id = x.post_id WHERE p.idea_id = i.id) AS post_people,
       (SELECT title FROM ideas pa WHERE pa.id = i.parent_id) AS parent_title,
+      (SELECT name FROM own_projects o WHERE o.id = i.own_project_id) AS own_project_title,
       (SELECT COUNT(*) FROM ideas c WHERE c.parent_id = i.id) AS child_count
     FROM ideas i ORDER BY i.updated_at DESC, i.id DESC`)
     .map((i) => {
@@ -67,39 +68,103 @@ export function ideaPeople(ctx: Ctx, ideaId?: number, personId?: number) {
     ideaId ?? null, ideaId ?? null, personId ?? null, personId ?? null);
 }
 
+/** Bağlı kişi ve sektör satırları gider; temas ve paylaşımlar kalır, fikir bağı kopar */
+export function trashIdea(tx: Q, ctx: Ctx, id: number) {
+  const cur = requireRow(ctx, "ideas", id);
+  const bin = new Bin(ctx);
+  bin.unlink("touches", "idea_id", id);
+  bin.unlink("posts", "idea_id", id);
+  bin.unlink("ideas", "parent_id", id);
+  bin.take("idea_people", "idea_id = ?", id);
+  bin.take("idea_sectors", "idea_id = ?", id);
+  bin.take("comments", "target_type = 'idea' AND target_id = ?", id);
+  bin.take("ideas", "id = ?", id);
+  bin.commit(tx, "idea", id, cur.title);
+  emit(tx, ctx, { type: "idea.deleted", summary: `Fikir silindi: ${truncate(cur.title, 60)}` });
+  return { effects: [] as string[], trash: { type: "idea", id } };
+}
+
 export function ideasService(ctx: Ctx) {
   /** Two levels only: the parent is a top-level idea, and an idea with children cannot get a parent */
   function checkParent(parentId: number | null | undefined, selfId?: number) {
     if (!parentId) return;
     if (parentId === selfId) throw new FFError("validation", "fikir kendi altına konamaz");
-    const p = requireRow(ctx, "ideas", parentId, "üst proje");
+    const p = requireRow(ctx, "ideas", parentId, "üst fikir");
+    if (p.own_project_id) throw new FFError("validation", "proje fikri üst fikir olamaz");
     if (p.parent_id) throw new FFError("validation", `${p.title} zaten bir alt fikir; alt fikrin altına fikir konmaz`);
-    if (selfId && row(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", "alt fikirleri olan bir proje başka bir projenin altına konamaz");
+    if (selfId && row(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", "alt fikirleri olan bir fikir başka bir fikrin altına konamaz");
   }
+
+  /** Priority group of a project idea (done ideas sit outside the groups) */
+  const GROUP = "own_project_id = ? AND priority = ? AND done_at IS NULL";
 
   function create(input: unknown) {
     return ctx.db.transaction((tx) => {
       const { sector_ids, ...d } = parse(ideaCreate, sectorInput(tx, ctx, input));
+      if (d.own_project_id) {
+        if (d.parent_id) throw new FFError("validation", "proje fikri bir üst fikrin altına konamaz");
+        requireRow(ctx, "own_projects", d.own_project_id, "kendi projesi");
+      } else if (d.priority) {
+        throw new FFError("validation", "öncelik, sıra ve yapıldı sadece proje fikirlerinde");
+      }
       checkParent(d.parent_id);
       const r = tx.insert(ideas).values({ ...d, ...stamp(ctx) }).returning().get();
+      if (r.own_project_id) placeInGroup(tx, ctx, "ideas", GROUP, [r.own_project_id, r.priority], r.id);
       if (sector_ids?.length) setSectorLinks(tx, ctx, "idea", r.id, sector_ids);
       emit(tx, ctx, { type: "idea.created", summary: `Fikir: ${truncate(d.title, 60)}`, data: { idea_id: r.id } });
-      return { row: r, effects: [] as string[] };
+      return { row: requireRow(ctx, "ideas", r.id), effects: [] as string[] };
     });
   }
 
   function update(id: number, input: unknown) {
     return ctx.db.transaction((tx) => {
-      const { sector_ids, ...d } = parse(ideaUpdate, sectorInput(tx, ctx, input));
+      const { sector_ids, done, ...d } = parse(ideaUpdate, sectorInput(tx, ctx, input));
       const cur = requireRow(ctx, "ideas", id);
+      const projectId = d.own_project_id !== undefined ? d.own_project_id : cur.own_project_id;
+      if ((d.priority !== undefined || d.position !== undefined || done !== undefined) && !projectId) {
+        throw new FFError("validation", "öncelik, sıra ve yapıldı sadece proje fikirlerinde");
+      }
+      if (projectId) {
+        if (d.parent_id) throw new FFError("validation", "proje fikri bir üst fikrin altına konamaz");
+        if (row(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", id)) throw new FFError("validation", "alt fikirleri olan fikir projeye taşınamaz; önce alt fikirleri ayır");
+        requireRow(ctx, "own_projects", projectId, "kendi projesi");
+        d.parent_id = null;
+      }
       checkParent(d.parent_id, id);
-      const effects: string[] = [];
-      if (Object.keys(d).length || sector_ids) tx.update(ideas).set({ ...d, updated_at: ctx.clock.now() }).where(eq(ideas.id, id)).run();
+
+      const now = ctx.clock.now();
+      const wasDone = !!cur.done_at;
+      const isDone = done !== undefined ? done : wasDone;
+      const set: Record<string, unknown> = { ...d };
+      if (done !== undefined) set.done_at = done ? now : null;
+      const scopeChanged = d.own_project_id !== undefined && d.own_project_id !== cur.own_project_id;
+      if (scopeChanged && !projectId) { set.done_at = null; set.position = 0; }
+
+      const priority = d.priority ?? cur.priority;
+      const reorder = d.own_project_id !== undefined || d.priority !== undefined || d.position !== undefined || done !== undefined;
+      if (Object.keys(set).length || sector_ids) tx.update(ideas).set({ ...set, updated_at: now }).where(eq(ideas.id, id)).run();
+
+      if (reorder) {
+        if (cur.own_project_id && !wasDone) renumberGroup(tx, ctx, "ideas", GROUP, [cur.own_project_id, cur.priority]);
+        if (projectId && !isDone) {
+          const pos = d.position !== undefined ? d.position : undefined;
+          placeInGroup(tx, ctx, "ideas", GROUP, [projectId, priority], id, pos);
+        }
+      }
       if (sector_ids) setSectorLinks(tx, ctx, "idea", id, sector_ids);
-      if (d.stage && d.stage !== cur.stage) {
+
+      const effects: string[] = [];
+      const title = truncate(d.title ?? cur.title, 50);
+      if (scopeChanged) {
+        const name = projectId ? requireRow(ctx, "own_projects", projectId).name : "Para kazanma fikirleri";
+        emit(tx, ctx, { type: "idea.moved", summary: `Fikir taşındı: ${title} → ${name}`, data: { idea_id: id, from: cur.own_project_id, to: projectId } });
+        effects.push(`fikir → ${name}`);
+      } else if (done !== undefined && done !== wasDone) {
+        emit(tx, ctx, { type: done ? "idea.done" : "idea.undone", summary: done ? `Fikir yapıldı: ${title}` : `Fikir geri açıldı: ${title}`, data: { idea_id: id } });
+      } else if (d.stage && d.stage !== cur.stage) {
         emit(tx, ctx, { type: "idea.stage", summary: `Fikir ${label(cur.stage)} → ${label(d.stage)}: ${truncate(cur.title, 50)}`, data: { idea_id: id, from: cur.stage, to: d.stage } });
         effects.push(`fikir → ${label(d.stage)}`);
-      } else if (Object.keys(d).length || sector_ids) {
+      } else if (Object.keys(set).length || sector_ids) {
         emit(tx, ctx, { type: "idea.updated", summary: `Fikir düzenlendi: ${truncate(d.title ?? cur.title, 60)}`, data: { idea_id: id } });
       }
       return { row: requireRow(ctx, "ideas", id), effects };
@@ -111,22 +176,8 @@ export function ideasService(ctx: Ctx) {
     return update(id, { stage });
   };
 
-  /** Bağlı kişi ve sektör satırları gider; temas ve paylaşımlar kalır, fikir bağı kopar */
   function remove(id: number) {
-    const cur = requireRow(ctx, "ideas", id);
-    return ctx.db.transaction((tx) => {
-      const bin = new Bin(ctx);
-      bin.unlink("touches", "idea_id", id);
-      bin.unlink("posts", "idea_id", id);
-      bin.unlink("ideas", "parent_id", id);
-      bin.take("idea_people", "idea_id = ?", id);
-      bin.take("idea_sectors", "idea_id = ?", id);
-      bin.take("comments", "target_type = 'idea' AND target_id = ?", id);
-      bin.take("ideas", "id = ?", id);
-      bin.commit(tx, "idea", id, cur.title);
-      emit(tx, ctx, { type: "idea.deleted", summary: `Fikir silindi: ${truncate(cur.title, 60)}` });
-      return { effects: [] as string[], trash: { type: "idea", id } };
-    });
+    return ctx.db.transaction((tx) => trashIdea(tx, ctx, id));
   }
 
   // ---- ilgi (fikir ↔ kişi) ----

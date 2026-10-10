@@ -5,10 +5,10 @@ import { linkCreate, linkUpdate } from "../schemas";
 import { link, requireRow, TARGET_TABLE, truncate } from "./shared";
 import { Bin } from "./trash";
 
-/** Labelled links on an opportunity or project; a project also shows the links of the opportunity it came from. */
+/** Labelled links on an opportunity, project or own project; a project also shows the links of the opportunity it came from. */
 export function linksService(ctx: Ctx) {
-  const owner = (r: { target_type: "opportunity" | "project"; target_id: number }) =>
-    link(ctx, r.target_type === "opportunity" ? { opportunity_id: r.target_id } : { project_id: r.target_id });
+  const owner = (r: { target_type: "opportunity" | "project" | "own_project"; target_id: number }) =>
+    link(ctx, r.target_type === "opportunity" ? { opportunity_id: r.target_id } : r.target_type === "project" ? { project_id: r.target_id } : {});
 
   function create(input: unknown) {
     const d = parse(linkCreate, input);

@@ -6,13 +6,13 @@ import type { CommentTarget } from "../constants";
 
 export const TARGET_TABLE: Record<CommentTarget, string> = {
   person: "people", company: "companies", opportunity: "opportunities", project: "projects",
-  task: "tasks", draft: "drafts", payment: "payments", post: "posts", idea: "ideas",
+  task: "tasks", draft: "drafts", payment: "payments", post: "posts", idea: "ideas", own_project: "own_projects",
 };
 
 export const TABLE_LABEL: Record<string, string> = {
   people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
   drafts: "taslak", payments: "ödeme", sources: "kaynak", comments: "yorum", touches: "temas",
-  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", idea_people: "fikir ilgisi", tags: "etiket", links: "link", daily_goals: "hedef",
+  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", own_projects: "kendi projesi", idea_people: "fikir ilgisi", tags: "etiket", links: "link", daily_goals: "hedef",
 };
 
 export function requireRow<T = any>(ctx: Ctx, table: string, id: number, what = TABLE_LABEL[table] ?? table): T {
@@ -52,7 +52,8 @@ export function targetLink(ctx: Ctx, type: CommentTarget, id: number): Required<
     case "project": return link(ctx, { project_id: id });
     case "company":
     case "post":
-    case "idea": return link(ctx, {});
+    case "idea":
+    case "own_project": return link(ctx, {});
     case "payment": {
       const p = row(ctx, "SELECT project_id FROM payments WHERE id = ?", id);
       return link(ctx, { project_id: p?.project_id });
@@ -82,6 +83,7 @@ export function targetLabel(ctx: Ctx, type: CommentTarget, id: number): string {
     }
     case "post": return row(ctx, "SELECT title FROM posts WHERE id = ?", id)?.title ?? `#${id}`;
     case "idea": return row(ctx, "SELECT title FROM ideas WHERE id = ?", id)?.title ?? `#${id}`;
+    case "own_project": return row(ctx, "SELECT name FROM own_projects WHERE id = ?", id)?.name ?? `#${id}`;
   }
 }
 
@@ -101,6 +103,7 @@ const REF_TABLES = {
   sector: { table: "sectors", col: "name", label: "sektör" },
   post: { table: "posts", col: "title", label: "paylaşım" },
   idea: { table: "ideas", col: "title", label: "fikir" },
+  own_project: { table: "own_projects", col: "name", label: "kendi projesi" },
   template: { table: "templates", col: "name", label: "şablon" },
   tag: { table: "tags", col: "name", label: "etiket" },
   goal: { table: "daily_goals", col: "title", label: "hedef" },
@@ -132,7 +135,7 @@ const INPUT_REFS: Record<string, [string, RefType]> = {
   person: ["person_id", "person"], company: ["company_id", "company"], source: ["source_id", "source"],
   opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
   project: ["project_id", "project"], referred_by: ["referred_by_id", "person"],
-  goal: ["goal_id", "goal"], post: ["post_id", "post"], idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], template: ["template_id", "template"],
+  goal: ["goal_id", "goal"], post: ["post_id", "post"], idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
 };
 
 /** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template) *_id'ye çevirir */

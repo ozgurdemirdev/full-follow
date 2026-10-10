@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
+  ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
@@ -232,6 +232,8 @@ export const ideaCreate = z.strictObject({
   notes: optText,
   sector_ids: z.array(id).optional(),
   parent_id: id.nullish(),
+  own_project_id: id.nullish(),
+  priority: z.enum(IDEA_PRIORITIES).optional(),
 });
 export const ideaUpdate = patch({
   title: text,
@@ -240,6 +242,29 @@ export const ideaUpdate = patch({
   notes: optText,
   sector_ids: z.array(id),
   parent_id: id.nullable(),
+  own_project_id: id.nullable(),
+  priority: z.enum(IDEA_PRIORITIES),
+  position: z.number().int().min(0),
+  done: z.boolean(),
+});
+
+export const ownProjectCreate = z.strictObject({
+  name: text,
+  description: optText,
+  status: z.enum(OWN_PROJECT_STATUSES).default("aktif"),
+  sellable: z.enum(SELLABLE).default("belki"),
+  sellable_note: optText,
+  notes: optText,
+  sector_ids: z.array(id).optional(),
+});
+export const ownProjectUpdate = patch({
+  name: text,
+  description: optText,
+  status: z.enum(OWN_PROJECT_STATUSES),
+  sellable: z.enum(SELLABLE),
+  sellable_note: optText,
+  notes: optText,
+  sector_ids: z.array(id),
 });
 
 /** Kişiyi fikre bağla ya da ilgisini güncelle (fikir + kişi başına tek satır) */

@@ -188,7 +188,7 @@ describe("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
     expect(ozgur.find("link", { filter: { opportunity_id: o.id } }).rows.map((l: any) => l.id)).toEqual([deck.id]);
     expect(p.id).toBeGreaterThan(0);
   });
-  it("fikir projeleri: iki seviye, alt fikir projesinin altında listelenir", () => {
+  it("üst fikir: iki seviye, alt fikir üst fikrin altında listelenir", () => {
     const ff = claude.save("idea", { title: "Full Follow", stage: "urun" }).row;
     const fin = claude.save("idea", { title: "Finans modülü", parent: "Full Follow" }).row;
     expect(fin.parent_id).toBe(ff.id);
