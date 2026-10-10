@@ -3,7 +3,7 @@ import { assertOzgur, emit, FFError, parse, stamp, type Ctx } from "../context";
 import { drafts } from "../db/schema";
 import { draftCreate, draftUpdate } from "../schemas";
 import { z } from "zod";
-import { insertTouch } from "./touches";
+import { insertTouch, sameSide } from "./touches";
 import { link, requireRow, truncate } from "./shared";
 import { resolveSubject } from "./subject";
 import { renderTemplate } from "./templates";
@@ -25,9 +25,9 @@ export function draftsService(ctx: Ctx) {
       const body = p.body ?? (tpl ? renderTemplate(ctx, tpl.body, s) : null);
       if (!body) throw new FFError("validation", "body: taslak metni ya da şablon gerekli");
       const d = { ...p, ...s, body };
-      // gönderilince temas olacağı için bağlantılar şimdiden aynı kişiye ait olmalı
+      // gönderilince temas olacağı için bağlantılar şimdiden aynı kişiye ya da firmasına ait olmalı
       for (const [key, table, what] of [["opportunity_id", "opportunities", "fırsat"], ["project_id", "projects", "proje"]] as const) {
-        if (d[key] && requireRow(ctx, table, d[key]!).person_id !== d.person_id) throw new FFError("validation", `${what} #${d[key]} bu kişiye ait değil`);
+        if (d[key] && !sameSide(ctx, requireRow(ctx, table, d[key]!).person_id, d)) throw new FFError("validation", `${what} #${d[key]} bu kişiye ya da firmasına ait değil`);
       }
       const r = tx.insert(drafts).values({ ...d, status: "bekliyor", ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "draft.created", ...link(ctx, d), summary: `Taslak hazırlandı (${d.channel}): ${truncate(d.body, 50)}`, data: { draft_id: r.id } });

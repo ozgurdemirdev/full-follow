@@ -29,7 +29,7 @@ const OPEN = OPEN_OPP_STAGES.map((s) => `'${s}'`).join(",");
 
 /**
  * Tüm kişilerin temas durumu tek sorguda (kişi sayısı küçük; listeler bunu kullanır).
- * Cevap bekleyen: son gelen temastan sonra expects_reply'li giden temas.
+ * Cevap bekleyen: kişiden ya da firmasından (firma adına veya bir çalışanından) gelen son temastan sonra expects_reply'li giden temas.
  * Soğuyan: bağlantı (gelen teması ya da bağlantı etiketi var) + son temas eşikten eski + cevap beklemiyor + takip tarihi yok.
  */
 export function networkStats(ctx: Ctx): Map<number, PersonNet> {
@@ -40,10 +40,15 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
     WITH agg AS (
       SELECT person_id, MAX(happened_at) AS last_at, MAX(CASE WHEN direction = 'gelen' THEN happened_at END) AS last_in
       FROM touches WHERE person_id IS NOT NULL GROUP BY person_id
+    ), cin AS (
+      SELECT cid, MAX(at) AS at FROM (
+        SELECT company_id AS cid, happened_at AS at FROM touches WHERE direction = 'gelen' AND company_id IS NOT NULL
+        UNION ALL SELECT p.company_id, t.happened_at FROM touches t JOIN people p ON p.id = t.person_id WHERE t.direction = 'gelen' AND p.company_id IS NOT NULL
+      ) GROUP BY cid
     ), pend AS (
       SELECT t.person_id, COUNT(*) AS attempts, MAX(t.happened_at) AS last_out
-      FROM touches t JOIN agg a ON a.person_id = t.person_id
-      WHERE t.direction = 'giden' AND t.expects_reply = 1 AND (a.last_in IS NULL OR t.happened_at > a.last_in)
+      FROM touches t JOIN agg a ON a.person_id = t.person_id JOIN people tp ON tp.id = t.person_id LEFT JOIN cin c ON c.cid = tp.company_id
+      WHERE t.direction = 'giden' AND t.expects_reply = 1 AND (a.last_in IS NULL OR t.happened_at > a.last_in) AND (c.at IS NULL OR t.happened_at > c.at)
       GROUP BY t.person_id
     )
     SELECT p.id, p.created_at, p.next_follow_up_at, a.last_at, a.last_in, d.attempts, d.last_out,

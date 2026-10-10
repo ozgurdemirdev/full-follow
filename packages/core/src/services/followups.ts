@@ -38,7 +38,7 @@ const SAME_DRAFT = `(r.person_id = d.person_id OR (d.person_id IS NULL AND r.per
 /**
  * Takip dizisi: cevapsız giden mesajdan (ilk cevapsız mesaj) `followup_days[k-1]` gün sonra k. takip zamanı gelir.
  * k = cevapsız giden mesaj sayısı (ilk mesaj + gönderilen takipler). Gelen temas diziyi sıfırlar.
- * Muhatap kişi, firma ya da sadece adres olabilir; firmanın herhangi bir çalışanından gelen cevap firma dizisini de sıfırlar.
+ * Muhatap kişi, firma ya da sadece adres olabilir; firmanın herhangi bir çalışanından gelen cevap firmanın ve çalışanlarının dizisini sıfırlar.
  * Bekleyen taslağı olan muhatap ve bu dizide aynı adım için zaten taslak açılmış (reddedilmiş olsa bile) muhatap listeye girmez.
  */
 export function followupsDue(ctx: Ctx): FollowupDue[] {
@@ -57,7 +57,8 @@ export function followupsDue(ctx: Ctx): FollowupDue[] {
       SELECT t.sk, MIN(t.happened_at) AS first_out, MAX(t.happened_at) AS last_out, COUNT(*) AS attempts,
         MAX(t.person_id) AS person_id, MAX(t.company_id) AS company_id, MAX(t.contact) AS contact
       FROM t LEFT JOIN li ON li.sk = t.sk
-      WHERE t.direction = 'giden' AND t.expects_reply = 1 AND (li.at IS NULL OR t.happened_at > li.at)
+        LEFT JOIN people tp ON tp.id = t.person_id LEFT JOIN li lc ON lc.sk = 'c' || tp.company_id
+      WHERE t.direction = 'giden' AND t.expects_reply = 1 AND (li.at IS NULL OR t.happened_at > li.at) AND (lc.at IS NULL OR t.happened_at > lc.at)
       GROUP BY t.sk
     )
     SELECT d.*, COALESCE(p.name, co.name, d.contact) AS name, COALESCE(pc.name, co.name) AS company_name,

@@ -14,6 +14,15 @@ import { z } from "zod";
 
 type TouchInput = z.infer<typeof touchCreate> & { draft_id?: number };
 
+/** The record's own person, a colleague at the same company, or that company itself (e.g. a reply sent "as Örnek Pizza") */
+export function sameSide(ctx: Ctx, ownerId: number, s: { person_id?: number | null; company_id?: number | null }) {
+  if (s.person_id === ownerId) return true;
+  const own = rows<{ company_id: number | null }>(ctx, "SELECT company_id FROM people WHERE id = ?", ownerId)[0]?.company_id;
+  if (!own) return false;
+  if (s.person_id) return rows(ctx, "SELECT 1 FROM people WHERE id = ? AND company_id = ?", s.person_id, own).length > 0;
+  return s.company_id === own;
+}
+
 /**
  * Temas kaydeder; muhatap kişi, firma ya da sadece adres olabilir (subject.ts).
  * Kişinin ve firmasının temas durumu ilerler (yazıldı → cevap geldi → görüşüldü).
@@ -23,10 +32,10 @@ type TouchInput = z.infer<typeof touchCreate> & { draft_id?: number };
 export function insertTouch(q: Q, ctx: Ctx, d: TouchInput) {
   const s = resolveSubject(ctx, d);
   let oppId = d.opportunity_id ?? null;
-  if (!s.person_id && (oppId || d.project_id || d.idea_id)) throw new FFError("validation", "fırsat, proje ya da fikir bağlantısı sadece kişiye yazılan temasta olur");
+  if (!s.person_id && (d.idea_id || (!s.company_id && (oppId || d.project_id)))) throw new FFError("validation", "fikir bağlantısı sadece kişiye, fırsat ve proje bağlantısı kişiye ya da firmaya yazılan temasta olur");
   if (oppId) {
     const o = requireRow(ctx, "opportunities", oppId);
-    if (o.person_id !== s.person_id) throw new FFError("validation", `fırsat #${oppId} bu kişiye ait değil`);
+    if (!sameSide(ctx, o.person_id, s)) throw new FFError("validation", `fırsat #${oppId} bu kişiye ya da firmasına ait değil`);
   } else if (s.person_id && !d.project_id) {
     // proje hakkındaki temas satış fırsatını ilerletmesin; sadece serbest temas tek açık fırsata bağlanır
     const open = rows<{ id: number }>(ctx, "SELECT id FROM opportunities WHERE person_id = ? AND stage IN ('bulundu','temas','cevap','gorusme','teklif')", s.person_id);
@@ -34,7 +43,7 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput) {
   }
   if (d.project_id) {
     const p = requireRow(ctx, "projects", d.project_id);
-    if (p.person_id !== s.person_id) throw new FFError("validation", `proje #${d.project_id} bu kişiye ait değil`);
+    if (!sameSide(ctx, p.person_id, s)) throw new FFError("validation", `proje #${d.project_id} bu kişiye ya da firmasına ait değil`);
   }
   if (d.idea_id) requireRow(ctx, "ideas", d.idea_id);
 
