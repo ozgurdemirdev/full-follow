@@ -18,6 +18,9 @@ const join = (...p: (string | number | null | undefined | false)[]) => p.filter(
 
 type Row = Record<string, any>;
 
+const DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+const dayNames = (days: string) => (days === "1,2,3,4,5,6,7" ? "her gün" : days === "1,2,3,4,5" ? "hafta içi" : days.split(",").map((n) => DAY_NAMES[Number(n) - 1]).join(" "));
+
 const LINE: Record<string, (r: Row) => string> = {
   person: (r) => join(
     `#${r.id} ${r.name}`, r.tags?.join(","), r.sector_path, r.role, r.company_name, r.contact_status && r.contact_status !== "yazilmadi" && label(r.contact_status),
@@ -56,6 +59,8 @@ const LINE: Record<string, (r: Row) => string> = {
   idea: (r) => join(`#${r.id} ${r.title}`, label(r.stage), r.sectors?.map((x: Row) => x.path).join(", "),
     `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
     !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${cut(r.problem, 50)}`),
+  goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
+  goal_log: (r) => join(`#${r.id} ${r.goal_title} ${d(r.date)}`, `elle ${r.count}`, r.note && `not: ${cut(r.note, 50)}`),
   interest: (r) => join(`#${r.id} ${r.person_name}`, r.idea_title, label(r.interest), r.note && cut(r.note, 50)),
 };
 
@@ -126,8 +131,23 @@ export function timelineText(events: Row[]): string {
 const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =>
   res.total ? `${title} (${res.total}):\n` + res.rows.map((r) => "  " + line(type, r)).join("\n") + (res.total > res.rows.length ? `\n  … +${res.total - res.rows.length}` : "") : "";
 
+/** Günün planı: hedefler (yapılan/hedef), o günün görevleri, seri ve haftalık oran */
+export function planText(p: any): string {
+  const goals = p.goals.map((g: Row) => `  #${g.id} ${g.title} ${g.done}/${g.target}${g.complete ? " ✓" : ""}${g.auto ? ` (otomatik ${g.auto})` : ""}${g.note ? ` · not: ${cut(g.note, 50)}` : ""}`);
+  const tasks = p.tasks.map((t: Row) => "  " + line("task", t));
+  const head = join(`PLAN ${p.date}`, p.streak ? `seri ${p.streak} gün` : "", p.week_ratio !== null && p.week_ratio !== undefined && `hafta %${Math.round(p.week_ratio * 100)}`);
+  return [head, goals.length ? `Hedef:\n${goals.join("\n")}` : "hedef yok (save goal ile ekle)", tasks.length ? `Görev:\n${tasks.join("\n")}` : ""].filter(Boolean).join("\n");
+}
+
+/** Takvim: gün başına tek satır */
+export function calendarText(days: Row[]): string {
+  return days.map((c) => join(`${d(c.date)} ${DAY_NAMES[(new Date(`${c.date}T12:00:00Z`).getUTCDay() + 6) % 7]}`,
+    c.ratio === null ? "hedef yok" : `hedef %${Math.round(c.ratio * 100)}`, c.tasks.length && `görev ${c.tasks.filter((t: Row) => t.done_at).length}/${c.tasks.length}`)).join("\n");
+}
+
 export function todayText(t: any): string {
   const parts = [
+    t.plan?.goals.length ? planText(t.plan) : "",
     sec("Cevapsız yorum", "comment", t.comments),
     sec("Cevap bekleyen", "person", t.network.awaiting),
     t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "",
@@ -176,7 +196,7 @@ export function reportText(r: any): string {
 export const KIND_NAME: Record<string, string> = {
   person: "kişi", company: "firma", source: "kaynak", opportunity: "fırsat", project: "proje", task: "görev",
   draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",
-  post: "paylaşım", template: "şablon", idea: "fikir", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu",
+  post: "paylaşım", template: "şablon", idea: "fikir", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu", goal: "hedef", goal_log: "ilerleme",
 };
 
 /** Toplu kayıt özeti: eklenen sayısı, mükerrer diye atlananlar (hangi kayıtla çakıştı), hatalılar */

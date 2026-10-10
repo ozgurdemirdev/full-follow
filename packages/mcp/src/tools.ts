@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { FFError, normalizeType as normalizeTypeName, type Core } from "@fullfollow/core";
 import { z } from "zod";
-import { block, bulkText, KIND_NAME, list, ok, reportText, timelineText, todayText } from "./format";
+import { block, bulkText, calendarText, KIND_NAME, list, ok, planText, reportText, timelineText, todayText } from "./format";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
@@ -24,7 +24,7 @@ const subject = (core: Core, a: { person?: string | number; company?: string | n
 });
 
 /**
- * 11 araç. Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
+ * 12 araç. Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
  * Taslak onaylama ve "gönderildi" işaretleme MCP'de yoktur (sadece Özgür).
  */
 export function registerTools(server: McpServer, core: Core) {
@@ -37,8 +37,13 @@ export function registerTools(server: McpServer, core: Core) {
     return todayText({ ...core.today(limit ?? 10), auto });
   }));
 
+  server.registerTool("plan", {
+    description: "Günün iş planı: hedefler (yapılan/hedef; kanallı hedefte giden mesajlar kendiliğinden sayılır), o günün görevleri, seri, haftalık tutturma oranı. date varsayılan bugün. from+to verilirse takvim (gün gün hedef doluluğu ve görevler, en fazla 92 gün). Hedef: save goal {title,target,days:'her_gun|hafta_ici|hafta_sonu'|[1..7],channel?,note?}; ilerleme: save goal_log {goal:'ad',add:1|count:10,date?,note?}.",
+    inputSchema: { date: z.string().optional(), from: z.string().optional(), to: z.string().optional() },
+  }, ({ date, from, to }) => run(() => (from && to ? calendarText(core.goals.calendar(from, to)) : planText(core.goals.plan(date)))));
+
   server.registerTool("find", {
-    description: "Ara/listele. type: person|company|opportunity|project|task|draft|payment|source|comment|touch|sector|note|setting|post|template|idea|interest|tag|trash. person/company filter: {tag:'sıcak'} {sector:'Sağlık'} {source:'LinkedIn'} {status:'yazilmadi|yazildi|cevap_geldi|gorusuldu|olumsuz|es_gecildi|tanidik|arkadas'} (virgülle çoklu); person {awaiting:true} {cooling:true} {channel:'linkedin'} {company_id:2} {post_id:2}; {stage:'teklif'} {overdue:true} {status:'bekliyor'}(draft) {unanswered:true}(comment) {person_id|company_id:3}(touch,note) {loose:true}(touch: kişisiz adres) {all:true}(task; tag/sector/source: silinenler dahil); post {refresh_due:true} {platform:'r10'}; template {channel,sector,kind:'takip'}; idea {stage,sector}; interest {idea_id|person_id}; trash {type:'person'}.",
+    description: "Ara/listele. type: person|company|opportunity|project|task|draft|payment|source|comment|touch|sector|note|setting|post|template|idea|interest|tag|goal|goal_log|trash. person/company filter: {tag:'sıcak'} {sector:'Sağlık'} {source:'LinkedIn'} {status:'yazilmadi|yazildi|cevap_geldi|gorusuldu|olumsuz|es_gecildi|tanidik|arkadas'} (virgülle çoklu); person {awaiting:true} {cooling:true} {channel:'linkedin'} {company_id:2} {post_id:2}; {stage:'teklif'} {overdue:true} {status:'bekliyor'}(draft) {unanswered:true}(comment) {person_id|company_id:3}(touch,note) {loose:true}(touch: kişisiz adres) {all:true}(task; tag/sector/source: silinenler dahil); post {refresh_due:true} {platform:'r10'}; template {channel,sector,kind:'takip'}; idea {stage,sector}; interest {idea_id|person_id}; trash {type:'person'}.",
     inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().optional(), offset: z.number().optional() },
   }, ({ type, q, filter, limit, offset }) => run(() => list(normalizeTypeName(type), core.find(type, { q, filter, limit, offset }), offset ?? 0)));
 
@@ -48,7 +53,7 @@ export function registerTools(server: McpServer, core: Core) {
   }, ({ type, id, with: w }) => run(() => block(core.get(type, id, w ?? []))));
 
   server.registerTool("save", {
-    description: "Oluştur/güncelle (id varsa güncelle). data dizi ise toplu ekler (liste verildiğinde tek çağrı): mükerrerler (e-posta, alan adı, firma adı, LinkedIn, Instagram) atlanır ve raporlanır. data DB alan adlarıyla; person/company/source/opp/project isimle verilebilir (person {company:'ABC'} yoksa firmayı açar); tarih ISO ya da bugün/yarın/+3g. Aşama için move. person: role (CEO, tasarım; sektör değil). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. company: {name,website,email,phone,instagram,linkedin,notes}. tag: {name,color}. opportunity: source_url, source_date (ilan linki/tarihi). note: {person,body}. link: {target_type:opportunity|project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). touch id + {expects_reply:false} cevap beklemeyi kapatır. comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20}. post: {platform:r10|linkedin|instagram|diger,title,url,posted_at,refresh_days}; id + {refreshed:true} = güncellendi; kişinin kaynağı: person {post:'başlık'}. template: {name,kind:ilk|takip|teklif|diger,channel?,sector?,body} yer tutucu {ad} {firma} {sektor}. idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'Full Follow'} (parent = ait olduğu kendi projesi, tek seviye). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}.",
+    description: "Oluştur/güncelle (id varsa güncelle). data dizi ise toplu ekler (liste verildiğinde tek çağrı): mükerrerler (e-posta, alan adı, firma adı, LinkedIn, Instagram) atlanır ve raporlanır. data DB alan adlarıyla; person/company/source/opp/project isimle verilebilir (person {company:'ABC'} yoksa firmayı açar); tarih ISO ya da bugün/yarın/+3g. Aşama için move. person: role (CEO, tasarım; sektör değil). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. company: {name,website,email,phone,instagram,linkedin,notes}. tag: {name,color}. opportunity: source_url, source_date (ilan linki/tarihi). note: {person,body}. link: {target_type:opportunity|project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). touch id + {expects_reply:false} cevap beklemeyi kapatır. comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20}. post: {platform:r10|linkedin|instagram|diger,title,url,posted_at,refresh_days}; id + {refreshed:true} = güncellendi; kişinin kaynağı: person {post:'başlık'}. template: {name,kind:ilk|takip|teklif|diger,channel?,sector?,body} yer tutucu {ad} {firma} {sektor}. idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'Full Follow'} (parent = ait olduğu kendi projesi, tek seviye). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. goal: {title,target,days,channel?,note?} (günlük tekrarlı hedef); goal_log: {goal,add|count,date?,note?}.",
     inputSchema: { type: z.string(), data: z.union([obj, z.array(obj)]), id: idOrName.optional() },
   }, ({ type, data, id }) => run(() => {
     const t = normalizeTypeName(type);

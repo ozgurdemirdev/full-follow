@@ -4,6 +4,7 @@ import { AuthController, AuthGuard } from "./auth";
 import { CompaniesController } from "./controllers/companies.controller";
 import { CommentsController } from "./controllers/comments.controller";
 import { LinksController } from "./controllers/links.controller";
+import { GoalsController } from "./controllers/goals.controller";
 import { NotesController } from "./controllers/notes.controller";
 import { SectorsController } from "./controllers/sectors.controller";
 import { DraftsController } from "./controllers/drafts.controller";
@@ -27,7 +28,7 @@ import { ErrorFilter } from "./http";
   controllers: [
     AuthController, MiscController, PeopleController, CompaniesController, SourcesController,
     OpportunitiesController, ProjectsController, PaymentsController, TasksController, DraftsController,
-    TouchesController, CommentsController, SectorsController, NotesController, LinksController,
+    TouchesController, CommentsController, SectorsController, NotesController, LinksController, GoalsController,
     PostsController, TemplatesController, IdeasController, MarketingController, TagsController, TrashController,
   ],
   providers: [
