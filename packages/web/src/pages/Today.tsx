@@ -16,7 +16,7 @@ import { PLATFORM, PLATFORM_DOT } from "../lib/labels";
 import { refreshNote } from "../lib/marketing";
 import { openSheet } from "../app/ui";
 import { DashboardActivity } from "./DashboardActivity";
-import { DayPlan } from "../components/DayPlan";
+import { GoalStrip } from "../components/GoalStrip";
 
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
@@ -32,7 +32,7 @@ export default function Today() {
         !today.error && <PageSkeleton />
       ) : (
         <>
-          <DayPlan plan={d.plan} />
+          <GoalStrip plan={d.plan} />
           <DashboardActivity d={d} />
           <div className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] desk:gap-9">
             <div className="flex flex-col gap-7 desk:gap-9">
