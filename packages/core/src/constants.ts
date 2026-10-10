@@ -7,11 +7,11 @@ export const TAGS = ["aday", "musteri", "ajans", "is_ortagi", "network", "r10", 
 export const CONNECTION_TAGS = ["musteri", "ajans", "is_ortagi", "network"] as const;
 /** Etiket renkleri: web bunları tasarım token'larına eşler */
 export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "opportunity", "source", "payment", "warning", "success"] as const;
-/** Firma ve kişinin temas durumu: temaslarla ileri gider, geri gitmez; "olumsuz" sadece elle */
-export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz"] as const;
+/** Firma ve kişinin temas durumu: temaslarla ileri gider, geri gitmez; "olumsuz", "tanidik" ve "arkadas" sadece elle */
+export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir */
-export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest"] as const;
+export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -32,11 +32,13 @@ export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "
 export const ASSIGNEES = ACTORS;
 export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
+/** Records that carry labelled links (roadmap, proposal deck, Figma, repo) */
+export const LINK_TARGETS = ["opportunity", "project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 export const RECORD_TYPES = [
   "person", "company", "opportunity", "project", "task", "draft", "payment", "source", "comment", "touch", "setting",
-  "sector", "note", "tag", "trash",
+  "sector", "note", "tag", "trash", "link",
   // Paket 2: pazarlama
   "post", "template", "idea", "interest",
 ] as const;
@@ -48,7 +50,7 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   firma: "company", proje: "project", gorev: "task", görev: "task",
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
   yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
-  sektor: "sector", sektör: "sector", not: "note", notes: "note",
+  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link",
   paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   etiket: "tag", tags: "tag", companies: "company", firmalar: "company", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
@@ -90,6 +92,6 @@ export const LABELS: Record<string, string> = {
   yuz_yuze: "yüz yüze", instagram: "Instagram DM", email: "e-posta",
   linkedin: "LinkedIn", whatsapp: "WhatsApp", r10: "R10",
   dogrulaniyor: "doğrulanıyor", urun: "ürün", anlatildi: "anlatıldı", ilk: "ilk mesaj", diger: "diğer",
-  yazilmadi: "yazılmadı", yazildi: "yazıldı", cevap_geldi: "cevap geldi", gorusuldu: "görüşüldü",
+  yazilmadi: "yazılmadı", yazildi: "yazıldı", cevap_geldi: "cevap geldi", gorusuldu: "görüşüldü", es_gecildi: "es geçildi", tanidik: "tanıdık", arkadas: "arkadaş",
 };
 export const label = (k: string) => LABELS[k] ?? k;

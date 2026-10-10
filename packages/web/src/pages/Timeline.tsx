@@ -9,6 +9,7 @@ import { Page } from "../app/Page";
 import { PATHS, timelinePath } from "../app/routes";
 import { openSheet } from "../app/ui";
 import { EditDelete } from "../components/contact";
+import { LinksCard } from "../components/LinksCard";
 import { Avatar, Chip, Empty, ErrorBox, Filters, order, PageSkeleton, Tags, Who } from "../components/ui";
 import { daysFrom, fmtDay, fmtDayLong, norm, tl, todayIso } from "../lib/format";
 import {
@@ -133,6 +134,7 @@ function EntityTimeline({ type, id }: { type: Kind; id: number }) {
         {type === "person" ? <PersonCard p={row} touches={touches.data?.rows ?? []} detail={detail.data!} /> : null}
         {type === "opportunity" ? <OppCard o={row as unknown as Opportunity} /> : null}
         {type === "project" ? <ProjectCard p={row as unknown as Project} payments={(detail.data?.related.payments as Payment[]) ?? []} /> : null}
+        {type !== "person" ? <LinksCard type={type} id={id} /> : null}
         <NextStep tasks={tasks.data?.rows ?? []} type={type} id={id} personId={personId} />
       </aside>
     </Page>
@@ -314,7 +316,7 @@ function OppCard({ o }: { o: Opportunity }) {
       <div className="flex items-start gap-3">
         <div className="flex min-w-0 flex-grow flex-col gap-0.5">
           <span className="flex flex-wrap items-center gap-3 text-md font-semibold">{o.title}<Who actor={o.created_by} /></span>
-          <Link href={timelinePath("person", o.person_id)} className="text-base-sm">{o.person_name}{o.company_name ? ` · ${o.company_name}` : ""}</Link>
+          <span className="text-base-sm text-text-secondary">Muhatap: <Link href={timelinePath("person", o.person_id)}>{o.person_name}{o.company_name ? ` · ${o.company_name}` : ""}</Link></span>
         </div>
         <EditDelete label={o.title} onEdit={() => openSheet("opportunity", { edit: o.id })} onDelete={o.project_id ? undefined : del} />
       </div>

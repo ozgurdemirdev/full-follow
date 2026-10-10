@@ -1,7 +1,9 @@
 import { label, type ContactStatus } from "../constants";
 import { row, type Ctx } from "../context";
 
-const RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1 };
+// set by hand; touches never move these
+const STICKY: ContactStatus[] = ["olumsuz", "tanidik", "arkadas"];
+const RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1, es_gecildi: -1, tanidik: -1, arkadas: -1 };
 
 /** Temastan çıkan durum: arama/görüşme > gelen mesaj (cevap geldi) > giden mesaj (yazıldı) */
 export function statusOfTouch(t: { direction: string; kind: string }): ContactStatus {
@@ -17,7 +19,7 @@ export function bumpStatus(ctx: Ctx, subject: { person_id?: number | null; compa
   const out: string[] = [];
   const bump = (table: "people" | "companies", id: number) => {
     const cur = row<{ contact_status: ContactStatus; name: string }>(ctx, `SELECT contact_status, name FROM ${table} WHERE id = ?`, id);
-    if (!cur || cur.contact_status === "olumsuz" || RANK[next] <= RANK[cur.contact_status]) return;
+    if (!cur || STICKY.includes(cur.contact_status) || RANK[next] <= RANK[cur.contact_status]) return;
     ctx.sqlite.prepare(`UPDATE ${table} SET contact_status = ? WHERE id = ?`).run(next, id);
     out.push(`${cur.name}: ${label(next)}`);
   };

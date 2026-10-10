@@ -4,6 +4,7 @@ import { useProjects, useThreads } from "../api/keys";
 import type { Project } from "../api/types";
 import { Page } from "../app/Page";
 import { timelinePath } from "../app/routes";
+import { openSheet } from "../app/ui";
 import { Chip, Empty, ErrorBox, order, PageSkeleton, Segmented, Who } from "../components/ui";
 import { fmtDay, tl } from "../lib/format";
 import { useIsDesktop } from "../lib/media";
@@ -33,7 +34,8 @@ export default function Projects() {
   const tabs = TABS.map((t, i) => `${t.label} (${counts[i]})`).filter((_, i) => i < 3 || counts[3] > 0);
 
   return (
-    <Page title="Proje panosu" sub={projects.data ? `${counts[0]} aktif proje · bu ay beklenen ${tl(expectedThisMonth)}` : ""}>
+    <Page title="Proje panosu" sub={projects.data ? `${counts[0]} aktif proje · bu ay beklenen ${tl(expectedThisMonth)}` : ""}
+      right={<button type="button" className="btn btn-pri" onClick={() => openSheet("project")}>Proje ekle</button>}>
       {projects.error && !projects.data ? <ErrorBox error={projects.error} retry={projects.reload} /> : null}
       {!projects.data ? (
         !projects.error && <PageSkeleton />

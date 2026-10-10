@@ -104,6 +104,7 @@ export function opportunitiesService(ctx: Ctx) {
       const bin = new Bin(ctx);
       for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "opportunity_id", id);
       bin.take("comments", "target_type = 'opportunity' AND target_id = ?", id);
+      bin.take("links", "target_type = 'opportunity' AND target_id = ?", id);
       bin.take("opportunities", "id = ?", id);
       bin.commit(tx, "opportunity", id, cur.title);
       emit(tx, ctx, { type: "opp.deleted", person_id: cur.person_id, summary: `Fırsat silindi: ${cur.title}` });

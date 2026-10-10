@@ -30,14 +30,16 @@ export const CHANNEL_DOT: Record<string, string> = {
 };
 export const CHANNELS = Object.keys(CHANNEL);
 
-/** Firma ve kişinin temas durumu (temaslarla ilerler, "olumsuz" elle) */
+/** Firma ve kişinin temas durumu (temaslarla ilerler; "olumsuz" ve "es geçildi" elle) */
 export const CONTACT_STATUS: Record<string, string> = {
-  yazilmadi: "Yazılmadı", yazildi: "Yazıldı", cevap_geldi: "Cevap geldi", gorusuldu: "Görüşüldü", olumsuz: "Olumsuz",
+  yazilmadi: "Yazılmadı", yazildi: "Yazıldı", cevap_geldi: "Cevap geldi", gorusuldu: "Görüşüldü", olumsuz: "Olumsuz", es_gecildi: "Es geçildi", tanidik: "Tanıdık", arkadas: "Arkadaş",
 };
 export const CONTACT_STATUSES = Object.keys(CONTACT_STATUS);
-export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi: "opportunity", cevap_geldi: "payment", gorusuldu: "success", olumsuz: "warning" };
+/** People already known personally: no cold-outreach prompts for them */
+export const isKnown = (status: string) => status === "tanidik" || status === "arkadas";
+export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi: "opportunity", cevap_geldi: "payment", gorusuldu: "success", olumsuz: "warning", es_gecildi: "neutral", tanidik: "source", arkadas: "success" };
 export const STATUS_DOT: Record<string, string> = {
-  yazilmadi: "bg-accent-neutral", yazildi: "bg-accent-opportunity", cevap_geldi: "bg-accent-payment", gorusuldu: "bg-primary", olumsuz: "bg-accent-warning",
+  yazilmadi: "bg-accent-neutral", yazildi: "bg-accent-opportunity", cevap_geldi: "bg-accent-payment", gorusuldu: "bg-primary", olumsuz: "bg-accent-warning", es_gecildi: "bg-text-disabled", tanidik: "bg-accent-source", arkadas: "bg-accent-comment",
 };
 
 export const TARGET: Record<string, string> = {

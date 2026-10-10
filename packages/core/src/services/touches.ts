@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { OPP_STAGES } from "../constants";
 import { emit, parse, rows, stamp, FFError, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { touches } from "../db/schema";
@@ -16,7 +17,7 @@ type TouchInput = z.infer<typeof touchCreate> & { draft_id?: number };
 /**
  * Temas kaydeder; muhatap kişi, firma ya da sadece adres olabilir (subject.ts).
  * Kişinin ve firmasının temas durumu ilerler (yazıldı → cevap geldi → görüşüldü).
- * Kişi temasında fırsat aşaması da ilerler: bulundu + giden → temas, temas + gelen → cevap. Daha ileri aşamalara dokunmaz.
+ * Kişi temasında fırsat aşaması da ilerler: bulundu + giden → temas, temas + gelen → cevap, görüşme türü → gorusme. Teklif ve sonrasına dokunmaz.
  * Fırsat verilmediyse kişinin tek açık fırsatı varsa ona bağlanır.
  */
 export function insertTouch(q: Q, ctx: Ctx, d: TouchInput) {
@@ -57,7 +58,8 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput) {
   if (d.idea_id && s.person_id) effects.push(...upsertInterest(q, ctx, { idea_id: d.idea_id, person_id: s.person_id, touch_id: r.id }).effects);
   if (oppId) {
     const o = requireRow(ctx, "opportunities", oppId);
-    const next = o.stage === "bulundu" && d.direction === "giden" ? "temas" : o.stage === "temas" && d.direction === "gelen" ? "cevap" : null;
+    const next = d.kind === "gorusme" && OPP_STAGES.indexOf(o.stage) < OPP_STAGES.indexOf("gorusme") ? "gorusme"
+      : o.stage === "bulundu" && d.direction === "giden" ? "temas" : o.stage === "temas" && d.direction === "gelen" ? "cevap" : null;
     if (next) {
       applyStage(q, ctx, o, next, { auto: true });
       effects.push(`fırsat #${oppId} → ${next}`);

@@ -63,7 +63,9 @@ export function ideaStats(ctx: Ctx) {
       (SELECT COUNT(*) FROM idea_people x WHERE x.idea_id = i.id AND x.interest = 'ilgilenmedi') AS not_interested,
       (SELECT COUNT(*) FROM touches t WHERE t.idea_id = i.id) AS touch_count,
       (SELECT COUNT(*) FROM posts p WHERE p.idea_id = i.id) AS post_count,
-      (SELECT COUNT(*) FROM people x JOIN posts p ON p.id = x.post_id WHERE p.idea_id = i.id) AS post_people
+      (SELECT COUNT(*) FROM people x JOIN posts p ON p.id = x.post_id WHERE p.idea_id = i.id) AS post_people,
+      (SELECT title FROM ideas pa WHERE pa.id = i.parent_id) AS parent_title,
+      (SELECT COUNT(*) FROM ideas c WHERE c.parent_id = i.id) AS child_count
     FROM ideas i ORDER BY i.updated_at DESC, i.id DESC`)
     .map((i) => {
       const s = secs.filter((x) => x.idea_id === i.id);
@@ -83,9 +85,19 @@ export function ideaPeople(ctx: Ctx, ideaId?: number, personId?: number) {
 }
 
 export function ideasService(ctx: Ctx) {
+  /** Two levels only: the parent is a top-level idea, and an idea with children cannot get a parent */
+  function checkParent(parentId: number | null | undefined, selfId?: number) {
+    if (!parentId) return;
+    if (parentId === selfId) throw new FFError("validation", "fikir kendi altına konamaz");
+    const p = requireRow(ctx, "ideas", parentId, "üst proje");
+    if (p.parent_id) throw new FFError("validation", `${p.title} zaten bir alt fikir; alt fikrin altına fikir konmaz`);
+    if (selfId && row(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", "alt fikirleri olan bir proje başka bir projenin altına konamaz");
+  }
+
   function create(input: unknown) {
     return ctx.db.transaction((tx) => {
       const { sector_ids, ...d } = parse(ideaCreate, withSectors(tx, ctx, input));
+      checkParent(d.parent_id);
       const r = tx.insert(ideas).values({ ...d, ...stamp(ctx) }).returning().get();
       if (sector_ids?.length) setSectors(tx, ctx, r.id, sector_ids);
       emit(tx, ctx, { type: "idea.created", summary: `Fikir: ${truncate(d.title, 60)}`, data: { idea_id: r.id } });
@@ -97,6 +109,7 @@ export function ideasService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const { sector_ids, ...d } = parse(ideaUpdate, withSectors(tx, ctx, input));
       const cur = requireRow(ctx, "ideas", id);
+      checkParent(d.parent_id, id);
       const effects: string[] = [];
       if (Object.keys(d).length || sector_ids) tx.update(ideas).set({ ...d, updated_at: ctx.clock.now() }).where(eq(ideas.id, id)).run();
       if (sector_ids) setSectors(tx, ctx, id, sector_ids);
@@ -122,6 +135,7 @@ export function ideasService(ctx: Ctx) {
       const bin = new Bin(ctx);
       bin.unlink("touches", "idea_id", id);
       bin.unlink("posts", "idea_id", id);
+      bin.unlink("ideas", "parent_id", id);
       bin.take("idea_people", "idea_id = ?", id);
       bin.take("idea_sectors", "idea_id = ?", id);
       bin.take("comments", "target_type = 'idea' AND target_id = ?", id);

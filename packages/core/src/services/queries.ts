@@ -232,12 +232,26 @@ export function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
     task: tasks, draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, post: posts, template: templates, idea: ideas, interest: interests, tag: tags,
+    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, interest: interests, tag: tags,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
     },
   };
+
+  /** Links of an opportunity or project; a project also lists the links of its opportunity (from: "fırsat") */
+  function linkList(o: ListOpts): Rows {
+    const f = o.filter ?? {};
+    let list = rows(ctx, "SELECT * FROM links ORDER BY id");
+    if (f.opportunity_id) list = list.filter((l) => l.target_type === "opportunity" && l.target_id === Number(f.opportunity_id));
+    if (f.project_id) {
+      const oppId = row<{ opportunity_id: number | null }>(ctx, "SELECT opportunity_id FROM projects WHERE id = ?", Number(f.project_id))?.opportunity_id;
+      list = list.filter((l) => (l.target_type === "project" && l.target_id === Number(f.project_id)) || (oppId && l.target_type === "opportunity" && l.target_id === oppId))
+        .map((l) => (l.target_type === "opportunity" ? { ...l, from: "fırsat" } : l));
+    }
+    list = list.filter((l) => has(o.q, l.label, l.url));
+    return page(list, o.limit, o.offset);
+  }
 
   function find(type: RecordType, o: ListOpts = {}) {
     const r = LISTS[type]({ ...o, limit: o.limit ?? 20, offset: o.offset ?? 0 });
@@ -250,8 +264,8 @@ export function queriesService(ctx: Ctx) {
   const relatedFor: Record<string, string[]> = {
     person: ["touches", "tasks", "opportunities", "projects", "comments", "referrals", "drafts", "notes", "channels"],
     company: ["people", "touches", "opportunities", "drafts", "comments", "channels"],
-    opportunity: ["touches", "tasks", "comments", "drafts"],
-    project: ["payments", "tasks", "touches", "comments", "drafts"],
+    opportunity: ["touches", "tasks", "comments", "drafts", "links"],
+    project: ["payments", "tasks", "touches", "comments", "drafts", "links"],
     payment: ["comments"], task: ["comments"], draft: ["comments"],
     post: ["people", "comments"], idea: ["people", "touches", "posts", "comments"], template: ["drafts"],
   };
@@ -274,6 +288,7 @@ export function queriesService(ctx: Ctx) {
       case "tag": rowData = own(find("tag", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "trash": throw new FFError("validation", "çöp kutusu için find(type: trash) kullan");
       case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
+      case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
       case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;
       case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;
@@ -309,6 +324,7 @@ export function queriesService(ctx: Ctx) {
           break;
         case "posts": related.posts = cap(posts({ filter: { idea_id: id }, limit: n })); break;
         case "referrals": related.referrals = cap(people({ filter: { referred_by_id: id }, limit: n })); break;
+        case "links": related.links = cap(linkList({ filter: by, limit: n })); break;
         case "notes": related.notes = cap(notes({ filter: { person_id: id }, limit: n })); break;
         case "channels": related.channels = type === "company" ? companyCard(id).channels : channelSummary(ctx, id, rowData.awaiting ? { awaiting: rowData.awaiting } as any : undefined); break;
         case "comments": related.comments = listThreads(ctx, { target_type: COMMENT_TYPES[type as keyof typeof COMMENT_TYPES], target_id: id, resolved: "all" }).slice(0, n); break;

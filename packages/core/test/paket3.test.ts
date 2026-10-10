@@ -169,4 +169,33 @@ describe("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
     ozgur.remove("source", li.id);
     expect(() => ozgur.people.create({ name: "X", source_id: li.id })).toThrow(/silinmiş/);
   });
+  it("linkler: fırsat linkleri projede de görünür, fırsatla birlikte çöp kutusuna gider", () => {
+    const p = ozgur.people.create({ name: "Deniz" }).row;
+    const o = claude.save("opportunity", { title: "Örnek Pizza", person: "Deniz", source: "LinkedIn", stage: "teklif" }).row;
+    const deck = claude.save("link", { target_type: "opportunity", target_id: o.id, label: "Teklif sunumu", url: "https://example.com/deck" }).row;
+    expect(deck.created_by).toBe("claude");
+    expect(() => claude.save("link", { target_type: "opportunity", target_id: o.id, label: "x", url: "olmayan link" })).toThrow(FFError);
+
+    ozgur.opportunities.move(o.id, { stage: "kazanildi" });
+    const project = sql<{ id: number }>("SELECT id FROM projects WHERE opportunity_id = ?", o.id)[0];
+    ozgur.save("link", { target_type: "project", target_id: project.id, label: "Repo", url: "https://example.com/repo" });
+    const shown = ozgur.get("project", project.id, ["links"]).related.links.map((l: any) => [l.label, l.from ?? null]);
+    expect(shown).toEqual([["Teklif sunumu", "fırsat"], ["Repo", null]]);
+
+    ozgur.remove("link", deck.id);
+    expect(ozgur.get("opportunity", o.id, ["links"]).related.links).toEqual([]);
+    ozgur.restore("link", deck.id);
+    expect(ozgur.find("link", { filter: { opportunity_id: o.id } }).rows.map((l: any) => l.id)).toEqual([deck.id]);
+    expect(p.id).toBeGreaterThan(0);
+  });
+  it("fikir projeleri: iki seviye, alt fikir projesinin altında listelenir", () => {
+    const ff = claude.save("idea", { title: "Full Follow", stage: "urun" }).row;
+    const fin = claude.save("idea", { title: "Finans modülü", parent: "Full Follow" }).row;
+    expect(fin.parent_id).toBe(ff.id);
+    expect(() => claude.save("idea", { title: "Alt alt", parent_id: fin.id })).toThrow(FFError);
+    expect(() => claude.save("idea", { parent_id: fin.id }, ff.id)).toThrow(FFError);
+    expect(ozgur.get("idea", ff.id).row.child_count).toBe(1);
+    ozgur.remove("idea", ff.id);
+    expect(ozgur.get("idea", fin.id).row.parent_id).toBeNull();
+  });
 });

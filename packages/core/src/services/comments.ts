@@ -17,6 +17,8 @@ export interface Thread {
   last_by: Actor;
   last_at: string;
   last_body: string;
+  root_by: Actor;
+  root_body: string;
   comments?: any[];
 }
 
@@ -29,6 +31,7 @@ export function threadOf(ctx: Ctx, root: any, withComments = false): Thread {
     target_label: targetLabel(ctx, root.target_type, root.target_id),
     resolved_at: root.resolved_at, count: all.length,
     last_id: last.id, last_by: last.created_by, last_at: last.created_at, last_body: last.body,
+    root_by: all[0].created_by, root_body: all[0].body,
     ...(withComments ? { comments: all } : {}),
   };
 }

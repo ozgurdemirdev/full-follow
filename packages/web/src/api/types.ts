@@ -17,7 +17,7 @@ interface Base {
   created_by: Actor;
 }
 
-export type ContactStatus = "yazilmadi" | "yazildi" | "cevap_geldi" | "gorusuldu" | "olumsuz";
+export type ContactStatus = "yazilmadi" | "yazildi" | "cevap_geldi" | "gorusuldu" | "olumsuz" | "es_gecildi" | "tanidik" | "arkadas";
 /** Kişi ve firmada ortak: etiketler (ad + id), sektörler, nereden buldum, temas durumu */
 export interface Labeled {
   tags: string[];
@@ -84,6 +84,14 @@ export interface TrashItem {
   deleted_at: string;
   deleted_by: Actor | null;
   trash_id: number | null;
+}
+export interface LinkRow extends Base {
+  target_type: "opportunity" | "project";
+  target_id: number;
+  label: string;
+  url: string;
+  /** set when a project shows a link of its opportunity */
+  from?: string;
 }
 export interface Note extends Base {
   person_id: number;
@@ -186,6 +194,10 @@ export interface Idea extends Base {
   touch_count: number;
   post_count: number;
   post_people: number;
+  /** own project this idea belongs to */
+  parent_id: number | null;
+  parent_title: string | null;
+  child_count: number;
 }
 export interface Interest extends Base {
   idea_id: number;

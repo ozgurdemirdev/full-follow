@@ -91,7 +91,7 @@ export function trashList(ctx: Ctx): TrashItem[] {
 
 export const TYPE_LABEL: Record<string, string> = {
   person: "kişi", company: "firma", opportunity: "fırsat", project: "proje", task: "görev", touch: "temas", note: "not",
-  post: "paylaşım", template: "şablon", idea: "fikir", draft: "taslak", payment: "ödeme", comment: "yorum", interest: "fikir ilgisi",
+  post: "paylaşım", template: "şablon", idea: "fikir", draft: "taslak", payment: "ödeme", comment: "yorum", interest: "fikir ilgisi", link: "link",
   tag: "etiket", sector: "sektör", source: "kaynak",
 };
 

@@ -4,13 +4,14 @@ import { openSheet, type SheetKind } from "./ui";
 
 const ITEMS: { kind: SheetKind; label: string; dot: string }[] = [
   { kind: "opportunity", label: "Fırsat", dot: "bg-accent-opportunity" },
-  { kind: "person", label: "Kişi", dot: "bg-text-neutral-chip" },
+  { kind: "person", label: "Kişi", dot: "bg-accent-person" },
+  { kind: "company", label: "Firma", dot: "bg-accent-company" },
   { kind: "touch", label: "Temas", dot: "bg-accent-source" },
   { kind: "draft", label: "Taslak", dot: "bg-accent-claude" },
   { kind: "post", label: "Paylaşım", dot: "bg-accent-warning" },
   { kind: "idea", label: "Fikir", dot: "bg-accent-payment" },
-  { kind: "task", label: "Görev", dot: "bg-primary" },
-  { kind: "comment", label: "Yorum", dot: "bg-accent-claude" },
+  { kind: "task", label: "Görev", dot: "bg-accent-task" },
+  { kind: "comment", label: "Yorum", dot: "bg-accent-comment" },
 ];
 
 /** Sağ alttaki hızlı ekle düğmesi ve menüsü (CSS geçişleri, JS animasyon yok) */

@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES,
 } from "../constants";
@@ -250,6 +250,15 @@ export const comments = sqliteTable("comments", {
   resolved_at: text("resolved_at"),
 }, (t) => [index("comments_target").on(t.target_type, t.target_id), index("comments_parent").on(t.parent_id)]);
 
+/** Labelled links on an opportunity or project (roadmap, proposal deck, Figma, repo) */
+export const links = sqliteTable("links", {
+  ...common(),
+  target_type: text("target_type", { enum: LINK_TARGETS }).notNull(),
+  target_id: integer("target_id").notNull(),
+  label: text("label").notNull(),
+  url: text("url").notNull(),
+}, (t) => [index("links_target").on(t.target_type, t.target_id)]);
+
 // ---------------------------------------------------------------- Paket 2: pazarlama
 
 /** Paylaşımlar: R10 konusu, LinkedIn/Instagram gönderisi. Yenileme aralığı dolunca Bugün'de "güncelle" hatırlatması. */
@@ -284,6 +293,8 @@ export const ideas = sqliteTable("ideas", {
   problem: text("problem"),
   stage: text("stage", { enum: IDEA_STAGES }).notNull().default("fikir"),
   notes: text("notes"),
+  /** Own project this idea belongs to (one level: a parent has no parent) */
+  parent_id: integer("parent_id").references((): AnySQLiteColumn => ideas.id),
 });
 
 export const idea_sectors = sqliteTable("idea_sectors", {

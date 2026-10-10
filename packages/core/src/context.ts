@@ -47,9 +47,15 @@ export interface Ctx {
   clock: Clock;
 }
 
-/** Zod doğrulaması; hata mesajı okunur. Bilinmeyen alanlar (örn. created_by) sessizce atılır. */
+/** System-owned fields are dropped silently (never taken from input); any other unknown field is a validation error. */
+const SYSTEM_KEYS = ["id", "created_by", "created_at", "updated_at"];
+
+/** Zod doğrulaması; hata mesajı okunur. */
 export function parse<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
-  const r = schema.safeParse(input ?? {});
+  const data = input && typeof input === "object" && !Array.isArray(input)
+    ? Object.fromEntries(Object.entries(input).filter(([k]) => !SYSTEM_KEYS.includes(k)))
+    : input;
+  const r = schema.safeParse(data ?? {});
   if (r.success) return r.data;
   const msg = r.error.issues
     .map((i) => (i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message))

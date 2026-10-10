@@ -16,7 +16,7 @@ import { OPEN_STAGES, STAGE, type OppStage } from "../lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "./helpers";
 
 const TITLES: Record<SheetState["kind"], string> = {
-  opportunity: "Yeni fırsat",
+  opportunity: "Fırsat",
   person: "Kişi",
   company: "Firma",
   touch: "Temas",
@@ -26,6 +26,7 @@ const TITLES: Record<SheetState["kind"], string> = {
   post: "Paylaşım",
   idea: "Fikir",
   template: "Mesaj şablonu",
+  project: "Yeni proje",
 };
 
 // Pazarlama formları ayrı parçada (ilk açılışta yüklenir)
@@ -37,6 +38,7 @@ const TemplateForm = lazy(() => import("./MarketingForms").then((m) => ({ defaul
 const PersonForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.PersonForm })));
 const CompanyForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.CompanyForm })));
 const TouchForm = lazy(() => import("./ContactForms").then((m) => ({ default: m.TouchForm })));
+const ProjectForm = lazy(() => import("./ProjectForm").then((m) => ({ default: m.ProjectForm })));
 
 /** Hızlı ekle menüsünden ya da sayfalardan açılan tüm formlar */
 export default function QuickAdd() {
@@ -103,6 +105,8 @@ function FormBody(p: FormProps) {
       return <IdeaForm {...p} />;
     case "template":
       return <TemplateForm {...p} />;
+    case "project":
+      return <ProjectForm {...p} />;
   }
 }
 
@@ -139,6 +143,8 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   const d = useQuery<Detail<Opportunity>>(`/opportunities/${p.id}`);
   const o = d.data?.row;
   const sources = useSources();
+  const personOptions = usePersonOptions();
+  const [person, setPerson] = useState<Ref>(emptyRef);
   const [title, setTitle] = useState("");
   const [value, setValue] = useState("");
   const [sourceId, setSourceId] = useState("");
@@ -147,6 +153,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   const [date, setDate] = useState("");
   useEffect(() => {
     if (!o) return;
+    setPerson({ id: o.person_id, text: o.person_name });
     setTitle(o.title);
     setValue(o.estimated_value ? String(o.estimated_value) : "");
     setSourceId(String(o.source_id));
@@ -156,14 +163,17 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   }, [o]);
   const submit = useSubmit(p, async () => {
     await run("patch", `/opportunities/${p.id}`, {
-      title: title.trim(), estimated_value: value ? Number(value) : null, source_id: Number(sourceId),
+      person_id: await ensurePerson(person, { tags: ["aday"] }), title: title.trim(), estimated_value: value ? Number(value) : null, source_id: Number(sourceId),
       source_url: url, source_date: srcDate || null, next_follow_up_at: date || null,
     }, { ok: "Fırsat güncellendi" });
   });
   if (!o) return null;
   return (
     <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
-      <p className="m-0 text-base text-text-secondary">{o.person_name}{o.company_name ? ` · ${o.company_name}` : ""} · {STAGE[o.stage]}</p>
+      <p className="m-0 text-base text-text-secondary">Aşama: {STAGE[o.stage]} (aşama fırsat sayfasından değişir)</p>
+      <Field label="Muhatap (kişi)" htmlFor="oe-person">
+        <Combo id="oe-person" value={person} onChange={setPerson} options={personOptions} placeholder="Kişi ara" />
+      </Field>
       <Field label="Ne yapılacak" htmlFor="oe-title">
         <input id="oe-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>

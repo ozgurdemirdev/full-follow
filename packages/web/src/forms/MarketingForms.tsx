@@ -11,7 +11,7 @@ import { Chip } from "../components/ui";
 import { todayIso } from "../lib/format";
 import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PLATFORMS, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
 import { SubmitGuard, useSubmit, usePersonOptions, type FormProps } from "./QuickAdd";
-import { ensurePerson, type Ref } from "./helpers";
+import { emptyRef, ensureCompany, ensurePerson, type Ref } from "./helpers";
 
 const PLACEHOLDERS = "{ad} {ad_soyad} {firma} {sektor}";
 
@@ -23,6 +23,9 @@ export function DraftForm(p: FormProps) {
   const company = pre?.company_id ? companies.byId.get(pre.company_id) : undefined;
   const people = usePeople();
   const personOptions = usePersonOptions();
+  const companyOptions = useMemo(() => companies.rows.map((x) => ({ id: x.id, label: x.name, sub: x.email ?? undefined })), [companies.rows]);
+  const [toKind, setToKind] = useState<"person" | "company">("person");
+  const [toCompany, setToCompany] = useState<Ref>(emptyRef);
   const [person, setPerson] = useState<Ref>(() => ({ id: pre?.person_id ?? null, text: "" }));
   useEffect(() => {
     if (person.id && !person.text) {
@@ -38,12 +41,13 @@ export function DraftForm(p: FormProps) {
   const [reason, setReason] = useState("");
 
   // kişiye ve kanala uyan şablonlar (en uygun önce); kişi seçilmemişse kanalın şablonları
-  const subject = pre?.company_id ? `company_id=${pre.company_id}` : person.id ? `person_id=${person.id}` : "";
+  const companyId = pre?.company_id ?? (toKind === "company" ? toCompany.id : null);
+  const subject = companyId ? `company_id=${companyId}` : toKind === "person" && person.id ? `person_id=${person.id}` : "";
   const sug = useQuery<Template[]>(subject ? `/templates/suggest?${subject}&channel=${ch}` : null);
   const all = useQuery<{ rows: Template[] }>(subject ? null : `/templates?channel=${ch}&limit=50`);
   const list = (subject ? sug.data : all.data?.rows) ?? [];
 
-  const pick = async (t: Template) => {
+  const pick = async (t: Pick<Template, "id" | "body">) => {
     setTemplateId(t.id);
     if (!subject) return setBody(t.body);
     try {
@@ -54,8 +58,17 @@ export function DraftForm(p: FormProps) {
     }
   };
 
+  // opened from a template card: apply it, and again for each newly chosen recipient
+  const preTemplate = useQuery<Detail<Template>>(pre?.template_id ? `/templates/${pre.template_id}` : null);
+  useEffect(() => {
+    const t = preTemplate.data?.row;
+    if (t && templateId === null) void pick(t);
+  }, [preTemplate.data, subject, templateId]);
+
   const submit = useSubmit(p, async () => {
-    const to = pre?.company_id ? { company_id: pre.company_id } : { person_id: await ensurePerson(person, { tags: ["aday"] }) };
+    const to = companyId || toKind === "company"
+      ? { company_id: companyId ?? await ensureCompany(toCompany) }
+      : { person_id: await ensurePerson(person, { tags: ["aday"] }) };
     await run("post", "/drafts", {
       ...to, channel: ch, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
       opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,
@@ -67,9 +80,19 @@ export function DraftForm(p: FormProps) {
       {pre?.company_id ? (
         <p className="m-0 text-base text-text-secondary">Firmaya: {company?.name ?? ""}{company?.email ? ` · ${company.email}` : ""}</p>
       ) : (
-        <Field label="Kişi" htmlFor="d-person">
-          <Combo id="d-person" value={person} onChange={(v) => { setPerson(v); setTemplateId(null); }} options={personOptions} placeholder="Kişi ara" />
-        </Field>
+        <>
+          <ChipRadio label="Kime" value={toKind} onChange={(v) => { setToKind(v); setTemplateId(null); }}
+            items={[{ value: "person", label: "Kişi" }, { value: "company", label: "Firma" }]} />
+          {toKind === "person" ? (
+            <Field label="Kişi" htmlFor="d-person">
+              <Combo id="d-person" value={person} onChange={(v) => { setPerson(v); setTemplateId(null); }} options={personOptions} placeholder="Kişi ara" />
+            </Field>
+          ) : (
+            <Field label="Firma" htmlFor="d-company">
+              <Combo id="d-company" value={toCompany} onChange={(v) => { setToCompany(v); setTemplateId(null); }} options={companyOptions} placeholder="Firma ara" />
+            </Field>
+          )}
+        </>
       )}
       <Field label="Kanal" htmlFor="d-channel">
         <select id="d-channel" className="inp" value={ch} onChange={(e) => { setChannel(e.target.value); setTemplateId(null); }}>
@@ -97,7 +120,7 @@ export function DraftForm(p: FormProps) {
       <Field label="Neden şimdi (isteğe bağlı)" htmlFor="d-reason">
         <input id="d-reason" className="inp" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Örn. paylaşıma yorum yaptı" />
       </Field>
-      <SubmitGuard ok={!!pre?.company_id || !!person.text.trim()} />
+      <SubmitGuard ok={!!pre?.company_id || !!(toKind === "company" ? toCompany.text : person.text).trim()} />
     </form>
   );
 }
@@ -182,6 +205,8 @@ export function IdeaForm(p: FormProps) {
   const editId = p.sheet.preset?.idea_id;
   const existing = useQuery<Detail<Idea>>(editId ? `/ideas/${editId}` : null);
   const sectors = useSectors();
+  const ideas = useIdeas();
+  const [parentId, setParentId] = useState("");
   const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
   const [stage, setStage] = useState("fikir");
@@ -193,6 +218,7 @@ export function IdeaForm(p: FormProps) {
   useEffect(() => {
     if (!row) return;
     setTitle(row.title);
+    setParentId(row.parent_id ? String(row.parent_id) : "");
     setProblem(row.problem ?? "");
     setStage(row.stage);
     setChosen(row.sectors.map((s) => s.path));
@@ -208,7 +234,7 @@ export function IdeaForm(p: FormProps) {
   const submit = useSubmit(p, async () => {
     const all = sectorText.trim() && !chosen.includes(sectorText.trim()) ? [...chosen, sectorText.trim()] : chosen;
     // "Sağlık > Diş hekimi" yazılırsa eksik sektörler açılır
-    const data = { title: title.trim(), problem, stage, notes, sectors: all };
+    const data = { title: title.trim(), problem, stage, notes, sectors: all, parent_id: parentId ? Number(parentId) : null };
     if (editId) await run("patch", `/ideas/${editId}`, data, { ok: "Fikir güncellendi" });
     else await run("post", "/ideas", data, { ok: "Fikir eklendi" });
   });
@@ -217,6 +243,12 @@ export function IdeaForm(p: FormProps) {
     <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
       <Field label="Ürün fikri" htmlFor="i-title">
         <input id="i-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. klinik randevu botu" />
+      </Field>
+      <Field label="Ait olduğu proje (isteğe bağlı)" htmlFor="i-parent">
+        <select id="i-parent" className="inp" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+          <option value="">Yok, kendi başına bir proje</option>
+          {ideas.rows.filter((x) => !x.parent_id && x.id !== editId).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+        </select>
       </Field>
       <Field label="Çözdüğü sorun" htmlFor="i-problem">
         <textarea id="i-problem" className="inp" value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="Kimin hangi derdini çözüyor" />

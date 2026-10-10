@@ -120,6 +120,7 @@ export function projectsService(ctx: Ctx) {
       bin.take("payments", "project_id = ?", id);
       for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "project_id", id);
       bin.take("comments", "target_type = 'project' AND target_id = ?", id);
+      bin.take("links", "target_type = 'project' AND target_id = ?", id);
       bin.take("projects", "id = ?", id);
       bin.commit(tx, "project", id, cur.name);
       emit(tx, ctx, { type: "project.deleted", ...link(ctx, { person_id: cur.person_id, opportunity_id: cur.opportunity_id }), summary: `Proje silindi: ${cur.name}` });

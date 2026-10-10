@@ -68,7 +68,7 @@ describe("çekirdek kurallar", () => {
     expect(() => t.claude.drafts.approve(d.id)).toThrow(FFError);
     expect(() => t.claude.drafts.reject(d.id, "x")).toThrow(FFError);
     // MCP'nin genel save yolu da durumu değiştiremez
-    t.claude.save("draft", { status: "gonderildi" }, d.id);
+    expect(() => t.claude.save("draft", { status: "gonderildi" }, d.id)).toThrow(FFError);
     expect(t.sql("SELECT status FROM drafts WHERE id = ?", d.id)[0].status).toBe("bekliyor");
     expect(t.sql("SELECT COUNT(*) n FROM touches")[0].n).toBe(0);
 
@@ -90,11 +90,15 @@ describe("çekirdek kurallar", () => {
     // cevap aşamasındayken gelen/giden temas aşamayı değiştirmez
     t.ozgur.touches.create({ person_id: t.person.id, opportunity_id: a.id, channel: "email", direction: "gelen", summary: "bir daha" });
     expect(stageOf(t.sql, a.id)).toBe("cevap");
+    // görüşme türü teklif öncesindeki fırsatı gorusme aşamasına taşır
+    t.ozgur.touches.create({ person_id: t.person.id, opportunity_id: a.id, channel: "telefon", direction: "giden", kind: "gorusme", summary: "kapsam görüşmesi" });
+    expect(stageOf(t.sql, a.id)).toBe("gorusme");
 
     // teklif aşamasındaki fırsata temas aşamayı değiştirmez; bulundu + gelen de değiştirmez
     const b = t.opp("B");
     t.ozgur.opportunities.move(b.id, { stage: "teklif" });
     t.ozgur.touches.create({ person_id: t.person.id, opportunity_id: b.id, channel: "telefon", direction: "giden", summary: "arama" });
+    t.ozgur.touches.create({ person_id: t.person.id, opportunity_id: b.id, channel: "telefon", direction: "giden", kind: "gorusme", summary: "görüşme" });
     expect(stageOf(t.sql, b.id)).toBe("teklif");
     const c = t.opp("C");
     t.ozgur.touches.create({ person_id: t.person.id, opportunity_id: c.id, channel: "email", direction: "gelen", summary: "kendisi yazdı" });

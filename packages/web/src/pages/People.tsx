@@ -11,7 +11,7 @@ import { Comments, ContactList, EditDelete, LabelLine, Section, TouchList } from
 import { LabelFilters, matchLabels, noFilter, type LabelFilter } from "../components/filters";
 import { Avatar, Chip, Empty, ErrorBox, Filters, PageSkeleton, Tags, Who } from "../components/ui";
 import { ago, fmtDay, followNote, norm, tl, todayIso } from "../lib/format";
-import { CHANNEL_DOT, IDEA_STAGE, INTEREST, INTEREST_TONE, PLATFORM, PROJECT_STAGE, STAGE, STAGE_TONE } from "../lib/labels";
+import { CHANNEL_DOT, IDEA_STAGE, INTEREST, INTEREST_TONE, PLATFORM, PROJECT_STAGE, STAGE, STAGE_TONE, isKnown } from "../lib/labels";
 import { channelName, netStatus } from "../lib/network";
 
 type State = "" | "awaiting" | "cooling" | "follow";
@@ -140,7 +140,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
           </span>
           <div className="mt-1 flex flex-wrap gap-2">
             <Who actor={p.created_by} />
-            {st ? <Chip tone={st.tone}>{st.text}</Chip> : <Chip>Henüz temas yok</Chip>}
+            {st ? <Chip tone={st.tone}>{st.text}</Chip> : isKnown(p.contact_status) ? null : <Chip>Henüz temas yok</Chip>}
           </div>
         </div>
         <EditDelete label={p.name} onEdit={() => openSheet("person", { person_id: p.id })} onDelete={del} />
@@ -156,7 +156,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
 
       <ContactList c={p} />
 
-      <Section title="Kanallar">
+      {c.channels.length === 0 && isKnown(p.contact_status) ? null : <Section title="Kanallar">
         {c.channels.length === 0 ? <span className="text-base-sm text-text-muted">Henüz temas yok. Fırsat açmadan doğrudan temas ekleyebilirsin.</span> : (
           <div className="flex flex-wrap gap-3" role="group" aria-label="Kanala göre süz">
             <button type="button" className="fchip" aria-pressed={!channel} onClick={() => setChannel("")}>Hepsi {c.touches.total}</button>
@@ -171,7 +171,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
           </div>
         )}
         {touches.length ? <TouchList list={touches} /> : null}
-      </Section>
+      </Section>}
 
       {c.post || c.ideas.length ? (
         <Section title="Pazarlama">

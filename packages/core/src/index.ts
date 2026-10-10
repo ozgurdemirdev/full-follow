@@ -12,6 +12,7 @@ import { peopleService } from "./services/people";
 import { projectsService } from "./services/projects";
 import { queriesService } from "./services/queries";
 import { networkLists } from "./services/network";
+import { linksService } from "./services/links";
 import { notesService } from "./services/notes";
 import { normalizeType, resolveId } from "./services/records";
 import { sectorsService } from "./services/sectors";
@@ -75,6 +76,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const comments = commentsService(ctx);
   const sectors = sectorsService(ctx);
   const notes = notesService(ctx);
+  const links = linksService(ctx);
   const settings = settingsService(ctx);
   const queries = queriesService(ctx);
   const reports = reportsService(ctx);
@@ -116,6 +118,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "touch": return nid ? touches.update(nid, d) : touches.create(d);
       case "sector": return nid ? sectors.update(nid, d) : sectors.create(d);
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
+      case "link": return nid ? links.update(nid, d) : links.create(d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
       case "post": return nid ? posts.update(nid, d) : posts.create(d);
@@ -175,6 +178,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "touch": return touches.remove(nid);
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
+      case "link": return links.remove(nid);
       case "post": return posts.remove(nid);
       case "template": return templates.remove(nid);
       case "idea": return ideas.remove(nid);
@@ -222,7 +226,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   return {
     actor,
     // yazma servisleri (REST controller'ları ve testler kullanır)
-    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes,
+    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links,
     posts, templates, ideas,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },

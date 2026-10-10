@@ -21,14 +21,20 @@ export default function Ideas() {
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [stage, setStage] = useState("");
-  const shown = ideas.rows.filter((i) => !stage || i.stage === stage);
+  const matching = ideas.rows.filter((i) => !stage || i.stage === stage);
+  // projects first, each followed by its ideas; an idea whose project is filtered out stands alone
+  const shown = useMemo(() => {
+    const ids = new Set(matching.map((i) => i.id));
+    return matching.filter((i) => !i.parent_id || !ids.has(i.parent_id))
+      .flatMap((i) => [i, ...matching.filter((c) => c.parent_id === i.id)]);
+  }, [matching]);
   const selId = Number(params.id) || shown[0]?.id;
   const told = ideas.rows.reduce((a, i) => a + i.told, 0);
   const interested = ideas.rows.reduce((a, i) => a + i.interested, 0);
 
   return (
     <Page
-      title="Fikirler"
+      title="Fikirler ve projelerim"
       sub={ideas.data ? `${ideas.rows.length} fikir · ${told} kişiye anlatıldı, ${interested} ilgilendi` : ""}
       right={<button type="button" className="btn btn-pri" onClick={() => openSheet("idea")}>Fikir ekle</button>}
       className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] desk:gap-9"
@@ -46,13 +52,15 @@ export default function Ideas() {
               {shown.length === 0 ? <Empty>Henüz fikir yok. Ürün fikrini, çözdüğü sorunu ve hedef sektörü yaz; kime anlattığını buradan ölç.</Empty> : null}
               {shown.map((i) => (
                 <button key={i.id} type="button" onClick={() => navigate(`${PATHS.ideas}/${i.id}`, { replace: true })} aria-current={i.id === selId || undefined}
-                  className={`row cv-auto flex w-full flex-col gap-2 border-x-0 border-t-0 px-7 py-5 text-left text-text-primary ${i.id === selId ? "bg-surface-2" : "bg-transparent"}`}>
+                  className={`row cv-auto flex w-full flex-col gap-2 border-x-0 border-t-0 py-5 pr-7 text-left text-text-primary ${i.parent_id ? "pl-12" : "pl-7"} ${i.id === selId ? "bg-surface-2" : "bg-transparent"}`}>
                   <span className="flex items-center gap-3">
                     <span className="min-w-0 flex-grow truncate text-base font-medium">{i.title}</span>
                     <Chip tone={IDEA_TONE[i.stage]}>{IDEA_STAGE[i.stage]}</Chip>
                     <Who actor={i.created_by} />
                   </span>
                   <span className="truncate text-base-sm text-text-secondary">
+                    {i.parent_title ? `${i.parent_title} · ` : ""}
+                    {i.child_count ? `${i.child_count} alt fikir · ` : ""}
                     {i.told ? `${i.told} kişiye anlatıldı · ${i.interested} ilgilendi (${pct(i.interest_rate)})` : "Henüz kimseye anlatılmadı"}
                     {i.sectors.length ? ` · ${i.sectors.map((s) => s.path).join(", ")}` : ""}
                   </span>
@@ -94,6 +102,7 @@ function IdeaCard({ id }: { id: number }) {
           <h2 className="m-0 text-lg font-semibold">{i.title}</h2>
           <Who actor={i.created_by} />
         </div>
+        {i.parent_id ? <Link href={`${PATHS.ideas}/${i.parent_id}`} className="text-base-sm">Proje: {i.parent_title}</Link> : null}
         {i.problem ? <p className="m-0 text-base leading-normal text-text-body">{i.problem}</p> : <span className="text-base-sm text-text-muted">Çözdüğü sorun yazılmadı</span>}
         {i.sectors.length ? <div className="mt-1 flex flex-wrap gap-2">{i.sectors.map((s) => <Chip key={s.id} tone="source">{s.path}</Chip>)}</div> : null}
       </div>

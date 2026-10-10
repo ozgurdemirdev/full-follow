@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  ASSIGNEES, COMMENT_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
+  ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   CONTACT_STATUSES, TAG_COLORS,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
@@ -22,7 +22,7 @@ const dateTime = z.preprocess(
 );
 
 /** create şemasını güncellemeye çevirir: alanlar opsiyonel */
-const patch = <T extends z.ZodRawShape>(shape: T) => z.object(shape).partial();
+const patch = <T extends z.ZodRawShape>(shape: T) => z.strictObject(shape).partial();
 
 /** Etiket ya da sektör: id, ad ("Sıcak") ya da sektör yolu ("Sağlık > Diş hekimi") */
 const refList = z.array(z.union([z.number().int().positive(), z.string().trim().min(1)]));
@@ -45,7 +45,7 @@ const companyShape = {
   contact_status: z.enum(CONTACT_STATUSES),
   notes: optText,
 };
-export const companyCreate = z.object({
+export const companyCreate = z.strictObject({
   ...companyShape,
   source_id: companyShape.source_id.optional(),
   contact_status: companyShape.contact_status.optional(),
@@ -68,7 +68,7 @@ const personShape = {
   next_follow_up_at: date,
   notes: optText,
 };
-export const personCreate = z.object({
+export const personCreate = z.strictObject({
   ...personShape,
   company_id: personShape.company_id.optional(),
   referred_by_id: personShape.referred_by_id.optional(),
@@ -80,13 +80,13 @@ export const personCreate = z.object({
 });
 export const personUpdate = patch(personShape).extend(labels);
 
-export const tagCreate = z.object({ name: text, color: z.enum(TAG_COLORS).optional() });
+export const tagCreate = z.strictObject({ name: text, color: z.enum(TAG_COLORS).optional() });
 export const tagUpdate = patch({ name: text, color: z.enum(TAG_COLORS) });
 
-export const sourceCreate = z.object({ name: text, kind: z.enum(SOURCE_KINDS).default("diger"), notes: optText });
+export const sourceCreate = z.strictObject({ name: text, kind: z.enum(SOURCE_KINDS).default("diger"), notes: optText });
 export const sourceUpdate = patch({ name: text, kind: z.enum(SOURCE_KINDS), notes: optText });
 
-export const oppCreate = z.object({
+export const oppCreate = z.strictObject({
   title: text,
   person_id: id,
   source_id: id,
@@ -107,7 +107,7 @@ export const oppUpdate = patch({
   source_date: date,
 });
 
-export const projectCreate = z.object({
+export const projectCreate = z.strictObject({
   name: text,
   person_id: id,
   opportunity_id: id.nullish(),
@@ -135,7 +135,7 @@ const subject = {
 const needSubject = (d: { person_id?: number | null; company_id?: number | null; contact?: string | null }) => !!(d.person_id || d.company_id || d.contact);
 const subjectMsg = { message: "kişi, firma ya da adres (contact) gerekli", path: ["person_id"] };
 
-export const touchCreate = z.object({
+export const touchCreate = z.strictObject({
   ...subject,
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
@@ -160,13 +160,17 @@ export const touchUpdate = patch({
   idea_id: id.nullable(),
 });
 
-export const sectorCreate = z.object({ name: text, parent_id: id.nullish() });
+export const sectorCreate = z.strictObject({ name: text, parent_id: id.nullish() });
 export const sectorUpdate = patch({ name: text, parent_id: id.nullable() });
 
-export const noteCreate = z.object({ person_id: id, body: text });
+export const noteCreate = z.strictObject({ person_id: id, body: text });
 export const noteUpdate = patch({ body: text });
 
-export const draftCreate = z.object({
+const url = z.string().trim().url("geçerli bir link gerekli");
+export const linkCreate = z.strictObject({ target_type: z.enum(LINK_TARGETS), target_id: id, label: text, url });
+export const linkUpdate = patch({ label: text, url });
+
+export const draftCreate = z.strictObject({
   ...subject,
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
@@ -182,7 +186,7 @@ export const draftUpdate = patch({ channel: z.enum(CHANNELS), body: text, reason
 // ---- Paket 2: pazarlama ----
 const days = z.coerce.number().int().min(1).max(365);
 
-export const postCreate = z.object({
+export const postCreate = z.strictObject({
   platform: z.enum(POST_PLATFORMS),
   title: text,
   url: optText,
@@ -205,7 +209,7 @@ export const postUpdate = patch({
   refreshed: z.boolean(),
 });
 
-export const templateCreate = z.object({
+export const templateCreate = z.strictObject({
   name: text,
   kind: z.enum(TEMPLATE_KINDS).default("ilk"),
   channel: z.enum(CHANNELS).nullish(),
@@ -220,12 +224,13 @@ export const templateUpdate = patch({
   body: text,
 });
 
-export const ideaCreate = z.object({
+export const ideaCreate = z.strictObject({
   title: text,
   problem: optText,
   stage: z.enum(IDEA_STAGES).default("fikir"),
   notes: optText,
   sector_ids: z.array(id).optional(),
+  parent_id: id.nullish(),
 });
 export const ideaUpdate = patch({
   title: text,
@@ -233,10 +238,11 @@ export const ideaUpdate = patch({
   stage: z.enum(IDEA_STAGES),
   notes: optText,
   sector_ids: z.array(id),
+  parent_id: id.nullable(),
 });
 
 /** Kişiyi fikre bağla ya da ilgisini güncelle (fikir + kişi başına tek satır) */
-export const interestSave = z.object({
+export const interestSave = z.strictObject({
   idea_id: id,
   person_id: id,
   interest: z.enum(INTEREST_LEVELS).optional(),
@@ -245,7 +251,7 @@ export const interestSave = z.object({
 });
 export const interestUpdate = patch({ interest: z.enum(INTEREST_LEVELS), note: optText });
 
-export const paymentCreate = z.object({
+export const paymentCreate = z.strictObject({
   project_id: id,
   milestone: z.enum(MILESTONES),
   expected_amount: tl,
@@ -260,7 +266,7 @@ export const paymentUpdate = patch({
   paid_at: date,
 });
 
-export const taskCreate = z.object({
+export const taskCreate = z.strictObject({
   title: text,
   assignee: z.enum(ASSIGNEES).default("ozgur"),
   due_date: date.optional(),
@@ -278,7 +284,7 @@ export const taskUpdate = patch({
   done: z.boolean(),
 });
 
-export const commentCreate = z.object({
+export const commentCreate = z.strictObject({
   target_type: z.enum(COMMENT_TARGETS).optional(),
   target_id: id.optional(),
   reply_to: id.optional(),
@@ -286,7 +292,7 @@ export const commentCreate = z.object({
 });
 export const commentUpdate = patch({ body: text, resolved: z.boolean() });
 
-export const stageMove = z.object({
+export const stageMove = z.strictObject({
   stage: z.string(),
   reason: optText,
   position: z.coerce.number().int().min(0).optional(),
