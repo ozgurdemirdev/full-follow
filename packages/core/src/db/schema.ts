@@ -237,6 +237,7 @@ export const tasks = sqliteTable("tasks", {
   due_date: text("due_date"),
   done_at: text("done_at"),
   person_id: integer("person_id").references(() => people.id),
+  company_id: integer("company_id").references(() => companies.id),
   opportunity_id: integer("opportunity_id").references(() => opportunities.id),
   project_id: integer("project_id").references(() => projects.id),
 });

@@ -272,6 +272,7 @@ export const taskCreate = z.strictObject({
   assignee: z.enum(ASSIGNEES).default("ozgur"),
   due_date: date.optional(),
   person_id: id.nullish(),
+  company_id: id.nullish(),
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
 });
@@ -280,6 +281,7 @@ export const taskUpdate = patch({
   assignee: z.enum(ASSIGNEES),
   due_date: date,
   person_id: id.nullable(),
+  company_id: id.nullable(),
   opportunity_id: id.nullable(),
   project_id: id.nullable(),
   done: z.boolean(),

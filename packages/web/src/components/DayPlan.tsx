@@ -5,6 +5,7 @@ import { openSheet } from "../app/ui";
 import { fmtDay, pct, todayIso } from "../lib/format";
 import { CHANNEL } from "../lib/labels";
 import { EditDelete } from "./contact";
+import { toast } from "./toast";
 import { Icon } from "./icons";
 import { CardHead, order } from "./ui";
 
@@ -15,7 +16,12 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
   const [noting, setNoting] = useState(false);
   const [note, setNote] = useState(g.note ?? "");
   const share = Math.min(100, (g.done / g.target) * 100);
-  const log = (body: Record<string, unknown>, ok?: string) => run("post", `/goals/${g.id}/log`, { date, ...body }, { silent: !ok, ok }).catch(() => {});
+  const log = (body: Record<string, unknown>) => run("post", `/goals/${g.id}/log`, { date, ...body }, { silent: true }).catch(() => {});
+  /** A step on the count; the toast offers to take it back (the count never goes below 0) */
+  const step = async (n: number) => {
+    await log({ add: n });
+    toast(`${g.title} ${n > 0 ? "+" : ""}${n}`, "ok", { label: "Geri al", run: () => void log({ add: -n }) });
+  };
 
   return (
     <div className="row flex flex-col gap-3 rounded-xl border-0 px-5 py-4">
@@ -28,8 +34,9 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
           </span>
         </span>
         <span className={`font-mono text-base ${g.complete ? "text-status-text-success" : "text-text-secondary"}`}>{g.done} / {g.target}</span>
+        <button type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} -1`} disabled={g.manual < 1} onClick={() => void step(-1)}>−1</button>
         {STEPS.map((n) => (
-          <button key={n} type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} +${n}`} onClick={() => void log({ add: n })}>+{n}</button>
+          <button key={n} type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} +${n}`} onClick={() => void step(n)}>+{n}</button>
         ))}
       </div>
       <div className="track">

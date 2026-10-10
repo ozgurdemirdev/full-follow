@@ -79,8 +79,8 @@ export function queriesService(ctx: Ctx) {
   function tasks(o: ListOpts): Rows {
     const f = o.filter ?? {};
     let list = rows(ctx, `
-      SELECT t.*, p.name AS person_name, op.title AS opportunity_title, pr.name AS project_name
-      FROM tasks t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN opportunities op ON op.id = t.opportunity_id
+      SELECT t.*, p.name AS person_name, co.name AS company_name, op.title AS opportunity_title, pr.name AS project_name
+      FROM tasks t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies co ON co.id = t.company_id LEFT JOIN opportunities op ON op.id = t.opportunity_id
       LEFT JOIN projects pr ON pr.id = t.project_id
       ORDER BY (t.due_date IS NULL), t.due_date, t.id`);
     const wantDone = bool(f.done);
@@ -88,8 +88,8 @@ export function queriesService(ctx: Ctx) {
     if (f.assignee) list = list.filter((t) => t.assignee === f.assignee);
     if (bool(f.overdue)) list = list.filter((t) => t.due_date && t.due_date < today());
     if (bool(f.due)) list = list.filter((t) => t.due_date && t.due_date <= today());
-    for (const k of ["person_id", "opportunity_id", "project_id"]) if (f[k]) list = list.filter((t) => t[k] === Number(f[k]));
-    list = list.filter((t) => has(o.q, t.title, t.person_name, t.opportunity_title, t.project_name));
+    for (const k of ["person_id", "company_id", "opportunity_id", "project_id"]) if (f[k]) list = list.filter((t) => t[k] === Number(f[k]));
+    list = list.filter((t) => has(o.q, t.title, t.person_name, t.company_name, t.opportunity_title, t.project_name));
     return page(list, o.limit, o.offset);
   }
 

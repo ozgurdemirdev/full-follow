@@ -41,7 +41,7 @@ const LINE: Record<string, (r: Row) => string> = {
     r.next_payment && `sıradaki: ${label(r.next_payment.milestone)} ${tl(r.next_payment.remaining)}${r.next_payment.due_date ? ` ${d(r.next_payment.due_date)}` : ""}`,
     r.next_task && `görev: ${cut(r.next_task.title, 40)}`,
   ),
-  task: (r) => join(`#${r.id} [${who(r.assignee)}] ${r.title}`, r.due_date && `son ${d(r.due_date)}`, r.done_at && "bitti", r.person_name || r.opportunity_title || r.project_name),
+  task: (r) => join(`#${r.id} [${who(r.assignee)}] ${r.title}`, r.due_date && `son ${d(r.due_date)}`, r.done_at && "bitti", r.person_name || r.company_name || r.opportunity_title || r.project_name),
   draft: (r) => join(`#${r.id} ${r.to_name ?? r.person_name}`, label(r.channel), label(r.status), !!r.followup_step && `${r.followup_step}. takip`, `"${cut(r.body, 60)}"`, r.reject_note && `ret: ${cut(r.reject_note, 40)}`),
   payment: (r) => join(`#${r.id} ${r.project_name}`, label(r.milestone), `${tl(r.paid_amount)}/${tl(r.expected_amount)}`, r.due_date && `vade ${d(r.due_date)}`, r.status !== "bekliyor" && label(r.status === "odendi" ? "ödendi" : r.status === "kismi" ? "kısmi" : "gecikmiş")),
   touch: (r) => join(`#${r.id} ${d(r.happened_at)} ${r.direction} ${label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && "firma", cut(r.summary, 60), r.outcome && `→ ${cut(r.outcome, 30)}`, r.expects_reply && "cevap bekler"),

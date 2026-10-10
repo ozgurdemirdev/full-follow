@@ -131,6 +131,24 @@ export function useSubmit(p: FormProps, fn: () => Promise<ReactNode | void>) {
   };
 }
 
+/** Anything a task or comment can be about: opportunity, project, person, company (one list, typed options) */
+export type LinkOption = Option & { type: "opportunity" | "project" | "person" | "company"; tid: number };
+export function useLinkOptions(): LinkOption[] {
+  const people = usePeople();
+  const companies = useCompanies();
+  const opps = useOpps();
+  const projects = useProjects();
+  return useMemo(() => {
+    const list: LinkOption[] = [];
+    let n = 0;
+    for (const o of opps.rows) list.push({ id: ++n, label: o.title, sub: `Fırsat · ${o.person_name}`, type: "opportunity", tid: o.id });
+    for (const x of projects.rows) list.push({ id: ++n, label: x.name, sub: "Proje", type: "project", tid: x.id });
+    for (const x of people.rows) list.push({ id: ++n, label: x.name, sub: x.company_name ?? "Kişi", type: "person", tid: x.id });
+    for (const x of companies.rows) list.push({ id: ++n, label: x.name, sub: "Firma", type: "company", tid: x.id });
+    return list;
+  }, [opps.rows, projects.rows, people.rows, companies.rows]);
+}
+
 export function usePersonOptions(): Option[] {
   const people = usePeople();
   return useMemo(() => people.rows.map((x) => ({ id: x.id, label: x.name, sub: x.company_name ?? undefined })), [people.rows]);
@@ -332,30 +350,34 @@ export function SubmitGuard({ ok }: { ok: boolean }) {
 
 // ---------------------------------------------------------------- görev
 function TaskForm(p: FormProps) {
-  const personOptions = usePersonOptions();
+  const options = useLinkOptions();
   const pre = p.sheet.preset;
   const editId = pre?.edit;
   const existing = useQuery<Detail<Task>>(editId ? `/tasks/${editId}` : null);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState(pre?.date ?? todayIso());
-  const [person, setPerson] = useState<Ref>(emptyRef);
+  const [target, setTarget] = useState<Ref>(emptyRef);
   const row = existing.data?.row;
+  /** The record the task is already tied to (edit) or was opened from (preset) */
+  const linked = row
+    ? { person: row.person_id, company: row.company_id, opportunity: row.opportunity_id, project: row.project_id }
+    : { person: pre?.person_id, company: pre?.company_id, opportunity: pre?.opportunity_id, project: pre?.project_id };
   useEffect(() => {
-    if (!row) return;
-    setTitle(row.title);
-    setDue(row.due_date ?? "");
-  }, [row]);
+    if (row) {
+      setTitle(row.title);
+      setDue(row.due_date ?? "");
+    }
+    const hit = options.find((o) => linked[o.type] === o.tid);
+    if (hit) setTarget({ id: hit.id, text: hit.label });
+    // options arrive after the first render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row, options]);
 
   const submit = useSubmit(p, async () => {
-    if (editId) {
-      await run<Task>("patch", `/tasks/${editId}`, { title: title.trim(), due_date: due || null }, { ok: "Görev güncellendi" });
-      return;
-    }
-    await run<Task>("post", "/tasks", {
-      title: title.trim(), assignee: "ozgur", due_date: due || undefined,
-      person_id: pre?.opportunity_id || pre?.project_id ? undefined : person.id ?? pre?.person_id ?? undefined,
-      opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,
-    }, { ok: "Görev eklendi" });
+    const t = options.find((o) => o.id === target.id);
+    const link = { person_id: null, company_id: null, opportunity_id: null, project_id: null, ...(t ? { [`${t.type}_id`]: t.tid } : {}) };
+    if (editId) await run<Task>("patch", `/tasks/${editId}`, { title: title.trim(), due_date: due || null, ...link }, { ok: "Görev güncellendi" });
+    else await run<Task>("post", "/tasks", { title: title.trim(), assignee: "ozgur", due_date: due || undefined, ...link }, { ok: "Görev eklendi" });
   });
 
   return (
@@ -366,29 +388,17 @@ function TaskForm(p: FormProps) {
       <Field label="Tarih" htmlFor="k-due">
         <input id="k-due" className="inp" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
       </Field>
-      {editId || pre?.opportunity_id || pre?.project_id || pre?.person_id ? null : (
-        <Field label="Kişi (isteğe bağlı)" htmlFor="k-person">
-          <Combo id="k-person" value={person} onChange={setPerson} options={personOptions} placeholder="Kişi ara" allowNew={false} />
-        </Field>
-      )}
+      <Field label="Neyle ilgili (isteğe bağlı)" htmlFor="k-target">
+        <Combo id="k-target" value={target} onChange={setTarget} options={options} placeholder="Kişi, firma, fırsat ya da proje ara" allowNew={false} />
+      </Field>
     </form>
   );
 }
 
 // ---------------------------------------------------------------- yorum
 function CommentForm(p: FormProps) {
-  const people = usePeople();
-  const opps = useOpps();
-  const projects = useProjects();
   const preTarget = p.sheet.preset?.target;
-  const options = useMemo(() => {
-    const list: (Option & { type: string; tid: number })[] = [];
-    let n = 0;
-    for (const o of opps.rows) list.push({ id: ++n, label: o.title, sub: `Fırsat · ${o.person_name}`, type: "opportunity", tid: o.id });
-    for (const x of projects.rows) list.push({ id: ++n, label: x.name, sub: "Proje", type: "project", tid: x.id });
-    for (const x of people.rows) list.push({ id: ++n, label: x.name, sub: x.company_name ?? "Kişi", type: "person", tid: x.id });
-    return list;
-  }, [opps.rows, projects.rows, people.rows]);
+  const options = useLinkOptions();
   const [target, setTarget] = useState<Ref>(emptyRef);
   const [body, setBody] = useState("");
 
@@ -407,7 +417,7 @@ function CommentForm(p: FormProps) {
         <p className="m-0 text-base text-text-secondary">{preTarget.label}</p>
       ) : (
         <Field label="Neyle ilgili" htmlFor="c-target">
-          <Combo id="c-target" value={target} onChange={setTarget} options={options} placeholder="Fırsat, proje ya da kişi ara" allowNew={false} />
+          <Combo id="c-target" value={target} onChange={setTarget} options={options} placeholder="Fırsat, proje, kişi ya da firma ara" allowNew={false} />
         </Field>
       )}
       <Field label="Yorum" htmlFor="c-body">

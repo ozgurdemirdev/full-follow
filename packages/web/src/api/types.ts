@@ -295,9 +295,11 @@ export interface Task extends Base {
   due_date: string | null;
   done_at: string | null;
   person_id: number | null;
+  company_id: number | null;
   opportunity_id: number | null;
   project_id: number | null;
   person_name: string | null;
+  company_name: string | null;
   opportunity_title: string | null;
   project_name: string | null;
 }

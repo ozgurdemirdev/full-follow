@@ -62,6 +62,7 @@ export function companiesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.unlink("people", "company_id", id);
+      bin.unlink("tasks", "company_id", id);
       bin.take("comments", "target_type = 'draft' AND target_id IN (SELECT id FROM drafts WHERE company_id = ?)", id);
       bin.take("touches", "company_id = ?", id);
       bin.take("drafts", "company_id = ?", id);

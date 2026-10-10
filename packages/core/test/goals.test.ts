@@ -98,4 +98,13 @@ describe("Günlük iş planı", () => {
     ozgur.restore("goal", "Mail");
     expect(ozgur.goals.plan().goals[0]).toMatchObject({ manual: 1 });
   });
+
+  it("görev firmaya bağlanabilir, tek kayda bağlanır; firma silinince görev kalır", () => {
+    const co = ozgur.companies.create({ name: "ABC" }).row;
+    const t = claude.save("task", { title: "teklif", company: "ABC", due_date: "2026-10-12" }).row;
+    expect(ozgur.find("task").rows[0]).toMatchObject({ company_id: co.id, company_name: "ABC" });
+    expect(() => ozgur.tasks.create({ title: "x", company_id: co.id, person_id: 1 })).toThrow(FFError);
+    ozgur.remove("company", co.id);
+    expect(ozgur.find("task").rows[0]).toMatchObject({ id: t.id, company_id: null });
+  });
 });

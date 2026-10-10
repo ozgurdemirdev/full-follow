@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` ADD `company_id` integer REFERENCES companies(id);
