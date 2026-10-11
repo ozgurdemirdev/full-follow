@@ -25,6 +25,8 @@ const DEBUG_KEY = "ff.mascot.debug";
 const DEBUG_FRAMES = 120;
 /** gap kept around the + button, its menu and the chat window (px) */
 const OBSTACLE_MARGIN = 6;
+/** below this speed (px/s) the mascot counts as resting */
+const REST_SPEED = 8;
 /** half width of the body as a fraction of the mascot width (the same number motion.ts collides with) */
 const BODY_HALF_W = 0.32;
 const FAB_SELECTOR = 'button[aria-label="Hızlı ekle"]';
@@ -76,6 +78,9 @@ function MascotBody({ onActivate }: Props) {
   const pointer = useRef<Pointer>({ px: -1, py: -1, lastMove: -99 });
   const press = useRef({ down: false, sx: 0, sy: 0, gx: 0, gy: 0, lx: 0, ly: 0, lt: 0, vx: 0, vy: 0 });
   const lastWork = useRef(-Infinity);
+  const frameNo = useRef(0);
+  /** time of the frames not drawn since the last drawn one, so the pose steps do not shrink */
+  const skipped = useRef(0);
   const faded = useRef(false);
   const resetsSeen = useRef(live.resets);
   const chat = useChatLive();
@@ -203,7 +208,13 @@ function MascotBody({ onActivate }: Props) {
     simulate(s, e, dt, hooks, { running: c.running });
     moodStep(s);
     pose(s, dt, pointer.current);
-    sc.frame(s, dt, c.running ? RUNNING_GLOW : 1, { props: e.size.w >= ACT_PROPS_MIN_SIZE, reduce: e.reduce });
+    // resting with nothing to show: pose and draw every idleFrameSkip-th frame (the simulation above still runs every frame)
+    skipped.current += dt;
+    const resting = s.mode === "free" && !s.travel && s.activity === "idle" && s.mood === "normal" && !press.current.down && Math.hypot(s.vel.x, s.vel.y) < REST_SPEED;
+    if (!resting || ++frameNo.current % CFG.idleFrameSkip === 0) {
+      sc.frame(s, skipped.current, c.running ? RUNNING_GLOW : 1, { props: e.size.w >= ACT_PROPS_MIN_SIZE, reduce: e.reduce });
+      skipped.current = 0;
+    }
     const bob = s.mode === "drag" || e.reduce ? 0 : Math.sin(s.t * 0.9) * CFG.bob;
     el.style.transform = `translate3d(${s.pos.x - e.size.w / 2}px, ${s.pos.y - e.size.h * 0.45 + bob}px, 0)`;
     el.style.setProperty("--pulse", (0.65 + 0.35 * s.c).toFixed(3));

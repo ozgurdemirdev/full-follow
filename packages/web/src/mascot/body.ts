@@ -1,10 +1,10 @@
 // Jellyfish body: felt fur material, bell, tentacles. Shape comes from the active variant. Port of jelly-body.js.
 import * as THREE from "three/webgpu";
 import { attribute, float, instanceIndex, max, mix, mx_noise_float, normalLocal, positionLocal, smoothstep, step, uniform, varying } from "three/tsl";
-import { BELL_BUILD, TENT_BUILD, VARIANTS, type BellShape, type FaceShape, type TentShape } from "./config";
+import { BELL_BUILD, CFG, TENT_BUILD, VARIANTS, type BellShape, type FaceShape, type TentShape } from "./config";
 
-export const BELL: BellShape & { segments: number; rimFade: number; face: FaceShape } = {
-  ...VARIANTS.yuvarlak.bell, segments: BELL_BUILD.segments, rimFade: BELL_BUILD.rimFade, face: VARIANTS.yuvarlak.face,
+export const BELL: BellShape & { segments: number; domeSteps: number; lipSteps: number; rimFade: number; face: FaceShape } = {
+  ...VARIANTS.yuvarlak.bell, ...BELL_BUILD, face: VARIANTS.yuvarlak.face,
 };
 export const TENT: TentShape & { rings: number; capRings: number; radial: number } & Omit<typeof TENT_BUILD, "rings" | "capRings" | "radial"> = { ...VARIANTS.yuvarlak.tent, ...TENT_BUILD };
 
@@ -17,7 +17,7 @@ export function applyVariant(id: string) {
 /** Shader inputs shared by the fur material; colours are written by scene.ts */
 export const U = {
   bell: uniform(new THREE.Color()), tent: uniform(new THREE.Color()), glow: uniform(new THREE.Color()),
-  glowPow: uniform(1), furLen: uniform(0.04), freq: uniform(40), force: uniform(new THREE.Vector3(0, -0.5, 0)),
+  glowPow: uniform(1), shells: uniform(CFG.shellsMax), furLen: uniform(0.04), freq: uniform(40), force: uniform(new THREE.Vector3(0, -0.5, 0)),
 };
 
 /** Where a tentacle is asked to reach (root local) and how strongly, 0 to 1 */
@@ -37,10 +37,11 @@ export function extent() {
   return { top: BELL.Y0 + BELL.H, bottom: TENT.rootY - TENT.lenMax, width: BELL.R * (1 + 0.07 * BELL.flare) + TENT.lenMax * 0.45 };
 }
 
-export function furMaterial({ shells, furLength, furFreq, glowStrength }: { shells: number; furLength: number; furFreq: number; glowStrength: number }) {
+/** Shell count is a uniform so it can drop for small sizes without a rebuild (mesh.count follows it) */
+export function furMaterial({ furLength, furFreq, glowStrength }: { furLength: number; furFreq: number; glowStrength: number }) {
   U.furLen.value = furLength;
   U.freq.value = furFreq;
-  const hVert: any = float(instanceIndex).div(shells - 1);
+  const hVert: any = float(instanceIndex).div(U.shells.sub(1));
   const h: any = varying(hVert);
   const fc: any = attribute("furCoord", "vec3");
   const glowA: any = attribute("glow", "float");
@@ -61,15 +62,15 @@ export function furMaterial({ shells, furLength, furFreq, glowStrength }: { shel
 export function buildBell() {
   const { R, Y0, flare } = BELL;
   const profile: THREE.Vector2[] = [];
-  for (let i = 0; i <= 20; i++) {
-    const p = domePoint((i / 20) * Math.PI / 2).p;
+  for (let i = 0; i <= BELL.domeSteps; i++) {
+    const p = domePoint((i / BELL.domeSteps) * Math.PI / 2).p;
     profile.push(new THREE.Vector2(Math.hypot(p.x, p.z), p.y));
   }
   // Soft rounded lip that tucks under; flare = 0 gives a plain rounded edge with no ring.
   const lip = new THREE.SplineCurve([
     new THREE.Vector2(R, Y0), new THREE.Vector2(R * (1 + 0.05 * flare), Y0 - 0.08), new THREE.Vector2(R * (1 + 0.06 * flare) - 0.02, Y0 - 0.15),
     new THREE.Vector2(R * 0.9, Y0 - 0.2), new THREE.Vector2(R * 0.65, Y0 - 0.19), new THREE.Vector2(R * 0.35, Y0 - 0.16), new THREE.Vector2(0.001, Y0 - 0.15),
-  ]).getPoints(24).slice(1);
+  ]).getPoints(BELL.lipSteps).slice(1);
   const pts = profile.concat(lip);
   // Seam at the back (phiStart = PI), away from the camera.
   let geo = new THREE.LatheGeometry(pts, BELL.segments, Math.PI);

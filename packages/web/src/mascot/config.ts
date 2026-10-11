@@ -2,7 +2,8 @@
 const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
 export const CFG = {
-  shells: coarse ? 16 : 24, furLength: 0.04, furFreq: 40, glowStrength: 0.9, exposure: 0.85, envIntensity: 0.35,
+  // Fur shells: all of them from shellsSmallBelow px of mascot width up, fewer below (one uniform and mesh.count, no rebuild); idle: draw every idleFrameSkip-th frame.
+  shellsMax: coarse ? 16 : 24, shellsSmall: 14, shellsSmallBelow: 140, idleFrameSkip: 2, furLength: 0.04, furFreq: 40, glowStrength: 0.9, exposure: 0.85, envIntensity: 0.35,
   // The canvas is tiny, so it is always supersampled at 2x: alpha-tested fur needs it and the cost is about 140 k pixels.
   supersample: 2,
   pulseTravel: 1.5, pulseIdle: 3.2, impulse: 65, waterDrag: 1.4, tossDrag: 0.9, maxToss: 2400,
@@ -80,8 +81,8 @@ export const VARIANTS: Record<string, Variant> = {
 export const VARIANT_IDS = Object.keys(VARIANTS);
 export const DEFAULT_VARIANT = "etekli";
 
-export const BELL_BUILD = { segments: 60, rimFade: 0.25 } as const;
-export const TENT_BUILD = { rings: 22, capRings: 5, radial: 12, stretch: 1.7, ikIterations: 6, collideFrom: 4, collideMargin: 0.07, lipBand: 0.14, ikSmooth: 0.6 } as const;
+export const BELL_BUILD = { segments: 36, domeSteps: 12, lipSteps: 12, rimFade: 0.25 } as const;
+export const TENT_BUILD = { rings: 16, capRings: 3, radial: 8, stretch: 1.7, ikIterations: 6, collideFrom: 3, collideMargin: 0.07, lipBand: 0.14, ikSmooth: 0.6 } as const;
 
 /** Packet E: acting. Below this mascot width (px) the laptop, magnifier and glasses are not shown; face looks, dots and the bubble still play */
 export const ACT_PROPS_MIN_SIZE = 70;

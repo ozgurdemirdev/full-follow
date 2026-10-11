@@ -23,6 +23,7 @@ export interface MascotScene {
   backend: "WebGPU" | "WebGL 2";
   setVariant(id: string): void;
   setColors(c: BellGlow): void;
+  /** `w`, `h`: canvas size in px; the fur shell count follows the width */
   resize(w: number, h: number): void;
   /** poses the model from the motion state and draws one frame */
   frame(S: MotionState, dt: number, glowScale: number, act: ActInput): void;
@@ -66,11 +67,16 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
   let face: ReturnType<typeof createFace>;
   let acting: ReturnType<typeof createActing>;
   let glowLight: THREE.PointLight;
+  let furMeshes: THREE.InstancedMesh[] = [];
+  let canvasW = 0;
   let colors = opts.colors;
 
   // Fits the camera to the model, leaving room above for the dizzy stars.
   function frameModel() {
     if (!root) return;
+    const shells = canvasW < CFG.shellsSmallBelow ? Math.min(CFG.shellsSmall, CFG.shellsMax) : CFG.shellsMax;
+    U.shells.value = shells;
+    for (const m of furMeshes) m.count = shells;
     const e = extent(), top = e.top + CFG.frameTop, bottom = e.bottom - CFG.frameBottom;
     root.position.y = -(top + bottom) / 2;
     const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
@@ -106,11 +112,13 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
     bellGroup = new THREE.Group();
     bellGroup.matrixAutoUpdate = false;
     root.add(bellGroup);
-    bellGroup.add(new THREE.InstancedMesh(buildBell(), furMat, CFG.shells));
+    const bellMesh = new THREE.InstancedMesh(buildBell(), furMat, CFG.shellsMax);
+    bellGroup.add(bellMesh);
     tentacles = createTentacles();
-    const tentMesh = new THREE.InstancedMesh(tentacles.geo, furMat, CFG.shells);
+    const tentMesh = new THREE.InstancedMesh(tentacles.geo, furMat, CFG.shellsMax);
     tentMesh.frustumCulled = false;
     root.add(tentMesh);
+    furMeshes = [bellMesh, tentMesh];
     face = createFace(bellGroup, root, CFG.furLength, face0);
     acting = createActing(root, bellGroup, tentacles.tents, CFG.furLength, props0);
     glowLight = new THREE.PointLight(colors.glow, 4, 3.5, 2);
@@ -131,6 +139,7 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
       applyColors();
     },
     resize(w, h) {
+      canvasW = w;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
