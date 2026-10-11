@@ -4,7 +4,7 @@ import { useChatLive } from "../lib/chatStore";
 import { T } from "../lib/chatText";
 import { isDesk } from "../lib/openRecord";
 import { MASCOT_TEXT } from "../lib/mascotText";
-import { ACT_ERROR_MS, ACT_MIN_MS, ACT_PROPS_MIN_SIZE, CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_EYE, PERCH_GAP, PERCH_X, PERCH_Y, SIZE } from "./config";
+import { ACT_ERROR_MS, ACT_MIN_MS, ACT_PROPS_MIN_SIZE, CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_GAP, PERCH_HEIGHT, PERCH_X, PERCH_Y, SIZE } from "./config";
 import { mascotLive, mascotPrefs, useMascotLive, useMascotPrefs, type MascotPrefs } from "./mascotStore";
 import { activityOf, newDebounce, settle } from "./activity";
 import { bounds, cheer, createMotion, freeze, moodStep, pose, setActivity, simulate, type Env, type MotionState, type Pointer, type Rect, type Vec2 } from "./motion";
@@ -30,9 +30,9 @@ const BODY_HALF_W = 0.32;
 const FAB_SELECTOR = 'button[aria-label="Hızlı ekle"]';
 const FAB_MENU_SELECTOR = '[role="menu"][aria-label="Hızlı ekle"]:not([aria-hidden="true"])';
 
-/** Beside the chat window at eye level, on the side the mascot already is (it cannot swim through the window), else the other side, else on its top edge */
+/** Beside the chat window at its middle, on the side the mascot already is (it cannot swim through the window), else the other side, else on its top edge */
 function perchSpot(r: DOMRect, e: Env, fromX: number): Vec2 {
-  const half = e.size.w * BODY_HALF_W + OBSTACLE_MARGIN + PERCH_GAP, y = r.top + e.size.h * PERCH_EYE;
+  const half = e.size.w * BODY_HALF_W + OBSTACLE_MARGIN + PERCH_GAP, y = r.top + r.height * PERCH_HEIGHT;
   const left = r.left - half * 2 >= e.left ? { x: r.left - half, y } : null;
   const right = r.right + half * 2 <= e.viewport.w ? { x: r.right + half, y } : null;
   const prefer = fromX < (r.left + r.right) / 2 ? [left, right] : [right, left];
