@@ -129,10 +129,13 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     this.slots.set(sessionId, slot);
     createInterface({ input: child.stdout! }).on("line", (l) => this.onLine(slot, l));
     child.stderr?.on("data", (d) => (slot.stderr = (slot.stderr + d).slice(-STDERR_LOG_CHARS)));
-    child.on("error", (e) => {
+    const failed = (e: Error) => {
       slot.stderr += String(e);
       this.onExit(slot);
-    });
+    };
+    child.on("error", failed);
+    // EPIPE when the process died before a write: end the turn as cli_crash instead of an unhandled stream error
+    child.stdin?.on("error", failed);
     child.on("exit", () => this.onExit(slot));
     return slot;
   }
