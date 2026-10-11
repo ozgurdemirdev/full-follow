@@ -59,7 +59,7 @@ function ProjectCard({ p, i, unanswered }: { p: Project; i: number; unanswered: 
   const total = p.expected_total || p.price;
   const paidPct = total ? Math.min(100, Math.round((p.paid_total / total) * 100)) : 0;
   return (
-    <Link href={timelinePath("project", p.id)} className="card rise lift flex flex-col gap-7 p-9 text-text-primary hover:text-text-primary" style={order(i)}>
+    <Link href={timelinePath("project", p.id)} data-record={`project-${p.id}`} className="card rise lift flex flex-col gap-7 p-9 text-text-primary hover:text-text-primary" style={order(i)}>
       <div className="flex items-start gap-5">
         <div className="flex min-w-0 flex-grow flex-col gap-0.5">
           <h2 className="m-0 text-lg font-semibold">{p.name}</h2>

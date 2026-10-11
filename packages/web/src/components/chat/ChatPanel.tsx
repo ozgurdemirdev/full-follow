@@ -38,6 +38,7 @@ export interface PanelProps {
   onStop: () => void;
   onRetrySend: (m: ChatMessage) => void;
   onRetryReply: () => void;
+  onOpenRecord: (type: string, id: number) => void;
   loadOlder: () => Promise<void>;
 }
 
@@ -166,6 +167,7 @@ export function ChatPanel(p: PanelProps) {
             loadOlder={p.loadOlder}
             onRetrySend={p.onRetrySend}
             onRetryReply={p.onRetryReply}
+            onOpenRecord={p.onOpenRecord}
           />
         )}
         <StatusLine live={p.live} />

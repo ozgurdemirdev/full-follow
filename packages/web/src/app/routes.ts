@@ -52,3 +52,21 @@ export const PATHS: Record<PageKey, string> = {
 };
 
 export const timelinePath = (type: "person" | "opportunity" | "project", id: number) => `/zaman/${type}/${id}`;
+
+/** Page of a record (people, companies, ideas, own projects, posts and timeline already take /:id; the rest follow the same pattern).
+ *  null: no page of its own (task and goal open their form on the dashboard, payment lives inside its project). */
+export function recordPath(type: string, id: number): string | null {
+  switch (type) {
+    case "person": return `${PATHS.people}/${id}`;
+    case "company": return `${PATHS.companies}/${id}`;
+    case "opportunity": return `${PATHS.pipeline}/${id}`;
+    case "project": return `${PATHS.projects}/${id}`;
+    case "draft": return `${PATHS.drafts}/${id}`;
+    case "template": return `${PATHS.templates}/${id}`;
+    case "idea": return `${PATHS.ideas}/${id}`;
+    case "own_project": return `${PATHS.ownProjects}/${id}`;
+    case "post": return `${PATHS.posts}/${id}`;
+    case "comment": return `${PATHS.comments}/${id}`;
+    default: return null;
+  }
+}

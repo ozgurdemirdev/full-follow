@@ -48,7 +48,7 @@ export default function OwnProjects() {
               <div className="card rise overflow-hidden">
                 {shown.length === 0 ? <Empty>Henüz kendi projen yok. Kendi ürününü ekle; satılabilir mi, hangi sektöre uyar, sıradaki fikirler neler, burada dursun.</Empty> : null}
                 {shown.map((p) => (
-                  <button key={p.id} type="button" onClick={() => navigate(`${PATHS.ownProjects}/${p.id}`)} aria-current={p.id === selId || undefined}
+                  <button key={p.id} type="button" data-record={`own_project-${p.id}`} onClick={() => navigate(`${PATHS.ownProjects}/${p.id}`)} aria-current={p.id === selId || undefined}
                     className={`row cv-auto flex w-full flex-col gap-2 border-x-0 border-t-0 py-5 pl-7 pr-7 text-left text-text-primary ${p.id === selId && desk ? "bg-surface-2" : "bg-transparent"}`}>
                     <span className="flex items-center gap-3">
                       <span className="min-w-0 flex-grow truncate text-base font-medium">{p.name}</span>

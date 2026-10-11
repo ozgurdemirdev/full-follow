@@ -86,7 +86,7 @@ function DraftCard({ d, i }: { d: Draft; i: number }) {
   };
 
   return (
-    <article className="card rise-item flex flex-col gap-5 px-9 py-8" style={order(i)}>
+    <article data-record={`draft-${d.id}`} className="card rise-item flex flex-col gap-5 px-9 py-8" style={order(i)}>
       <div className="flex flex-wrap items-center gap-3">
         {d.person_id ? <Link href={timelinePath("person", d.person_id)} className="text-md font-semibold text-text-primary">{d.to_name}</Link>
           : d.company_id ? <Link href={`${PATHS.companies}/${d.company_id}`} className="text-md font-semibold text-text-primary">{d.to_name}</Link>

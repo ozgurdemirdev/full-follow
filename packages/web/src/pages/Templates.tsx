@@ -47,7 +47,7 @@ function TemplateCard({ t, i }: { t: Template; i: number }) {
     void trash(`/templates/${t.id}`, `“${t.name}” şablonu`).catch(() => {});
   };
   return (
-    <article className="card rise-item flex flex-col gap-4 px-9 py-8" style={order(i)}>
+    <article data-record={`template-${t.id}`} className="card rise-item flex flex-col gap-4 px-9 py-8" style={order(i)}>
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-md font-semibold">{t.name}</span>
         <Who actor={t.created_by} />

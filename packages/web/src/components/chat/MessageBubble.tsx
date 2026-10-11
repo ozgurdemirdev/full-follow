@@ -3,7 +3,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { parseTools, type ChatMessage } from "../../api/chat";
 import { fmtDay } from "../../lib/format";
-import { T } from "../../lib/chatText";
+import { KIND_LABEL, T } from "../../lib/chatText";
 import { chatApi } from "../../api/chat";
 import { Attachment } from "./Attachment";
 import { Icon } from "../icons";
@@ -58,9 +58,10 @@ interface Props {
   onRetrySend: (m: ChatMessage) => void;
   /** ask again after a failed reply */
   onRetryReply: () => void;
+  onOpenRecord: (type: string, id: number) => void;
 }
 
-export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySend, onRetryReply }: Props) {
+export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySend, onRetryReply, onOpenRecord }: Props) {
   if (m.role === "user") {
     return (
       <article className="msg me" data-pending={m.local === "sending" ? "" : undefined}>
@@ -92,6 +93,11 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
       </div>
       {(m.body || active) && <Reply body={m.body} caret={active} />}
       {!active && <Tools message={m} />}
+      {!active && parseTools(m).filter((t) => t.open).map((t, i) => (
+        <button key={i} type="button" className="rchip" onClick={() => onOpenRecord(t.open!.type, t.open!.id)}>
+          {T.openChip(KIND_LABEL[t.open!.type] ?? t.open!.type, t.open!.id)}
+        </button>
+      ))}
       {m.state === "stopped" && (
         <div className="endnote">
           <span className="chip c-neutral">{T.stopped}</span>

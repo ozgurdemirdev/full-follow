@@ -185,6 +185,9 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
       case "delta":
         this.appendText(sessionId, turn, e.text);
         break;
+      case "navigate":
+        this.hub.emit(sessionId, "navigate", { message_id, type: e.record_type, id: e.record_id, at: Date.now() });
+        break;
       case "tools":
         turn.tools = e.tools;
         this.core.chat.setAssistantTools(message_id, e.tools);

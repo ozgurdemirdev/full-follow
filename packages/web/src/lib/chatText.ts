@@ -51,6 +51,7 @@ export const T = {
   listenDone: "Bitir",
   micDenied: "Mikrofon izni verilmedi",
   micFailed: "Ses tanıma çalışmadı, tekrar dene",
+  openChip: (kind: string, id: number) => `${kind} #${id} · aç`,
   attach: "Dosya ya da resim ekle",
   attachRemove: (name: string) => `${name} kaldır`,
   dropHint: "Bırak, mesaja eklensin",
@@ -84,6 +85,11 @@ export const CHAT_UI = {
   lostBadgeMs: 2_000,
   /** "back" banner stays this long */
   backBannerMs: 2_000,
+  /** a navigate event older than this is a replay (F5), not a request */
+  navigateMaxAgeMs: 5_000,
+  /** after navigating, how long and how often to look for the opened row */
+  flashPollMs: 100,
+  flashTries: 30,
   warnLimit: 0.75,
   dangerLimit: 0.95,
   composerCountFrom: 0.8,
@@ -91,3 +97,9 @@ export const CHAT_UI = {
   contextUnit: 1_000,
   million: 1_000_000,
 } as const;
+
+/** Record kinds as the reply chips and cards name them */
+export const KIND_LABEL: Record<string, string> = {
+  person: "Kişi", company: "Firma", opportunity: "Fırsat", project: "Proje", task: "Görev", goal: "Hedef", draft: "Taslak",
+  template: "Şablon", idea: "Fikir", own_project: "Kendi proje", post: "Paylaşım", comment: "Yorum", payment: "Ödeme",
+};

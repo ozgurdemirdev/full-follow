@@ -76,7 +76,7 @@ function PostRow({ p, open, toggle }: { p: Post; open: boolean; toggle: () => vo
     void trash(`/posts/${p.id}`, `“${p.title}” paylaşımı`).catch(() => {});
   };
   return (
-    <article className="row cv-auto flex flex-col gap-4 px-9 py-7">
+    <article data-record={`post-${p.id}`} className="row cv-auto flex flex-col gap-4 px-9 py-7">
       <div className="flex items-start gap-4">
         <span className={`dot mt-3 ${PLATFORM_DOT[p.platform] ?? "bg-accent-neutral"}`} />
         <div className="flex min-w-0 flex-grow flex-col gap-1">

@@ -543,3 +543,13 @@
 .tl-ev:not(:has(+ .tl-ev))::before {
   display: none;
 }
+
+/* a row Claude opened in the panel flashes once */
+@keyframes record-flash {
+  from {
+    background: var(--color-primary-soft-bg);
+  }
+}
+[data-flash] {
+  animation: record-flash var(--dur-bar-grow) var(--ease-out) both;
+}

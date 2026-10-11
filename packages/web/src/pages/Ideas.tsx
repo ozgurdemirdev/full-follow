@@ -57,7 +57,7 @@ export default function Ideas() {
             <div className="card rise overflow-hidden">
               {shown.length === 0 ? <Empty>Henüz fikir yok. Ürün fikrini, çözdüğü sorunu ve hedef sektörü yaz; kime anlattığını buradan ölç.</Empty> : null}
               {shown.map((i) => (
-                <button key={i.id} type="button" onClick={() => navigate(`${PATHS.ideas}/${i.id}`, { replace: true })} aria-current={i.id === selId || undefined}
+                <button key={i.id} type="button" data-record={`idea-${i.id}`} onClick={() => navigate(`${PATHS.ideas}/${i.id}`, { replace: true })} aria-current={i.id === selId || undefined}
                   className={`row cv-auto flex w-full flex-col gap-2 border-x-0 border-t-0 py-5 pr-7 text-left text-text-primary ${i.parent_id ? "pl-12" : "pl-7"} ${i.id === selId ? "bg-surface-2" : "bg-transparent"}`}>
                   <span className="flex items-center gap-3">
                     <span className="min-w-0 flex-grow truncate text-base font-medium">{i.title}</span>

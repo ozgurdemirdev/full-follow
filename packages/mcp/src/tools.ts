@@ -14,6 +14,8 @@ function run(fn: () => string) {
   }
 }
 
+/** Record types that have a page in the panel (what `open` may show) */
+const OPENABLE = new Set(["person", "company", "opportunity", "project", "task", "goal", "draft", "template", "idea", "own_project", "post", "comment"]);
 const idOrName = z.union([z.number(), z.string()]);
 const obj = z.record(z.string(), z.any());
 /** Muhatap: kişi, firma ya da sadece adres (biri) */
@@ -24,7 +26,7 @@ const subject = (core: Core, a: { person?: string | number; company?: string | n
 });
 
 /**
- * 12 araç. Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
+ * 13 araç. Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
  * Taslak onaylama ve "gönderildi" işaretleme MCP'de yoktur (sadece Özgür).
  */
 export function registerTools(server: McpServer, core: Core) {
@@ -35,6 +37,19 @@ export function registerTools(server: McpServer, core: Core) {
     // takip dizisi: zamanı gelenlere Claude adına taslak (tekrar çağrılırsa aynı adım için ikinci taslak açılmaz)
     const auto = core.followups.generate().created.map((c) => `${c.name} ${c.step}. takip #${c.draft_id}`);
     return todayText({ ...core.today(limit ?? 10), auto });
+  }));
+
+  server.registerTool("open", {
+    description: "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası olarak çağırma. type: person|company|opportunity|project|task|goal|draft|template|idea|own_project|post|comment; id sayı ya da isim.",
+    inputSchema: { type: z.string(), id: idOrName },
+  }, ({ type, id }) => run(() => {
+    const t = normalizeTypeName(type);
+    if (!OPENABLE.has(t)) throw new FFError("validation", `${t} kaydının panelde sayfası yok`);
+    const r = core.get(t, id);
+    const row = r.row as Record<string, any>;
+    const label = String(row.name ?? row.title ?? row.target_label ?? row.to_name ?? `#${r.id}`).slice(0, 60);
+    // "(tür #id)": the panel chat reads the canonical record from this suffix
+    return `açıldı: ${label} (${r.type} #${r.id})`;
   }));
 
   server.registerTool("plan", {

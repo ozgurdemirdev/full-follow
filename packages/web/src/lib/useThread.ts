@@ -15,6 +15,8 @@ export interface ThreadEvents {
   onUsage: (u: ChatUsage) => void;
   onLimits: (l: ChatLimits) => void;
   onFinished: (m: ChatMessage) => void;
+  /** Claude opened a record: { message_id, type, id, at } */
+  onNavigate: (n: { type: string; id: number; at: number }) => void;
 }
 
 const isActive = (m: ChatMessage) => m.role === "assistant" && (m.state === "pending" || m.state === "streaming");
@@ -128,6 +130,9 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
         break;
       case "limits":
         events.current.onLimits(d);
+        break;
+      case "navigate":
+        events.current.onNavigate(d);
         break;
       case "snapshot":
         void load(id, false);

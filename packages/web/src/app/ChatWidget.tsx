@@ -6,6 +6,8 @@ import { statusText, useElapsed } from "../components/chat/StatusLine";
 import { toast } from "../components/toast";
 import { chatPrefs } from "../lib/chatStore";
 import { T } from "../lib/chatText";
+import { CHAT_UI } from "../lib/chatText";
+import { isDesk, useOpenRecord } from "../lib/openRecord";
 import { useThread } from "../lib/useThread";
 
 /** Merge a session row into the list: update in place, or put a new one on top */
@@ -43,7 +45,18 @@ export default function ChatWidget() {
     void chatApi.sessions().then((r) => setSessions((l) => r.items.reduce((acc, s) => upsert(acc, s), l)));
   }, []);
 
-  const thread = useThread(sessionId, { onSession, onUsage, onLimits: setLimits, onFinished });
+  const openRecord = useOpenRecord();
+  // Claude opens a record: go there; on a phone the window gets out of the way. Older events are a replay after F5.
+  const onNavigate = useCallback((n: { type: string; id: number; at: number }) => {
+    if (Date.now() - n.at > CHAT_UI.navigateMaxAgeMs) return;
+    openRecord(n.type, n.id);
+    if (!isDesk()) {
+      setOpen(false);
+      chatPrefs.setOpen(false);
+    }
+  }, [openRecord]);
+
+  const thread = useThread(sessionId, { onSession, onUsage, onLimits: setLimits, onFinished, onNavigate });
 
   useEffect(() => {
     void chatApi.meta().then((m) => {
@@ -198,6 +211,7 @@ export default function ChatWidget() {
         onStop={thread.stop}
         onRetrySend={(m) => sessionId && m.client_id && void thread.send(sessionId, m.body, m.client_id, m.attachments, m.input_mode).then((e) => e && toast(e.message, "error"))}
         onRetryReply={retryReply}
+        onOpenRecord={openRecord}
         loadOlder={thread.loadOlder}
       />
     </>

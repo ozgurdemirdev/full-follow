@@ -302,7 +302,7 @@ const Card = memo(function Card({ o, company, overlay, actions }: { o: Opportuni
     : o.stage === "kaybedildi" ? { text: o.lost_reason ?? "Kaybedildi", late: false }
     : followNote(o.next_follow_up_at);
   return (
-    <article className={`card rise-item lift flex cursor-grab touch-manipulation select-none flex-col gap-4 rounded-card-sm p-6 ${overlay ? "cursor-grabbing shadow-card-hover" : ""}`}>
+    <article data-record={`opportunity-${o.id}`} className={`card rise-item lift flex cursor-grab touch-manipulation select-none flex-col gap-4 rounded-card-sm p-6 ${overlay ? "cursor-grabbing shadow-card-hover" : ""}`}>
       <div className="flex flex-col gap-0.5">
         <span className="text-base font-semibold">{company ?? o.title}</span>
         <span className="text-base-sm text-text-secondary">{company ? `${o.title} · ` : ""}{o.person_name}</span>

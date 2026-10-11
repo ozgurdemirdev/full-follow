@@ -68,6 +68,7 @@ function CompanyRow({ c, active, onPick }: { c: Company; active: boolean; onPick
   return (
     <button
       type="button"
+      data-record={`company-${c.id}`}
       onClick={() => onPick(c.id)}
       aria-current={active || undefined}
       className={`row cv-auto flex w-full items-center gap-5 border-x-0 border-t-0 px-7 py-5 text-left text-text-primary ${active ? "bg-surface-2" : "bg-transparent"}`}

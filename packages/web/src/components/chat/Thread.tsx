@@ -11,13 +11,14 @@ interface Props {
   loadOlder: () => Promise<void>;
   onRetrySend: (m: ChatMessage) => void;
   onRetryReply: () => void;
+  onOpenRecord: (type: string, id: number) => void;
 }
 
 /**
  * Scroll rules: stick to the bottom only when the user was within stickPx of it, otherwise offer a "new message" pill;
  * a ResizeObserver keeps it pinned when the viewport shrinks (composer grows, banner shows); older pages keep the visual position.
  */
-export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRetrySend, onRetryReply }: Props) {
+export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRetrySend, onRetryReply, onOpenRecord }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const top = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
@@ -101,7 +102,7 @@ export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRet
           </div>
         ) : (
           messages.map((m) => (
-            <MessageBubble key={m.client_id && m.role === "user" ? m.client_id : m.id} message={m} onRetrySend={onRetrySend} onRetryReply={onRetryReply} />
+            <MessageBubble key={m.client_id && m.role === "user" ? m.client_id : m.id} message={m} onRetrySend={onRetrySend} onRetryReply={onRetryReply} onOpenRecord={onOpenRecord} />
           ))
         )}
       </div>

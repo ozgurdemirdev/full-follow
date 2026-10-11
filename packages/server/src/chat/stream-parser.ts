@@ -5,6 +5,8 @@ export interface ToolRecord {
   name: string;
   summary: string;
   ok: boolean;
+  /** set when an `open` call succeeded: the record that was opened (chip under the reply) */
+  open?: { type: string; id: number; label: string };
 }
 export interface Usage {
   input_tokens: number;
@@ -16,6 +18,7 @@ export type ChatEvent =
   | { type: "delta"; text: string }
   | { type: "tools"; tools: ToolRecord[] }
   | { type: "context"; tokens: number }
+  | { type: "navigate"; record_type: string; record_id: number }
   | { type: "limits"; five_hour: number | null; seven_day: number | null; five_resets_at: number | null; seven_resets_at: number | null; status: string }
   | { type: "done"; usage: Usage; cost_usd: number; context_tokens: number; fallback_text: string | null }
   | { type: "error"; raw: string };
@@ -24,6 +27,13 @@ type Json = Record<string, any>;
 
 const toolName = (name: string) => (name === TOOL_SEARCH ? TOOL_SEARCH_LABEL : name.startsWith(MCP_TOOL_PREFIX) ? name.slice(MCP_TOOL_PREFIX.length) : name);
 const sumTokens = (u: Json | undefined) => (u ? (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) : 0);
+const OPEN_TOOL = "open";
+/** `open` answers "açıldı: <label> (<type> #<id>)"; anything else (an error text) opens nothing */
+function parseOpened(content: unknown): { type: string; id: number; label: string } | null {
+  const text = typeof content === "string" ? content : Array.isArray(content) ? content.map((c: Json) => c.text ?? "").join("") : "";
+  const m = /^açıldı: (.*) \((\w+) #(\d+)\)\s*$/s.exec(text.trim());
+  return m ? { label: m[1], type: m[2], id: Number(m[3]) } : null;
+}
 const clip = (s: string) => (s.length > TOOL_SUMMARY_CHARS ? `${s.slice(0, TOOL_SUMMARY_CHARS - 1)}…` : s);
 
 /** Error text from a failed result → the code that picks the Turkish message */
@@ -78,18 +88,24 @@ export function createParser() {
 
   function handleUser(m: Json): ChatEvent[] {
     const out: ChatEvent[] = [];
+    const nav: ChatEvent[] = [];
     let any = false;
     for (const b of Array.isArray(m.content) ? m.content : []) {
       if (b.type !== "tool_result") continue;
       any = true;
       const rec = byId.get(b.tool_use_id);
       if (rec) rec.ok = !b.is_error;
+      const opened = rec && rec.name === OPEN_TOOL && !b.is_error ? parseOpened(b.content) : null;
+      if (rec && opened) {
+        rec.open = opened;
+        nav.push({ type: "navigate", record_type: opened.type, record_id: opened.id });
+      }
     }
     if (any) {
       if (tools.length) out.push({ type: "tools", tools: tools.map((t) => ({ ...t })) });
       out.push({ type: "status", state: "thinking" });
     }
-    return out;
+    return [...out, ...nav];
   }
 
   function handleResult(o: Json): ChatEvent[] {

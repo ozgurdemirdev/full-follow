@@ -44,19 +44,19 @@ export function App() {
                 <Switch>
                   <Route path={PATHS.today} component={pages.today} />
                   <Route path={PATHS.calendar} component={pages.calendar} />
-                  <Route path={PATHS.pipeline} component={pages.pipeline} />
+                  <Route path={`${PATHS.pipeline}/:id?`} component={pages.pipeline} />
                   <Route path={`${PATHS.people}/:id?`} component={pages.people} />
                   <Route path={`${PATHS.companies}/:id?`} component={pages.companies} />
                   <Route path={PATHS.referrals} component={pages.referrals} />
-                  <Route path={PATHS.projects} component={pages.projects} />
+                  <Route path={`${PATHS.projects}/:id?`} component={pages.projects} />
                   <Route path={`${PATHS.timeline}/:type?/:id?`} component={pages.timeline} />
                   <Route path={PATHS.report} component={pages.report} />
-                  <Route path={PATHS.drafts} component={pages.drafts} />
-                  <Route path={PATHS.comments} component={pages.comments} />
+                  <Route path={`${PATHS.drafts}/:id?`} component={pages.drafts} />
+                  <Route path={`${PATHS.comments}/:id?`} component={pages.comments} />
                   <Route path={`${PATHS.posts}/:id?`} component={pages.posts} />
                   <Route path={`${PATHS.ideas}/:id?`} component={pages.ideas} />
                   <Route path={`${PATHS.ownProjects}/:id?`} component={pages.ownProjects} />
-                  <Route path={PATHS.templates} component={pages.templates} />
+                  <Route path={`${PATHS.templates}/:id?`} component={pages.templates} />
                   <Route path={PATHS.settings} component={pages.settings} />
                   <Route component={pages.today} />
                 </Switch>

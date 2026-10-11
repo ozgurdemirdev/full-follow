@@ -79,6 +79,8 @@ export interface ToolRecord {
   name: string;
   summary: string;
   ok: boolean;
+  /** an `open` call that worked: the record that was shown */
+  open?: { type: string; id: number; label: string };
 }
 
 const base = "/chat";

@@ -331,3 +331,19 @@
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
+
+/* "Fikir #26 · aç" under a reply: opens the record Claude showed, any time later */
+.rchip {
+  align-self: flex-start;
+  height: var(--spacing-11);
+  padding: 0 var(--spacing-5);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-primary-soft-border);
+  background: transparent;
+  color: var(--color-primary-text-soft);
+  font-size: var(--text-xs);
+  transition: background var(--dur-hover);
+}
+.rchip:hover {
+  background: var(--color-primary-soft-bg);
+}
