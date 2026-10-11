@@ -28,9 +28,9 @@ export const SIZE = { min: 56, max: 180, step: 2, initial: 96, aspect: 1.05, pho
 export const MASCOT_IDLE_MS = 20_000;
 /** A press that moves less than this many px is a click */
 export const DRAG_THRESHOLD = CFG.dragTap;
-/** Packet C: where the mascot perches on the chat window, as fractions of its size */
+/** Packet C: where the mascot perches on the chat window, as fractions of its size (PERCH_Y puts its body bottom on the window top edge, tentacles included) */
 export const PERCH_X = 0.6;
-export const PERCH_Y = 0.35;
+export const PERCH_Y = 0.64;
 
 export const CAMERA_FOV = 30;
 /** Squeezed between obstacles and walls it shrinks to this fraction of its size, quickly, and grows back slowly (rates per second) */

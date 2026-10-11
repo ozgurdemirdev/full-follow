@@ -16,9 +16,12 @@ change in `packages/core`, `server` or `mcp`, tests (CLAUDE.md: tests only for c
 ## 0. Sources to read first
 
 - `docs/design/maskot/prototype.html` (page script: behaviour, physics, moods, input),
-  `jelly-body.js` (fur material, bell, tentacles, variants), `jelly-face.js` (eyes, mouths,
-  blush, stars), `jelly-config.js` (all tuning numbers). This is a working prototype; port
-  it, do not redesign it. The chosen model is `etekli`.
+  `jelly-body.js` (fur material, bell, tentacles, variants, tentacle reach with bell
+  collision), `jelly-face.js` (eyes, brows, mouths including the talking mouth, blush,
+  stars), `jelly-act.js` (activities: props and poses per chat phase), `jelly-config.js`
+  (all tuning numbers). This is a working prototype; port it, do not redesign it. The
+  chosen model is `etekli`. In the prototype the "Davranış" buttons of the card trigger
+  each activity; open `prototype.html` through a local static server to see them.
 - `docs/design/ayarlar.html`: visual reference for the settings layout (open it in a
   browser). Its values are examples.
 - Existing code this plan builds on: `src/app/App.tsx`, `src/app/ChatWidget.tsx`,
@@ -48,7 +51,7 @@ change in `packages/core`, `server` or `mcp`, tests (CLAUDE.md: tests only for c
   lowercase, English.
 - If the panel chat work (for example the attachments packet) has uncommitted changes,
   commit that packet first, then start this plan, so each commit holds one logical change.
-  Do the packets in order A, B, C, D without waiting, one commit each.
+  Do the packets in order A, B, C, D, E without waiting, one commit each.
 
 ## 2. Packet A: settings categories and search
 
@@ -229,7 +232,13 @@ render loop stopped while the tab is hidden.
 
 Remove: the click menu, the chat bubble, the design-system card, the size slider and
 swatches on the page, `localStorage` key `ff.jelly` (replaced by `mascotStore`),
-`window.__S`.
+`window.__S`, `mountActDemo` and the "Davranış" demo buttons.
+
+Port `jelly-body.js` whole, including `reachTo` (warm started, smoothed FABRIK) and
+`pushOut` (one continuous collision shape). They exist because the first versions let
+tentacles pass through the bell and jitter; do not simplify them away. `jelly-act.js` and
+the face looks it needs (`think`, `search`, `work`, `talk`, `error`, brows, talk mouth)
+are ported in packet E, but port `jelly-face.js` whole in this packet so E only wires.
 
 Change:
 
@@ -352,7 +361,50 @@ Texts go in `mascotText.ts`.
 
 Done when every control changes the running mascot without reload and survives F5.
 
-## 6. Checks (Özgür tests by hand after C and D)
+## 5b. Packet E: mascot acting (what the chat is doing, without text)
+
+Commit: `feat: mascot acts out the chat phase (think, search, work, talk, error)`
+
+Port `jelly-act.js` to `src/mascot/act.ts` (imports `three`, so it lives in the lazy
+chunk with `scene.ts`). Drop `mountActDemo`. Colours of the props become tokens in
+`color.mascot` (`alu #C9CCD2`, `keys #2A2C31`, `screen #D6E9FF`, `screen-light #BFD8FF`,
+`frame #2A1D18`, `lens #FFFFFF`, `brass #D9A441`, `handle #7A4B2A`, `drop #9ED8FF`,
+`mouth-dark #2A0E08`, `tongue #E8737C`, `dot #FFFFFF`), read through `palette.ts`.
+
+Activity comes from the chat live state published in packet C (`chatLive`), extended with
+`phase` and `tool` from `thread.live` (`src/lib/useThread.ts`; tool names already arrive
+without the `mcp__full-follow__` prefix, see `packages/server/src/chat/stream-parser.ts`).
+Mapping, as a single table constant in `act.ts`:
+
+| Chat state | Activity |
+|------------|----------|
+| `queued` | `queued` (nod) |
+| `thinking` | `thinking` (dots, chin, eyes up) |
+| `tool` with `find`, `get`, `timeline`, `today`, `report`, `open`, ToolSearch label | `search` (magnifier) |
+| `tool` with any other tool (`save`, `move`, `pay`, `touch`, `draft`, `plan`, `delete`) | `work` (laptop, glasses, typing) |
+| `writing` | `writing` (talk mouth, speech bubble) |
+| reply finished `done` | `done` (happy once, props go away) |
+| reply finished with an error state | `error` (sweat drop, worried) for `ACT_ERROR_MS` (3000), then idle |
+| nothing running | `idle` |
+
+Rules:
+
+- The talk mouth uses the prototype's syllable generator; syncing it to the real text
+  stream is not required.
+- While an activity runs the mascot holds its place (or stays perched, packet C); look at
+  pointer is off. Moods (`dizzy`, `shake`, `happy`, ...) win over activity looks, as in the
+  prototype `pose()`.
+- Below `ACT_PROPS_MIN_SIZE` (70 px mascot size) props (laptop, magnifier, glasses) are not
+  shown; face looks, thought dots and the speech bubble still play.
+- Activity changes are debounced by `ACT_MIN_MS` (400) so a 50 ms tool call does not flash
+  the laptop.
+- Reduced motion: no typing bounce, no magnifier sweep; looks and the bubble stay.
+
+Done when, with the chat minimized, a reply that searches and then saves shows: nod,
+thinking dots, magnifier, laptop with glasses and typing, talking mouth with bubble, happy;
+and no tentacle passes through the bell or jitters (watch the magnifier and chin).
+
+## 6. Checks (Özgür tests by hand after C, D and E)
 
 1. Click the mascot: the chat opens with the cursor in the composer. Click it again: the
    chat stays open.
@@ -368,3 +420,6 @@ Done when every control changes the running mascot without reload and survives F
 8. Settings: "vergi" finds Fiyat tabanı, "maskot" finds the mascot card, `/ayarlar/network`
    opens Network, an unknown word shows the empty state.
 9. First load with the mascot off transfers no `three` chunk.
+10. Ask something that searches and saves, minimize the chat: the mascot acts out each
+    step (section 5b) and is readable at the default size.
+11. At 60 px size: no laptop or magnifier, but the talk mouth and the speech bubble show.
