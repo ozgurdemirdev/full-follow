@@ -313,10 +313,12 @@ function setMood(S: MotionState, m: Mood, until = Infinity) {
   S.moodUntil = until;
 }
 
-/** Hard hits stun it and it drops to the nearest bottom corner; softer ones only say ouch. Reduced motion and perching only squash. */
+/** Hard hits stun it and it drops to the nearest bottom corner (perched: stunned in place); softer ones only say ouch. Reduced motion only squashes. */
 function onImpact(S: MotionState, env: Env, impact: number) {
   if (env.reduce) return;
-  if (impact > CFG.dizzyImpact && !env.perch) {
+  // Perched it does not drop to a corner (it keeps its place), but a hard hit still stuns it for the usual time
+  if (impact > CFG.dizzyImpact && env.perch) setMood(S, "dizzy", S.t + CFG.dizzyHold);
+  else if (impact > CFG.dizzyImpact) {
     setMood(S, "dizzy");
     S.mode = "fall";
     S.travel = false;
