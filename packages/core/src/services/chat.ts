@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { CHAT_DEFAULTS, CHAT_NEW_TITLE, CHAT_TITLE_CHARS } from "../constants";
 import { emit, FFError, parse, stamp, type Ctx } from "../context";
-import { chat_messages, chat_sessions } from "../db/schema";
-import { chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "../schemas/chat";
+import { chat_attachments, chat_messages, chat_sessions } from "../db/schema";
+import { chatAttachmentCreate, chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "../schemas/chat";
 
 /** First user message → title: first CHAT_TITLE_CHARS chars, cut at a word boundary */
 function autoTitle(body: string): string {
@@ -32,6 +32,31 @@ export function chatService(ctx: Ctx) {
     if (!r) throw new FFError("not_found", `mesaj #${id} bulunamadı`);
     return r;
   };
+
+  /** User rows carry the files they were sent with; every row gets the field so the shape is the same */
+  function withAttachments<T extends { id: number }>(list: T[]) {
+    const ids = list.map((m) => m.id);
+    const files = ids.length
+      ? ctx.db.select({ id: chat_attachments.id, message_id: chat_attachments.message_id, name: chat_attachments.name, mime: chat_attachments.mime, size: chat_attachments.size })
+        .from(chat_attachments).where(inArray(chat_attachments.message_id, ids)).orderBy(chat_attachments.id).all()
+      : [];
+    return list.map((m) => ({ ...m, attachments: files.filter((f) => f.message_id === m.id).map(({ message_id: _m, ...f }) => f) }));
+  }
+
+  /** Stored before the message exists; becomes part of it when the message is sent */
+  function createAttachment(sessionId: number, input: unknown) {
+    const d = parse(chatAttachmentCreate, input);
+    sessionRow(sessionId);
+    return ctx.db.insert(chat_attachments).values({ session_id: sessionId, ...d, ...stamp(ctx) }).returning().get();
+  }
+  function getAttachment(id: number) {
+    const r = ctx.db.select().from(chat_attachments).where(eq(chat_attachments.id, id)).get();
+    if (!r) throw new FFError("not_found", `dosya #${id} bulunamadı`);
+    return r;
+  }
+  function attachmentsOfMessage(messageId: number) {
+    return ctx.db.select().from(chat_attachments).where(eq(chat_attachments.message_id, messageId)).orderBy(chat_attachments.id).all();
+  }
 
   function createSession(input: unknown = {}) {
     const d = parse(chatSessionCreate, input);
@@ -89,7 +114,7 @@ export function chatService(ctx: Ctx) {
     const list = ctx.db.select().from(chat_messages)
       .where(and(eq(chat_messages.session_id, sessionId), q.before ? lt(chat_messages.id, q.before) : undefined))
       .orderBy(desc(chat_messages.id)).limit(q.limit + 1).all();
-    return { items: list.slice(0, q.limit).reverse(), has_more: list.length > q.limit };
+    return { items: withAttachments(list.slice(0, q.limit).reverse()), has_more: list.length > q.limit };
   }
 
   /** Idempotent on (session, client_id): a retried send returns the existing row */
@@ -97,16 +122,23 @@ export function chatService(ctx: Ctx) {
     const d = parse(chatMessageCreate, input);
     const session = sessionRow(sessionId);
     const dup = ctx.db.select().from(chat_messages).where(and(eq(chat_messages.session_id, sessionId), eq(chat_messages.client_id, d.client_id))).get();
-    if (dup) return dup;
+    if (dup) return withAttachments([dup])[0];
+    const owned = d.attachment_ids.length
+      ? ctx.db.select().from(chat_attachments).where(inArray(chat_attachments.id, d.attachment_ids)).all()
+      : [];
+    if (owned.length !== d.attachment_ids.length || owned.some((a) => a.session_id !== sessionId || a.message_id !== null)) {
+      throw new FFError("validation", "dosya bu sohbete ait değil ya da zaten gönderilmiş");
+    }
     return ctx.db.transaction((tx) => {
       const first = !tx.select({ id: chat_messages.id }).from(chat_messages).where(eq(chat_messages.session_id, sessionId)).get();
       const r = tx.insert(chat_messages).values({ session_id: sessionId, role: "user", body: d.body, state: "done", client_id: d.client_id, ...stamp(ctx) }).returning().get();
       const now = ctx.clock.now();
       tx.update(chat_sessions).set({
         last_message_at: now, updated_at: now,
-        ...(first && !session.title_locked && session.title === CHAT_NEW_TITLE ? { title: autoTitle(d.body) } : {}),
+        ...(first && !session.title_locked && session.title === CHAT_NEW_TITLE && d.body ? { title: autoTitle(d.body) } : {}),
       }).where(eq(chat_sessions.id, sessionId)).run();
-      return r;
+      if (d.attachment_ids.length) tx.update(chat_attachments).set({ message_id: r.id }).where(inArray(chat_attachments.id, d.attachment_ids)).run();
+      return withAttachments([r])[0];
     });
   }
 
@@ -116,7 +148,7 @@ export function chatService(ctx: Ctx) {
     if (!user) return null;
     const reply = ctx.db.select().from(chat_messages)
       .where(and(eq(chat_messages.session_id, sessionId), eq(chat_messages.role, "assistant"), gt(chat_messages.id, user.id))).orderBy(chat_messages.id).limit(1).get();
-    return { user, reply: reply ?? null };
+    return { user: withAttachments([user])[0], reply: reply ?? null };
   }
 
   function startAssistantMessage(sessionId: number) {
@@ -171,6 +203,6 @@ export function chatService(ctx: Ctx) {
 
   return {
     createSession, listSessions, getSession: sessionRow, updateSession, deleteSession, restoreSession, listMessages, getMessage: messageRow,
-    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, failDanglingRuns,
+    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, createAttachment, getAttachment, attachmentsOfMessage, failDanglingRuns,
   };
 }

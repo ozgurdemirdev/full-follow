@@ -142,7 +142,24 @@ export const CHAT_LIMITS = {
   sseHeartbeatMs: 15_000,
   sseRetryMs: 3_000,
   haikuPriceStepTokens: 100_000,
+  maxAttachments: 5,
+  maxImageBytes: 5 * 1024 * 1024,
+  maxFileBytes: 10 * 1024 * 1024,
+  /** text attachments longer than this are cut before they reach the CLI (a 10 MB file would fill the context) */
+  maxTextAttachmentChars: 100_000,
 } as const;
+/** What a chat message may carry. kind decides how the file reaches the CLI: image and PDF as base64 blocks, text inlined. */
+export const CHAT_ATTACHMENT_TYPES = [
+  { ext: "png", mime: "image/png", kind: "image" },
+  { ext: "jpg", mime: "image/jpeg", kind: "image" },
+  { ext: "jpeg", mime: "image/jpeg", kind: "image" },
+  { ext: "gif", mime: "image/gif", kind: "image" },
+  { ext: "webp", mime: "image/webp", kind: "image" },
+  { ext: "pdf", mime: "application/pdf", kind: "pdf" },
+  { ext: "txt", mime: "text/plain", kind: "text" },
+  { ext: "md", mime: "text/markdown", kind: "text" },
+  { ext: "csv", mime: "text/csv", kind: "text" },
+] as const;
 /** Max length of the pinned notes text that goes into every panel chat */
 export const CHAT_PINNED_MAX = 4_000;
 export const CHAT_NEW_TITLE = "Yeni sohbet";

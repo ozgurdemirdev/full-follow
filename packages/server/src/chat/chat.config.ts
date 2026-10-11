@@ -1,6 +1,6 @@
 import path from "node:path";
 
-export { CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, type ChatErrorCode } from "@fullfollow/core";
+export { CHAT_ATTACHMENT_TYPES, CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, type ChatErrorCode } from "@fullfollow/core";
 
 /** Repo root: this file compiles to packages/server/dist/chat/ */
 export const REPO_ROOT = path.resolve(__dirname, "../../../..");

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/client";
-import { chatApi, type ChatLimits, type ChatMessage, type ChatPhase, type ChatSession, type ChatUsage } from "../api/chat";
+import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatPhase, type ChatSession, type ChatUsage } from "../api/chat";
 import { useChatStream, type Connection } from "./useChatStream";
 
 export interface Live {
@@ -150,11 +150,11 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
   }, [messages]);
 
   /** Optimistic bubble first; a failed send keeps the same client_id so retrying is idempotent */
-  const send = useCallback(async (id: number, body: string, clientId: string): Promise<ApiError | null> => {
-    const temp: ChatMessage = { id: -Date.now(), session_id: id, role: "user", body, state: "done", client_id: clientId, tools_json: null, error: null, created_at: new Date().toISOString(), local: "sending" };
+  const send = useCallback(async (id: number, body: string, clientId: string, files: ChatAttachment[] = []): Promise<ApiError | null> => {
+    const temp: ChatMessage = { id: -Date.now(), session_id: id, role: "user", body, state: "done", client_id: clientId, tools_json: null, error: null, created_at: new Date().toISOString(), local: "sending", attachments: files, attachment_ids: files.map((f) => f.id) };
     setMessages((prev) => [...prev.filter((m) => m.client_id !== clientId), temp]);
     try {
-      const r = await chatApi.send(id, { body, client_id: clientId });
+      const r = await chatApi.send(id, { body, client_id: clientId, attachment_ids: files.map((f) => f.id) });
       if (sid.current !== id) return null;
       const reply = r.assistant_message;
       if (reply) lens.current.set(reply.id, reply.body.length);

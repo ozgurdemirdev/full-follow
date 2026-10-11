@@ -1,9 +1,12 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, Res } from "@nestjs/common";
+import { Body, BadRequestException, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import fs from "node:fs";
 import { CORE, type Core } from "../core.provider";
 import { intId } from "../http";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
-import { CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
+import { attachmentFile, saveUpload } from "./chat-uploads";
+import { CHAT_ATTACHMENT_TYPES, CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
 import { resolveCli } from "./claude-cli";
 import { ClaudeRunner } from "./claude-runner";
 
@@ -22,7 +25,7 @@ export class ChatController {
   @Get("meta")
   meta() {
     const cli_error = !resolveCli() ? "cli_missing" : !mcpBuilt() ? "mcp_not_built" : undefined;
-    return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, defaults: CHAT_DEFAULTS, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits };
+    return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, defaults: CHAT_DEFAULTS, attachment_types: CHAT_ATTACHMENT_TYPES, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits };
   }
 
   @Get("sessions")
@@ -62,8 +65,27 @@ export class ChatController {
 
   @Post("sessions/:id/messages")
   @HttpCode(202)
-  send(@Param("id") id: string, @Body() b: { body?: string; client_id?: string }) {
-    return this.runner.send(intId(id), { body: String(b?.body ?? ""), client_id: String(b?.client_id ?? "") });
+  send(@Param("id") id: string, @Body() b: { body?: string; client_id?: string; attachment_ids?: number[] }) {
+    return this.runner.send(intId(id), { body: String(b?.body ?? ""), client_id: String(b?.client_id ?? ""), attachment_ids: b?.attachment_ids });
+  }
+
+  /** multipart, field "file": stored on disk, becomes part of a message when its id is sent in attachment_ids */
+  @Post("sessions/:id/attachments")
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: CHAT_LIMITS.maxFileBytes } }))
+  upload(@Param("id") id: string, @UploadedFile() file: { originalname: string; buffer: Buffer; size: number } | undefined) {
+    if (!file) throw new BadRequestException("dosya gerekli");
+    return saveUpload(this.core, intId(id), file);
+  }
+
+  /** Thumbnails and downloads; stored mime only, never sniffed by the browser */
+  @Get("attachments/:id")
+  attachment(@Param("id") id: string, @Res() res: any) {
+    const a = attachmentFile(this.core, intId(id));
+    res.setHeader("Content-Type", a.mime);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=86400");
+    if (!a.mime.startsWith("image/")) res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(a.name)}`);
+    fs.createReadStream(a.path).pipe(res);
   }
 
   @Post("sessions/:id/stop")

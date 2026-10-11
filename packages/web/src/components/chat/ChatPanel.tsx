@@ -1,10 +1,10 @@
-import { useEffect, useState, type Ref } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import type { ChatLimits, ChatMessage, ChatMeta, ChatSession } from "../../api/chat";
 import { T } from "../../lib/chatText";
 import type { Connection } from "../../lib/useChatStream";
 import type { Live } from "../../lib/useThread";
 import { ChatHeader } from "./ChatHeader";
-import { Composer } from "./Composer";
+import { Composer, type ComposerApi } from "./Composer";
 import { Meters, meterState } from "./Meters";
 import { SessionList } from "./SessionList";
 import { StatusLine } from "./StatusLine";
@@ -34,7 +34,7 @@ export interface PanelProps {
   onSettings: (patch: { model?: string; effort?: string }) => void;
   onToggleLarge: () => void;
   onMinimize: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string, files: File[]) => Promise<boolean>;
   onStop: () => void;
   onRetrySend: (m: ChatMessage) => void;
   onRetryReply: () => void;
@@ -45,6 +45,9 @@ export function ChatPanel(p: PanelProps) {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [popOpen, setPopOpen] = useState(false);
   const [changed, setChanged] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef(0);
+  const composer = useRef<ComposerApi | null>(null);
   const sessionId = p.session?.id ?? null;
   const state = meterState(p.session, p.meta, p.limits);
   const setupError = p.meta && !p.meta.cli_ok ? (p.meta.cli_error === "mcp_not_built" ? T.mcpNotBuilt : T.cliMissing) : null;
@@ -88,6 +91,26 @@ export function ChatPanel(p: PanelProps) {
       data-large={p.large ? "" : undefined}
       data-sessions={sessionsOpen ? "" : undefined}
       inert={!p.open}
+      onDragEnter={(e) => {
+        if (!e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        drag.current++;
+        setDragging(true);
+      }}
+      onDragOver={(e) => e.dataTransfer.types.includes("Files") && e.preventDefault()}
+      onDragLeave={() => {
+        if (--drag.current <= 0) {
+          drag.current = 0;
+          setDragging(false);
+        }
+      }}
+      onDrop={(e) => {
+        if (!e.dataTransfer.files.length) return;
+        e.preventDefault();
+        drag.current = 0;
+        setDragging(false);
+        composer.current?.addFiles(e.dataTransfer.files);
+      }}
     >
       <button className="scrim" type="button" tabIndex={-1} aria-label={T.sessionsClose} onClick={() => setSessionsOpen(false)} />
       <SessionList
@@ -152,6 +175,9 @@ export function ChatPanel(p: PanelProps) {
           running={!!p.live}
           disabled={!!setupError}
           maxChars={p.meta?.limits.maxBodyChars ?? 0}
+          meta={p.meta}
+          dragging={dragging}
+          apiRef={composer}
           weekDanger={state.weekDanger}
           inputRef={p.inputRef}
           onSend={p.onSend}

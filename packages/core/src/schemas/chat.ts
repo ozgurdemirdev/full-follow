@@ -7,8 +7,15 @@ const effort = z.enum(CHAT_EFFORT_IDS);
 export const chatSessionCreate = z.strictObject({ model: model.optional(), effort: effort.optional() });
 export const chatSessionUpdate = z.strictObject({ title: z.string().trim().min(1).max(120).optional(), model: model.optional(), effort: effort.optional() });
 export const chatMessageCreate = z.strictObject({
-  body: z.string().trim().min(1).max(CHAT_LIMITS.maxBodyChars),
+  body: z.string().trim().max(CHAT_LIMITS.maxBodyChars).default(""),
   client_id: z.string().trim().min(1).max(64),
+  attachment_ids: z.array(z.coerce.number().int().positive()).max(CHAT_LIMITS.maxAttachments).default([]),
+}).refine((m) => m.body.length > 0 || m.attachment_ids.length > 0, { message: "mesaj ya da dosya gerekli" });
+export const chatAttachmentCreate = z.strictObject({
+  name: z.string().trim().min(1).max(200),
+  mime: z.string().min(1),
+  size: z.number().int().min(0),
+  path: z.string().min(1),
 });
 export const chatSessionsQuery = z.strictObject({
   cursor: z.string().trim().min(1).optional(),

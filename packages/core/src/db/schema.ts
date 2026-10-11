@@ -423,3 +423,14 @@ export const chat_messages = sqliteTable("chat_messages", {
   output_tokens: integer("output_tokens"),
   cost_usd_micros: integer("cost_usd_micros"),
 }, (t) => [index("chat_messages_session").on(t.session_id, t.id), uniqueIndex("chat_messages_client").on(t.session_id, t.client_id)]);
+
+/** Files attached to a chat message; message_id stays null until the message is sent. Files live on disk under data/chat/uploads. */
+export const chat_attachments = sqliteTable("chat_attachments", {
+  ...common(),
+  session_id: integer("session_id").notNull().references(() => chat_sessions.id),
+  message_id: integer("message_id").references(() => chat_messages.id),
+  name: text("name").notNull(),
+  mime: text("mime").notNull(),
+  size: integer("size").notNull(),
+  path: text("path").notNull(),
+}, (t) => [index("chat_attachments_message").on(t.message_id), index("chat_attachments_session").on(t.session_id)]);

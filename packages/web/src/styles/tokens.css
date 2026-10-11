@@ -206,6 +206,9 @@
   --spacing-chat-newpill-offset: 128px;
   --spacing-chat-track-min: 40px;
   --spacing-scrollbar: 4px;
+  --spacing-chat-att-max: 200px;
+  --spacing-chat-thumb-width: 120px;
+  --spacing-chat-thumb-height: 90px;
   --container-content: undefined;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { chatApi, type ChatLimits, type ChatMessage, type ChatMeta, type ChatSession, type ChatUsage } from "../api/chat";
+import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatMeta, type ChatSession, type ChatUsage } from "../api/chat";
 import { ChatButton } from "../components/chat/ChatButton";
 import { ChatPanel } from "../components/chat/ChatPanel";
 import { statusText, useElapsed } from "../components/chat/StatusLine";
 import { toast } from "../components/toast";
 import { chatPrefs } from "../lib/chatStore";
+import { T } from "../lib/chatText";
 import { useThread } from "../lib/useThread";
 
 /** Merge a session row into the list: update in place, or put a new one on top */
@@ -27,7 +28,7 @@ export default function ChatWidget() {
   const [draft, setDraft] = useState<{ model?: string; effort?: string }>({});
   const button = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const queued = useRef<{ sid: number; text: string; clientId: string } | null>(null);
+  const queued = useRef<{ sid: number; text: string; clientId: string; files: ChatAttachment[] } | null>(null);
   const listLoaded = useRef(false);
 
   const onSession = useCallback((s: ChatSession) => {
@@ -85,7 +86,7 @@ export default function ChatWidget() {
     const q = queued.current;
     if (!q || !thread.ready || q.sid !== sessionId) return;
     queued.current = null;
-    void doSend(q.sid, q.text, q.clientId).then((e) => e && toast(e.message, "error"));
+    void doSend(q.sid, q.text, q.clientId, q.files).then((e) => e && toast(e.message, "error"));
   }, [thread.ready, sessionId, doSend]);
 
   const toggle = (next: boolean) => {
@@ -109,18 +110,30 @@ export default function ChatWidget() {
     return () => document.removeEventListener("keydown", esc);
   }, [open, minimize]);
 
-  const send = async (text: string) => {
+  /** Creates the chat on the first message, uploads the files, then sends; resolves false when nothing was taken (the composer keeps its content) */
+  const send = async (text: string, files: File[]): Promise<boolean> => {
     const clientId = crypto.randomUUID();
-    if (sessionId) {
-      const e = await thread.send(sessionId, text, clientId);
-      if (e) toast(e.message, "error");
-      return;
+    try {
+      let id = sessionId;
+      let created: ChatSession | null = null;
+      if (!id) {
+        created = await chatApi.create({ model: draft.model, effort: draft.effort });
+        id = created.id;
+      }
+      const uploaded = await Promise.all(files.map((f) => chatApi.upload(id, f)));
+      if (created) {
+        setSessions((l) => upsert(l, created));
+        setSession(created);
+        queued.current = { sid: id, text, clientId, files: uploaded };
+        setSessionId(id);
+      } else {
+        void thread.send(id, text, clientId, uploaded).then((e) => e && toast(e.message, "error"));
+      }
+      return true;
+    } catch (e) {
+      toast(e instanceof Error ? e.message : T.uploadFailed, "error");
+      return false;
     }
-    const s = await chatApi.create({ model: draft.model, effort: draft.effort });
-    setSessions((l) => upsert(l, s));
-    setSession(s);
-    queued.current = { sid: s.id, text, clientId };
-    setSessionId(s.id);
   };
 
   const settings = async (patch: { model?: string; effort?: string }) => {
@@ -181,9 +194,9 @@ export default function ChatWidget() {
           chatPrefs.setLarge(!large);
         }}
         onMinimize={minimize}
-        onSend={(t) => void send(t)}
+        onSend={send}
         onStop={thread.stop}
-        onRetrySend={(m) => sessionId && m.client_id && void thread.send(sessionId, m.body, m.client_id).then((e) => e && toast(e.message, "error"))}
+        onRetrySend={(m) => sessionId && m.client_id && void thread.send(sessionId, m.body, m.client_id, m.attachments).then((e) => e && toast(e.message, "error"))}
         onRetryReply={retryReply}
         loadOlder={thread.loadOlder}
       />

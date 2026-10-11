@@ -1,4 +1,4 @@
-import { api, qs } from "./client";
+import { api, ApiError, qs } from "./client";
 
 export type ChatState = "pending" | "streaming" | "done" | "error" | "stopped";
 export type ChatPhase = "queued" | "thinking" | "tool" | "writing";
@@ -15,6 +15,19 @@ export interface ChatSession {
   last_message_at: string | null;
   created_at: string;
 }
+export interface ChatAttachment {
+  id: number;
+  name: string;
+  size: number;
+  mime: string;
+  /** browser only: object URL of a file that is not uploaded yet (thumbnail of the bubble being sent) */
+  url?: string;
+}
+export interface ChatAttachmentType {
+  ext: string;
+  mime: string;
+  kind: "image" | "pdf" | "text";
+}
 export interface ChatMessage {
   id: number;
   session_id: number;
@@ -25,8 +38,11 @@ export interface ChatMessage {
   tools_json: string | null;
   error: string | null;
   created_at: string;
+  attachments?: ChatAttachment[];
   /** browser only: a user bubble not yet confirmed by the server */
   local?: "sending" | "failed";
+  /** browser only: uploaded file ids to send again on retry */
+  attachment_ids?: number[];
 }
 export interface ChatModel {
   id: string;
@@ -45,7 +61,8 @@ export interface ChatMeta {
   models: ChatModel[];
   efforts: { id: string; label: string }[];
   defaults: { model: string; effort: string };
-  limits: { messagesPageSize: number; sessionsPageSize: number; maxBodyChars: number; haikuPriceStepTokens: number };
+  attachment_types: ChatAttachmentType[];
+  limits: { messagesPageSize: number; sessionsPageSize: number; maxBodyChars: number; haikuPriceStepTokens: number; maxAttachments: number; maxImageBytes: number; maxFileBytes: number };
   cli_ok: boolean;
   cli_error?: "cli_missing" | "mcp_not_built";
   rate_limits: ChatLimits | null;
@@ -72,8 +89,23 @@ export const chatApi = {
   update: (id: number, b: { title?: string; model?: string; effort?: string }) => api.patch<ChatSession>(`${base}/sessions/${id}`, b),
   messages: (id: number, before?: number) =>
     api.get<{ items: ChatMessage[]; has_more: boolean; running_message_id: number | null; stream_seq: number }>(`${base}/sessions/${id}/messages${qs({ before })}`),
-  send: (id: number, b: { body: string; client_id: string }) =>
+  send: (id: number, b: { body: string; client_id: string; attachment_ids?: number[] }) =>
     api.post<{ user_message: ChatMessage; assistant_message: ChatMessage | null }>(`${base}/sessions/${id}/messages`, b),
+  /** multipart upload; the server sniffs the real type and answers with the stored file */
+  upload: async (id: number, file: File): Promise<ChatAttachment> => {
+    const form = new FormData();
+    form.append("file", file);
+    let res: Response;
+    try {
+      res = await fetch(`/api${base}/sessions/${id}/attachments`, { method: "POST", body: form, credentials: "same-origin" });
+    } catch {
+      throw new ApiError("Sunucuya ulaşılamadı", 0, "network");
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(data?.error ?? res.statusText, res.status, data?.code);
+    return data as ChatAttachment;
+  },
+  attachmentUrl: (id: number) => `/api${base}/attachments/${id}`,
   stop: (id: number) => api.post<{ ok: true }>(`${base}/sessions/${id}/stop`),
   streamUrl: (id: number, lastEventId: number) => `/api${base}/sessions/${id}/stream${qs({ last_event_id: lastEventId })}`,
 };

@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 import { parseTools, type ChatMessage } from "../../api/chat";
 import { fmtDay } from "../../lib/format";
 import { T } from "../../lib/chatText";
+import { chatApi } from "../../api/chat";
+import { Attachment } from "./Attachment";
 import { Icon } from "../icons";
 
 const timeFmt = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" });
@@ -62,7 +64,14 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
   if (m.role === "user") {
     return (
       <article className="msg me" data-pending={m.local === "sending" ? "" : undefined}>
-        <div className="bubble">{m.body}</div>
+        {!!m.attachments?.length && (
+          <div className="matts">
+            {m.attachments.map((a) => (
+              <Attachment key={a.id} name={a.name} size={a.size} mime={a.mime} url={a.url ?? (a.mime.startsWith("image/") ? chatApi.attachmentUrl(a.id) : undefined)} />
+            ))}
+          </div>
+        )}
+        {m.body && <div className="bubble">{m.body}</div>}
         {m.local === "failed" ? (
           <div className="err">
             <span>{T.failed}</span>

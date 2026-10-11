@@ -3,6 +3,7 @@ import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { CORE, type Core } from "../core.provider";
 import { ChatHub } from "./chat-hub";
+import { attachmentBlocks } from "./chat-uploads";
 import { notesVersion, writeRuntimeFiles } from "./chat-files";
 import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
@@ -78,7 +79,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     for (const s of this.slots.values()) s.stale = true;
   }
 
-  send(sessionId: number, input: { body: string; client_id: string }) {
+  send(sessionId: number, input: { body: string; client_id: string; attachment_ids?: number[] }) {
     const chat = this.core.chat;
     const prior = chat.findSend(sessionId, input.client_id);
     if (prior) return { user_message: prior.user, assistant_message: prior.reply };
@@ -102,7 +103,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     if (!slot) slot = this.spawn(sessionId, session);
     clearTimeout(slot.idleTimer);
     slot.turn = this.newTurn(slot, assistant.id);
-    const content = [{ type: "text", text: user.body }, ...this.notesBlock(session)];
+    const content = [...(user.body ? [{ type: "text", text: user.body }] : []), ...attachmentBlocks(this.core, user.id), ...this.notesBlock(session)];
     const line = JSON.stringify({ type: "user", message: { role: "user", content } });
     slot.child.stdin?.write(`${line}\n`);
     return { user_message: user, assistant_message: assistant };
