@@ -58,12 +58,12 @@ export function Filters<T extends string | number>({
   );
 }
 
-/** Kayan göstergeli segment kontrol */
+/** Kayan göstergeli segment kontrol; genişlik verilmezse telefonda dar, masaüstünde geniş sekme (telefonda 3 sekme taşmasın) */
 export function Segmented({
-  items, value, onChange, label, width = "var(--spacing-seg-tab)",
+  items, value, onChange, label, width,
 }: { items: string[]; value: number; onChange: (i: number) => void; label: string; width?: string }) {
   return (
-    <div className="seg rise" role="tablist" aria-label={label} style={{ ["--seg-w" as string]: width }}>
+    <div className="seg rise" role="tablist" aria-label={label} style={width ? { ["--seg-w" as string]: width } : undefined}>
       <span className="seg-ind" style={{ transform: `translateX(${value * 100}%)` }} />
       {items.map((l, i) => (
         <button key={l} type="button" role="tab" className="seg-btn" aria-selected={i === value} onClick={() => onChange(i)}>

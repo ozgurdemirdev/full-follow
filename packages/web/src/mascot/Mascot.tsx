@@ -32,13 +32,26 @@ const BODY_HALF_W = 0.32;
 const FAB_SELECTOR = 'button[aria-label="Hızlı ekle"]';
 const FAB_MENU_SELECTOR = '[role="menu"][aria-label="Hızlı ekle"]:not([aria-hidden="true"])';
 
-/** Beside the chat window at its middle, on the side the mascot already is (it cannot swim through the window), else the other side, else on its top edge */
-function perchSpot(r: DOMRect, e: Env, fromX: number): Vec2 {
+/**
+ * Beside the chat window at its middle, on the side the mascot already is (it cannot swim through the window), else the other
+ * side, else on its top edge. Going to the other side is routed over the top of the window: up along its near side, across
+ * above it, then down to the spot. The position decides the step, so there is no state to keep.
+ */
+function perchSpot(r: DOMRect, e: Env, at: Vec2): Vec2 {
   const half = e.size.w * BODY_HALF_W + OBSTACLE_MARGIN + PERCH_GAP, y = r.top + r.height * PERCH_HEIGHT;
   const left = r.left - half * 2 >= e.left ? { x: r.left - half, y } : null;
   const right = r.right + half * 2 <= e.viewport.w ? { x: r.right + half, y } : null;
-  const prefer = fromX < (r.left + r.right) / 2 ? [left, right] : [right, left];
-  return prefer[0] ?? prefer[1] ?? { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
+  // both sides free: the one the mascot is on (a lone side never changes, so the route below stays stable)
+  const spot = left && right ? (at.x < (r.left + r.right) / 2 ? left : right) : left ?? right ?? { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
+  const across = r.top - e.size.h;
+  if ((spot !== left && spot !== right) || across < e.size.h * 0.3) return spot;
+  const toLeft = spot === left;
+  // still on the far side of the window from the spot: over the top first
+  if (toLeft ? at.x > spot.x + CFG.arrive : at.x < spot.x - CFG.arrive) {
+    const outside = toLeft ? at.x > r.right : at.x < r.left;
+    return outside && at.y > across + CFG.arrive ? { x: toLeft ? r.right + half : r.left - half, y: across } : { x: spot.x, y: across };
+  }
+  return spot;
 }
 
 function rectOf(el: Element | null, perchSkip = false): Rect[] {
@@ -194,7 +207,7 @@ function MascotBody({ onActivate }: Props) {
     if (win) {
       const r = win.getBoundingClientRect();
       if (r.width >= innerWidth - 1) hide = true;
-      else perch = perchSpot(r, e, s.pos.x);
+      else perch = perchSpot(r, e, s.pos);
     }
     e.perch = perch;
     e.obstacles = [...rectOf(document.querySelector(FAB_SELECTOR)), ...rectOf(document.querySelector(FAB_MENU_SELECTOR)), ...rectOf(win, true)];

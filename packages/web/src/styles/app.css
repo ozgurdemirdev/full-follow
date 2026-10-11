@@ -389,6 +389,7 @@
 
   /* segment kontrol: kayan gösterge */
   .seg {
+    --seg-w: var(--spacing-seg-tab-mobile);
     position: relative;
     display: inline-flex;
     align-self: flex-start;
@@ -396,6 +397,11 @@
     background: var(--color-bg-sidebar);
     border: var(--bw-default) solid var(--color-border-sidebar);
     border-radius: var(--radius-2xl);
+  }
+  @variant desk {
+    .seg {
+      --seg-w: var(--spacing-seg-tab);
+    }
   }
   .seg-ind {
     position: absolute;
