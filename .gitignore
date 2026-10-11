@@ -8,3 +8,4 @@ data/*.db-wal
 data/backups/
 data/*.log
 *.tgz
+data/chat/
