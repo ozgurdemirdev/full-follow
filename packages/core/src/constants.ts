@@ -116,11 +116,11 @@ export const GOAL_DAY_PRESETS = { her_gun: [1, 2, 3, 4, 5, 6, 7], hafta_ici: [1,
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
 
 // ---- Panel chat ----
-/** Models the panel chat may use; ids are passed to the Claude CLI, so they come only from this list */
+/** Models the panel chat may use; context is the window the CLI assumes (it warns "not in catalog" for Haiku 5.5 and auto compacts at 200K); ids are passed to the Claude CLI, so they come only from this list */
 export const CHAT_MODELS = [
   { id: "claude-opus-5-5", label: "Opus 5.5", context: 1_000_000 },
   { id: "claude-sonnet-5-5", label: "Sonnet 5.5", context: 1_000_000 },
-  { id: "claude-haiku-5-5", label: "Haiku 5.5", context: 1_000_000 },
+  { id: "claude-haiku-5-5", label: "Haiku 5.5", context: 200_000 },
 ] as const;
 export const CHAT_MODEL_IDS = CHAT_MODELS.map((m) => m.id) as unknown as readonly [string, ...string[]];
 export const CHAT_EFFORTS = [
