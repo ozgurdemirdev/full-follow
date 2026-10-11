@@ -1,0 +1,303 @@
+// The Three.js free part of the mascot: state, swim and wander physics, drag and throw, moods, springs.
+// Port of the page script of docs/design/maskot/prototype.html. Vectors are plain {x, y, z} objects; scene.ts converts.
+import { CFG } from "./config";
+
+export interface Vec2 { x: number; y: number }
+export interface Vec3 { x: number; y: number; z: number }
+export type Mode = "free" | "drag" | "toss" | "fall";
+export type Mood = "normal" | "flying" | "ouch" | "dizzy" | "shake" | "happy";
+
+export interface Bounds { x0: number; x1: number; y0: number; y1: number }
+
+/** What the outside world says this frame; the simulation never reads the DOM */
+export interface Env {
+  reduce: boolean;
+  size: { w: number; h: number };
+  viewport: { w: number; h: number };
+  bounds: Bounds;
+  /** where it waits: the old chat button spot */
+  home: Vec2;
+  /** swim home and stay there (working, wander off, phone) */
+  homeLock: boolean;
+  /** perched on something (the chat window): this point wins over everything, no dizzy fall */
+  perch: Vec2 | null;
+}
+
+export interface MotionState {
+  mode: Mode;
+  travel: boolean;
+  target: Vec2 | null;
+  idleUntil: number;
+  pos: Vec2;
+  vel: Vec2;
+  pinned: boolean;
+  anchor: Vec2 | null;
+  tempAnchor: Vec2 | null;
+  hovered: boolean;
+  dragTarget: Vec2;
+  phase: number;
+  /** contraction of the bell, 0 to 1 */
+  c: number;
+  lean: number;
+  yaw: number;
+  pitch: number;
+  sq: number;
+  sqV: number;
+  trail: Vec3;
+  trailV: Vec3;
+  nextBlink: number;
+  blinkT: number;
+  t: number;
+  shear: number;
+  shearV: number;
+  limp: number;
+  mood: Mood;
+  moodUntil: number;
+  shakeT: number;
+  fallX: number;
+}
+
+export interface Pointer { px: number; py: number; lastMove: number }
+export interface Hooks {
+  /** a position became the pin (landed after a dizzy fall, or dragged while pinned): persist it */
+  onPin: (anchor: Vec2) => void;
+}
+
+const rand = (a: number, b: number) => a + Math.random() * (b - a);
+export const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+const damp = (k: number, dt: number) => Math.exp(-k * dt);
+const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
+
+export function createMotion(start: Vec2, anchor: Vec2 | null): MotionState {
+  return {
+    mode: "free", travel: false, target: null, idleUntil: 1.5,
+    pos: { ...(anchor ?? start) }, vel: { x: 0, y: 0 },
+    pinned: !!anchor, anchor: anchor ? { ...anchor } : null, tempAnchor: null, hovered: false, dragTarget: { x: 0, y: 0 },
+    phase: 0, c: 0, lean: 0, yaw: 0, pitch: 0, sq: 0, sqV: 0,
+    trail: { x: 0, y: 0, z: 0 }, trailV: { x: 0, y: 0, z: 0 }, nextBlink: 2, blinkT: -1, t: 0,
+    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0,
+  };
+}
+
+export function bounds(size: { w: number; h: number }, vw: number, vh: number, left = 0): Bounds {
+  return { x0: Math.max(left, 0) + size.w * 0.32, x1: vw - size.w * 0.32, y0: size.h * 0.3, y1: vh - size.h * 0.56 };
+}
+
+/** Where a locked mascot sits: the perch, else home unless it is pinned in a corner */
+const lockTarget = (S: MotionState, env: Env): Vec2 | null => env.perch ?? (!S.pinned && env.homeLock ? env.home : null);
+
+function holdAnchor(S: MotionState, env: Env): Vec2 {
+  return lockTarget(S, env) ?? (S.pinned ? S.anchor : S.tempAnchor) ?? S.pos;
+}
+
+function holding(S: MotionState, env: Env): boolean {
+  if (S.mode !== "free") return false;
+  const lock = lockTarget(S, env);
+  return S.pinned || S.hovered || (!!lock && dist(lock, S.pos) <= CFG.arrive);
+}
+
+/** Stop on the spot: kill the swim velocity and hold where it is now */
+export function freeze(S: MotionState) {
+  S.vel = { x: 0, y: 0 };
+  S.travel = false;
+  S.tempAnchor = { ...S.pos };
+  if (S.mode === "toss") S.mode = "free";
+  // Caught mid fall: it stops, and the daze wears off soon.
+  if (S.mode === "fall") {
+    S.mode = "free";
+    if (S.mood === "dizzy") S.moodUntil = S.t + CFG.dizzyHold / 2;
+  }
+}
+
+function settle(S: MotionState, hooks: Hooks) {
+  S.mode = "free";
+  if (S.pinned) {
+    S.anchor = { ...S.pos };
+    hooks.onPin(S.anchor);
+  }
+  S.tempAnchor = { ...S.pos };
+  S.travel = false;
+  S.idleUntil = S.t + 1.5;
+}
+
+function contraction(ph: number) {
+  if (ph < 0.3) {
+    const u = ph / 0.3;
+    return 1 - (1 - u) * (1 - u);
+  }
+  const u = (ph - 0.3) / 0.7;
+  return 1 - u * u * (3 - 2 * u);
+}
+
+function randTarget(b: Bounds): Vec2 {
+  return { x: rand(b.x0 + 40, b.x1 - 40), y: rand(b.y0 + 60, b.y1 - 40) };
+}
+
+export interface Status {
+  /** a chat reply is running: faster pulse (packet C) */
+  running: boolean;
+}
+
+export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, status: Status = { running: false }) {
+  const lock = lockTarget(S, env);
+  const travelling = S.mode === "free" && S.travel && !holding(S, env);
+  const pulse = travelling ? CFG.pulseTravel : status.running ? CFG.pulseTravel * 0.6 : CFG.pulseIdle;
+  S.phase += dt / pulse;
+  let wrapped = false;
+  if (S.phase >= 1) {
+    S.phase -= 1;
+    wrapped = true;
+  }
+  S.c = contraction(S.phase) * (env.reduce ? CFG.reducedPulse : 1);
+
+  if (S.mode === "free") {
+    if (lock && !S.hovered && !S.travel && dist(lock, S.pos) > CFG.arrive) {
+      S.target = lock;
+      S.travel = true;
+    } else if (!lock && !S.pinned && !S.travel && !S.hovered && S.t > S.idleUntil && !env.reduce) {
+      S.target = randTarget(env.bounds);
+      S.travel = true;
+    }
+    if (holding(S, env)) {
+      const a = holdAnchor(S, env);
+      S.vel.x += ((a.x - S.pos.x) * CFG.holdK - S.vel.x * CFG.holdD) * dt;
+      S.vel.y += ((a.y - S.pos.y) * CFG.holdK - S.vel.y * CFG.holdD) * dt;
+    } else {
+      if (S.travel && S.target) {
+        if (lock) S.target = lock;
+        const dx = S.target.x - S.pos.x, dy = S.target.y - S.pos.y, d = Math.hypot(dx, dy);
+        if (d < CFG.arrive) {
+          S.travel = false;
+          S.idleUntil = S.t + rand(CFG.idleMin, CFG.idleMax);
+        } else if (wrapped) {
+          const k = (CFG.impulse * Math.min(1, d / 160) + 20) / d;
+          S.vel.x += dx * k;
+          S.vel.y += dy * k;
+        }
+      }
+      const f = damp(CFG.waterDrag, dt);
+      S.vel.x *= f;
+      S.vel.y *= f;
+    }
+  } else if (S.mode === "drag") {
+    const k = CFG.dragK, d = 2 * Math.sqrt(k) * 0.9;
+    S.vel.x += ((S.dragTarget.x - S.pos.x) * k - S.vel.x * d) * dt;
+    S.vel.y += ((S.dragTarget.y - S.pos.y) * k - S.vel.y * d) * dt;
+  } else if (S.mode === "toss") {
+    const f = damp(CFG.tossDrag, dt);
+    S.vel.x *= f;
+    S.vel.y *= f;
+    if (Math.hypot(S.vel.x, S.vel.y) < CFG.settleSpeed) settle(S, hooks);
+  } else {
+    S.vel.y += CFG.gravity * dt;
+    S.vel.x += (S.fallX - S.pos.x) * CFG.fallPull * dt;
+    S.vel.x *= damp(CFG.fallDragX, dt);
+  }
+  S.pos.x += S.vel.x * dt;
+  S.pos.y += S.vel.y * dt;
+
+  const b = env.bounds;
+  for (const [ax, lo, hi] of [["x", b.x0, b.x1], ["y", b.y0, b.y1]] as const) {
+    if (S.pos[ax] >= lo && S.pos[ax] <= hi) continue;
+    const floor = ax === "y" && S.pos.y > hi;
+    S.pos[ax] = clamp(S.pos[ax], lo, hi);
+    if (S.mode === "drag") {
+      S.vel[ax] = 0;
+      continue;
+    }
+    const impact = Math.abs(S.vel[ax]);
+    S.sqV += Math.min(impact * 0.004, 6);
+    S.shearV += (ax === "x" ? Math.sign(S.vel.x) : 0.5) * impact * CFG.impactShear;
+    if (S.mode === "fall" && floor && impact < CFG.landSpeed) {
+      land(S, b, hooks);
+      continue;
+    }
+    S.vel[ax] *= -(S.mode === "fall" ? CFG.fallBounce : CFG.restitution);
+    if (S.mode !== "fall") onImpact(S, env, impact);
+  }
+}
+
+function setMood(S: MotionState, m: Mood, until = Infinity) {
+  S.mood = m;
+  S.moodUntil = until;
+}
+
+/** Hard hits stun it and it drops to the nearest bottom corner; softer ones only say ouch. Reduced motion and perching only squash. */
+function onImpact(S: MotionState, env: Env, impact: number) {
+  if (env.reduce) return;
+  if (impact > CFG.dizzyImpact && !env.perch) {
+    setMood(S, "dizzy");
+    S.mode = "fall";
+    S.travel = false;
+    S.fallX = S.pos.x < env.viewport.w / 2 ? env.bounds.x0 : env.bounds.x1;
+  } else if (impact > CFG.ouchImpact && S.mood !== "dizzy") setMood(S, "ouch", S.t + CFG.ouchFor);
+}
+
+function land(S: MotionState, b: Bounds, hooks: Hooks) {
+  S.vel = { x: 0, y: 0 };
+  S.sqV += 5;
+  S.mode = "free";
+  S.pinned = true;
+  S.anchor = { x: S.fallX, y: b.y1 };
+  setMood(S, "dizzy", S.t + CFG.dizzyHold);
+  hooks.onPin(S.anchor);
+}
+
+export function moodStep(S: MotionState) {
+  if (S.mood === "flying" && S.mode !== "toss") setMood(S, "normal");
+  if (S.t >= S.moodUntil) {
+    if (S.mood === "dizzy") {
+      setMood(S, "shake", S.t + CFG.shakeFor);
+      S.shakeT = S.t;
+    } else if (S.mood === "shake") {
+      setMood(S, "happy", S.t + CFG.happyFor);
+      S.sqV += 4;
+    } else setMood(S, "normal");
+  }
+  if (S.mood === "normal" && S.mode === "toss" && Math.hypot(S.vel.x, S.vel.y) > CFG.flyingSpeed) setMood(S, "flying");
+}
+
+/** Plays the happy face once (a reply finished while minimized) */
+export function cheer(S: MotionState) {
+  if (S.mood === "dizzy") return;
+  setMood(S, "happy", S.t + CFG.happyFor);
+  S.sqV += 4;
+}
+
+const clampLen = (v: Vec3, max: number): Vec3 => {
+  const l = Math.hypot(v.x, v.y, v.z);
+  return l > max ? { x: (v.x / l) * max, y: (v.y / l) * max, z: (v.z / l) * max } : v;
+};
+
+/** Springs that follow the motion: lean, look at the pointer, trailing tentacles, squash, jelly shear, limp, blink */
+export function pose(S: MotionState, dt: number, ptr: Pointer) {
+  const ease = (rate: number) => 1 - Math.exp(-rate * dt);
+  S.lean += (clamp(-S.vel.x * CFG.leanPerPx, -CFG.leanMax, CFG.leanMax) - S.lean) * ease(6);
+  const looking = S.t - ptr.lastMove < 4 && ptr.px >= 0;
+  const yawT = looking ? clamp((ptr.px - S.pos.x) / 500, -0.55, 0.55) : Math.sin(S.t * 0.23) * 0.15;
+  const pitchT = looking ? clamp((ptr.py - S.pos.y) / 700, -0.2, 0.3) : 0.05;
+  S.yaw += (yawT - S.yaw) * ease(4);
+  S.pitch += (pitchT - S.pitch) * ease(4);
+
+  // Trail: a spring lags the tentacles behind the motion, so they follow through and settle.
+  const want = clampLen({ x: -S.vel.x * CFG.trailPerPx, y: clamp(S.vel.y * CFG.trailPerPx, -CFG.trailMax, 0.5), z: 0 }, CFG.trailMax);
+  const k = CFG.trailK * dt, f = damp(CFG.trailD, dt);
+  S.trailV.x = (S.trailV.x + (want.x - S.trail.x) * k) * f;
+  S.trailV.y = (S.trailV.y + (want.y - S.trail.y) * k) * f;
+  S.trailV.z = (S.trailV.z + (want.z - S.trail.z) * k) * f;
+  S.trail.x += S.trailV.x * dt;
+  S.trail.y += S.trailV.y * dt;
+  S.trail.z += S.trailV.z * dt;
+
+  S.sqV += (-S.sq * CFG.squashK - S.sqV * CFG.squashD) * dt;
+  S.sq += S.sqV * dt;
+  const shearT = clamp(-S.vel.x * CFG.shearPerPx, -CFG.shearMax, CFG.shearMax) + Math.sin(S.t * 2.1) * CFG.idleWobble;
+  S.shearV += ((shearT - S.shear) * CFG.jellyK - S.shearV * CFG.jellyD) * dt;
+  S.shear += S.shearV * dt;
+  S.limp += ((S.mood === "dizzy" ? 1 : 0) - S.limp) * ease(CFG.limpRate);
+
+  if (S.t > S.nextBlink) {
+    S.blinkT = S.t;
+    S.nextBlink = S.t + rand(CFG.blinkMin, CFG.blinkMax);
+  }
+}

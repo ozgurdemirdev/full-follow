@@ -2,6 +2,7 @@
 @import "./fonts.css";
 @import "./tokens.css";
 @import "./chat.css";
+@import "./mascot.css";
 
 @layer base {
   html {

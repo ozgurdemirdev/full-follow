@@ -94,6 +94,25 @@
   --color-status-text-attention: #F5CB73;
   --color-status-text-danger: #FF928A;
   --color-status-text-success: #7EE29A;
+  --color-mascot-amber-bell: #EBA066;
+  --color-mascot-amber-glow: #FFCB52;
+  --color-mascot-mercan-bell: #E07E5E;
+  --color-mascot-mercan-glow: #FF9A73;
+  --color-mascot-lila-bell: #B293E2;
+  --color-mascot-lila-glow: #D7A8FF;
+  --color-mascot-lagun-bell: #5BB4CB;
+  --color-mascot-lagun-glow: #7FE6FF;
+  --color-mascot-nane-bell: #6CC79A;
+  --color-mascot-nane-glow: #A6F59A;
+  --color-mascot-ink: #4A2216;
+  --color-mascot-star: #FFD34A;
+  --color-mascot-star-glow: #FFB61A;
+  --color-mascot-blush: rgba(255,120,130,.85);
+  --color-mascot-eye: #141012;
+  --color-mascot-spark: #FFFFFF;
+  --color-mascot-light-key: #FFF0DC;
+  --color-mascot-light-rim: #D8E4FF;
+  --color-mascot-custom-mix: #FFE6A0;
   --font-sans: "Geist Variable", 'Geist', system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", 'Geist Mono', ui-monospace, monospace;
   --font-weight-regular: 400;
@@ -212,6 +231,9 @@
   --spacing-chat-goal-width: 72px;
   --spacing-settings-rail: 220px;
   --spacing-settings-search-max: 520px;
+  --spacing-mascot-min: 56px;
+  --spacing-mascot-max: 180px;
+  --spacing-mascot-default: 96px;
   --container-content: undefined;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -266,6 +288,8 @@
   --z-fab: 40;
   --z-sheet: 50;
   --z-toast: 60;
+  --z-mascot: 45;
+  --z-mascot-perch: 55;
   --bw-default: 1px;
   --bw-check: 1.5px;
   --bw-strong: 2px;
@@ -367,6 +391,14 @@
 
 @utility z-toast {
   z-index: var(--z-toast);
+}
+
+@utility z-mascot {
+  z-index: var(--z-mascot);
+}
+
+@utility z-mascot-perch {
+  z-index: var(--z-mascot-perch);
 }
 
 @utility bw-default {

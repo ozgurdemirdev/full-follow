@@ -11,6 +11,7 @@ import { Sidebar } from "./Sidebar";
 const QuickAdd = lazy(() => import("../forms/QuickAdd"));
 const Toasts = lazy(() => import("../components/Toasts"));
 const ChatWidget = lazy(() => import("./ChatWidget"));
+const Mascot = lazy(() => import("../mascot/Mascot"));
 
 type Auth = "checking" | "in" | "out";
 
@@ -64,6 +65,7 @@ export function App() {
             </Boundary>
             <Suspense fallback={null}>
               <ChatWidget />
+              <Mascot onActivate={() => {}} />
             </Suspense>
             <Fab />
             <Suspense fallback={null}>
