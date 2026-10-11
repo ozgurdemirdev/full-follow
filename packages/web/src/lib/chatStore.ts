@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+
 // Chat state that must survive F5: open or not, large or not, open session, unsent drafts.
 // localStorage can throw (private window), so every access is wrapped.
 const KEY = { open: "ff.chat.open", large: "ff.chat.large", session: "ff.chat.session", draft: "ff.chat.draft.", suggest: "ff.chat.suggest." } as const;
@@ -34,3 +36,29 @@ export const chatPrefs = {
   draft: (id: number | null) => read(`${KEY.draft}${id ?? "new"}`) ?? "",
   setDraft: (id: number | null, text: string) => write(`${KEY.draft}${id ?? "new"}`, text),
 };
+
+/** Anything outside the chat window (the mascot) asks it to open here; it never asks to close */
+export const chatBus = new EventTarget();
+export const requestChatOpen = () => chatBus.dispatchEvent(new Event("open"));
+
+/** What the mascot needs to know about the chat: window open, a reply running (and its status), a finished reply nobody has seen */
+export interface ChatLive {
+  open: boolean;
+  running: boolean;
+  ready: boolean;
+  /** status text and start time of the running reply, for the pill next to the mascot */
+  status: string | null;
+  since: number | null;
+}
+let liveState: ChatLive = { open: false, running: false, ready: false, status: null, since: null };
+const liveSubs = new Set<() => void>();
+export const chatLive = {
+  get: () => liveState,
+  subscribe: (fn: () => void) => (liveSubs.add(fn), () => void liveSubs.delete(fn)),
+  set: (next: ChatLive) => {
+    if (Object.keys(next).every((k) => next[k as keyof ChatLive] === liveState[k as keyof ChatLive])) return;
+    liveState = next;
+    liveSubs.forEach((fn) => fn());
+  },
+};
+export const useChatLive = () => useSyncExternalStore(chatLive.subscribe, chatLive.get);

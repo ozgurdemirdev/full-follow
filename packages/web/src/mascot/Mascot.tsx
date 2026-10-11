@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
+import { useElapsed } from "../components/chat/StatusLine";
+import { useChatLive } from "../lib/chatStore";
+import { T } from "../lib/chatText";
 import { isDesk } from "../lib/openRecord";
 import { MASCOT_TEXT } from "../lib/mascotText";
-import { CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, SIZE } from "./config";
+import { CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_X, PERCH_Y, SIZE } from "./config";
 import { mascotLive, mascotPrefs, useMascotLive, useMascotPrefs, type MascotPrefs } from "./mascotStore";
-import { bounds, createMotion, freeze, moodStep, pose, simulate, type Env, type MotionState, type Pointer, type Vec2 } from "./motion";
+import { bounds, cheer, createMotion, freeze, moodStep, pose, simulate, type Env, type MotionState, type Pointer, type Vec2 } from "./motion";
 import { customMix, CUSTOM_MIX_AMOUNT, presetColors, type BellGlow } from "./palette";
 import type { MascotScene } from "./scene";
 
@@ -19,6 +22,8 @@ const STILL_MS = 90;
 const SPEED_KEEP = 0.6;
 const DEBUG_KEY = "ff.mascot.debug";
 const DEBUG_FRAMES = 120;
+/** glow power while a reply runs */
+const RUNNING_GLOW = 1.2;
 
 /** Palette of the active choice: a preset from the tokens, or the custom colour with the glow mixed toward the custom-mix token */
 async function colorsFor(el: Element, p: MascotPrefs): Promise<BellGlow> {
@@ -51,6 +56,16 @@ function MascotBody({ onActivate }: Props) {
   const lastWork = useRef(-Infinity);
   const faded = useRef(false);
   const resetsSeen = useRef(live.resets);
+  const chat = useChatLive();
+  const chatRef = useRef(chat);
+  const seconds = useElapsed(!chat.open && chat.running ? chat.since : null);
+  useEffect(() => {
+    chatRef.current = chat;
+  });
+  // a reply that finished while the chat was minimized: it smiles once, the badge stays until the chat opens
+  useEffect(() => {
+    if (chat.ready && S.current) cheer(S.current);
+  }, [chat.ready]);
 
   useEffect(() => {
     latest.current = { prefs, onActivate };
@@ -139,10 +154,24 @@ function MascotBody({ onActivate }: Props) {
     const working = performance.now() - lastWork.current < MASCOT_IDLE_MS;
     const wander = latest.current.prefs.wander && desk && !e.reduce;
     e.homeLock = working || !wander;
-    simulate(s, e, dt, hooks);
+    // perched on the open chat window (nothing else moves it); a window as wide as the screen (phone) hides it instead
+    const c = chatRef.current;
+    let perch: Vec2 | null = null;
+    let hide = false;
+    const win = c.open ? document.getElementById("chat-window") : null;
+    if (win) {
+      const r = win.getBoundingClientRect();
+      if (r.width >= innerWidth - 1) hide = true;
+      else perch = { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
+    }
+    e.perch = perch;
+    el.classList.toggle("perched", !!perch);
+    el.classList.toggle(FADE_CLASS, faded.current || hide);
+    // a running reply: quicker pulse and a brighter glow
+    simulate(s, e, dt, hooks, { running: c.running });
     moodStep(s);
     pose(s, dt, pointer.current);
-    sc.frame(s, dt, 1);
+    sc.frame(s, dt, c.running ? RUNNING_GLOW : 1);
     const bob = s.mode === "drag" || e.reduce ? 0 : Math.sin(s.t * 0.9) * CFG.bob;
     el.style.transform = `translate3d(${s.pos.x - e.size.w / 2}px, ${s.pos.y - e.size.h * 0.45 + bob}px, 0)`;
     el.style.setProperty("--pulse", (0.65 + 0.35 * s.c).toFixed(3));
@@ -198,7 +227,7 @@ function MascotBody({ onActivate }: Props) {
       const open = !!document.querySelector('[role="dialog"][aria-modal="true"]');
       if (open === faded.current) return;
       faded.current = open;
-      root.current?.classList.toggle(FADE_CLASS, open);
+      // tick() applies the class together with the phone hide
     };
     const mo = new MutationObserver(check);
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-modal"] });
@@ -222,7 +251,11 @@ function MascotBody({ onActivate }: Props) {
   const onDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     const s = S.current;
     if (e.button !== 0 || !s) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* no active pointer (synthetic event): the drag still works inside the element */
+    }
     freeze(s);
     Object.assign(press.current, { down: true, sx: e.clientX, sy: e.clientY, gx: e.clientX - s.pos.x, gy: e.clientY - s.pos.y, lx: e.clientX, ly: e.clientY, lt: performance.now(), vx: 0, vy: 0 });
   };
@@ -267,12 +300,19 @@ function MascotBody({ onActivate }: Props) {
   return (
     <>
     <div className="mascot-probe" ref={probe} aria-hidden="true" />
-    <div ref={root} className="mascot" data-engine={live.engine}>
+    <div ref={root} className="mascot" data-engine={live.engine} data-ready={chat.ready && !chat.open ? "" : undefined}>
       <div className="mascot-scale">
         <div className="mascot-halo" />
         <canvas ref={canvas} />
         <span className="mascot-pin" aria-hidden="true" />
       </div>
+      {!chat.open && chat.running && chat.status && (
+        <div className="mascot-pill" role="status">
+          <b>{chat.status}</b>
+          <i className="mono">{T.seconds(seconds)}</i>
+        </div>
+      )}
+      <span className="cb-badge" aria-hidden="true" />
       <button
         type="button"
         className="mascot-hit"

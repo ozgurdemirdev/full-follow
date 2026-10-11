@@ -128,3 +128,28 @@
     bottom: calc(var(--spacing-fab-offset) + var(--spacing-fab-size) + var(--spacing-5));
   }
 }
+
+/* perched on the open chat window: above it */
+.mascot.perched {
+  z-index: var(--z-mascot-perch);
+}
+/* reply status next to the mascot while the chat is minimized; the text rules are shared with the chat button label */
+.mascot-pill {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  translate: 0 -50%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  max-width: var(--spacing-chat-pill-max);
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-primary-soft-border);
+  background: var(--color-surface-menu);
+  box-shadow: var(--shadow-fab);
+  font-size: var(--text-base-sm);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  pointer-events: none;
+}

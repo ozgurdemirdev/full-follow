@@ -74,12 +74,14 @@
   font-size: var(--text-base-sm);
   color: var(--color-text-primary);
 }
-.cb-label b {
+.cb-label b,
+.mascot-pill b {
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cb-label i {
+.cb-label i,
+.mascot-pill i {
   font-style: normal;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -112,7 +114,8 @@
   transform: scale(0);
   transition: transform var(--dur-fade) var(--ease-pop);
 }
-.cb[data-ready] .cb-badge {
+.cb[data-ready] .cb-badge,
+.mascot[data-ready] .cb-badge {
   transform: scale(1);
 }
 .cb[aria-expanded="true"] {

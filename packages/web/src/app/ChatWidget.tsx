@@ -4,7 +4,8 @@ import { ChatButton } from "../components/chat/ChatButton";
 import { ChatPanel } from "../components/chat/ChatPanel";
 import { statusText, useElapsed } from "../components/chat/StatusLine";
 import { toast } from "../components/toast";
-import { chatPrefs } from "../lib/chatStore";
+import { chatBus, chatLive, chatPrefs } from "../lib/chatStore";
+import { useMascotLive, useMascotPrefs } from "../mascot/mascotStore";
 import { T } from "../lib/chatText";
 import { CHAT_UI } from "../lib/chatText";
 import { isDesk, useOpenRecord } from "../lib/openRecord";
@@ -174,18 +175,40 @@ export default function ChatWidget() {
   };
 
   const secs = useElapsed(open ? null : thread.live?.since ?? null);
+
+  // the mascot opens the chat (never closes it): closed -> open and focus the composer, open -> just focus
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  });
+  useEffect(() => {
+    const onOpen = () => (openRef.current ? input.current?.focus() : toggle(true));
+    chatBus.addEventListener("open", onOpen);
+    return () => chatBus.removeEventListener("open", onOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // publish what the mascot shows: open, a running reply with its status, a finished reply nobody saw
+  const status = thread.live ? statusText(thread.live) : null;
+  const since = thread.live?.since ?? null;
+  useEffect(() => {
+    chatLive.set({ open, running: !!thread.live, ready, status, since });
+  }, [open, thread.live, ready, status, since]);
+  // the old button stays until the mascot is really there: there is always one way to open the chat
+  const mascotPrefs = useMascotPrefs();
+  const mascot = useMascotLive();
+  const mascotUsable = mascotPrefs.show && mascot.engine === "ready";
   const defaults = meta?.defaults;
 
   return (
     <>
-      <ChatButton
+      {!mascotUsable && <ChatButton
         open={open}
         status={thread.live ? statusText(thread.live) : null}
         seconds={secs}
         ready={ready}
         buttonRef={button}
         onToggle={() => toggle(!open)}
-      />
+      />}
       <ChatPanel
         open={open}
         large={large}

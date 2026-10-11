@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "
 import { Route, Switch } from "wouter";
 import { api, onAuthRequired } from "../api/client";
 import { PageSkeleton } from "../components/ui";
+import { requestChatOpen } from "../lib/chatStore";
 import { Fab } from "./Fab";
 import { Login } from "./Login";
 import { pages, PATHS, preload } from "./routes";
@@ -65,7 +66,7 @@ export function App() {
             </Boundary>
             <Suspense fallback={null}>
               <ChatWidget />
-              <Mascot onActivate={() => {}} />
+              <Mascot onActivate={requestChatOpen} />
             </Suspense>
             <Fab />
             <Suspense fallback={null}>
