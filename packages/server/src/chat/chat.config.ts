@@ -23,3 +23,5 @@ export const STDERR_LOG_CHARS = 500;
 /** Hidden block sent once when the pinned notes changed after a chat started (never stored, never shown) */
 export const NOTES_UPDATE = "Updated pinned notes from Özgür, apply them from now on:\n";
 export const NOTES_CLEARED = "Özgür cleared the pinned notes; disregard any earlier pinned notes.";
+/** Hidden block added to the user message of a dictated message (never stored in body, never returned, never rendered) */
+export const VOICE_NOTE = "This message was dictated by voice and transcribed automatically, so some words may be misheard. Infer the intended meaning from context and ask if something important is unclear.";

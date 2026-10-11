@@ -165,6 +165,7 @@ export const CHAT_PINNED_MAX = 4_000;
 export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_TITLE_CHARS = 60;
 export const CHAT_ROLES = ["user", "assistant"] as const;
+export const CHAT_INPUT_MODES = ["text", "voice"] as const;
 export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] as const;
 /** Turkish text stored in chat_messages.error and shown by the web; the server picks one by error code */
 export const CHAT_ERROR_TEXT = {

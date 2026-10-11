@@ -65,8 +65,8 @@ export class ChatController {
 
   @Post("sessions/:id/messages")
   @HttpCode(202)
-  send(@Param("id") id: string, @Body() b: { body?: string; client_id?: string; attachment_ids?: number[] }) {
-    return this.runner.send(intId(id), { body: String(b?.body ?? ""), client_id: String(b?.client_id ?? ""), attachment_ids: b?.attachment_ids });
+  send(@Param("id") id: string, @Body() b: { body?: string; client_id?: string; attachment_ids?: number[]; input_mode?: string }) {
+    return this.runner.send(intId(id), { body: String(b?.body ?? ""), client_id: String(b?.client_id ?? ""), attachment_ids: b?.attachment_ids, input_mode: b?.input_mode });
   }
 
   /** multipart, field "file": stored on disk, becomes part of a message when its id is sent in attachment_ids */

@@ -1,0 +1,1 @@
+ALTER TABLE `chat_messages` ADD `input_mode` text DEFAULT 'text' NOT NULL;

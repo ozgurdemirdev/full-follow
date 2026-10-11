@@ -82,6 +82,8 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 
 **Dosya ve resim eki:** Yazma alanındaki ataş düğmesiyle, pencereye sürükleyip bırakarak ya da yapıştırarak (Ctrl+V) en fazla 5 dosya eklenir. Resim (PNG, JPEG, GIF, WebP) en fazla 5 MB, PDF, `.txt`, `.md` ve `.csv` en fazla 10 MB. Dosya türü adına değil içeriğine bakılarak doğrulanır. Dosyalar `data/chat/uploads/` altında saklanır (git'e girmez); metin dosyaları Claude'a ilk 100.000 karakteriyle gider.
 
+**Sesle yazma:** Yazma alanındaki mikrofon düğmesiyle konuşursun, söylediklerin kelime kelime yazılır, "Bitir" ile durur. Tarayıcının kendi konuşma tanıması kullanılır (Chrome ve Edge, Türkçe); tarayıcı desteklemiyorsa düğme görünmez. Ses, tanıma için tarayıcıyı yapan şirketin (Google ya da Microsoft) sunucusuna gider; Full Follow sesi kaydetmez. Sesle yazılan mesajla Claude'a, görünmeyen kısa bir not da gider ("sesle yazıldı, yanlış duyulmuş kelime olabilir"); not mesaja yazılmaz, sohbette görünmez.
+
 **Ortam değişkenleri** (`.env`, hepsi isteğe bağlı)
 
 | Değişken | Varsayılan | Ne yapar |

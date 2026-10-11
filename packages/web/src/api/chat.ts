@@ -39,6 +39,7 @@ export interface ChatMessage {
   error: string | null;
   created_at: string;
   attachments?: ChatAttachment[];
+  input_mode?: "text" | "voice";
   /** browser only: a user bubble not yet confirmed by the server */
   local?: "sending" | "failed";
   /** browser only: uploaded file ids to send again on retry */
@@ -89,7 +90,7 @@ export const chatApi = {
   update: (id: number, b: { title?: string; model?: string; effort?: string }) => api.patch<ChatSession>(`${base}/sessions/${id}`, b),
   messages: (id: number, before?: number) =>
     api.get<{ items: ChatMessage[]; has_more: boolean; running_message_id: number | null; stream_seq: number }>(`${base}/sessions/${id}/messages${qs({ before })}`),
-  send: (id: number, b: { body: string; client_id: string; attachment_ids?: number[] }) =>
+  send: (id: number, b: { body: string; client_id: string; attachment_ids?: number[]; input_mode?: "text" | "voice" }) =>
     api.post<{ user_message: ChatMessage; assistant_message: ChatMessage | null }>(`${base}/sessions/${id}/messages`, b),
   /** multipart upload; the server sniffs the real type and answers with the stored file */
   upload: async (id: number, file: File): Promise<ChatAttachment> => {

@@ -224,3 +224,76 @@
   width: var(--spacing-control-height-sm);
   height: var(--spacing-control-height-sm);
 }
+
+/* voice dictation */
+.mic {
+  color: var(--color-text-muted);
+}
+.mic:hover {
+  color: var(--color-text-primary);
+}
+.mic[aria-pressed="true"] {
+  color: var(--color-primary-on);
+  background: var(--color-accent-warning);
+}
+.voice {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  min-width: 0;
+  padding: var(--spacing-2) var(--spacing-2) 0 var(--spacing-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.voice > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vstop {
+  height: var(--spacing-10);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+}
+.composer[data-listening] {
+  border-color: var(--color-accent-warning);
+}
+.wave {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-0_75);
+  height: var(--spacing-9);
+}
+.wave i {
+  width: var(--spacing-0_75);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-warning);
+  animation: chat-wave var(--dur-wave) ease-in-out infinite;
+}
+.wave i:nth-child(2) {
+  animation-delay: var(--dur-wave-step);
+}
+.wave i:nth-child(3) {
+  animation-delay: calc(var(--dur-wave-step) * 2);
+}
+.wave i:nth-child(4) {
+  animation-delay: calc(var(--dur-wave-step) * 3);
+}
+.wave i:nth-child(5) {
+  animation-delay: calc(var(--dur-wave-step) * 4);
+}
+@keyframes chat-wave {
+  0%,
+  100% {
+    height: var(--spacing-1);
+  }
+  50% {
+    height: var(--spacing-8);
+  }
+}

@@ -3,6 +3,7 @@ import type { ChatMeta } from "../../api/chat";
 import { CHAT_UI, T } from "../../lib/chatText";
 import { acceptAttr, isImage, refuseReason } from "../../lib/chatFiles";
 import { chatPrefs } from "../../lib/chatStore";
+import { useDictation } from "../../lib/useDictation";
 import { Attachment } from "./Attachment";
 import { Icon } from "../icons";
 
@@ -30,7 +31,7 @@ interface Props {
   inputRef: Ref<HTMLTextAreaElement>;
   apiRef: RefObject<ComposerApi | null>;
   /** resolves true when the message was taken (the composer then clears itself) */
-  onSend: (text: string, files: File[]) => Promise<boolean>;
+  onSend: (text: string, files: File[], mode: "text" | "voice") => Promise<boolean>;
   onStop: () => void;
 }
 
@@ -40,6 +41,11 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
   const [files, setFiles] = useState<Pending[]>([]);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const voiceUsed = useRef(false);
+  const dictation = useDictation((phrase) => {
+    voiceUsed.current = true;
+    setText((t) => (t && !/\s$/.test(t) ? `${t} ` : t) + phrase.trim());
+  });
   const area = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const filesRef = useRef(files);
@@ -95,13 +101,15 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
     const body = text.trim();
     if (!canSend || running || disabled) return;
     setBusy(true);
-    const taken = await onSend(body, files.map((f) => f.file));
+    dictation.stop();
+    const taken = await onSend(body, files.map((f) => f.file), voiceUsed.current ? "voice" : "text");
     setBusy(false);
     if (!taken) return;
     files.forEach((f) => f.url && URL.revokeObjectURL(f.url));
     setFiles([]);
     setProblem(null);
     setText("");
+    voiceUsed.current = false;
     area.current?.focus();
   };
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -120,12 +128,15 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
     else if (inputRef) inputRef.current = node;
   };
 
+  // while listening the unfinished phrase shows at the end of the text and is replaced by the next result
+  const shown = dictation.interim ? `${text}${text && !/\s$/.test(text) ? " " : ""}${dictation.interim}` : text;
   const showCount = text.length >= maxChars * CHAT_UI.composerCountFrom;
   return (
     <div className="composer-wrap">
       <form
         className="composer"
         data-drag={dragging ? "" : undefined}
+        data-listening={dictation.listening ? "" : undefined}
         onSubmit={(e) => {
           e.preventDefault();
           if (running) onStop();
@@ -137,6 +148,13 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
             {files.map((p) => (
               <Attachment key={p.key} name={p.file.name} size={p.file.size} mime={p.file.type} url={p.url} onRemove={() => remove(p)} />
             ))}
+          </div>
+        )}
+        {dictation.listening && (
+          <div className="voice">
+            <span className="wave"><i /><i /><i /><i /><i /></span>
+            <span>{T.listening}</span>
+            <button className="vstop" type="button" onClick={dictation.stop}>{T.listenDone}</button>
           </div>
         )}
         <div className="crow">
@@ -158,14 +176,24 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
             ref={setRefs}
             rows={1}
             maxLength={maxChars}
-            value={text}
+            value={shown}
             placeholder={T.placeholderFiles}
             aria-label={T.message}
             disabled={disabled}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              const next = dictation.interim && v.endsWith(dictation.interim) ? v.slice(0, v.length - dictation.interim.length).trimEnd() : v;
+              if (!next.trim()) voiceUsed.current = false;
+              setText(next);
+            }}
             onKeyDown={onKey}
             onPaste={onPaste}
           />
+          {dictation.supported && (
+            <button className="ib mic" type="button" aria-label={T.mic} aria-pressed={dictation.listening} disabled={disabled} onClick={dictation.toggle}>
+              <Icon name="mic" className="size-icon-md" />
+            </button>
+          )}
           {running ? (
             <button className="send" type="submit" data-stop="" aria-label={T.stop}>
               <span className="sq" />
@@ -180,7 +208,7 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
         {dragging && <div className="drophint">{T.dropHint}</div>}
       </form>
       <div className="cfoot">
-        <span className={weekDanger || problem ? "warn" : undefined}>{problem ?? (weekDanger ? T.weekNear : T.composerHint)}</span>
+        <span className={weekDanger || problem || dictation.error ? "warn" : undefined}>{problem ?? (dictation.error === "denied" ? T.micDenied : dictation.error === "failed" ? T.micFailed : weekDanger ? T.weekNear : T.composerHint)}</span>
         {showCount && <span className="count mono">{T.charCount(text.length, maxChars)}</span>}
       </div>
     </div>

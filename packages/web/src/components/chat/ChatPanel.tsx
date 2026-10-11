@@ -34,7 +34,7 @@ export interface PanelProps {
   onSettings: (patch: { model?: string; effort?: string }) => void;
   onToggleLarge: () => void;
   onMinimize: () => void;
-  onSend: (text: string, files: File[]) => Promise<boolean>;
+  onSend: (text: string, files: File[], mode: "text" | "voice") => Promise<boolean>;
   onStop: () => void;
   onRetrySend: (m: ChatMessage) => void;
   onRetryReply: () => void;

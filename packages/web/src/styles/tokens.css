@@ -251,6 +251,8 @@
   --dur-caret: 1000ms;
   --dur-sheen: 2400ms;
   --dur-pulse: 1400ms;
+  --dur-wave: 900ms;
+  --dur-wave-step: 100ms;
   --stagger: 50ms;
   --rise-distance: 10px;
   --press-scale: 0.97;
@@ -329,6 +331,14 @@
 
 @utility dur-pulse {
   transition-duration: var(--dur-pulse);
+}
+
+@utility dur-wave {
+  transition-duration: var(--dur-wave);
+}
+
+@utility dur-wave-step {
+  transition-duration: var(--dur-wave-step);
 }
 
 @utility z-scrim {

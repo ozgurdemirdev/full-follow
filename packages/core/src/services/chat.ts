@@ -131,7 +131,7 @@ export function chatService(ctx: Ctx) {
     }
     return ctx.db.transaction((tx) => {
       const first = !tx.select({ id: chat_messages.id }).from(chat_messages).where(eq(chat_messages.session_id, sessionId)).get();
-      const r = tx.insert(chat_messages).values({ session_id: sessionId, role: "user", body: d.body, state: "done", client_id: d.client_id, ...stamp(ctx) }).returning().get();
+      const r = tx.insert(chat_messages).values({ session_id: sessionId, role: "user", body: d.body, state: "done", client_id: d.client_id, input_mode: d.input_mode, ...stamp(ctx) }).returning().get();
       const now = ctx.clock.now();
       tx.update(chat_sessions).set({
         last_message_at: now, updated_at: now,

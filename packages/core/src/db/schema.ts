@@ -4,7 +4,7 @@ import {
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE,
+  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -417,6 +417,8 @@ export const chat_messages = sqliteTable("chat_messages", {
   state: text("state", { enum: CHAT_STATES }).notNull(),
   /** browser UUID, user rows only; unique per session so a retried send is idempotent */
   client_id: text("client_id"),
+  /** user rows only: "voice" when the text was dictated (the CLI then gets a hidden note, never stored in body) */
+  input_mode: text("input_mode", { enum: CHAT_INPUT_MODES }).notNull().default("text"),
   tools_json: text("tools_json"),
   error: text("error"),
   input_tokens: integer("input_tokens"),

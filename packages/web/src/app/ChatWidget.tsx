@@ -28,7 +28,7 @@ export default function ChatWidget() {
   const [draft, setDraft] = useState<{ model?: string; effort?: string }>({});
   const button = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const queued = useRef<{ sid: number; text: string; clientId: string; files: ChatAttachment[] } | null>(null);
+  const queued = useRef<{ sid: number; text: string; clientId: string; files: ChatAttachment[]; mode: "text" | "voice" } | null>(null);
   const listLoaded = useRef(false);
 
   const onSession = useCallback((s: ChatSession) => {
@@ -86,7 +86,7 @@ export default function ChatWidget() {
     const q = queued.current;
     if (!q || !thread.ready || q.sid !== sessionId) return;
     queued.current = null;
-    void doSend(q.sid, q.text, q.clientId, q.files).then((e) => e && toast(e.message, "error"));
+    void doSend(q.sid, q.text, q.clientId, q.files, q.mode).then((e) => e && toast(e.message, "error"));
   }, [thread.ready, sessionId, doSend]);
 
   const toggle = (next: boolean) => {
@@ -111,7 +111,7 @@ export default function ChatWidget() {
   }, [open, minimize]);
 
   /** Creates the chat on the first message, uploads the files, then sends; resolves false when nothing was taken (the composer keeps its content) */
-  const send = async (text: string, files: File[]): Promise<boolean> => {
+  const send = async (text: string, files: File[], mode: "text" | "voice"): Promise<boolean> => {
     const clientId = crypto.randomUUID();
     try {
       let id = sessionId;
@@ -124,10 +124,10 @@ export default function ChatWidget() {
       if (created) {
         setSessions((l) => upsert(l, created));
         setSession(created);
-        queued.current = { sid: id, text, clientId, files: uploaded };
+        queued.current = { sid: id, text, clientId, files: uploaded, mode };
         setSessionId(id);
       } else {
-        void thread.send(id, text, clientId, uploaded).then((e) => e && toast(e.message, "error"));
+        void thread.send(id, text, clientId, uploaded, mode).then((e) => e && toast(e.message, "error"));
       }
       return true;
     } catch (e) {
@@ -196,7 +196,7 @@ export default function ChatWidget() {
         onMinimize={minimize}
         onSend={send}
         onStop={thread.stop}
-        onRetrySend={(m) => sessionId && m.client_id && void thread.send(sessionId, m.body, m.client_id, m.attachments).then((e) => e && toast(e.message, "error"))}
+        onRetrySend={(m) => sessionId && m.client_id && void thread.send(sessionId, m.body, m.client_id, m.attachments, m.input_mode).then((e) => e && toast(e.message, "error"))}
         onRetryReply={retryReply}
         loadOlder={thread.loadOlder}
       />
