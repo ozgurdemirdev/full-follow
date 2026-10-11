@@ -3,6 +3,7 @@ import { SectorsCard, SourcesCard, TagsCard, TrashCard } from "../SettingsLists"
 import { SessionCard } from "./AccountCards";
 import { FloorCard, TemplateCard } from "./BusinessCards";
 import { ChatNotesCard, ClaudeCard } from "./ClaudeCards";
+import { MascotCard } from "./MascotCard";
 import { NetworkCard } from "./NetworkCards";
 
 /** Search starts this long after the last keystroke */
@@ -53,6 +54,7 @@ export const SETTINGS: SettingsCategory[] = [
     slug: "claude",
     name: "Claude",
     cards: [
+      { id: "mascot", title: "Maskot", keywords: ["maskot", "denizanası", "göster", "gizle", "gezinsin", "gezinme", "model", "yuvarlak", "klasik", "etekli", "renk", "boyut", "konum", "sıfırla"], render: () => <MascotCard /> },
       { id: "chat-notes", title: "Sohbet sabit notları", keywords: ["sohbet", "sabit not", "kural", "bağlam"], render: () => <ChatNotesCard /> },
       { id: "claude", title: "Claude bağlantısı", keywords: ["mcp", "bağlantı", "sunucu"], render: () => <ClaudeCard /> },
     ],
