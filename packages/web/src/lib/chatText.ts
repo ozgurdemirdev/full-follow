@@ -54,6 +54,7 @@ export const T = {
   micInsecure: "Mikrofon yalnızca localhost ya da https adreslerinde açılır",
   micNetwork: "Tarayıcının ses tanıma servisine ulaşılamadı (internet gerekir)",
   micNone: "Mikrofon bulunamadı",
+  micBrowser: "Opera ses tanımayı desteklemiyor, Chrome ya da Edge'de aç",
   micStalled: "Ses gelmiyor: tarayıcının mikrofon iznini ve seçili mikrofonu kontrol et",
   micHeard: "Ses alınıyor",
   openChip: (kind: string, id: number) => `${kind} #${id} · aç`,

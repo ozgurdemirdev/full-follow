@@ -7,7 +7,7 @@ import { useDictation } from "../../lib/useDictation";
 import { Attachment } from "./Attachment";
 import { Icon } from "../icons";
 
-const MIC_ERROR = { denied: T.micDenied, insecure: T.micInsecure, network: T.micNetwork, nomic: T.micNone, failed: T.micFailed } as const;
+const MIC_ERROR = { denied: T.micDenied, insecure: T.micInsecure, network: T.micNetwork, nomic: T.micNone, browser: T.micBrowser, failed: T.micFailed } as const;
 const micError = (e: keyof typeof MIC_ERROR | null) => (e ? MIC_ERROR[e] : null);
 
 interface Pending {

@@ -18,6 +18,8 @@ type Ctor = new () => Recognition;
 const LANG = "tr-TR";
 /** no audio start event for this long counts as stalled */
 const STALL_MS = 6_000;
+/** Opera exposes the API but has no recognition service behind it: it listens and never returns text */
+const noService = () => /OPR\//.test(navigator.userAgent);
 const ctor = (): Ctor | undefined => {
   const w = window as unknown as { SpeechRecognition?: Ctor; webkitSpeechRecognition?: Ctor };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition;
@@ -29,7 +31,7 @@ export interface Dictation {
   /** the phrase still being recognized; replaced by the next result */
   interim: string;
   /** why it failed, or null */
-  error: "denied" | "insecure" | "network" | "nomic" | "failed" | null;
+  error: "denied" | "browser" | "insecure" | "network" | "nomic" | "failed" | null;
   /** the microphone opened / speech was heard; `stalled` when nothing arrived for a while (permission prompt ignored, wrong device) */
   heard: "none" | "audio" | "speech";
   stalled: boolean;
@@ -60,6 +62,7 @@ export function useDictation(onFinal: (text: string) => void): Dictation {
     if (rec.current) return rec.current.stop();
     const C = ctor();
     if (!C) return;
+    if (noService()) return setError("browser");
     // the browser only opens the microphone on localhost or https
     if (!window.isSecureContext) return setError("insecure");
     const r = new C();
