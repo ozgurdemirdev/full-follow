@@ -160,7 +160,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
         this.core.chat.setAssistantTools(message_id, e.tools);
         break;
       case "limits":
-        this.hub.limits = { five_hour: e.five_hour, seven_day: e.seven_day, resets_at: e.resets_at, status: e.status, at: new Date().toISOString() };
+        this.hub.limits = { five_hour: e.five_hour, seven_day: e.seven_day, five_resets_at: e.five_resets_at, seven_resets_at: e.seven_resets_at, status: e.status, at: new Date().toISOString() };
         this.hub.emit(sessionId, "limits", this.hub.limits);
         break;
       case "done":

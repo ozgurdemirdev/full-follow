@@ -28,6 +28,14 @@ const P = {
   building: <path d="M4 20V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v15M15 9h4a1 1 0 0 1 1 1v10M3 20h18M8 8h3M8 12h3M8 16h3" />,
   calendar: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M4 10h16" /></>,
   grid: <path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" />,
+  chat: <path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 16.5h-8.5L6 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z" />,
+  spark: <path d="M12 6.6l1.05 2.6 2.6 1.05-2.6 1.05L12 13.9l-1.05-2.6-2.6-1.05 2.6-1.05z" />,
+  hist: <path d="M4 7h16M4 12h10M4 17h7" />,
+  expand: <path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5" />,
+  shrink: <path d="M20 10h-6V4M4 14h6v6M14 10l6.5-6.5M10 14l-6.5 6.5" />,
+  down: <path d="M6 9l6 6 6-6" />,
+  up: <path d="M12 19V5M6 11l6-6 6 6" />,
+  chevron: <path d="M9 6l6 6-6 6" />,
 } as const;
 
 export type IconName = keyof typeof P;

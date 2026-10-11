@@ -3,7 +3,7 @@ import { CORE, type Core } from "../core.provider";
 import { intId } from "../http";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
-import { CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
+import { CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
 import { resolveCli } from "./claude-cli";
 import { ClaudeRunner } from "./claude-runner";
 
@@ -22,12 +22,17 @@ export class ChatController {
   @Get("meta")
   meta() {
     const cli_error = !resolveCli() ? "cli_missing" : !mcpBuilt() ? "mcp_not_built" : undefined;
-    return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits };
+    return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, defaults: CHAT_DEFAULTS, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits };
   }
 
   @Get("sessions")
   sessions(@Query() q: Record<string, unknown>) {
     return this.core.chat.listSessions(q);
+  }
+
+  @Get("sessions/:id")
+  one(@Param("id") id: string) {
+    return this.core.chat.getSession(intId(id));
   }
 
   @Post("sessions")

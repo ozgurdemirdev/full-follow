@@ -18,7 +18,8 @@ interface Channel {
 export interface LimitsReading {
   five_hour: number | null;
   seven_day: number | null;
-  resets_at: number | null;
+  five_resets_at: number | null;
+  seven_resets_at: number | null;
   status: string;
   at: string;
 }

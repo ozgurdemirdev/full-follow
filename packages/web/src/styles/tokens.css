@@ -116,6 +116,8 @@
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
+  --tracking-label: 0.06em;
+  --tracking-label-wide: 0.08em;
   --spacing-0: 0px;
   --spacing-1: 4px;
   --spacing-2: 6px;
@@ -190,6 +192,20 @@
   --spacing-fab-menu-offset: 96px;
   --spacing-fab-menu-offset-mobile: 84px;
   --spacing-kanban-column-mobile: 84vw;
+  --spacing-chat-fab-size: 48px;
+  --spacing-chat-panel-width: 400px;
+  --spacing-chat-panel-height: 640px;
+  --spacing-chat-panel-large-width: 960px;
+  --spacing-chat-sessions-width: 240px;
+  --spacing-chat-pill-max: 260px;
+  --spacing-chat-composer-max: 160px;
+  --spacing-chat-sheet-height: 88dvh;
+  --spacing-chat-thread-max: 720px;
+  --spacing-chat-pop-width: 268px;
+  --spacing-chat-pop-top: 48px;
+  --spacing-chat-newpill-offset: 128px;
+  --spacing-chat-track-min: 40px;
+  --spacing-scrollbar: 4px;
   --container-content: undefined;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -226,6 +242,12 @@
   --dur-rise-item: 450ms;
   --dur-bar-grow: 800ms;
   --dur-sheet: 450ms;
+  --dur-spin: 1100ms;
+  --dur-spin-fast: 800ms;
+  --dur-blink: 1200ms;
+  --dur-caret: 1000ms;
+  --dur-sheen: 2400ms;
+  --dur-pulse: 1400ms;
   --stagger: 50ms;
   --rise-distance: 10px;
   --press-scale: 0.97;
@@ -280,6 +302,30 @@
 
 @utility dur-sheet {
   transition-duration: var(--dur-sheet);
+}
+
+@utility dur-spin {
+  transition-duration: var(--dur-spin);
+}
+
+@utility dur-spin-fast {
+  transition-duration: var(--dur-spin-fast);
+}
+
+@utility dur-blink {
+  transition-duration: var(--dur-blink);
+}
+
+@utility dur-caret {
+  transition-duration: var(--dur-caret);
+}
+
+@utility dur-sheen {
+  transition-duration: var(--dur-sheen);
+}
+
+@utility dur-pulse {
+  transition-duration: var(--dur-pulse);
 }
 
 @utility z-scrim {

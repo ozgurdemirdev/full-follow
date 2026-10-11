@@ -1,0 +1,192 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { chatApi, type ChatLimits, type ChatMessage, type ChatMeta, type ChatSession, type ChatUsage } from "../api/chat";
+import { ChatButton } from "../components/chat/ChatButton";
+import { ChatPanel } from "../components/chat/ChatPanel";
+import { statusText, useElapsed } from "../components/chat/StatusLine";
+import { toast } from "../components/toast";
+import { chatPrefs } from "../lib/chatStore";
+import { useThread } from "../lib/useThread";
+
+/** Merge a session row into the list: update in place, or put a new one on top */
+const upsert = (list: ChatSession[], s: ChatSession) => (list.some((x) => x.id === s.id) ? list.map((x) => (x.id === s.id ? s : x)) : [s, ...list]);
+
+/**
+ * The chat floating window. Lives in App, so it survives page navigation and a running reply keeps streaming
+ * while the window is minimized.
+ */
+export default function ChatWidget() {
+  const [open, setOpen] = useState(chatPrefs.open);
+  const [large, setLarge] = useState(chatPrefs.large);
+  const [sessionId, setSessionId] = useState<number | null>(chatPrefs.session);
+  const [session, setSession] = useState<ChatSession | null>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [meta, setMeta] = useState<ChatMeta | null>(null);
+  const [limits, setLimits] = useState<ChatLimits | null>(null);
+  const [ready, setReady] = useState(false);
+  const [draft, setDraft] = useState<{ model?: string; effort?: string }>({});
+  const button = useRef<HTMLButtonElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const queued = useRef<{ sid: number; text: string; clientId: string } | null>(null);
+  const listLoaded = useRef(false);
+
+  const onSession = useCallback((s: ChatSession) => {
+    setSession((cur) => (cur?.id === s.id ? s : cur));
+    setSessions((l) => upsert(l, s));
+  }, []);
+  const onUsage = useCallback((u: ChatUsage) => {
+    setSession((cur) => (cur ? { ...cur, context_tokens: u.context_tokens, input_tokens_total: u.input_tokens_total, output_tokens_total: u.output_tokens_total, cost_usd_micros_total: u.cost_usd_micros_total } : cur));
+  }, []);
+  const onFinished = useCallback((m: ChatMessage) => {
+    if (m.state === "done" && !chatPrefs.open()) setReady(true);
+    void chatApi.sessions().then((r) => setSessions((l) => r.items.reduce((acc, s) => upsert(acc, s), l)));
+  }, []);
+
+  const thread = useThread(sessionId, { onSession, onUsage, onLimits: setLimits, onFinished });
+
+  useEffect(() => {
+    void chatApi.meta().then((m) => {
+      setMeta(m);
+      setLimits((l) => l ?? m.rate_limits);
+    });
+  }, []);
+
+  const loadSessions = useCallback((from: string | null) => {
+    void chatApi.sessions(from).then((r) => {
+      setSessions((l) => (from ? [...l, ...r.items.filter((s) => !l.some((x) => x.id === s.id))] : r.items.reduce((acc, s) => upsert(acc, s), l)));
+      setCursor(r.next_cursor);
+      listLoaded.current = true;
+    });
+  }, []);
+
+  // first open: load the list; with no remembered session, continue the most recent one
+  useEffect(() => {
+    if (!open || listLoaded.current) return;
+    loadSessions(null);
+  }, [open, loadSessions]);
+  useEffect(() => {
+    if (open && sessionId === null && !queued.current && sessions.length) setSessionId(sessions[0].id);
+  }, [open, sessionId, sessions]);
+
+  // the session row for the header: from the list, else fetched (a remembered older session)
+  useEffect(() => {
+    if (sessionId === null) return void setSession(null);
+    const known = sessions.find((s) => s.id === sessionId);
+    if (known) return void setSession((cur) => (cur?.id === sessionId ? cur : known));
+    void chatApi.session(sessionId).then(setSession).catch(() => setSessionId(null));
+  }, [sessionId, sessions]);
+
+  useEffect(() => {
+    chatPrefs.setSession(sessionId);
+  }, [sessionId]);
+
+  const doSend = thread.send;
+  useEffect(() => {
+    const q = queued.current;
+    if (!q || !thread.ready || q.sid !== sessionId) return;
+    queued.current = null;
+    void doSend(q.sid, q.text, q.clientId).then((e) => e && toast(e.message, "error"));
+  }, [thread.ready, sessionId, doSend]);
+
+  const toggle = (next: boolean) => {
+    setOpen(next);
+    chatPrefs.setOpen(next);
+    if (next) {
+      setReady(false);
+      requestAnimationFrame(() => input.current?.focus());
+    }
+  };
+  const minimize = useCallback(() => {
+    setOpen(false);
+    chatPrefs.setOpen(false);
+    button.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && minimize();
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [open, minimize]);
+
+  const send = async (text: string) => {
+    const clientId = crypto.randomUUID();
+    if (sessionId) {
+      const e = await thread.send(sessionId, text, clientId);
+      if (e) toast(e.message, "error");
+      return;
+    }
+    const s = await chatApi.create({ model: draft.model, effort: draft.effort });
+    setSessions((l) => upsert(l, s));
+    setSession(s);
+    queued.current = { sid: s.id, text, clientId };
+    setSessionId(s.id);
+  };
+
+  const settings = async (patch: { model?: string; effort?: string }) => {
+    if (!sessionId) return setDraft((d) => ({ ...d, ...patch }));
+    const s = await chatApi.update(sessionId, patch);
+    onSession(s);
+  };
+  const title = async (t: string) => {
+    if (sessionId) onSession(await chatApi.update(sessionId, { title: t }));
+  };
+  const pick = (id: number) => setSessionId(id);
+  const newChat = () => {
+    setSessionId(null);
+    setDraft({});
+    requestAnimationFrame(() => input.current?.focus());
+  };
+  const retryReply = () => {
+    const last = [...thread.messages].reverse().find((m) => m.role === "user");
+    if (last && sessionId) void thread.send(sessionId, last.body, crypto.randomUUID()).then((e) => e && toast(e.message, "error"));
+  };
+
+  const secs = useElapsed(open ? null : thread.live?.since ?? null);
+  const defaults = meta?.defaults;
+
+  return (
+    <>
+      <ChatButton
+        open={open}
+        status={thread.live ? statusText(thread.live) : null}
+        seconds={secs}
+        ready={ready}
+        buttonRef={button}
+        onToggle={() => toggle(!open)}
+      />
+      <ChatPanel
+        open={open}
+        large={large}
+        meta={meta}
+        limits={limits}
+        session={session}
+        draftModel={draft.model ?? defaults?.model ?? ""}
+        draftEffort={draft.effort ?? defaults?.effort ?? ""}
+        sessions={sessions}
+        sessionsHasMore={cursor !== null}
+        loadMoreSessions={() => loadSessions(cursor)}
+        messages={thread.messages}
+        hasMore={thread.hasMore}
+        loading={thread.loading}
+        live={thread.live}
+        connection={thread.connection}
+        inputRef={input}
+        onPickSession={pick}
+        onNew={newChat}
+        onTitle={title}
+        onSettings={settings}
+        onToggleLarge={() => {
+          setLarge(!large);
+          chatPrefs.setLarge(!large);
+        }}
+        onMinimize={minimize}
+        onSend={(t) => void send(t)}
+        onStop={thread.stop}
+        onRetrySend={(m) => sessionId && m.client_id && void thread.send(sessionId, m.body, m.client_id).then((e) => e && toast(e.message, "error"))}
+        onRetryReply={retryReply}
+        loadOlder={thread.loadOlder}
+      />
+    </>
+  );
+}

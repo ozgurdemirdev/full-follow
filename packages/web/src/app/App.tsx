@@ -10,6 +10,7 @@ import { Sidebar } from "./Sidebar";
 // Formlar ve bildirimler (Motion dahil) ilk boyamadan sonra ayrı parçalar halinde yüklenir
 const QuickAdd = lazy(() => import("../forms/QuickAdd"));
 const Toasts = lazy(() => import("../components/Toasts"));
+const ChatWidget = lazy(() => import("./ChatWidget"));
 
 type Auth = "checking" | "in" | "out";
 
@@ -61,6 +62,9 @@ export function App() {
                 </Switch>
               </Suspense>
             </Boundary>
+            <Suspense fallback={null}>
+              <ChatWidget />
+            </Suspense>
             <Fab />
             <Suspense fallback={null}>
               <QuickAdd />

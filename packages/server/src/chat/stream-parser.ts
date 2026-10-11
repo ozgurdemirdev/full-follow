@@ -16,7 +16,7 @@ export type ChatEvent =
   | { type: "delta"; text: string }
   | { type: "tools"; tools: ToolRecord[] }
   | { type: "context"; tokens: number }
-  | { type: "limits"; five_hour: number | null; seven_day: number | null; resets_at: number | null; status: string }
+  | { type: "limits"; five_hour: number | null; seven_day: number | null; five_resets_at: number | null; seven_resets_at: number | null; status: string }
   | { type: "done"; usage: Usage; cost_usd: number; context_tokens: number; fallback_text: string | null }
   | { type: "error"; raw: string };
 
@@ -122,7 +122,11 @@ export function createParser() {
       case "user": return handleUser(o.message ?? {});
       case "rate_limit_event": {
         const i = o.rate_limit_info ?? {};
-        return [{ type: "limits", five_hour: i.unifiedWindows?.five_hour?.utilization ?? null, seven_day: i.unifiedWindows?.seven_day?.utilization ?? null, resets_at: i.resetsAt ?? null, status: String(i.status ?? "") }];
+        const w = i.unifiedWindows ?? {};
+        return [{
+          type: "limits", five_hour: w.five_hour?.utilization ?? null, seven_day: w.seven_day?.utilization ?? null,
+          five_resets_at: w.five_hour?.resetsAt ?? null, seven_resets_at: w.seven_day?.resetsAt ?? null, status: String(i.status ?? ""),
+        }];
       }
       case "result": return handleResult(o);
       default: return [];
