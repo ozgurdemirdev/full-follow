@@ -17,7 +17,6 @@ export const MCP_TOOL_PREFIX = `mcp__${MCP_SERVER_NAME}__`;
 export const TOOL_SEARCH = "ToolSearch";
 export const TOOL_SEARCH_LABEL = "Araçlar hazırlanıyor";
 export const TOOL_SUMMARY_CHARS = 80;
-export const DISALLOWED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch", "Read", "Glob", "Grep", "Task"] as const;
 /** After closing stdin, how long a process gets to exit before it is killed */
 export const GRACEFUL_EXIT_MS = 2_000;
 export const STDERR_LOG_CHARS = 500;
