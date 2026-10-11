@@ -147,3 +147,16 @@ export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_TITLE_CHARS = 60;
 export const CHAT_ROLES = ["user", "assistant"] as const;
 export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] as const;
+/** Turkish text stored in chat_messages.error and shown by the web; the server picks one by error code */
+export const CHAT_ERROR_TEXT = {
+  cli_missing: "Claude Code bulunamadı. Terminalde `npm i -g @anthropic-ai/claude-code` çalıştır.",
+  cli_auth: "Claude oturumu kapanmış. Terminalde `claude auth login` çalıştır, sonra tekrar dene.",
+  cli_limit: "Claude kullanım sınırına takıldın. Sınır yenilenince tekrar dene.",
+  cli_crash: "Claude beklenmedik şekilde kapandı. Tekrar dene.",
+  timeout: "Cevap çok uzun sürdü ve durduruldu.",
+  busy: "Önceki cevap bitmeden yeni mesaj gönderilemez.",
+  too_many_runs: "Aynı anda çok fazla sohbet çalışıyor, birinin bitmesini bekle.",
+  restart: "Sunucu yeniden başladı, bu cevap yarım kaldı.",
+  unknown: "Bir hata oldu. Tekrar dene.",
+} as const;
+export type ChatErrorCode = keyof typeof CHAT_ERROR_TEXT;
