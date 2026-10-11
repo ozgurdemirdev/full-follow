@@ -240,13 +240,18 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
   squeeze(S, env, dt);
 }
 
+/** Resting on the chat window: near the perch spot and its centre still above the window's top edge, so it can never sink into the window */
+function perched(S: MotionState, env: Env, o: Rect): boolean {
+  return !!o.perchSkip && !!env.perch && S.pos.y < o.y0 && dist(S.pos, env.perch) < CFG.arrive * 2;
+}
+
 /** Does a body of this scale, kept inside the walls, still overlap an obstacle? */
 function blocked(S: MotionState, env: Env, scale: number): boolean {
   const w = env.size.w * scale, h = env.size.h * scale;
   const b = bounds({ w, h }, env.viewport.w, env.viewport.h, env.left);
   const x = clamp(S.pos.x, b.x0, b.x1), y = clamp(S.pos.y, b.y0, b.y1);
   return env.obstacles.some((o) => {
-    if (o.perchSkip && env.perch && dist(S.pos, env.perch) < CFG.arrive * 2) return false;
+    if (perched(S, env, o)) return false;
     return !(x + w * BODY.halfW <= o.x0 || x - w * BODY.halfW >= o.x1 || y + h * BODY.down <= o.y0 || y - h * BODY.up >= o.y1);
   });
 }
@@ -268,7 +273,7 @@ function squeeze(S: MotionState, env: Env, dt: number) {
 function collide(S: MotionState, env: Env, hooks: Hooks, size: { w: number; h: number }) {
   const { w, h } = size;
   for (const o of env.obstacles) {
-    if (o.perchSkip && env.perch && dist(S.pos, env.perch) < CFG.arrive * 2) continue;
+    if (perched(S, env, o)) continue;
     const l = S.pos.x - w * BODY.halfW, r = S.pos.x + w * BODY.halfW, t = S.pos.y - h * BODY.up, b = S.pos.y + h * BODY.down;
     if (r <= o.x0 || l >= o.x1 || b <= o.y0 || t >= o.y1) continue;
     const sides = [
