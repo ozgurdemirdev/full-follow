@@ -88,7 +88,7 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
         {!!m.attachments?.length && (
           <div className="matts">
             {m.attachments.map((a) => (
-              <Attachment key={a.id} name={a.name} size={a.size} mime={a.mime} url={a.url ?? (a.mime.startsWith("image/") ? chatApi.attachmentUrl(a.id) : undefined)} />
+              <Attachment key={a.id} name={a.name} size={a.size} mime={a.mime} url={a.url ?? (a.mime.startsWith("image/") ? chatApi.attachmentUrl(a.id) : undefined)} openUrl={() => chatApi.attachmentUrl(a.id)} />
             ))}
           </div>
         )}

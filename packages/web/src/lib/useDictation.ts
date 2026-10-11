@@ -8,12 +8,16 @@ interface Recognition {
   onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onspeechstart: (() => void) | null;
   start(): void;
   stop(): void;
 }
 type Ctor = new () => Recognition;
 
 const LANG = "tr-TR";
+/** no audio start event for this long counts as stalled */
+const STALL_MS = 6_000;
 const ctor = (): Ctor | undefined => {
   const w = window as unknown as { SpeechRecognition?: Ctor; webkitSpeechRecognition?: Ctor };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition;
@@ -24,8 +28,11 @@ export interface Dictation {
   listening: boolean;
   /** the phrase still being recognized; replaced by the next result */
   interim: string;
-  /** error key of the last failure: "denied" | "failed" | null */
-  error: "denied" | "failed" | null;
+  /** why it failed, or null */
+  error: "denied" | "insecure" | "network" | "nomic" | "failed" | null;
+  /** the microphone opened / speech was heard; `stalled` when nothing arrived for a while (permission prompt ignored, wrong device) */
+  heard: "none" | "audio" | "speech";
+  stalled: boolean;
   toggle: () => void;
   stop: () => void;
 }
@@ -38,6 +45,9 @@ export function useDictation(onFinal: (text: string) => void): Dictation {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<Dictation["error"]>(null);
+  const [heard, setHeard] = useState<Dictation["heard"]>("none");
+  const [stalled, setStalled] = useState(false);
+  const stallTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const rec = useRef<Recognition | null>(null);
   const final = useRef(onFinal);
   useEffect(() => {
@@ -50,11 +60,20 @@ export function useDictation(onFinal: (text: string) => void): Dictation {
     if (rec.current) return rec.current.stop();
     const C = ctor();
     if (!C) return;
+    // the browser only opens the microphone on localhost or https
+    if (!window.isSecureContext) return setError("insecure");
     const r = new C();
     r.lang = LANG;
     r.continuous = true;
     r.interimResults = true;
+    r.onaudiostart = () => {
+      clearTimeout(stallTimer.current);
+      setStalled(false);
+      setHeard((h) => (h === "speech" ? h : "audio"));
+    };
+    r.onspeechstart = () => setHeard("speech");
     r.onresult = (e) => {
+      setHeard("speech");
       let pending = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const text = e.results[i][0].transcript;
@@ -63,18 +82,37 @@ export function useDictation(onFinal: (text: string) => void): Dictation {
       }
       setInterim(pending.trim());
     };
-    r.onerror = (e) => setError(e.error === "not-allowed" || e.error === "service-not-allowed" ? "denied" : e.error === "no-speech" || e.error === "aborted" ? null : "failed");
+    r.onerror = (e) =>
+      setError(
+        e.error === "not-allowed" || e.error === "service-not-allowed" ? "denied"
+          : e.error === "network" ? "network"
+            : e.error === "audio-capture" ? "nomic"
+              : e.error === "no-speech" || e.error === "aborted" ? null : "failed",
+      );
     r.onend = () => {
+      clearTimeout(stallTimer.current);
+      setStalled(false);
+      setHeard("none");
       rec.current = null;
       setListening(false);
       setInterim("");
     };
     rec.current = r;
     setError(null);
+    setHeard("none");
+    setStalled(false);
     setListening(true);
-    r.start();
+    stallTimer.current = setTimeout(() => setStalled(true), STALL_MS);
+    try {
+      r.start();
+    } catch {
+      rec.current = null;
+      clearTimeout(stallTimer.current);
+      setListening(false);
+      setError("failed");
+    }
   }, []);
 
   useEffect(() => () => rec.current?.stop(), []);
-  return { supported: !!ctor(), listening, interim, error, toggle, stop };
+  return { supported: !!ctor(), listening, interim, error, heard, stalled, toggle, stop };
 }

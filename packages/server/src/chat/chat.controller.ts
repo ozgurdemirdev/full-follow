@@ -88,10 +88,11 @@ export class ChatController {
   @Get("attachments/:id")
   attachment(@Param("id") id: string, @Res() res: any) {
     const a = attachmentFile(this.core, intId(id));
-    res.setHeader("Content-Type", a.mime);
+    // text files show as plain text in the tab (markdown and csv would download otherwise); images and PDF show as they are
+    res.setHeader("Content-Type", a.mime.startsWith("text/") ? "text/plain; charset=utf-8" : a.mime);
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, max-age=86400");
-    if (!a.mime.startsWith("image/")) res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(a.name)}`);
+    res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(a.name)}`);
     fs.createReadStream(a.path).pipe(res);
   }
 

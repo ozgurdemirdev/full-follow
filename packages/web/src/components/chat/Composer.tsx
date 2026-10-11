@@ -7,6 +7,9 @@ import { useDictation } from "../../lib/useDictation";
 import { Attachment } from "./Attachment";
 import { Icon } from "../icons";
 
+const MIC_ERROR = { denied: T.micDenied, insecure: T.micInsecure, network: T.micNetwork, nomic: T.micNone, failed: T.micFailed } as const;
+const micError = (e: keyof typeof MIC_ERROR | null) => (e ? MIC_ERROR[e] : null);
+
 interface Pending {
   key: string;
   file: File;
@@ -146,14 +149,14 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
         {files.length > 0 && (
           <div className="atts">
             {files.map((p) => (
-              <Attachment key={p.key} name={p.file.name} size={p.file.size} mime={p.file.type} url={p.url} onRemove={() => remove(p)} />
+              <Attachment key={p.key} name={p.file.name} size={p.file.size} mime={p.file.type} url={p.url} openUrl={() => URL.createObjectURL(p.file)} onRemove={() => remove(p)} />
             ))}
           </div>
         )}
         {dictation.listening && (
           <div className="voice">
             <span className="wave"><i /><i /><i /><i /><i /></span>
-            <span>{T.listening}</span>
+            <span>{dictation.stalled && dictation.heard === "none" ? T.micStalled : dictation.heard === "none" ? T.listening : T.micHeard}</span>
             <button className="vstop" type="button" onClick={dictation.stop}>{T.listenDone}</button>
           </div>
         )}
@@ -208,7 +211,7 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
         {dragging && <div className="drophint">{T.dropHint}</div>}
       </form>
       <div className="cfoot">
-        <span className={weekDanger || problem || dictation.error ? "warn" : undefined}>{problem ?? (dictation.error === "denied" ? T.micDenied : dictation.error === "failed" ? T.micFailed : weekDanger ? T.weekNear : T.composerHint)}</span>
+        <span className={weekDanger || problem || dictation.error ? "warn" : undefined}>{problem ?? micError(dictation.error) ?? (weekDanger ? T.weekNear : T.composerHint)}</span>
         {showCount && <span className="count mono">{T.charCount(text.length, maxChars)}</span>}
       </div>
     </div>
