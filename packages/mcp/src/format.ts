@@ -146,10 +146,13 @@ export function planText(p: any): string {
   return [head, goals.length ? `Hedef:\n${goals.join("\n")}` : "hedef yok (save goal ile ekle)", tasks.length ? `Görev:\n${tasks.join("\n")}` : ""].filter(Boolean).join("\n");
 }
 
-/** Takvim: gün başına tek satır */
+/** Takvim: gün başına bir satır, altında o günün görevleri (id ile, panel sohbeti kart yapabilsin) */
 export function calendarText(days: Row[]): string {
-  return days.map((c) => join(`${d(c.date)} ${WEEKDAY_SHORT[(new Date(`${c.date}T12:00:00Z`).getUTCDay() + 6) % 7]}`,
-    c.ratio === null ? "hedef yok" : `hedef %${Math.round(c.ratio * 100)}`, c.tasks.length && `görev ${c.tasks.filter((t: Row) => t.done_at).length}/${c.tasks.length}`)).join("\n");
+  return days.map((c) => [
+    join(`${d(c.date)} ${WEEKDAY_SHORT[(new Date(`${c.date}T12:00:00Z`).getUTCDay() + 6) % 7]}`,
+      c.ratio === null ? "hedef yok" : `hedef %${Math.round(c.ratio * 100)}`, c.tasks.length && `görev ${c.tasks.filter((t: Row) => t.done_at).length}/${c.tasks.length}`),
+    ...c.tasks.map((t: Row) => "  " + line("task", t)),
+  ].join("\n")).join("\n");
 }
 
 export function todayText(t: any): string {
