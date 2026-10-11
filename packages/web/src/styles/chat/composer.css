@@ -1,0 +1,101 @@
+/* ---------- composer ---------- */
+.composer-wrap {
+  padding: 0 var(--spacing-5) var(--spacing-5);
+}
+.composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1);
+  border-radius: var(--radius-card);
+  border: var(--bw-default) solid var(--color-border);
+  background: var(--color-surface-inset);
+  transition:
+    border-color var(--dur-fade),
+    box-shadow var(--dur-fade);
+}
+.composer:focus-within {
+  border-color: var(--color-border-strong);
+}
+.crow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-1);
+}
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  height: var(--spacing-control-height-sm);
+  resize: none;
+  border: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  padding: var(--spacing-2) var(--spacing-3);
+  max-height: var(--spacing-chat-composer-max);
+  line-height: var(--spacing-9);
+  font-size: var(--text-base);
+  overflow-y: auto;
+}
+.composer textarea:focus-visible {
+  box-shadow: none;
+}
+.composer textarea::placeholder {
+  color: var(--color-text-muted);
+}
+.send {
+  height: var(--spacing-control-height-sm);
+  min-width: var(--spacing-control-height-sm);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition:
+    filter var(--dur-hover),
+    transform var(--dur-press),
+    background var(--dur-fade);
+}
+.send:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.send:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+}
+.send:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+.send[data-stop] {
+  padding: 0 var(--spacing-5) 0 var(--spacing-4);
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-primary);
+  border: var(--bw-default) solid var(--color-border-strong);
+}
+.send .sq {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  border-radius: var(--radius-xs);
+  background: currentColor;
+}
+.cfoot {
+  display: flex;
+  gap: var(--spacing-5);
+  padding: var(--spacing-2) var(--spacing-3) 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-disabled);
+}
+.cfoot .warn {
+  color: var(--color-status-text-attention);
+}
+.cfoot .count {
+  margin-left: auto;
+}

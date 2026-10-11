@@ -1,0 +1,152 @@
+/* ---------- chat button (above the + FAB) ---------- */
+.cb {
+  position: fixed;
+  z-index: var(--z-fab);
+  right: calc(var(--spacing-fab-offset-mobile) + (var(--spacing-fab-size) - var(--spacing-chat-fab-size)) / 2);
+  bottom: calc(var(--spacing-fab-offset-mobile) + var(--spacing-fab-size) + var(--spacing-5));
+  height: var(--spacing-chat-fab-size);
+  min-width: var(--spacing-chat-fab-size);
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  padding: 0;
+  border-radius: var(--radius-card);
+  border: var(--bw-default) solid var(--color-border-strong);
+  background: var(--color-surface-menu);
+  color: var(--color-primary-text);
+  box-shadow: var(--shadow-fab);
+  transition:
+    transform var(--dur-fade) var(--ease-out),
+    border-color var(--dur-hover),
+    background var(--dur-hover),
+    right var(--dur-drawer) var(--ease-out);
+}
+.cb:hover {
+  transform: var(--hover-lift);
+  background: var(--color-surface-menu-hover);
+}
+.cb:active {
+  transform: scale(var(--press-scale));
+}
+.cb-ic {
+  position: relative;
+  width: calc(var(--spacing-chat-fab-size) - var(--bw-default) * 2);
+  height: calc(var(--spacing-chat-fab-size) - var(--bw-default) * 2);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.cb-ic svg {
+  grid-area: 1 / 1;
+  width: var(--spacing-icon-xl);
+  height: var(--spacing-icon-xl);
+}
+.cb-spark {
+  fill: currentColor;
+  stroke: none;
+}
+.cb-ring {
+  position: absolute;
+  inset: var(--spacing-2);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  background: conic-gradient(from 0deg, transparent 0 55%, var(--color-primary) 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--spacing-0_5)), black calc(100% - var(--spacing-0_5)));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--spacing-0_5)), black calc(100% - var(--spacing-0_5)));
+  transition: opacity var(--dur-fade);
+}
+.cb[data-running] .cb-ring {
+  opacity: 1;
+  animation: chat-spin var(--dur-spin) linear infinite;
+}
+.cb-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  opacity: 0;
+  transition:
+    max-width var(--dur-drawer) var(--ease-out),
+    opacity var(--dur-fade),
+    padding var(--dur-drawer) var(--ease-out);
+  font-size: var(--text-base-sm);
+  color: var(--color-text-primary);
+}
+.cb-label b {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cb-label i {
+  font-style: normal;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.cb[data-pill] {
+  right: var(--spacing-fab-offset-mobile);
+  border-color: var(--color-primary-soft-border);
+}
+.cb[data-pill] .cb-label {
+  max-width: var(--spacing-chat-pill-max);
+  opacity: 1;
+  padding-left: var(--spacing-7);
+}
+.cb[data-ready] {
+  border-color: var(--color-primary-soft-border);
+  animation: chat-pulse var(--dur-pulse) var(--ease-out) 2;
+}
+.cb[data-ready] .cb-label b {
+  color: var(--color-primary-text-soft);
+}
+.cb-badge {
+  position: absolute;
+  top: calc(var(--spacing-1) * -1);
+  right: calc(var(--spacing-1) * -1);
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  border: var(--bw-default) solid var(--color-bg-canvas);
+  transform: scale(0);
+  transition: transform var(--dur-fade) var(--ease-pop);
+}
+.cb[data-ready] .cb-badge {
+  transform: scale(1);
+}
+.cb[aria-expanded="true"] {
+  background: var(--color-primary-soft-bg);
+  border-color: var(--color-primary-soft-border);
+}
+/* phone: the sheet covers the FAB column, the button hides itself too */
+.cb[aria-expanded="true"] {
+  display: none;
+}
+
+@keyframes chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes chat-pulse {
+  0% {
+    box-shadow: var(--shadow-fab), 0 0 0 0 var(--color-primary-soft-border);
+  }
+  100% {
+    box-shadow: var(--shadow-fab), 0 0 0 var(--spacing-5) transparent;
+  }
+}
+@keyframes chat-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes chat-sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
