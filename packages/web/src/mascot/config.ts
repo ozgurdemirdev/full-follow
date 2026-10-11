@@ -31,6 +31,9 @@ export const DRAG_THRESHOLD = CFG.dragTap;
 /** Packet C: where the mascot perches on the chat window, as fractions of its size (PERCH_Y puts its body bottom on the window top edge, tentacles included) */
 export const PERCH_X = 0.6;
 export const PERCH_Y = 0.64;
+/** It waits beside the open chat window (left first, then right) at eye level: this many px clear of it, this many mascot heights below the window top. On top only when neither side has room. */
+export const PERCH_GAP = 14;
+export const PERCH_EYE = 0.9;
 
 export const CAMERA_FOV = 30;
 /** Squeezed between obstacles and walls it shrinks to this fraction of its size, quickly, and grows back slowly (rates per second) */
