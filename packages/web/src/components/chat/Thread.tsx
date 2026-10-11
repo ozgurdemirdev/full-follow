@@ -95,7 +95,7 @@ export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRet
           <button type="button" className="older" onClick={() => void loadOlder()}>{T.older}</button>
         )}
         {!messages.length && !loading ? (
-          <div className="empty">
+          <div className="cempty">
             <h3>{T.emptyTitle}</h3>
             <p>{T.emptyHint}</p>
           </div>

@@ -53,7 +53,7 @@ export function Meters({ session, meta, limits, state }: { session: ChatSession 
       <div className="meters" data-ctx-warn={state.ctxWarn ? "" : undefined}>
         <div className="ctx" tabIndex={0} data-tip={tip}>
           <span>{T.context}</span>
-          <div className="track"><i style={{ width: `${Math.min(100, (used / max) * 100)}%` }} /></div>
+          <div className="ctrack"><i style={{ width: `${Math.min(100, (used / max) * 100)}%` }} /></div>
           <b className="mono">{T.contextOf(fmtTokens(used), fmtTokens(max))}</b>
         </div>
         <Limit label={T.fiveHour} value={five} warn={(five ?? 0) >= CHAT_UI.warnLimit} danger={(five ?? 0) >= CHAT_UI.dangerLimit} tip={(limits ? resetText(limits.five_resets_at) + reading : T.noReading)} />

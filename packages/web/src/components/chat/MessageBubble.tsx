@@ -77,8 +77,8 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
   const active = m.state === "pending" || m.state === "streaming";
   return (
     <article className="msg">
-      <div className="who-row">
-        <span className="who">Claude</span>
+      <div className="cwho-row">
+        <span className="cwho">Claude</span>
         <time>{stamp(m.created_at)}</time>
       </div>
       {(m.body || active) && <Reply body={m.body} caret={active} />}

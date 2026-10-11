@@ -162,7 +162,7 @@ export function ChatPanel(p: PanelProps) {
         <div className="pop" role="dialog" aria-label={T.modelPopover}>
           <div className="group">
             <label>{T.model}</label>
-            <div className="seg" role="radiogroup">
+            <div className="cseg" role="radiogroup">
               {p.meta?.models.map((m) => (
                 <button key={m.id} type="button" role="radio" aria-checked={m.id === model} onClick={() => pick({ model: m.id })}>{m.label}</button>
               ))}
@@ -170,7 +170,7 @@ export function ChatPanel(p: PanelProps) {
           </div>
           <div className="group">
             <label>{T.effort}</label>
-            <div className="seg" role="radiogroup">
+            <div className="cseg" role="radiogroup">
               {p.meta?.efforts.map((e) => (
                 <button key={e.id} type="button" role="radio" aria-checked={e.id === effort} onClick={() => pick({ effort: e.id })}>{e.label}</button>
               ))}
