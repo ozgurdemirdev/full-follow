@@ -86,6 +86,10 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 
 **Kaydı panelde açma:** "26 numaralı fikri aç", "şu firmayı göster", "bulamadım, nerede" dediğinde Claude kaydı senin panelinde açar (sayfaya gider, satırı kısa süre vurgular, sohbet masaüstünde açık kalır; telefonda küçülür). Cevabın altında "Fikir #26 · aç" düğmesi kalır, sonradan da çalışır. Claude bunu yalnızca açıkça istediğinde yapar, ekleme, arama ya da rapor sırasında kendiliğinden sayfa değiştirmez. Görev ve hedef Dashboard'da düzenleme formuyla açılır.
 
+**Kayıt kartları ve 👍:** Claude kayıt listelediğinde (haftalık plan, bir şablon, takip edilecek kişiler) uzun metin yerine kısa bir cümle ve canlı kartlar gönderir: görev kartındaki kutuyla görevi tamamlarsın, taslak kartından "Gönderildi" dersin, şablon kartı kişiye göre doldurulmuş metni gösterir ("Kopyala", "Taslak olarak kaydet"). Kartlar kaydedilmez, sohbeti açtıkça güncel veri çekilir. Sadece "tamam", "tamamdır anladım" gibi bir kapanış yazdığında Claude cevap yazmaz, mesajının yanında 👍 görünür; "onaylıyorum" dersen 👍 ile işi yapar ve tek satır sonuç yazar; "hallettim" dersen "Görev #N'yi kapat" düğmesi çıkar, görev ancak ona basınca kapanır.
+
+**Panel brief (isteğe bağlı, özel):** Claude'un çalışma klasöründe (`FF_CHAT_CWD`, yoksa `data/chat/`) `panel-brief.md` adlı bir dosya varsa içeriği her sohbette sistem notuna eklenir; iş bağlamını oraya yazabilirsin. Bu dosya projenin içinde değil senin klasöründe durur, git'e girmez; dosyayı değiştirince sonraki mesajda yeni hali kullanılır.
+
 **Ortam değişkenleri** (`.env`, hepsi isteğe bağlı)
 
 | Değişken | Varsayılan | Ne yapar |

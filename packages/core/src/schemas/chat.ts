@@ -32,4 +32,5 @@ export const chatFinish = z.strictObject({
   usage: z.strictObject({ input_tokens: z.number().int().min(0), output_tokens: z.number().int().min(0) }).optional(),
   cost_usd: z.number().min(0).optional(),
   context_tokens: z.number().int().min(0).optional(),
+  ack: z.boolean().optional(),
 });

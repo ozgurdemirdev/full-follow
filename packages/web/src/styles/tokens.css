@@ -209,6 +209,7 @@
   --spacing-chat-att-max: 200px;
   --spacing-chat-thumb-width: 120px;
   --spacing-chat-thumb-height: 90px;
+  --spacing-chat-goal-width: 72px;
   --container-content: undefined;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -253,6 +254,7 @@
   --dur-pulse: 1400ms;
   --dur-wave: 900ms;
   --dur-wave-step: 100ms;
+  --dur-react-pop: 420ms;
   --stagger: 50ms;
   --rise-distance: 10px;
   --press-scale: 0.97;
@@ -339,6 +341,10 @@
 
 @utility dur-wave-step {
   transition-duration: var(--dur-wave-step);
+}
+
+@utility dur-react-pop {
+  transition-duration: var(--dur-react-pop);
 }
 
 @utility z-scrim {

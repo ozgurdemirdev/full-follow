@@ -1,6 +1,6 @@
 // Chat state that must survive F5: open or not, large or not, open session, unsent drafts.
 // localStorage can throw (private window), so every access is wrapped.
-const KEY = { open: "ff.chat.open", large: "ff.chat.large", session: "ff.chat.session", draft: "ff.chat.draft." } as const;
+const KEY = { open: "ff.chat.open", large: "ff.chat.large", session: "ff.chat.session", draft: "ff.chat.draft.", suggest: "ff.chat.suggest." } as const;
 
 const read = (k: string): string | null => {
   try {
@@ -28,6 +28,9 @@ export const chatPrefs = {
     return Number.isInteger(n) && n > 0 ? n : null;
   },
   setSession: (id: number | null) => write(KEY.session, id === null ? null : String(id)),
+  /** what Özgür did with a suggestion button: "done" or "no" (kept per reply so F5 does not bring the buttons back) */
+  suggest: (messageId: number) => read(`${KEY.suggest}${messageId}`),
+  setSuggest: (messageId: number, v: "done" | "no") => write(`${KEY.suggest}${messageId}`, v),
   draft: (id: number | null) => read(`${KEY.draft}${id ?? "new"}`) ?? "",
   setDraft: (id: number | null, text: string) => write(`${KEY.draft}${id ?? "new"}`, text),
 };

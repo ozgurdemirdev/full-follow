@@ -20,6 +20,10 @@ export const TOOL_SUMMARY_CHARS = 80;
 /** After closing stdin, how long a process gets to exit before it is killed */
 export const GRACEFUL_EXIT_MS = 2_000;
 export const STDERR_LOG_CHARS = 500;
+/** Claude answers an acknowledgement with this marker; it is held back, stripped and stored as chat_messages.ack */
+export const ACK_MARKER = "[[ack]]";
+/** Name of the private brief in the chat working folder (outside the repo); appended to system.md when it exists */
+export const BRIEF_FILE = "panel-brief.md";
 /** Hidden block sent once when the pinned notes changed after a chat started (never stored, never shown) */
 export const NOTES_UPDATE = "Updated pinned notes from Özgür, apply them from now on:\n";
 export const NOTES_CLEARED = "Özgür cleared the pinned notes; disregard any earlier pinned notes.";

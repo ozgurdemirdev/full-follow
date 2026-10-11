@@ -131,6 +131,10 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
       case "limits":
         events.current.onLimits(d);
         break;
+      case "ack":
+        // Claude decided to acknowledge: the thumbs up appears before the reply finishes
+        setMessages((prev) => prev.map((m) => (m.id === d.message_id ? { ...m, ack: true } : m)));
+        break;
       case "navigate":
         events.current.onNavigate(d);
         break;

@@ -5,6 +5,7 @@ import { CORE, type Core } from "../core.provider";
 import { intId } from "../http";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
+import { cardRecords } from "./chat-records";
 import { attachmentFile, saveUpload } from "./chat-uploads";
 import { CHAT_ATTACHMENT_TYPES, CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
 import { resolveCli } from "./claude-cli";
@@ -26,6 +27,12 @@ export class ChatController {
   meta() {
     const cli_error = !resolveCli() ? "cli_missing" : !mcpBuilt() ? "mcp_not_built" : undefined;
     return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, defaults: CHAT_DEFAULTS, attachment_types: CHAT_ATTACHMENT_TYPES, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits };
+  }
+
+  /** Live rows for the record cards of a reply: ?keys=task:7,person:12,template:5@12 (max 30) */
+  @Get("records")
+  records(@Query("keys") keys?: string) {
+    return cardRecords(this.core, keys ?? "");
   }
 
   @Get("sessions")

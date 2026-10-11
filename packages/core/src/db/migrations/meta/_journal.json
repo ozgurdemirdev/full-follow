@@ -113,6 +113,13 @@
       "when": 1791696642638,
       "tag": "0015_chat_input_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1791697362600,
+      "tag": "0016_chat_ack",
+      "breakpoints": true
     }
   ]
 }

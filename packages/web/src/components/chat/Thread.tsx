@@ -101,8 +101,8 @@ export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRet
             <p>{T.emptyHint}</p>
           </div>
         ) : (
-          messages.map((m) => (
-            <MessageBubble key={m.client_id && m.role === "user" ? m.client_id : m.id} message={m} onRetrySend={onRetrySend} onRetryReply={onRetryReply} onOpenRecord={onOpenRecord} />
+          messages.map((m, i) => (
+            <MessageBubble key={m.client_id && m.role === "user" ? m.client_id : m.id} message={m} next={m.role === "user" ? messages[i + 1] : undefined} onRetrySend={onRetrySend} onRetryReply={onRetryReply} onOpenRecord={onOpenRecord} />
           ))
         )}
       </div>

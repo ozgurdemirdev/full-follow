@@ -4,7 +4,7 @@ import { CHAT_UI } from "./chatText";
 export type Connection = "open" | "lost" | "back";
 export type StreamHandler = (name: string, data: any) => void;
 
-const EVENTS = ["status", "delta", "message", "usage", "session", "limits", "navigate", "snapshot"] as const;
+const EVENTS = ["status", "delta", "message", "usage", "session", "limits", "navigate", "ack", "snapshot"] as const;
 
 /**
  * One EventSource for the open session. The browser reconnects by itself and sends Last-Event-ID;

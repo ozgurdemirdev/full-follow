@@ -4,8 +4,8 @@ import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleI
 import { CORE, type Core } from "../core.provider";
 import { ChatHub } from "./chat-hub";
 import { attachmentBlocks } from "./chat-uploads";
-import { notesVersion, writeRuntimeFiles } from "./chat-files";
-import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, VOICE_NOTE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
+import { notesVersion, readBrief, writeRuntimeFiles } from "./chat-files";
+import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, ACK_MARKER, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, VOICE_NOTE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
 import { createParser, errorCode, type ChatEvent, type ToolRecord } from "./stream-parser";
 
@@ -26,6 +26,12 @@ interface Turn {
   timeoutTimer: NodeJS.Timeout;
   tools: ToolRecord[];
   ended: boolean;
+  /** first characters held back until it is clear whether the reply starts with the ack marker */
+  head: string;
+  headDone: boolean;
+  ack: boolean;
+  /** whitespace after the marker is dropped from the first delivered text */
+  stripLead?: boolean;
 }
 
 interface Slot {
@@ -44,14 +50,18 @@ interface Slot {
 @Injectable()
 export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private slots = new Map<number, Slot>();
-  /** pinned notes as last written to system.md */
+  /** pinned notes and the private brief as last written to system.md, and both together (the version and the hidden update block follow it) */
+  private pinned = "";
+  private brief = "";
   private notes = "";
 
   constructor(@Inject(CORE) private core: Core, private hub: ChatHub) {}
 
   onModuleInit() {
-    this.notes = this.core.settings.all().chat_pinned_notes;
-    writeRuntimeFiles(this.notes);
+    this.pinned = this.core.settings.all().chat_pinned_notes;
+    this.brief = readBrief();
+    this.notes = this.combined();
+    writeRuntimeFiles(this.pinned, this.brief);
     const n = this.core.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
     if (n) console.log(`  ${n} yarım kalan sohbet cevabı hataya çevrildi`);
   }
@@ -65,12 +75,17 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     return this.slots.get(sessionId)?.turn?.messageId ?? null;
   }
 
-  /** Pinned notes saved in Settings (or by Claude): rewrite system.md and let every process pick them up on its next message */
+  private combined = () => [this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
+
+  /** Pinned notes saved in Settings or a changed brief file (or by Claude): rewrite system.md and let every process pick them up on its next message */
   private syncNotes() {
-    const now = this.core.settings.all().chat_pinned_notes;
-    if (now === this.notes) return;
-    this.notes = now;
-    writeRuntimeFiles(now);
+    const pinned = this.core.settings.all().chat_pinned_notes;
+    const brief = readBrief();
+    if (pinned === this.pinned && brief === this.brief) return;
+    this.pinned = pinned;
+    this.brief = brief;
+    this.notes = this.combined();
+    writeRuntimeFiles(pinned, brief);
     this.markAllStale();
   }
 
@@ -156,7 +171,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
 
   private newTurn(slot: Slot, messageId: number): Turn {
     const turn: Turn = {
-      messageId, parser: createParser(), bodyLen: 0, pending: "", tools: [], ended: false,
+      messageId, parser: createParser(), bodyLen: 0, pending: "", tools: [], ended: false, head: "", headDone: false, ack: false,
       timeoutTimer: setTimeout(() => {
         this.finishTurn(slot, { state: "error", code: "timeout" });
         this.dropSlot(slot);
@@ -210,7 +225,38 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Reply text goes through here. The first ACK_MARKER.length characters are held until it is clear whether the reply
+   * starts with the marker; the marker is removed from deltas and body and remembered as `ack`.
+   */
   private appendText(sessionId: number, turn: Turn, text: string) {
+    if (turn.headDone) return this.deliver(sessionId, turn, text);
+    turn.head += text;
+    if (turn.head.length < ACK_MARKER.length && ACK_MARKER.startsWith(turn.head)) return;
+    this.releaseHead(sessionId, turn);
+  }
+
+  private releaseHead(sessionId: number, turn: Turn) {
+    if (turn.headDone) return;
+    turn.headDone = true;
+    let rest = turn.head;
+    turn.head = "";
+    if (rest.startsWith(ACK_MARKER)) {
+      turn.ack = true;
+      rest = rest.slice(ACK_MARKER.length).trimStart();
+      this.hub.emit(sessionId, "ack", { message_id: turn.messageId });
+      // text right after the marker starts on a clean line
+      turn.stripLead = true;
+    }
+    if (rest) this.deliver(sessionId, turn, rest);
+  }
+
+  private deliver(sessionId: number, turn: Turn, text: string) {
+    if (turn.stripLead) {
+      text = text.trimStart();
+      if (!text) return;
+      turn.stripLead = false;
+    }
     this.hub.emit(sessionId, "delta", { message_id: turn.messageId, offset: turn.bodyLen, text });
     turn.bodyLen += text.length;
     turn.pending += text;
@@ -231,10 +277,11 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     if (!turn || turn.ended) return;
     turn.ended = true;
     clearTimeout(turn.timeoutTimer);
+    this.releaseHead(slot.sessionId, turn);
     this.flush(turn);
     const chat = this.core.chat;
     const row = chat.finishAssistantMessage(turn.messageId, {
-      state: r.state, error: r.code ? CHAT_ERROR_TEXT[r.code] : null, usage: r.usage, cost_usd: r.cost_usd, context_tokens: r.context_tokens,
+      state: r.state, ack: turn.ack, error: r.code ? CHAT_ERROR_TEXT[r.code] : null, usage: r.usage, cost_usd: r.cost_usd, context_tokens: r.context_tokens,
     });
     slot.turn = null;
     slot.lastUsed = Date.now();

@@ -418,6 +418,8 @@ export const chat_messages = sqliteTable("chat_messages", {
   /** browser UUID, user rows only; unique per session so a retried send is idempotent */
   client_id: text("client_id"),
   /** user rows only: "voice" when the text was dictated (the CLI then gets a hidden note, never stored in body) */
+  /** assistant rows only: the reply started with [[ack]] (Claude acknowledged instead of answering); the marker itself is never stored */
+  ack: integer("ack", { mode: "boolean" }).notNull().default(false),
   input_mode: text("input_mode", { enum: CHAT_INPUT_MODES }).notNull().default("text"),
   tools_json: text("tools_json"),
   error: text("error"),

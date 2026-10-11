@@ -1,0 +1,1 @@
+ALTER TABLE `chat_messages` ADD `ack` integer DEFAULT false NOT NULL;

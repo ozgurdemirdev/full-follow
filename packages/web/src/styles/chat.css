@@ -6,4 +6,5 @@
 @import "./chat/window.css";
 @import "./chat/thread.css";
 @import "./chat/composer.css";
+@import "./chat/cards.css";
 @import "./chat/popover-layout.css";

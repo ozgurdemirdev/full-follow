@@ -41,7 +41,7 @@ export default function ChatWidget() {
     setSession((cur) => (cur ? { ...cur, context_tokens: u.context_tokens, input_tokens_total: u.input_tokens_total, output_tokens_total: u.output_tokens_total, cost_usd_micros_total: u.cost_usd_micros_total } : cur));
   }, []);
   const onFinished = useCallback((m: ChatMessage) => {
-    if (m.state === "done" && !chatPrefs.open()) setReady(true);
+    if (m.state === "done" && !chatPrefs.open() && !(m.ack && !m.body.trim())) setReady(true);
     void chatApi.sessions().then((r) => setSessions((l) => r.items.reduce((acc, s) => upsert(acc, s), l)));
   }, []);
 

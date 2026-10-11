@@ -174,7 +174,7 @@ export function chatService(ctx: Ctx) {
       const micros = d.cost_usd === undefined ? null : Math.round(d.cost_usd * 1_000_000);
       const r = tx.update(chat_messages).set({
         state: d.state, error: d.error ?? null, input_tokens: d.usage?.input_tokens ?? null, output_tokens: d.usage?.output_tokens ?? null,
-        cost_usd_micros: micros, updated_at: now,
+        cost_usd_micros: micros, ack: d.ack ?? false, updated_at: now,
       }).where(eq(chat_messages.id, messageId)).returning().get();
       tx.update(chat_sessions).set({
         input_tokens_total: sql`${chat_sessions.input_tokens_total} + ${d.usage?.input_tokens ?? 0}`,

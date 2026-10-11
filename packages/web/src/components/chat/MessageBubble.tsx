@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { Children, isValidElement, memo, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { parseTools, type ChatMessage } from "../../api/chat";
@@ -6,6 +6,9 @@ import { fmtDay } from "../../lib/format";
 import { KIND_LABEL, T } from "../../lib/chatText";
 import { chatApi } from "../../api/chat";
 import { Attachment } from "./Attachment";
+import { extractSuggest, splitOpenFence } from "../../lib/chatReply";
+import { CardsSkeleton, RecordCards } from "./RecordCards";
+import { SuggestRow } from "./SuggestRow";
 import { Icon } from "../icons";
 
 const timeFmt = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" });
@@ -16,13 +19,26 @@ function stamp(iso: string): string {
   return d.toDateString() === today.toDateString() ? timeFmt.format(d) : `${fmtDay(iso)} ${timeFmt.format(d)}`;
 }
 
-const components = { a: (p: React.ComponentProps<"a">) => <a {...p} target="_blank" rel="noreferrer" /> };
+const FF = /language-(ff-[a-z]+)/;
+const ffLang = (node: unknown) => (isValidElement<{ className?: string }>(node) ? FF.exec(node.props.className ?? "")?.[1] : undefined);
 
-/** Raw HTML stays off (react-markdown default): never dangerouslySetInnerHTML */
-function Reply({ body, caret }: { body: string; caret: boolean }) {
+/** Raw HTML stays off (react-markdown default): never dangerouslySetInnerHTML. ```ff-cards renders as record cards, ```ff-suggest renders elsewhere (under the user's message). */
+function Reply({ body, caret, messageId }: { body: string; caret: boolean; messageId: number }) {
+  const components = useMemo(() => ({
+    a: (p: React.ComponentProps<"a">) => <a {...p} target="_blank" rel="noreferrer" />,
+    pre: ({ children }: { children?: React.ReactNode }) => (ffLang(Children.toArray(children)[0]) ? <>{children}</> : <pre>{children}</pre>),
+    code: ({ className, children }: { className?: string; children?: React.ReactNode }) => {
+      const lang = FF.exec(className ?? "")?.[1];
+      if (lang === "ff-cards") return <RecordCards source={String(children)} messageId={messageId} />;
+      if (lang === "ff-suggest") return null;
+      return <code className={className}>{children}</code>;
+    },
+  }), [messageId]);
+  const { text, open } = caret ? splitOpenFence(body) : { text: body, open: false };
   return (
-    <div className="md" data-caret={caret ? "" : undefined}>
-      <Markdown remarkPlugins={[remarkGfm]} components={components}>{body}</Markdown>
+    <div className="md" data-caret={caret && !open ? "" : undefined}>
+      <Markdown remarkPlugins={[remarkGfm]} components={components}>{text}</Markdown>
+      {open && <CardsSkeleton />}
     </div>
   );
 }
@@ -59,10 +75,14 @@ interface Props {
   /** ask again after a failed reply */
   onRetryReply: () => void;
   onOpenRecord: (type: string, id: number) => void;
+  /** the reply that follows this user message, if any: its ack puts a thumbs up here, its ff-suggest block renders here */
+  next?: ChatMessage;
 }
 
-export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySend, onRetryReply, onOpenRecord }: Props) {
+export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySend, onRetryReply, onOpenRecord, next }: Props) {
   if (m.role === "user") {
+    const acked = !!next?.ack && !!m.body;
+    const suggest = next?.ack ? extractSuggest(next.body).suggest : null;
     return (
       <article className="msg me" data-pending={m.local === "sending" ? "" : undefined}>
         {!!m.attachments?.length && (
@@ -72,7 +92,12 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
             ))}
           </div>
         )}
-        {m.body && <div className="bubble">{m.body}</div>}
+        {m.body && (
+          <div className="bubble-wrap">
+            <div className="bubble">{m.body}</div>
+            {acked && <span className="creact" role="img" aria-label={T.acked}>👍</span>}
+          </div>
+        )}
         {m.local === "failed" ? (
           <div className="err">
             <span>{T.failed}</span>
@@ -81,17 +106,21 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
         ) : (
           <time>{m.local === "sending" ? T.sending : stamp(m.created_at)}</time>
         )}
+        {suggest && next && <SuggestRow suggest={suggest} messageId={next.id} />}
       </article>
     );
   }
   const active = m.state === "pending" || m.state === "streaming";
+  const text = extractSuggest(m.body).text;
+  // an acknowledgement with no text and no tools is only the thumbs up on the user message: no bubble at all
+  if (m.ack && !text.trim() && !parseTools(m).length && m.state !== "error") return null;
   return (
-    <article className="msg">
+    <article className={`msg${m.ack ? " short" : ""}`}>
       <div className="cwho-row">
         <span className="cwho">Claude</span>
         <time>{stamp(m.created_at)}</time>
       </div>
-      {(m.body || active) && <Reply body={m.body} caret={active} />}
+      {(text || active) && <Reply body={text} caret={active} messageId={m.id} />}
       {!active && <Tools message={m} />}
       {!active && parseTools(m).filter((t) => t.open).map((t, i) => (
         <button key={i} type="button" className="rchip" onClick={() => onOpenRecord(t.open!.type, t.open!.id)}>

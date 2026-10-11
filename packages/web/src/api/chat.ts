@@ -39,6 +39,8 @@ export interface ChatMessage {
   error: string | null;
   created_at: string;
   attachments?: ChatAttachment[];
+  /** Claude acknowledged instead of answering (thumbs up on the user bubble) */
+  ack?: boolean;
   input_mode?: "text" | "voice";
   /** browser only: a user bubble not yet confirmed by the server */
   local?: "sending" | "failed";
@@ -83,6 +85,9 @@ export interface ToolRecord {
   open?: { type: string; id: number; label: string };
 }
 
+/** Live data of one record card; `missing` for a deleted or unknown record */
+export type CardRecord = { key: string; type: string; id: number; missing?: true } & Record<string, any>;
+
 const base = "/chat";
 export const chatApi = {
   meta: () => api.get<ChatMeta>(`${base}/meta`),
@@ -109,6 +114,7 @@ export const chatApi = {
     return data as ChatAttachment;
   },
   attachmentUrl: (id: number) => `/api${base}/attachments/${id}`,
+  records: (keys: string[]) => api.get<CardRecord[]>(`${base}/records${qs({ keys: keys.join(",") })}`),
   stop: (id: number) => api.post<{ ok: true }>(`${base}/sessions/${id}/stop`),
   streamUrl: (id: number, lastEventId: number) => `/api${base}/sessions/${id}/stream${qs({ last_event_id: lastEventId })}`,
 };
