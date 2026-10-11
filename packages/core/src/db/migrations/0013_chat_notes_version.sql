@@ -1,0 +1,1 @@
+ALTER TABLE `chat_sessions` ADD `notes_version` text DEFAULT '' NOT NULL;

@@ -159,6 +159,10 @@ export function chatService(ctx: Ctx) {
     ctx.db.update(chat_sessions).set({ cli_started: true }).where(eq(chat_sessions.id, sessionId)).run();
   }
 
+  function setNotesVersion(sessionId: number, version: string) {
+    ctx.db.update(chat_sessions).set({ notes_version: version }).where(eq(chat_sessions.id, sessionId)).run();
+  }
+
   /** Boot cleanup: a run owned by a dead server can never finish */
   function failDanglingRuns(reason: string) {
     return ctx.db.update(chat_messages).set({ state: "error", error: reason, updated_at: ctx.clock.now() })
@@ -167,6 +171,6 @@ export function chatService(ctx: Ctx) {
 
   return {
     createSession, listSessions, getSession: sessionRow, updateSession, deleteSession, restoreSession, listMessages, getMessage: messageRow,
-    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, failDanglingRuns,
+    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, failDanglingRuns,
   };
 }

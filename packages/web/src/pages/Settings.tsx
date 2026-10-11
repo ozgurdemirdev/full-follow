@@ -222,7 +222,7 @@ function ChatNotesCard({ notes }: { notes: string }) {
   return (
     <section className="card rise flex flex-col gap-4 px-9 py-8" style={order(2)} aria-label="Sohbet sabit notları">
       <Head title="Sohbet sabit notları" />
-      <p className="m-0 text-base-sm text-text-secondary">Panel sohbetindeki Claude her konuşmada bu notu da görür. Yeni açılan sohbetlerde geçerli olur; eski sohbetler ilk açıldıkları notla devam eder.</p>
+      <p className="m-0 text-base-sm text-text-secondary">Panel sohbetindeki Claude her konuşmada bu notu da görür. Bir sonraki mesajdan itibaren geçerli olur.</p>
       <textarea id="set-chat-notes" className="inp min-h-textarea-lg" maxLength={PINNED_MAX} value={v} onChange={(e) => setV(e.target.value)} onBlur={save} aria-label="Sohbet sabit notları" />
       <span className="text-xs text-text-muted">{v.length.toLocaleString("tr-TR")} / {PINNED_MAX.toLocaleString("tr-TR")}</span>
     </section>

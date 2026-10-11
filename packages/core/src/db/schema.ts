@@ -397,6 +397,8 @@ export const chat_sessions = sqliteTable("chat_sessions", {
   /** UUID handed to the Claude CLI: --session-id on the first run, --resume afterwards */
   cli_session_id: text("cli_session_id").notNull().unique(),
   cli_started: integer("cli_started", { mode: "boolean" }).notNull().default(false),
+  /** version (hash) of the pinned notes this chat last saw; a resumed CLI session ignores a changed system prompt, so a change is sent as a hidden block */
+  notes_version: text("notes_version").notNull().default(""),
   model: text("model").notNull(),
   effort: text("effort").notNull(),
   context_tokens: integer("context_tokens").notNull().default(0),

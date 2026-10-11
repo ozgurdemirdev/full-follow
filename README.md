@@ -88,7 +88,7 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 | `FF_CHAT_CWD` | `C:/Projects/Networking`, yoksa `data/chat/` | Claude'un çalışma klasörü; içindeki `CLAUDE.md` dosyası iş bağlamı olarak okunur. Senin bilgisayarında bu klasör yoksa `data/chat/` kullanılır, sorun olmaz |
 | `FF_CLAUDE_CONFIG_DIR` | yok | Sohbet için terminalden farklı bir Claude hesabı kullanmak istersen: `CLAUDE_CONFIG_DIR=<klasör> claude auth login` ile bir kez giriş yap, klasörü buraya yaz |
 
-**Sabit notlar:** Ayarlar sayfasındaki "Sohbet sabit notları" kutusu (en fazla 4.000 karakter) her yeni sohbette Claude'a verilir; kurallarını ve iş bağlamını oraya yazabilirsin. Eski sohbetler ilk açıldıkları notla devam eder.
+**Sabit notlar:** Ayarlar sayfasındaki "Sohbet sabit notları" kutusu (en fazla 4.000 karakter) her sohbette Claude'a verilir; kurallarını ve iş bağlamını oraya yazabilirsin. Notu değiştirirsen açık sohbetler de bir sonraki mesajda yeni notu görür.
 
 **Sık görülen hatalar**
 

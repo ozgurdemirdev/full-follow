@@ -3,8 +3,8 @@ import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { CORE, type Core } from "../core.provider";
 import { ChatHub } from "./chat-hub";
-import { writeRuntimeFiles } from "./chat-files";
-import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, GRACEFUL_EXIT_MS, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
+import { notesVersion, writeRuntimeFiles } from "./chat-files";
+import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
 import { createParser, errorCode, type ChatEvent, type ToolRecord } from "./stream-parser";
 
@@ -102,9 +102,22 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     if (!slot) slot = this.spawn(sessionId, session);
     clearTimeout(slot.idleTimer);
     slot.turn = this.newTurn(slot, assistant.id);
-    const line = JSON.stringify({ type: "user", message: { role: "user", content: [{ type: "text", text: user.body }] } });
+    const content = [{ type: "text", text: user.body }, ...this.notesBlock(session)];
+    const line = JSON.stringify({ type: "user", message: { role: "user", content } });
     slot.child.stdin?.write(`${line}\n`);
     return { user_message: user, assistant_message: assistant };
+  }
+
+  /**
+   * A resumed CLI session keeps its original system prompt, so changed pinned notes reach it as one extra hidden block
+   * in its next user message. A chat that has not started yet gets the notes through system.md, so it only records the version.
+   */
+  private notesBlock(session: ReturnType<Core["chat"]["getSession"]>): { type: "text"; text: string }[] {
+    const v = notesVersion(this.notes);
+    if (session.notes_version === v) return [];
+    this.core.chat.setNotesVersion(session.id, v);
+    if (!session.cli_started) return [];
+    return [{ type: "text", text: v ? NOTES_UPDATE + this.notes.trim() : NOTES_CLEARED }];
   }
 
   /** Stop: the text so far stays, the message becomes `stopped` */

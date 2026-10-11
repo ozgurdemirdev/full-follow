@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { defaultDbPath } from "@fullfollow/core";
@@ -19,3 +20,6 @@ export function writeRuntimeFiles(pinnedNotes = ""): void {
 
 /** Setup problem shown by GET /api/chat/meta instead of failing per message */
 export const mcpBuilt = () => fs.existsSync(MCP_ENTRY);
+
+/** Short version id of the pinned notes text ("" when there are none) */
+export const notesVersion = (notes: string) => (notes.trim() ? createHash("sha1").update(notes.trim()).digest("hex").slice(0, 12) : "");
