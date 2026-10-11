@@ -6,7 +6,7 @@ import { isDesk } from "../lib/openRecord";
 import { MASCOT_TEXT } from "../lib/mascotText";
 import { CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_X, PERCH_Y, SIZE } from "./config";
 import { mascotLive, mascotPrefs, useMascotLive, useMascotPrefs, type MascotPrefs } from "./mascotStore";
-import { bounds, cheer, createMotion, freeze, moodStep, pose, simulate, type Env, type MotionState, type Pointer, type Vec2 } from "./motion";
+import { bounds, cheer, createMotion, freeze, moodStep, pose, simulate, type Env, type MotionState, type Pointer, type Rect, type Vec2 } from "./motion";
 import { customMix, CUSTOM_MIX_AMOUNT, presetColors, type BellGlow } from "./palette";
 import type { MascotScene } from "./scene";
 
@@ -22,6 +22,16 @@ const STILL_MS = 90;
 const SPEED_KEEP = 0.6;
 const DEBUG_KEY = "ff.mascot.debug";
 const DEBUG_FRAMES = 120;
+/** gap kept around the + button, its menu and the chat window (px) */
+const OBSTACLE_MARGIN = 6;
+const FAB_SELECTOR = 'button[aria-label="Hızlı ekle"]';
+const FAB_MENU_SELECTOR = '[role="menu"][aria-label="Hızlı ekle"]:not([aria-hidden="true"])';
+
+function rectOf(el: Element | null, perchSkip = false): Rect[] {
+  if (!el) return [];
+  const r = el.getBoundingClientRect();
+  return r.width ? [{ x0: r.left - OBSTACLE_MARGIN, y0: r.top - OBSTACLE_MARGIN, x1: r.right + OBSTACLE_MARGIN, y1: r.bottom + OBSTACLE_MARGIN, perchSkip }] : [];
+}
 /** glow power while a reply runs */
 const RUNNING_GLOW = 1.2;
 
@@ -84,8 +94,9 @@ function MascotBody({ onActivate }: Props) {
     const r = pr.getBoundingClientRect();
     const sb = desk ? document.querySelector("nav.sb")?.getBoundingClientRect() : null;
     const b = bounds(size.current, vw, vh, sb ? sb.right : 0);
-    const home: Vec2 = { x: Math.min(r.right - size.current.w / 2, b.x1), y: Math.min(r.bottom - size.current.h * 0.45, b.y1) };
-    env.current = { reduce: reducedMotion(), size: size.current, viewport: { w: vw, h: vh }, bounds: b, home, homeLock: true, perch: null };
+    // the body rests just above the + button, not on it
+    const home: Vec2 = { x: Math.min(r.right - size.current.w / 2, b.x1), y: Math.min(r.bottom - size.current.h * 0.56, b.y1) };
+    env.current = { reduce: reducedMotion(), size: size.current, viewport: { w: vw, h: vh }, bounds: b, obstacles: [], home, homeLock: true, perch: null };
     scene.current?.resize(Math.max(1, size.current.w), Math.max(1, size.current.h));
   };
 
@@ -165,6 +176,7 @@ function MascotBody({ onActivate }: Props) {
       else perch = { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
     }
     e.perch = perch;
+    e.obstacles = [...rectOf(document.querySelector(FAB_SELECTOR)), ...rectOf(document.querySelector(FAB_MENU_SELECTOR)), ...rectOf(win, true)];
     el.classList.toggle("perched", !!perch);
     el.classList.toggle(FADE_CLASS, faded.current || hide);
     // a running reply: quicker pulse and a brighter glow
@@ -175,6 +187,8 @@ function MascotBody({ onActivate }: Props) {
     const bob = s.mode === "drag" || e.reduce ? 0 : Math.sin(s.t * 0.9) * CFG.bob;
     el.style.transform = `translate3d(${s.pos.x - e.size.w / 2}px, ${s.pos.y - e.size.h * 0.45 + bob}px, 0)`;
     el.style.setProperty("--pulse", (0.65 + 0.35 * s.c).toFixed(3));
+    el.dataset.mood = s.mood;
+    el.dataset.mode = s.mode;
     el.classList.toggle("pinned", s.pinned);
     el.classList.toggle("dragging", s.mode === "drag");
     if (localStorage.getItem(DEBUG_KEY) === "1") {

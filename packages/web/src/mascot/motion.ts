@@ -8,6 +8,14 @@ export type Mode = "free" | "drag" | "toss" | "fall";
 export type Mood = "normal" | "flying" | "ouch" | "dizzy" | "shake" | "happy";
 
 export interface Bounds { x0: number; x1: number; y0: number; y1: number }
+/** A box the mascot cannot swim into (the + button and its menu, the open chat window), in viewport pixels */
+export interface Rect extends Bounds {
+  /** skipped while the mascot sits at its perch spot (it rests on the chat window edge on purpose) */
+  perchSkip?: boolean;
+}
+
+/** The body around the position: half width, and how far it reaches above and below (the same numbers the bounds use) */
+const BODY = { halfW: 0.32, up: 0.3, down: 0.56 } as const;
 
 /** What the outside world says this frame; the simulation never reads the DOM */
 export interface Env {
@@ -15,6 +23,7 @@ export interface Env {
   size: { w: number; h: number };
   viewport: { w: number; h: number };
   bounds: Bounds;
+  obstacles: Rect[];
   /** where it waits: the old chat button spot */
   home: Vec2;
   /** swim home and stay there (working, wander off, phone) */
@@ -209,10 +218,47 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
     S.sqV += Math.min(impact * 0.004, 6);
     S.shearV += (ax === "x" ? Math.sign(S.vel.x) : 0.5) * impact * CFG.impactShear;
     if (S.mode === "fall" && floor && impact < CFG.landSpeed) {
-      land(S, b, hooks);
+      land(S, { x: S.fallX, y: b.y1 }, hooks);
       continue;
     }
     S.vel[ax] *= -(S.mode === "fall" ? CFG.fallBounce : CFG.restitution);
+    if (S.mode !== "fall") onImpact(S, env, impact);
+  }
+  collide(S, env, hooks);
+}
+
+/**
+ * Obstacles push the body out along the shallowest side. A body moving into one bounces like off a wall (and can get dizzy);
+ * a box that grows into it (the menu opening) just shoves it. A falling body that comes down on one lands on it.
+ */
+function collide(S: MotionState, env: Env, hooks: Hooks) {
+  const { w, h } = env.size;
+  for (const o of env.obstacles) {
+    if (o.perchSkip && env.perch && dist(S.pos, env.perch) < CFG.arrive * 2) continue;
+    const l = S.pos.x - w * BODY.halfW, r = S.pos.x + w * BODY.halfW, t = S.pos.y - h * BODY.up, b = S.pos.y + h * BODY.down;
+    if (r <= o.x0 || l >= o.x1 || b <= o.y0 || t >= o.y1) continue;
+    const sides = [
+      { ax: "x" as const, sign: -1, depth: r - o.x0 },
+      { ax: "x" as const, sign: 1, depth: o.x1 - l },
+      { ax: "y" as const, sign: -1, depth: b - o.y0 },
+      { ax: "y" as const, sign: 1, depth: o.y1 - t },
+    ];
+    const hit = sides.reduce((a, c) => (c.depth < a.depth ? c : a));
+    S.pos[hit.ax] += hit.sign * hit.depth;
+    if (S.mode === "drag") {
+      S.vel[hit.ax] = 0;
+      continue;
+    }
+    // only a body moving into the obstacle bounces; one that is pushed away keeps its speed
+    if (Math.sign(S.vel[hit.ax]) !== -hit.sign || S.vel[hit.ax] === 0) continue;
+    const impact = Math.abs(S.vel[hit.ax]);
+    S.sqV += Math.min(impact * 0.004, 6);
+    S.shearV += (hit.ax === "x" ? Math.sign(S.vel.x) : 0.5) * impact * CFG.impactShear;
+    if (S.mode === "fall" && hit.ax === "y" && hit.sign === -1 && impact < CFG.landSpeed) {
+      land(S, { x: S.pos.x, y: S.pos.y }, hooks);
+      continue;
+    }
+    S.vel[hit.ax] *= -(S.mode === "fall" ? CFG.fallBounce : CFG.restitution);
     if (S.mode !== "fall") onImpact(S, env, impact);
   }
 }
@@ -233,12 +279,12 @@ function onImpact(S: MotionState, env: Env, impact: number) {
   } else if (impact > CFG.ouchImpact && S.mood !== "dizzy") setMood(S, "ouch", S.t + CFG.ouchFor);
 }
 
-function land(S: MotionState, b: Bounds, hooks: Hooks) {
+function land(S: MotionState, at: Vec2, hooks: Hooks) {
   S.vel = { x: 0, y: 0 };
   S.sqV += 5;
   S.mode = "free";
   S.pinned = true;
-  S.anchor = { x: S.fallX, y: b.y1 };
+  S.anchor = { ...at };
   setMood(S, "dizzy", S.t + CFG.dizzyHold);
   hooks.onPin(S.anchor);
 }
