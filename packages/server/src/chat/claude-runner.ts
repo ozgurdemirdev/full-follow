@@ -4,7 +4,7 @@ import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleI
 import { CORE, type Core } from "../core.provider";
 import { ChatHub } from "./chat-hub";
 import { attachmentBlocks } from "./chat-uploads";
-import { notesVersion, readBrief, writeRuntimeFiles } from "./chat-files";
+import { notesVersion, readBrief, SYSTEM_RULES, writeRuntimeFiles } from "./chat-files";
 import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, ACK_MARKER, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, VOICE_NOTE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
 import { createParser, errorCode, type ChatEvent, type ToolRecord } from "./stream-parser";
@@ -75,7 +75,8 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     return this.slots.get(sessionId)?.turn?.messageId ?? null;
   }
 
-  private combined = () => [this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
+  /** The rules are part of it: a resumed CLI session keeps its first system prompt, so changed rules reach it as the hidden update block too */
+  private combined = () => [SYSTEM_RULES, this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
 
   /** Pinned notes saved in Settings or a changed brief file (or by Claude): rewrite system.md and let every process pick them up on its next message */
   private syncNotes() {
