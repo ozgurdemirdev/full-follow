@@ -78,8 +78,12 @@ export default function ChatWidget() {
     if (!open || listLoaded.current) return;
     loadSessions(null);
   }, [open, loadSessions]);
+  // only the first open decides; "Yeni sohbet" must stay empty even though older sessions exist
+  const autoPicked = useRef(false);
   useEffect(() => {
-    if (open && sessionId === null && !queued.current && sessions.length) setSessionId(sessions[0].id);
+    if (!open || autoPicked.current || !listLoaded.current) return;
+    autoPicked.current = true;
+    if (sessionId === null && !queued.current && sessions.length) setSessionId(sessions[0].id);
   }, [open, sessionId, sessions]);
 
   // the session row for the header: from the list, else fetched (a remembered older session)
@@ -159,6 +163,7 @@ export default function ChatWidget() {
   };
   const pick = (id: number) => setSessionId(id);
   const newChat = () => {
+    autoPicked.current = true;
     setSessionId(null);
     setDraft({});
     requestAnimationFrame(() => input.current?.focus());
