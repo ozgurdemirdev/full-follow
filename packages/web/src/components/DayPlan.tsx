@@ -34,17 +34,20 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
 
   return (
     <div className="flex flex-col gap-2 py-4">
-      <div className="flex items-center gap-4">
-        <span className="flex min-w-0 flex-grow flex-col">
+      {/* phone: title and count on the first row, the buttons on their own row below */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-base font-medium">{g.title}</span>
           {sub ? <span className="truncate text-sm text-text-muted">{sub}</span> : null}
         </span>
         <span className={`font-mono text-base ${g.complete ? "text-status-text-success" : "text-text-secondary"}`}>{g.done} / {g.target}</span>
-        <button type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} -1`} disabled={g.manual < 1} onClick={() => void step(-1)}>−1</button>
-        {STEPS.map((n) => (
-          <button key={n} type="button" className="btn btn-pri btn-sm" aria-label={`${g.title} +${n}`} onClick={() => void step(n)}>+{n}</button>
-        ))}
-        <More open={more} onToggle={() => setMore(!more)} label={g.title} />
+        <span className="flex basis-full items-center justify-end gap-3 desk:basis-auto">
+          <button type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} -1`} disabled={g.manual < 1} onClick={() => void step(-1)}>−1</button>
+          {STEPS.map((n) => (
+            <button key={n} type="button" className="btn btn-pri btn-sm" aria-label={`${g.title} +${n}`} onClick={() => void step(n)}>+{n}</button>
+          ))}
+          <More open={more} onToggle={() => setMore(!more)} label={g.title} />
+        </span>
       </div>
       <div className="track">
         <i className={`grow-x ${g.complete ? "bg-status-text-success" : "bg-accent-payment"}`} style={{ width: `${share}%` }} />

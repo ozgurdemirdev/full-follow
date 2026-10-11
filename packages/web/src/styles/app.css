@@ -145,8 +145,9 @@
   }
   .card-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--spacing-4);
+    gap: var(--spacing-3) var(--spacing-4);
     padding: var(--spacing-7) var(--spacing-9);
     border-bottom: var(--bw-default) solid var(--color-border-default);
   }

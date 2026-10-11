@@ -100,7 +100,7 @@ export function Sidebar() {
       <nav
         aria-label="Ana menü"
         data-collapsed={collapsed || undefined}
-        className={`sb fixed inset-y-0 left-0 z-sidebar flex w-drawer-width flex-none flex-col gap-0.5 overflow-y-auto overflow-x-hidden border-r border-border-sidebar bg-bg-sidebar px-4 py-6 shadow-drawer transition-transform dur-drawer ease-out
+        className={`sb fixed inset-y-0 left-0 z-sidebar flex w-drawer-width flex-none flex-col gap-2 overflow-y-auto overflow-x-hidden border-r border-border-sidebar bg-bg-sidebar px-4 py-6 shadow-drawer transition-transform dur-drawer ease-out
           desk:sticky desk:top-0 desk:h-dvh desk:translate-x-0 desk:shadow-none desk:transition-[width] desk:dur-sidebar
           ${drawer ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "desk:w-sidebar-collapsed" : "desk:w-sidebar-width"}`}
       >
