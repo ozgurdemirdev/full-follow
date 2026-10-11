@@ -1,6 +1,6 @@
 // The Three.js free part of the mascot: state, swim and wander physics, drag and throw, moods, springs.
 // Port of the page script of docs/design/maskot/prototype.html. Vectors are plain {x, y, z} objects; scene.ts converts.
-import { CFG } from "./config";
+import { CFG, SQUEEZE_IN, SQUEEZE_MIN, SQUEEZE_OUT } from "./config";
 
 export interface Vec2 { x: number; y: number }
 export interface Vec3 { x: number; y: number; z: number }
@@ -22,7 +22,8 @@ export interface Env {
   reduce: boolean;
   size: { w: number; h: number };
   viewport: { w: number; h: number };
-  bounds: Bounds;
+  /** right edge of the sidebar on desk width: the left wall */
+  left: number;
   obstacles: Rect[];
   /** where it waits: the old chat button spot */
   home: Vec2;
@@ -64,6 +65,8 @@ export interface MotionState {
   moodUntil: number;
   shakeT: number;
   fallX: number;
+  /** 1 normally, shrinks while the body is squeezed between obstacles and walls, then grows back */
+  scale: number;
 }
 
 export interface Pointer { px: number; py: number; lastMove: number }
@@ -84,7 +87,7 @@ export function createMotion(start: Vec2, anchor: Vec2 | null): MotionState {
     pinned: !!anchor, anchor: anchor ? { ...anchor } : null, tempAnchor: null, hovered: false, dragTarget: { x: 0, y: 0 },
     phase: 0, c: 0, lean: 0, yaw: 0, pitch: 0, sq: 0, sqV: 0,
     trail: { x: 0, y: 0, z: 0 }, trailV: { x: 0, y: 0, z: 0 }, nextBlink: 2, blinkT: -1, t: 0,
-    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0,
+    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0, scale: 1,
   };
 }
 
@@ -148,6 +151,8 @@ export interface Status {
 }
 
 export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, status: Status = { running: false }) {
+  const sz = { w: env.size.w * S.scale, h: env.size.h * S.scale };
+  const b = bounds(sz, env.viewport.w, env.viewport.h, env.left);
   const lock = lockTarget(S, env);
   const travelling = S.mode === "free" && S.travel && !holding(S, env);
   const pulse = travelling ? CFG.pulseTravel : status.running ? CFG.pulseTravel * 0.6 : CFG.pulseIdle;
@@ -164,7 +169,7 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
       S.target = lock;
       S.travel = true;
     } else if (!lock && !S.pinned && !S.travel && !S.hovered && S.t > S.idleUntil && !env.reduce) {
-      S.target = randTarget(env.bounds);
+      S.target = randTarget(b);
       S.travel = true;
     }
     if (holding(S, env)) {
@@ -205,7 +210,6 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
   S.pos.x += S.vel.x * dt;
   S.pos.y += S.vel.y * dt;
 
-  const b = env.bounds;
   for (const [ax, lo, hi] of [["x", b.x0, b.x1], ["y", b.y0, b.y1]] as const) {
     if (S.pos[ax] >= lo && S.pos[ax] <= hi) continue;
     const floor = ax === "y" && S.pos.y > hi;
@@ -224,15 +228,34 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
     S.vel[ax] *= -(S.mode === "fall" ? CFG.fallBounce : CFG.restitution);
     if (S.mode !== "fall") onImpact(S, env, impact);
   }
-  collide(S, env, hooks);
+  collide(S, env, hooks, sz);
+  squeeze(S, env, dt);
+}
+
+/** Does a body of this scale, kept inside the walls, still overlap an obstacle? */
+function blocked(S: MotionState, env: Env, scale: number): boolean {
+  const w = env.size.w * scale, h = env.size.h * scale;
+  const b = bounds({ w, h }, env.viewport.w, env.viewport.h, env.left);
+  const x = clamp(S.pos.x, b.x0, b.x1), y = clamp(S.pos.y, b.y0, b.y1);
+  return env.obstacles.some((o) => {
+    if (o.perchSkip && env.perch && dist(S.pos, env.perch) < CFG.arrive * 2) return false;
+    return !(x + w * BODY.halfW <= o.x0 || x - w * BODY.halfW >= o.x1 || y + h * BODY.down <= o.y0 || y - h * BODY.up >= o.y1);
+  });
+}
+
+/** Squeezed between an obstacle and a wall (or two obstacles): it shrinks quickly, and grows back slowly once the full body fits again */
+function squeeze(S: MotionState, env: Env, dt: number) {
+  const target = blocked(S, env, 1) ? SQUEEZE_MIN : 1;
+  const rate = target < S.scale ? SQUEEZE_IN : SQUEEZE_OUT;
+  S.scale += (target - S.scale) * (1 - Math.exp(-rate * dt));
 }
 
 /**
  * Obstacles push the body out along the shallowest side. A body moving into one bounces like off a wall (and can get dizzy);
  * a box that grows into it (the menu opening) just shoves it. A falling body that comes down on one lands on it.
  */
-function collide(S: MotionState, env: Env, hooks: Hooks) {
-  const { w, h } = env.size;
+function collide(S: MotionState, env: Env, hooks: Hooks, size: { w: number; h: number }) {
+  const { w, h } = size;
   for (const o of env.obstacles) {
     if (o.perchSkip && env.perch && dist(S.pos, env.perch) < CFG.arrive * 2) continue;
     const l = S.pos.x - w * BODY.halfW, r = S.pos.x + w * BODY.halfW, t = S.pos.y - h * BODY.up, b = S.pos.y + h * BODY.down;
@@ -275,7 +298,7 @@ function onImpact(S: MotionState, env: Env, impact: number) {
     setMood(S, "dizzy");
     S.mode = "fall";
     S.travel = false;
-    S.fallX = S.pos.x < env.viewport.w / 2 ? env.bounds.x0 : env.bounds.x1;
+    S.fallX = S.pos.x < env.viewport.w / 2 ? bounds(env.size, env.viewport.w, env.viewport.h, env.left).x0 : bounds(env.size, env.viewport.w, env.viewport.h, env.left).x1;
   } else if (impact > CFG.ouchImpact && S.mood !== "dizzy") setMood(S, "ouch", S.t + CFG.ouchFor);
 }
 

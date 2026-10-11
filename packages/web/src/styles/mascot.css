@@ -53,6 +53,7 @@
   position: absolute;
   inset: 0;
   transform-origin: 50% 45%;
+  scale: var(--squeeze, 1);
 }
 .mascot-halo {
   position: absolute;

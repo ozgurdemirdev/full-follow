@@ -96,7 +96,7 @@ function MascotBody({ onActivate }: Props) {
     const b = bounds(size.current, vw, vh, sb ? sb.right : 0);
     // the body rests just above the + button, not on it
     const home: Vec2 = { x: Math.min(r.right - size.current.w / 2, b.x1), y: Math.min(r.bottom - size.current.h * 0.56, b.y1) };
-    env.current = { reduce: reducedMotion(), size: size.current, viewport: { w: vw, h: vh }, bounds: b, obstacles: [], home, homeLock: true, perch: null };
+    env.current = { reduce: reducedMotion(), size: size.current, viewport: { w: vw, h: vh }, left: sb ? sb.right : 0, obstacles: [], home, homeLock: true, perch: null };
     scene.current?.resize(Math.max(1, size.current.w), Math.max(1, size.current.h));
   };
 
@@ -187,6 +187,7 @@ function MascotBody({ onActivate }: Props) {
     const bob = s.mode === "drag" || e.reduce ? 0 : Math.sin(s.t * 0.9) * CFG.bob;
     el.style.transform = `translate3d(${s.pos.x - e.size.w / 2}px, ${s.pos.y - e.size.h * 0.45 + bob}px, 0)`;
     el.style.setProperty("--pulse", (0.65 + 0.35 * s.c).toFixed(3));
+    el.style.setProperty("--squeeze", s.scale.toFixed(3));
     el.dataset.mood = s.mood;
     el.dataset.mode = s.mode;
     el.classList.toggle("pinned", s.pinned);

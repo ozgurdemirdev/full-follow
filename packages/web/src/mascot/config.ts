@@ -33,6 +33,10 @@ export const PERCH_X = 0.6;
 export const PERCH_Y = 0.35;
 
 export const CAMERA_FOV = 30;
+/** Squeezed between obstacles and walls it shrinks to this fraction of its size, quickly, and grows back slowly (rates per second) */
+export const SQUEEZE_MIN = 0.5;
+export const SQUEEZE_IN = 9;
+export const SQUEEZE_OUT = 1.4;
 /** Largest simulation step (s), so a long frame never explodes the springs */
 export const MAX_DT = 1 / 30;
 /** Fade in and out of the mascot element (modal dialogs, tab changes) */
