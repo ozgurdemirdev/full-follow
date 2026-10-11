@@ -114,3 +114,36 @@ export const label = (k: string) => LABELS[k] ?? k;
 /** Hafta günleri ISO numarasıyla (1 = pazartesi); hedef tekrarı bu numaraların virgüllü listesidir */
 export const GOAL_DAY_PRESETS = { her_gun: [1, 2, 3, 4, 5, 6, 7], hafta_ici: [1, 2, 3, 4, 5], hafta_sonu: [6, 7] } as const;
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
+
+// ---- Panel chat ----
+/** Models the panel chat may use; ids are passed to the Claude CLI, so they come only from this list */
+export const CHAT_MODELS = [
+  { id: "claude-opus-5-5", label: "Opus 5.5", context: 1_000_000 },
+  { id: "claude-sonnet-5-5", label: "Sonnet 5.5", context: 1_000_000 },
+  { id: "claude-haiku-5-5", label: "Haiku 5.5", context: 1_000_000 },
+] as const;
+export const CHAT_MODEL_IDS = CHAT_MODELS.map((m) => m.id) as unknown as readonly [string, ...string[]];
+export const CHAT_EFFORTS = [
+  { id: "low", label: "Düşük" },
+  { id: "medium", label: "Orta" },
+  { id: "high", label: "Yüksek" },
+] as const;
+export const CHAT_EFFORT_IDS = CHAT_EFFORTS.map((e) => e.id) as unknown as readonly [string, ...string[]];
+export const CHAT_DEFAULTS = { model: "claude-haiku-5-5", effort: "low" } as const;
+export const CHAT_LIMITS = {
+  maxBodyChars: 8_000,
+  sessionsPageSize: 30,
+  messagesPageSize: 30,
+  maxActiveProcesses: 2,
+  idleKillMs: 10 * 60_000,
+  runTimeoutMs: 10 * 60_000,
+  textFlushMs: 400,
+  ringBufferEvents: 2_000,
+  sseHeartbeatMs: 15_000,
+  sseRetryMs: 3_000,
+  haikuPriceStepTokens: 100_000,
+} as const;
+export const CHAT_NEW_TITLE = "Yeni sohbet";
+export const CHAT_TITLE_CHARS = 60;
+export const CHAT_ROLES = ["user", "assistant"] as const;
+export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] as const;

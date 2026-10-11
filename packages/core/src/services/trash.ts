@@ -86,13 +86,16 @@ export function trashList(ctx: Ctx): TrashItem[] {
     rows(ctx, `SELECT id, name, deleted_at FROM ${table} WHERE deleted_at IS NOT NULL`).map((c) => ({
       type, id: c.id, label: c.name, what: TABLE_LABEL[table] ?? type, deleted_at: c.deleted_at, deleted_by: null, trash_id: null,
     })));
-  return [...recs, ...cats].sort((a, b) => b.deleted_at.localeCompare(a.deleted_at));
+  const chats = rows(ctx, "SELECT id, title, deleted_at FROM chat_sessions WHERE deleted_at IS NOT NULL").map((c) => ({
+    type: "chat_session", id: c.id, label: c.title, what: TYPE_LABEL.chat_session, deleted_at: c.deleted_at, deleted_by: null, trash_id: null,
+  }));
+  return [...recs, ...cats, ...chats].sort((a, b) => b.deleted_at.localeCompare(a.deleted_at));
 }
 
 export const TYPE_LABEL: Record<string, string> = {
   person: "kişi", company: "firma", opportunity: "fırsat", project: "proje", task: "görev", touch: "temas", note: "not",
   post: "paylaşım", template: "şablon", idea: "fikir", own_project: "kendi projesi", draft: "taslak", payment: "ödeme", comment: "yorum", interest: "fikir ilgisi", link: "link", goal: "hedef",
-  tag: "etiket", sector: "sektör", source: "kaynak",
+  tag: "etiket", sector: "sektör", source: "kaynak", chat_session: "sohbet",
 };
 
 /**

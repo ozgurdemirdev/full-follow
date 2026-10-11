@@ -27,6 +27,7 @@ import { postsService } from "./services/posts";
 import { templatesService } from "./services/templates";
 import { ideasService } from "./services/ideas";
 import { ownProjectsService } from "./services/ownProjects";
+import { chatService } from "./services/chat";
 import { followupsDue, generateFollowups } from "./services/followups";
 import { marketingReport } from "./services/marketing";
 import { isCategory, restoreFromTrash, trashList, TYPE_LABEL } from "./services/trash";
@@ -88,6 +89,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const templates = templatesService(ctx);
   const ideas = ideasService(ctx);
   const ownProjects = ownProjectsService(ctx);
+  const chat = chatService(ctx);
 
   /**
    * Kişinin firması adla verilip (`company: "ABC Ltd"`) bulunamazsa firma açılır: toplu listede firmalar ayrıca eklenmesin.
@@ -205,6 +207,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    * Kişi ve firmada mükerrer kontrolü yapılır (aynı e-posta bu arada başka kayda verildiyse geri gelmez).
    */
   function restore(type: string, id: string | number): SaveResult {
+    if (type === "chat_session") return chat.restoreSession(Number(id));
     const t = normalizeType(type);
     if (isCategory(t)) {
       const nid = resolveId(ctx, t, id);
@@ -239,7 +242,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     actor,
     // yazma servisleri (REST controller'ları ve testler kullanır)
     companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
-    posts, templates, ideas, ownProjects,
+    posts, templates, ideas, ownProjects, chat,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },
     marketing: () => marketingReport(ctx),

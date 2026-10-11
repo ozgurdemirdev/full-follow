@@ -4,6 +4,7 @@ import {
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -384,3 +385,39 @@ export const settings = sqliteTable("settings", {
   updated_at: text("updated_at").notNull(),
   updated_by: text("updated_by", { enum: ACTORS }).notNull(),
 });
+
+// ---------------------------------------------------------------- Panel chat
+
+export const chat_sessions = sqliteTable("chat_sessions", {
+  ...common(),
+  ...deletedAt(),
+  title: text("title").notNull().default(CHAT_NEW_TITLE),
+  /** 1 after a manual rename: the auto title stops changing */
+  title_locked: integer("title_locked", { mode: "boolean" }).notNull().default(false),
+  /** UUID handed to the Claude CLI: --session-id on the first run, --resume afterwards */
+  cli_session_id: text("cli_session_id").notNull().unique(),
+  cli_started: integer("cli_started", { mode: "boolean" }).notNull().default(false),
+  model: text("model").notNull(),
+  effort: text("effort").notNull(),
+  context_tokens: integer("context_tokens").notNull().default(0),
+  input_tokens_total: integer("input_tokens_total").notNull().default(0),
+  output_tokens_total: integer("output_tokens_total").notNull().default(0),
+  cost_usd_micros_total: integer("cost_usd_micros_total").notNull().default(0),
+  last_message_at: text("last_message_at"),
+}, (t) => [index("chat_sessions_list").on(t.deleted_at, t.last_message_at)]);
+
+export const chat_messages = sqliteTable("chat_messages", {
+  ...common(),
+  session_id: integer("session_id").notNull().references(() => chat_sessions.id),
+  role: text("role", { enum: CHAT_ROLES }).notNull(),
+  /** assistant body grows while streaming */
+  body: text("body").notNull().default(""),
+  state: text("state", { enum: CHAT_STATES }).notNull(),
+  /** browser UUID, user rows only; unique per session so a retried send is idempotent */
+  client_id: text("client_id"),
+  tools_json: text("tools_json"),
+  error: text("error"),
+  input_tokens: integer("input_tokens"),
+  output_tokens: integer("output_tokens"),
+  cost_usd_micros: integer("cost_usd_micros"),
+}, (t) => [index("chat_messages_session").on(t.session_id, t.id), uniqueIndex("chat_messages_client").on(t.session_id, t.client_id)]);
