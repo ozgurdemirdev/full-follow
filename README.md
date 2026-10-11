@@ -2,7 +2,7 @@
 
 Müşteri bulmaktan işin teslimine kadar her şeyi tek sistemde tutan kişisel CRM. Plan: [docs/MIMARI.md](docs/MIMARI.md).
 
-Durum: arka uç (core + testler, NestJS API, MCP) ve web arayüzü (`packages/web`) hazır.
+Durum: arka uç (core + testler, NestJS API, MCP), web arayüzü (`packages/web`) ve panel sohbeti hazır.
 
 ## Çalıştırma (Windows, Node 22+)
 
@@ -60,6 +60,48 @@ claude mcp add full-follow -- node C:\Projects\WebProjects\FullFollow\packages\m
 Claude Desktop'u yeniden başlat. Kontrol: Claude'a "Full Follow'da bugün ne var?" diye sor; `today` aracı çalışmalı. Web'de sol alttaki "Claude: …" yazısı Claude'un son işlemini gösterir.
 
 MCP ve web sunucusu aynı `data/fullfollow.db` dosyasını aynı anda açabilir. MCP'den yapılan her işlem `claude`, web'den yapılan `ozgur` olarak kaydedilir.
+
+## Panel sohbeti
+
+Web arayüzünün her sayfasında, sağ alttaki + düğmesinin üstündeki sohbet düğmesiyle açılan yüzer pencere. Claude ile Full Follow verisi üzerinde konuşursun: bugün ne var, şu firmanın durumu ne, bu haftanın raporu. Cevaplar kelime kelime akar; pencereyi küçültsen, sayfayı yenilesin ya da sekmeyi kapatsan da cevap sunucuda yazılmaya devam eder, geri döndüğünde kaldığı yerden görünür.
+
+**Gerekenler**
+
+- Claude Code CLI: `npm i -g @anthropic-ai/claude-code`
+- Giriş yapılmış bir Claude aboneliği: `claude auth login`
+- Node 22+ ve bir kez `npm run build` (MCP sunucusu `packages/mcp/dist` içinde olmalı)
+
+Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok). Kullanım senin planına yazılır; penceredeki "5 saat" ve "Haftalık" halkaları abonelik sınırının ne kadar dolduğunu gösterir.
+
+**Ne yapabilir, ne yapamaz**
+
+- Sadece Full Follow araçlarını kullanır (MCP: `find`, `get`, `save`, `today` ve diğerleri). Claude'un yazdığı her kayıt "Claude" etiketiyle görünür.
+- Dosya okuyamaz, kabuk komutu çalıştıramaz, internete çıkamaz.
+- Model (Opus 5.5, Sonnet 5.5, Haiku 5.5) ve efor (Düşük, Orta, Yüksek) her sohbet için başlıktaki düğmeden seçilir; değişiklik bir sonraki mesajdan geçerlidir. Varsayılan Haiku 5.5, düşük efor.
+- Eski sohbetler listede durur, tam bağlamıyla devam eder. Başlıktaki çubuk bağlam doluluğunu gösterir.
+
+**Ortam değişkenleri** (`.env`, hepsi isteğe bağlı)
+
+| Değişken | Varsayılan | Ne yapar |
+|---|---|---|
+| `FF_CLAUDE_CLI` | otomatik bulunur | Claude Code çalıştırılabilir dosyasının tam yolu (PATH'te `claude` yoksa) |
+| `FF_CHAT_CWD` | `C:/Projects/Networking`, yoksa `data/chat/` | Claude'un çalışma klasörü; içindeki `CLAUDE.md` dosyası iş bağlamı olarak okunur. Senin bilgisayarında bu klasör yoksa `data/chat/` kullanılır, sorun olmaz |
+| `FF_CLAUDE_CONFIG_DIR` | yok | Sohbet için terminalden farklı bir Claude hesabı kullanmak istersen: `CLAUDE_CONFIG_DIR=<klasör> claude auth login` ile bir kez giriş yap, klasörü buraya yaz |
+
+**Sabit notlar:** Ayarlar sayfasındaki "Sohbet sabit notları" kutusu (en fazla 4.000 karakter) her yeni sohbette Claude'a verilir; kurallarını ve iş bağlamını oraya yazabilirsin. Eski sohbetler ilk açıldıkları notla devam eder.
+
+**Sık görülen hatalar**
+
+| Mesaj | Çözüm |
+|---|---|
+| Claude Code bulunamadı | `npm i -g @anthropic-ai/claude-code`, sonra sunucuyu yeniden başlat |
+| Claude oturumu kapanmış | Terminalde `claude auth login`, sonra tekrar dene |
+| Claude kullanım sınırına takıldın | Sınır yenilenince tekrar dene (halkalardaki "Yenilenme" saatine bak) |
+| Full Follow MCP derlenmemiş | `npm run build` |
+| Claude beklenmedik şekilde kapandı | Tekrar dene; sürerse sunucu günlüğüne (`data/son-calistirma.log`) bak |
+| Sunucu yeniden başladı, bu cevap yarım kaldı | Sunucu cevap yazılırken kapandı; aynı sohbette devam edebilirsin |
+
+Çalışma dosyaları (`mcp.json`, `system.md`) `data/chat/` içinde kendiliğinden oluşur ve git'e girmez.
 
 ## Ön yüz (packages/web)
 
