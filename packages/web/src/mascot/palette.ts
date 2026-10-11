@@ -12,7 +12,11 @@ export interface BellGlow {
 }
 export interface FaceColors {
   ink: string; eye: string; spark: string; star: string; starGlow: string; blush: string;
-  lightKey: string; lightRim: string;
+  lightKey: string; lightRim: string; mouthDark: string; tongue: string;
+}
+/** Colours of the acting props (laptop, glasses, magnifier, speech bubble, sweat drop) */
+export interface PropColors {
+  alu: string; keys: string; screen: string; screenLight: string; frame: string; lens: string; brass: string; handle: string; drop: string; dot: string; ink: string;
 }
 
 const read = (el: Element, name: string) => getComputedStyle(el).getPropertyValue(`--mascot-${name}`).trim();
@@ -24,7 +28,14 @@ export function presetColors(el: Element, id: PresetId): BellGlow {
 export function faceColors(el: Element): FaceColors {
   return {
     ink: read(el, "ink"), eye: read(el, "eye"), spark: read(el, "spark"), star: read(el, "star"), starGlow: read(el, "star-glow"),
-    blush: read(el, "blush"), lightKey: read(el, "light-key"), lightRim: read(el, "light-rim"),
+    blush: read(el, "blush"), lightKey: read(el, "light-key"), lightRim: read(el, "light-rim"), mouthDark: read(el, "mouth-dark"), tongue: read(el, "tongue"),
+  };
+}
+
+export function propColors(el: Element): PropColors {
+  return {
+    alu: read(el, "alu"), keys: read(el, "keys"), screen: read(el, "screen"), screenLight: read(el, "screen-light"), frame: read(el, "frame"),
+    lens: read(el, "lens"), brass: read(el, "brass"), handle: read(el, "handle"), drop: read(el, "drop"), dot: read(el, "dot"), ink: read(el, "ink"),
   };
 }
 

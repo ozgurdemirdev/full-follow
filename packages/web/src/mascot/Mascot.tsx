@@ -4,9 +4,10 @@ import { useChatLive } from "../lib/chatStore";
 import { T } from "../lib/chatText";
 import { isDesk } from "../lib/openRecord";
 import { MASCOT_TEXT } from "../lib/mascotText";
-import { CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_X, PERCH_Y, SIZE } from "./config";
+import { ACT_ERROR_MS, ACT_MIN_MS, ACT_PROPS_MIN_SIZE, CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_X, PERCH_Y, SIZE } from "./config";
 import { mascotLive, mascotPrefs, useMascotLive, useMascotPrefs, type MascotPrefs } from "./mascotStore";
-import { bounds, cheer, createMotion, freeze, moodStep, pose, simulate, type Env, type MotionState, type Pointer, type Rect, type Vec2 } from "./motion";
+import { activityOf, newDebounce, settle } from "./activity";
+import { bounds, cheer, createMotion, freeze, moodStep, pose, setActivity, simulate, type Env, type MotionState, type Pointer, type Rect, type Vec2 } from "./motion";
 import { customMix, CUSTOM_MIX_AMOUNT, presetColors, type BellGlow } from "./palette";
 import type { MascotScene } from "./scene";
 
@@ -72,10 +73,14 @@ function MascotBody({ onActivate }: Props) {
   useEffect(() => {
     chatRef.current = chat;
   });
-  // a reply that finished while the chat was minimized: it smiles once, the badge stays until the chat opens
+  // a reply ended: done smiles once (the badge stays until the chat opens), an error shows the sweat drop for ACT_ERROR_MS
+  const errorUntil = useRef(0);
+  const act = useRef(newDebounce());
   useEffect(() => {
-    if (chat.ready && S.current) cheer(S.current);
-  }, [chat.ready]);
+    if (!chat.outcome) return;
+    if (chat.outcome.error) errorUntil.current = performance.now() + ACT_ERROR_MS;
+    else if (S.current) cheer(S.current);
+  }, [chat.outcome]);
 
   useEffect(() => {
     latest.current = { prefs, onActivate };
@@ -179,17 +184,22 @@ function MascotBody({ onActivate }: Props) {
     e.obstacles = [...rectOf(document.querySelector(FAB_SELECTOR)), ...rectOf(document.querySelector(FAB_MENU_SELECTOR)), ...rectOf(win, true)];
     el.classList.toggle("perched", !!perch);
     el.classList.toggle(FADE_CLASS, faded.current || hide);
+    // what the chat is doing: a new activity must last ACT_MIN_MS before it shows
+    const now = performance.now();
+    const want = c.running ? activityOf(c) : now < errorUntil.current ? "error" : "idle";
+    setActivity(s, settle(act.current, want, now, ACT_MIN_MS));
     // a running reply: quicker pulse and a brighter glow
     simulate(s, e, dt, hooks, { running: c.running });
     moodStep(s);
     pose(s, dt, pointer.current);
-    sc.frame(s, dt, c.running ? RUNNING_GLOW : 1);
+    sc.frame(s, dt, c.running ? RUNNING_GLOW : 1, { props: e.size.w >= ACT_PROPS_MIN_SIZE, reduce: e.reduce });
     const bob = s.mode === "drag" || e.reduce ? 0 : Math.sin(s.t * 0.9) * CFG.bob;
     el.style.transform = `translate3d(${s.pos.x - e.size.w / 2}px, ${s.pos.y - e.size.h * 0.45 + bob}px, 0)`;
     el.style.setProperty("--pulse", (0.65 + 0.35 * s.c).toFixed(3));
     el.style.setProperty("--squeeze", s.scale.toFixed(3));
     el.dataset.mood = s.mood;
     el.dataset.mode = s.mode;
+    el.dataset.act = s.activity;
     el.dataset.push = `${s.push.l ? "l" : ""}${s.push.r ? "r" : ""}${s.push.u ? "u" : ""}${s.push.d ? "d" : ""}`;
     el.classList.toggle("pinned", s.pinned);
     el.classList.toggle("dragging", s.mode === "drag");

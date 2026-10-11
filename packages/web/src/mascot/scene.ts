@@ -2,11 +2,12 @@
 // Loaded lazily by Mascot.tsx (a separate chunk), never from the entry.
 import * as THREE from "three/webgpu";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { createActing, type ActInput } from "./act";
 import { applyVariant, BELL, buildBell, createTentacles, extent, furMaterial, U } from "./body";
 import { CAMERA_FOV, CFG, MAX_DT } from "./config";
 import { createFace } from "./face";
 import { clamp, type MotionState } from "./motion";
-import { faceColors, type BellGlow } from "./palette";
+import { faceColors, propColors, type BellGlow } from "./palette";
 
 export interface SceneOptions {
   /** element carrying the token custom properties (the mascot root) */
@@ -24,7 +25,7 @@ export interface MascotScene {
   setColors(c: BellGlow): void;
   resize(w: number, h: number): void;
   /** poses the model from the motion state and draws one frame */
-  frame(S: MotionState, dt: number, glowScale: number): void;
+  frame(S: MotionState, dt: number, glowScale: number, act: ActInput): void;
   stats(): RenderStats | null;
   /** run `fn` every display frame, or stop with null */
   loop(fn: ((dt: number) => void) | null): void;
@@ -43,7 +44,7 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, 1, 20);
-  const face0 = faceColors(opts.tokens);
+  const face0 = faceColors(opts.tokens), props0 = propColors(opts.tokens);
   try {
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -63,6 +64,7 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
   let bellGroup: THREE.Group;
   let tentacles: ReturnType<typeof createTentacles>;
   let face: ReturnType<typeof createFace>;
+  let acting: ReturnType<typeof createActing>;
   let glowLight: THREE.PointLight;
   let colors = opts.colors;
 
@@ -110,6 +112,7 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
     tentMesh.frustumCulled = false;
     root.add(tentMesh);
     face = createFace(bellGroup, root, CFG.furLength, face0);
+    acting = createActing(root, bellGroup, tentacles.tents, CFG.furLength, props0);
     glowLight = new THREE.PointLight(colors.glow, 4, 3.5, 2);
     glowLight.position.set(0, BELL.Y0 - 0.45, 0.35);
     root.add(glowLight);
@@ -133,10 +136,12 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
       camera.updateProjectionMatrix();
       frameModel();
     },
-    frame(S, dt, glowScale) {
+    frame(S, dt, glowScale, act) {
       if (!root) return;
       const bl = S.t - S.blinkT < CFG.blinkLen ? 0.12 : 1;
-      face.update(S.mood, S.t, Math.min(dt, MAX_DT), bl);
+      // moods win over the look of an activity
+      const a = acting.update(S.activity, S.t, Math.min(dt, MAX_DT), S.actT0, act);
+      face.update(S.mood !== "normal" ? S.mood : a.look ?? "normal", S.t, Math.min(dt, MAX_DT), bl, a.talk);
       // Dizzy: slow drunken sway. Shake: fast decaying head shake.
       let wobY = Math.sin(S.t * 2.3) * 0.3 * S.limp;
       const wobZ = Math.sin(S.t * 3.1) * 0.16 * S.limp;
@@ -144,13 +149,14 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
         const k = (S.t - S.shakeT) / CFG.shakeFor;
         wobY += Math.sin(k * CFG.shakeFor * CFG.shakeFreq) * CFG.shakeAmp * (1 - k);
       }
-      root.rotation.set(S.pitch, S.yaw + wobY, S.lean + wobZ);
+      root.rotation.set(S.pitch + a.pitch, S.yaw + wobY + a.yaw, S.lean + wobZ);
+      S.sqV += a.kick;
       const c = S.c, sq = clamp(S.sq, -0.5, 0.6);
       bellGroup.matrix.makeScale(1 - 0.1 * c + 0.18 * sq, 1 + 0.07 * c - 0.25 * sq, 1 - 0.1 * c + 0.18 * sq)
         .premultiply(_shear.makeShear(0, 0, clamp(S.shear, -CFG.shearMax, CFG.shearMax), 0, 0, 0));
       bellGroup.matrixWorldNeedsUpdate = true;
       _trail.set(S.trail.x, S.trail.y, S.trail.z);
-      tentacles.write(S.t, _trail, c, S.limp);
+      tentacles.write(S.t, _trail, c, S.limp, true, a.reach);
       _d.set(0, -0.5, 0).applyQuaternion(_q.copy(root.quaternion).invert()).addScaledVector(_trail, 0.6);
       U.force.value.copy(_d);
       U.glowPow.value = (0.85 + 0.35 * c) * (1 - 0.3 * S.limp) * glowScale;

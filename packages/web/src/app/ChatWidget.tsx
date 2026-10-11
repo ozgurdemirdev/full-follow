@@ -4,7 +4,7 @@ import { ChatButton } from "../components/chat/ChatButton";
 import { ChatPanel } from "../components/chat/ChatPanel";
 import { statusText, useElapsed } from "../components/chat/StatusLine";
 import { toast } from "../components/toast";
-import { chatBus, chatLive, chatPrefs } from "../lib/chatStore";
+import { chatBus, chatLive, chatPrefs, type ChatLive } from "../lib/chatStore";
 import { useMascotLive, useMascotPrefs } from "../mascot/mascotStore";
 import { T } from "../lib/chatText";
 import { CHAT_UI } from "../lib/chatText";
@@ -28,6 +28,7 @@ export default function ChatWidget() {
   const [meta, setMeta] = useState<ChatMeta | null>(null);
   const [limits, setLimits] = useState<ChatLimits | null>(null);
   const [ready, setReady] = useState(false);
+  const [outcome, setOutcome] = useState<ChatLive["outcome"]>(null);
   const [draft, setDraft] = useState<{ model?: string; effort?: string }>({});
   const button = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -42,7 +43,9 @@ export default function ChatWidget() {
     setSession((cur) => (cur ? { ...cur, context_tokens: u.context_tokens, input_tokens_total: u.input_tokens_total, output_tokens_total: u.output_tokens_total, cost_usd_micros_total: u.cost_usd_micros_total } : cur));
   }, []);
   const onFinished = useCallback((m: ChatMessage) => {
-    if (m.state === "done" && !chatPrefs.open() && !(m.ack && !m.body.trim())) setReady(true);
+    const silent = m.ack && !m.body.trim();
+    if (m.state === "done" && !chatPrefs.open() && !silent) setReady(true);
+    if ((m.state === "done" && !silent) || m.state === "error") setOutcome((o) => ({ n: (o?.n ?? 0) + 1, error: m.state === "error" }));
     void chatApi.sessions().then((r) => setSessions((l) => r.items.reduce((acc, s) => upsert(acc, s), l)));
   }, []);
 
@@ -191,8 +194,8 @@ export default function ChatWidget() {
   const status = thread.live ? statusText(thread.live) : null;
   const since = thread.live?.since ?? null;
   useEffect(() => {
-    chatLive.set({ open, running: !!thread.live, ready, status, since });
-  }, [open, thread.live, ready, status, since]);
+    chatLive.set({ open, running: !!thread.live, ready, status, since, phase: thread.live?.phase ?? null, tool: thread.live?.tool ?? null, outcome });
+  }, [open, thread.live, ready, status, since, outcome]);
   // the old button stays until the mascot is really there: there is always one way to open the chat
   const mascotPrefs = useMascotPrefs();
   const mascot = useMascotLive();

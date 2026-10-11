@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { ChatPhase } from "../api/chat";
 
 // Chat state that must survive F5: open or not, large or not, open session, unsent drafts.
 // localStorage can throw (private window), so every access is wrapped.
@@ -49,8 +50,13 @@ export interface ChatLive {
   /** status text and start time of the running reply, for the pill next to the mascot */
   status: string | null;
   since: number | null;
+  /** phase and tool of the running reply, for the mascot's acting (tool names arrive without the mcp__full-follow__ prefix) */
+  phase: ChatPhase | null;
+  tool: string | null;
+  /** the last reply that ended: `n` counts them, `error` is true when it failed (stopped replies do not count) */
+  outcome: { n: number; error: boolean } | null;
 }
-let liveState: ChatLive = { open: false, running: false, ready: false, status: null, since: null };
+let liveState: ChatLive = { open: false, running: false, ready: false, status: null, since: null, phase: null, tool: null, outcome: null };
 const liveSubs = new Set<() => void>();
 export const chatLive = {
   get: () => liveState,

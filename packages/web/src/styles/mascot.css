@@ -29,6 +29,18 @@
   --mascot-light-key: var(--color-mascot-light-key);
   --mascot-light-rim: var(--color-mascot-light-rim);
   --mascot-custom-mix: var(--color-mascot-custom-mix);
+  --mascot-alu: var(--color-mascot-alu);
+  --mascot-keys: var(--color-mascot-keys);
+  --mascot-screen: var(--color-mascot-screen);
+  --mascot-screen-light: var(--color-mascot-screen-light);
+  --mascot-frame: var(--color-mascot-frame);
+  --mascot-lens: var(--color-mascot-lens);
+  --mascot-brass: var(--color-mascot-brass);
+  --mascot-handle: var(--color-mascot-handle);
+  --mascot-drop: var(--color-mascot-drop);
+  --mascot-mouth-dark: var(--color-mascot-mouth-dark);
+  --mascot-tongue: var(--color-mascot-tongue);
+  --mascot-dot: var(--color-mascot-dot);
   --mascot-bell: var(--color-mascot-amber-bell);
   --mascot-glow: var(--color-mascot-amber-glow);
 }

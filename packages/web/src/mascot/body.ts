@@ -6,7 +6,7 @@ import { BELL_BUILD, TENT_BUILD, VARIANTS, type BellShape, type FaceShape, type 
 export const BELL: BellShape & { segments: number; rimFade: number; face: FaceShape } = {
   ...VARIANTS.yuvarlak.bell, segments: BELL_BUILD.segments, rimFade: BELL_BUILD.rimFade, face: VARIANTS.yuvarlak.face,
 };
-export const TENT: TentShape & { rings: number; capRings: number; radial: number } = { ...VARIANTS.yuvarlak.tent, ...TENT_BUILD };
+export const TENT: TentShape & { rings: number; capRings: number; radial: number } & Omit<typeof TENT_BUILD, "rings" | "capRings" | "radial"> = { ...VARIANTS.yuvarlak.tent, ...TENT_BUILD };
 
 export function applyVariant(id: string) {
   const v = VARIANTS[id] ?? VARIANTS.yuvarlak;
@@ -19,6 +19,9 @@ export const U = {
   bell: uniform(new THREE.Color()), tent: uniform(new THREE.Color()), glow: uniform(new THREE.Color()),
   glowPow: uniform(1), furLen: uniform(0.04), freq: uniform(40), force: uniform(new THREE.Vector3(0, -0.5, 0)),
 };
+
+/** Where a tentacle is asked to reach (root local) and how strongly, 0 to 1 */
+export interface Reach { x: number; y: number; z: number; w: number }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
@@ -89,7 +92,8 @@ export function buildBell() {
   return geo;
 }
 
-interface Tentacle {
+export interface Tentacle {
+  i: number; ik?: THREE.Vector3[]; ikLive?: boolean;
   out: THREE.Vector3; side: THREE.Vector3; len: number; r0: number; phase: number; phase2: number; splay: number; curl: number;
 }
 
@@ -101,7 +105,7 @@ export function createTentacles() {
     const phi = ((i + 0.5) / N) * Math.PI * 2;
     const out = new THREE.Vector3(Math.sin(phi), 0, Math.cos(phi));
     tents.push({
-      out, side: new THREE.Vector3(out.z, 0, -out.x), len: rand(TENT.lenMin, TENT.lenMax), r0: rand(TENT.rMin, TENT.rMax),
+      i, out, side: new THREE.Vector3(out.z, 0, -out.x), len: rand(TENT.lenMin, TENT.lenMax), r0: rand(TENT.rMin, TENT.rMax),
       phase: rand(0, 6.28), phase2: rand(0, 6.28), splay: rand(TENT.splayMin, TENT.splayMax), curl: rand(TENT.curlMin, TENT.curlMax),
     });
   }
@@ -125,8 +129,58 @@ export function createTentacles() {
   const cl = Array.from({ length: TENT.rings }, () => new THREE.Vector3());
   const _t = new THREE.Vector3(), _n = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _c = new THREE.Vector3();
   const DOWN = new THREE.Vector3(0, -1, 0);
+  const ik = Array.from({ length: TENT.rings }, () => new THREE.Vector3()), _v = new THREE.Vector3(), _tg = new THREE.Vector3();
 
-  function write(t: number, trail: THREE.Vector3, c: number, limp: number, live = true) {
+  // FABRIK from the free pose toward `target`, root fixed; segments may stretch (jelly) up to TENT.stretch.
+  function reachTo(target: THREE.Vector3, seg0: number, w: number, td: Tentacle) {
+    const n = TENT.rings;
+    // Warm start from last frame's solution so the chain does not jump between frames.
+    const prev = td.ik ?? (td.ik = Array.from({ length: n }, () => new THREE.Vector3()));
+    const warm = td.ikLive;
+    for (let j = 0; j < n; j++) ik[j].copy(warm ? prev[j] : cl[j]);
+    // A target inside the bell (chin, glasses) would fight the collision every frame; rest it on the surface.
+    pushOut(target);
+    const seg = Math.min(Math.max(seg0, cl[0].distanceTo(target) / (n - 1)), seg0 * TENT.stretch);
+    for (let it = 0; it < TENT.ikIterations; it++) {
+      ik[n - 1].copy(target);
+      for (let j = n - 2; j >= 0; j--) {
+        _v.subVectors(ik[j], ik[j + 1]).setLength(seg);
+        ik[j].copy(ik[j + 1]).add(_v);
+      }
+      ik[0].copy(cl[0]);
+      for (let j = 1; j < n; j++) {
+        _v.subVectors(ik[j], ik[j - 1]).setLength(seg);
+        ik[j].copy(ik[j - 1]).add(_v);
+        if (j >= TENT.collideFrom) pushOut(ik[j]);
+      }
+    }
+    if (warm) for (let j = 1; j < n; j++) ik[j].lerp(prev[j], TENT.ikSmooth);
+    ik[0].copy(cl[0]);
+    for (let j = 0; j < n; j++) prev[j].copy(ik[j]);
+    td.ikLive = true;
+    for (let j = 1; j < n; j++) {
+      cl[j].lerp(ik[j], w * Math.min(1, (j / (n - 1)) * 3));
+      if (j >= TENT.collideFrom) pushOut(cl[j]);
+    }
+  }
+
+  // Keeps a centerline point outside the bell, modelled as one continuous shape: a tall half ellipsoid above the lip and a flat one
+  // below it, joined at the lip. Continuous on purpose: a rule with two exits flips between them and makes the tentacle jitter.
+  function pushOut(p: THREE.Vector3) {
+    const m = TENT.rMax + TENT.collideMargin, rc = BELL.R * (1 + 0.07 * BELL.flare) + m;
+    const cy = BELL.Y0 - TENT.lipBand, dy = p.y - cy;
+    const ry = dy >= 0 ? BELL.H + TENT.lipBand + m : TENT.lipBand + m;
+    const d = Math.hypot(Math.hypot(p.x, p.z) / rc, dy / ry);
+    if (d < 1) {
+      const k = 1 / Math.max(d, 1e-4);
+      p.x *= k;
+      p.z *= k;
+      p.y = cy + dy * k;
+    }
+  }
+
+  /** reach: optional array, one { x, y, z, w } per tentacle (root-local target and weight 0..1) */
+  function write(t: number, trail: THREE.Vector3, c: number, limp: number, live = true, reach: Reach[] | null = null) {
     const arr = geo.attributes.position.array as Float32Array;
     const lively = live ? 1 - 0.75 * limp : 0;
     let o = 0;
@@ -145,6 +199,9 @@ export function createTentacles() {
         if (k > 0) _d.applyAxisAngle(td.side, -td.curl * k * k * (1 - 0.5 * limp)).normalize();
         cl[j].copy(cl[j - 1]).addScaledVector(_d, seg);
       }
+      const r = reach?.[td.i];
+      if (r && r.w > 0.001) reachTo(_tg.set(r.x, r.y, r.z), seg, r.w, td);
+      else td.ikLive = false;
       // Parallel-transport frames so rings never twist.
       _n.copy(td.out);
       for (let j = 0; j < RINGS; j++) {
@@ -152,17 +209,17 @@ export function createTentacles() {
         _t.copy(cl[Math.min(jj + 1, TENT.rings - 1)]).sub(cl[Math.max(jj - 1, 0)]).normalize();
         if (j < TENT.rings) _n.addScaledVector(_t, -_n.dot(_t)).normalize();
         _b.crossVectors(_t, _n);
-        let r: number;
+        let rad: number;
         if (j < TENT.rings) {
-          r = td.r0 * (1 - TENT.taper * (j / (TENT.rings - 1)));
+          rad = td.r0 * (1 - TENT.taper * (j / (TENT.rings - 1)));
           _c.copy(cl[j]);
         } else {
           const a = ((j - TENT.rings + 1) / TENT.capRings) * Math.PI / 2, rEnd = td.r0 * (1 - TENT.taper);
-          r = rEnd * Math.cos(a);
+          rad = rEnd * Math.cos(a);
           _c.copy(cl[TENT.rings - 1]).addScaledVector(_t, rEnd * Math.sin(a));
         }
         for (let q = 0; q < R; q++) {
-          const a = (q / R) * Math.PI * 2, ca = Math.cos(a) * r, sa = Math.sin(a) * r;
+          const a = (q / R) * Math.PI * 2, ca = Math.cos(a) * rad, sa = Math.sin(a) * rad;
           arr[o++] = _c.x + _n.x * ca + _b.x * sa;
           arr[o++] = _c.y + _n.y * ca + _b.y * sa;
           arr[o++] = _c.z + _n.z * ca + _b.z * sa;
@@ -175,5 +232,5 @@ export function createTentacles() {
 
   write(0, new THREE.Vector3(), 0, 0, false);
   geo.setAttribute("furCoord", new THREE.BufferAttribute((geo.attributes.position.array as Float32Array).slice(), 3));
-  return { geo, write };
+  return { geo, write, tents };
 }

@@ -113,6 +113,18 @@
   --color-mascot-light-key: #FFF0DC;
   --color-mascot-light-rim: #D8E4FF;
   --color-mascot-custom-mix: #FFE6A0;
+  --color-mascot-alu: #C9CCD2;
+  --color-mascot-keys: #2A2C31;
+  --color-mascot-screen: #D6E9FF;
+  --color-mascot-screen-light: #BFD8FF;
+  --color-mascot-frame: #2A1D18;
+  --color-mascot-lens: #FFFFFF;
+  --color-mascot-brass: #D9A441;
+  --color-mascot-handle: #7A4B2A;
+  --color-mascot-drop: #9ED8FF;
+  --color-mascot-mouth-dark: #2A0E08;
+  --color-mascot-tongue: #E8737C;
+  --color-mascot-dot: #FFFFFF;
   --font-sans: "Geist Variable", 'Geist', system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", 'Geist Mono', ui-monospace, monospace;
   --font-weight-regular: 400;

@@ -78,4 +78,18 @@ export const VARIANT_IDS = Object.keys(VARIANTS);
 export const DEFAULT_VARIANT = "etekli";
 
 export const BELL_BUILD = { segments: 60, rimFade: 0.25 } as const;
-export const TENT_BUILD = { rings: 22, capRings: 5, radial: 12 } as const;
+export const TENT_BUILD = { rings: 22, capRings: 5, radial: 12, stretch: 1.7, ikIterations: 6, collideFrom: 4, collideMargin: 0.07, lipBand: 0.14, ikSmooth: 0.6 } as const;
+
+/** Packet E: acting. Below this mascot width (px) the laptop, magnifier and glasses are not shown; face looks, dots and the bubble still play */
+export const ACT_PROPS_MIN_SIZE = 70;
+/** A new activity must last this long (ms) before it shows, so a 50 ms tool call does not flash the laptop */
+export const ACT_MIN_MS = 400;
+/** The error look lasts this long (ms), then it is idle again */
+export const ACT_ERROR_MS = 3000;
+// Props and poses of the acting rig, in model units (colours come from the tokens).
+export const ACT = {
+  // Laptop in front of the body; local -z faces the jellyfish, the hinge is on +z.
+  lap: { x: 0, y: -0.22, z: 0.98, yaw: 0.28, w: 0.95, d: 0.6, t: 0.045, lidH: 0.56, lidT: 0.03, lidOpen: 0.2, round: 0.02, rise: 0.35 },
+  screenLightMax: 3, lensOpacity: 0.16,
+  pop: 5, glassesRate: 3, typeHz: 7.5, keyLift: 0.08, keyKick: 0.35, talkRate: 9.5, talkSmooth: 25, talkKick: 0.5,
+} as const;

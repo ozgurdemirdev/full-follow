@@ -1,5 +1,6 @@
 // The Three.js free part of the mascot: state, swim and wander physics, drag and throw, moods, springs.
 // Port of the page script of docs/design/maskot/prototype.html. Vectors are plain {x, y, z} objects; scene.ts converts.
+import type { Activity } from "./activity";
 import { CFG, SQUEEZE_HOLD, SQUEEZE_IN, SQUEEZE_MIN, SQUEEZE_OUT } from "./config";
 
 export interface Vec2 { x: number; y: number }
@@ -71,6 +72,10 @@ export interface MotionState {
   push: { l: boolean; r: boolean; u: boolean; d: boolean };
   /** how long it has been pushed from two opposite sides (s) */
   pinchT: number;
+  /** what the chat is doing (packet E): while it is not idle the mascot holds its place and does not look at the pointer */
+  activity: Activity;
+  /** when the activity started (s) */
+  actT0: number;
 }
 
 export interface Pointer { px: number; py: number; lastMove: number }
@@ -91,7 +96,7 @@ export function createMotion(start: Vec2, anchor: Vec2 | null): MotionState {
     pinned: !!anchor, anchor: anchor ? { ...anchor } : null, tempAnchor: null, hovered: false, dragTarget: { x: 0, y: 0 },
     phase: 0, c: 0, lean: 0, yaw: 0, pitch: 0, sq: 0, sqV: 0,
     trail: { x: 0, y: 0, z: 0 }, trailV: { x: 0, y: 0, z: 0 }, nextBlink: 2, blinkT: -1, t: 0,
-    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0, scale: 1, push: { l: false, r: false, u: false, d: false }, pinchT: 0,
+    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0, scale: 1, push: { l: false, r: false, u: false, d: false }, pinchT: 0, activity: "idle", actT0: 0,
   };
 }
 
@@ -109,7 +114,7 @@ function holdAnchor(S: MotionState, env: Env): Vec2 {
 function holding(S: MotionState, env: Env): boolean {
   if (S.mode !== "free") return false;
   const lock = lockTarget(S, env);
-  return S.pinned || S.hovered || (!!lock && dist(lock, S.pos) <= CFG.arrive);
+  return S.pinned || S.hovered || S.activity !== "idle" || (!!lock && dist(lock, S.pos) <= CFG.arrive);
 }
 
 /** Stop on the spot: kill the swim velocity and hold where it is now */
@@ -173,7 +178,7 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
     if (lock && !S.hovered && !S.travel && dist(lock, S.pos) > CFG.arrive) {
       S.target = lock;
       S.travel = true;
-    } else if (!lock && !S.pinned && !S.travel && !S.hovered && S.t > S.idleUntil && !env.reduce) {
+    } else if (!lock && !S.pinned && !S.travel && !S.hovered && S.activity === "idle" && S.t > S.idleUntil && !env.reduce) {
       S.target = randTarget(b);
       S.travel = true;
     }
@@ -359,7 +364,7 @@ const clampLen = (v: Vec3, max: number): Vec3 => {
 export function pose(S: MotionState, dt: number, ptr: Pointer) {
   const ease = (rate: number) => 1 - Math.exp(-rate * dt);
   S.lean += (clamp(-S.vel.x * CFG.leanPerPx, -CFG.leanMax, CFG.leanMax) - S.lean) * ease(6);
-  const looking = S.t - ptr.lastMove < 4 && ptr.px >= 0;
+  const looking = S.activity === "idle" && S.t - ptr.lastMove < 4 && ptr.px >= 0;
   const yawT = looking ? clamp((ptr.px - S.pos.x) / 500, -0.55, 0.55) : Math.sin(S.t * 0.23) * 0.15;
   const pitchT = looking ? clamp((ptr.py - S.pos.y) / 700, -0.2, 0.3) : 0.05;
   S.yaw += (yawT - S.yaw) * ease(4);
@@ -386,4 +391,12 @@ export function pose(S: MotionState, dt: number, ptr: Pointer) {
     S.blinkT = S.t;
     S.nextBlink = S.t + rand(CFG.blinkMin, CFG.blinkMax);
   }
+}
+
+/** Switches the shown activity; the mascot stops on the spot when one starts */
+export function setActivity(S: MotionState, a: Activity) {
+  if (a === S.activity) return;
+  if (S.activity === "idle") freeze(S);
+  S.activity = a;
+  S.actT0 = S.t;
 }
