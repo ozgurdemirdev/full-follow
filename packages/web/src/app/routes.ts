@@ -51,6 +51,7 @@ export const PATHS: Record<PageKey, string> = {
   settings: "/ayarlar",
 };
 
+export const settingsPath = (slug: string) => `${PATHS.settings}/${slug}`;
 export const timelinePath = (type: "person" | "opportunity" | "project", id: number) => `/zaman/${type}/${id}`;
 
 /** Page of a record (people, companies, ideas, own projects, posts and timeline already take /:id; the rest follow the same pattern).

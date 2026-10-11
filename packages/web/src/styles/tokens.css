@@ -210,6 +210,8 @@
   --spacing-chat-thumb-width: 120px;
   --spacing-chat-thumb-height: 90px;
   --spacing-chat-goal-width: 72px;
+  --spacing-settings-rail: 220px;
+  --spacing-settings-search-max: 520px;
   --container-content: undefined;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;

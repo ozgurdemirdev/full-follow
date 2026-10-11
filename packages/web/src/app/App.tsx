@@ -57,7 +57,7 @@ export function App() {
                   <Route path={`${PATHS.ideas}/:id?`} component={pages.ideas} />
                   <Route path={`${PATHS.ownProjects}/:id?`} component={pages.ownProjects} />
                   <Route path={`${PATHS.templates}/:id?`} component={pages.templates} />
-                  <Route path={PATHS.settings} component={pages.settings} />
+                  <Route path={`${PATHS.settings}/:kategori?`} component={pages.settings} />
                   <Route component={pages.today} />
                 </Switch>
               </Suspense>
