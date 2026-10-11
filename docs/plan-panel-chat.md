@@ -29,9 +29,13 @@ Must have:
 5. Live context indicator (tokens used / context window) and per session token and
    cost totals.
 6. Stop button for a running reply.
+7. The chat is a floating window opened from a button above the existing + FAB, not a
+   page. Minimizing it never stops a reply; the button shows the live status (§11).
+8. Later packets (after the core works): file and image attachments (§11.2) and voice
+   dictation with a hidden "dictated" note to Claude (§11.3).
 
-Out of scope (do not build): Anthropic API path, file uploads, images, voice, multi
-user, sharing, markdown export, editing past messages, branching.
+Out of scope (do not build): Anthropic API path, Excel or Word file parsing, multi
+user, sharing, markdown export, editing past messages, branching, the mascot.
 
 ## 2. Architecture
 
@@ -465,7 +469,9 @@ Set an explicit JSON body limit for these routes (64 kB is enough).
 - The composer draft is saved per session in `localStorage` (key from the existing
   `api/keys.ts` pattern), wrapped in try/catch, cleared after a successful send. F5
   keeps an unsent draft.
-- The open session id lives in the URL (`/chat/:id`), so F5 reopens the same session.
+- The chat is a floating window, not a route. The open session id, whether the window
+  is open and whether it is large are kept in `localStorage` (same key pattern, try/catch),
+  so F5 reopens the same session in the same state.
 
 ### 7.5 Server restart
 
@@ -525,22 +531,51 @@ marks all live processes stale (§6.6), so the next message uses the new notes.
 
 ## 11. Web UI
 
+**The visual design is fixed:** `docs/design/panel-chat.html` (open it in a browser;
+same page online: https://claude.ai/artifact/LgLF9WtVeokZEn2v7c8YrF). Build exactly that
+look and behaviour. Its "Tasarım notları" panel (prototype strip button) lists sizes,
+states and the new tokens. Ignore the dashed "Prototip" strip, the fake dashboard
+behind the chat and the sample data; they only exist in the mockup. The mockup is plain
+HTML with literal sizes: in the React code every value comes from tokens (map 32 to
+`control-height-sm`, 28 to the nearest token, and so on); add only the new tokens the
+design notes list, through `tokens.json` and `npm run tokens`. Where a number in this
+plan differs from the mockup, the plan wins.
+
 Files under `packages/web/src/`:
 
-- `pages/Chat.tsx` page shell (≤250 lines)
-- `components/chat/SessionList.tsx`, `Thread.tsx`, `MessageBubble.tsx`,
-  `Composer.tsx`, `ChatHeader.tsx`, `ContextBar.tsx`, `StatusLine.tsx`
+- `app/ChatWidget.tsx` mounted in `App.tsx` next to `Fab`, on every page (≤250 lines)
+- `components/chat/ChatButton.tsx` (button that becomes the status pill),
+  `ChatPanel.tsx`, `SessionList.tsx`, `ChatHeader.tsx` (title, model and effort
+  popover, expand, minimize), `Meters.tsx` (context bar, 5 hour and weekly rings),
+  `Thread.tsx`, `MessageBubble.tsx`, `StatusLine.tsx`, `Composer.tsx`
 - `api/chat.ts` typed calls on top of the existing `api` client
 - `lib/useChatStream.ts` the EventSource hook (§7.4)
 - `lib/chatText.ts` strings (§8)
 
-Routing and nav: add `chat` to `routes.ts` loaders and `PATHS`, route
-`${PATHS.chat}/:id?`, sidebar entry "Sohbet". Opening `/chat` without id opens the most
-recent session or creates one on first send.
+No route and no sidebar entry. The widget lives in `App.tsx`, so it survives page
+navigation and keeps streaming while the user moves around the panel. Opening it
+without a stored session opens the most recent session or creates one on first send.
 
-Layout: session list on the left (collapsible on mobile into a sheet using the existing
-`Sheet` component), thread in the middle, composer pinned to the bottom. Works at phone
-width.
+### 11.1 Window behaviour (from the design)
+
+- Chat button: above the + FAB, same right edge, `chat-fab-size`. Click toggles the
+  window.
+- Window: floats to the left of the FAB column, bottom aligned, never docked, no scrim;
+  the page behind stays usable. Small size `chat-panel-width` × `chat-panel-height`
+  (shorter on short screens). Expand button: up to `chat-panel-large-width` and full
+  height, session list visible inside on the left (`chat-sessions-width`). In small size
+  the session list slides over the thread from the history button.
+- Phone width: bottom sheet `chat-sheet-height`, FAB column hidden while open, no expand
+  button.
+- Minimize (chevron or Esc) only hides the window. While a reply runs and the window is
+  minimized, the button widens into a pill with a spinning ring, the live status text
+  (§8 labels) and elapsed seconds. If the reply finishes while minimized: "Cevap hazır",
+  two pulses, a dot until opened.
+- Header meters: context bar, "5 saat" and "Haftalık" rings with the colour rules of §9;
+  hover shows reset time and the API equivalent cost.
+- Connection banner at the top of the thread: "Bağlantı koptu, yeniden bağlanıyor…",
+  then "Bağlandı, cevap kaldığı yerden devam ediyor" (§7.4).
+- Scrollbars: thin (`scrollbar` token), transparent track, no arrow buttons.
 
 Rules:
 
@@ -551,7 +586,12 @@ Rules:
   Never fetch a whole session or the whole list.
 - Auto scroll: stick to the bottom only if the user was within 80 px of it (that number
   is a token or a named constant, not a literal); otherwise show a "Yeni mesaj ↓" pill.
-- Composer: auto growing textarea, Enter sends, Shift+Enter new line, IME safe
+  When the user is at the bottom and the thread viewport shrinks (composer grows,
+  attachments or the voice strip appear, a banner shows), keep it pinned to the bottom:
+  a `ResizeObserver` on the thread element re-applies `scrollTop = scrollHeight` while
+  the "at bottom" flag (updated on scroll) is true.
+- Composer: starts as one line and grows while typing up to `chat-composer-max`, then
+  scrolls inside. Enter sends, Shift+Enter new line, IME safe
   (ignore Enter while `isComposing`). While a reply runs, the send button becomes
   "Durdur". Character counter appears after 80% of `maxBodyChars`.
 - Header: editable title, model select, effort select, context bar, "Yeni sohbet".
@@ -571,6 +611,47 @@ Rules:
   Tailwind values in source). Motion through the existing `motion` helpers and
   `MotionScope`, respecting reduced motion.
 
+### 11.2 Attachments (packet 7)
+
+- UI as in the design: paperclip button, drag and drop onto the window, paste (Ctrl+V).
+  Images show as thumbnails, other files as cards with extension and size; removable
+  before sending; shown above the user bubble after sending.
+- Allowed: PNG, JPEG, GIF, WebP images (max 5 MB each), PDF (max 10 MB), `.txt`, `.md`,
+  `.csv` (max 10 MB). At most 5 per message. Limits go into `CHAT_LIMITS`
+  (`maxAttachments`, `maxImageBytes`, `maxFileBytes`); the UI shows the reason when a
+  file is refused.
+- Upload: `POST /api/chat/sessions/:id/attachments` (multipart, Nest `FileInterceptor`,
+  which `@nestjs/platform-express` already ships) stores the file under
+  `data/chat/uploads/<session_id>/<uuid>.<ext>` and returns `{id, name, size, mime}`.
+  The message POST gets `attachment_ids`. `GET /api/chat/attachments/:id` serves the file
+  for thumbnails. Validate mime by content sniffing of the first bytes, not only by name.
+- Storage: new table `chat_attachments` (`common()`, `session_id`, `message_id`
+  nullable until sent, `name`, `mime`, `size`, `path`) through core, migration 0013.
+- To the CLI, in the same stdin user message: images as
+  `{"type":"image","source":{"type":"base64","media_type":...,"data":...}}`, PDF as
+  `{"type":"document","source":{"type":"base64","media_type":"application/pdf","data":...}}`,
+  text files as a text block `<file name="...">content</file>`. Confirm with one Haiku
+  smoke test (one image, one PDF) before building the UI; if a block type is refused,
+  drop that type and tell Özgür.
+
+### 11.3 Voice dictation (packet 8)
+
+- Browser `SpeechRecognition` (`webkitSpeechRecognition` in Chrome and Edge), `lang:
+  "tr-TR"`, `continuous: true`, `interimResults: true`. Final results are appended to
+  the textarea word by word as they arrive; the current interim phrase is shown at the
+  end and replaced by the next result. Mic button toggles; the "Dinliyorum" strip with a
+  "Bitir" button shows above the input, as in the design. If the API is missing, hide
+  the mic button. Audio goes to the browser vendor's service; note this in the README.
+- When a message was dictated (mic used and not cleared), the POST sends
+  `input_mode: "voice"`. New column `chat_messages.input_mode` (`text` or `voice`,
+  default `text`).
+- Hidden note: for `voice` messages the runner adds a second text block to the stdin
+  user message, from the constant `VOICE_NOTE` in `chat.config.ts`:
+  "This message was dictated by voice and transcribed automatically, so some words may
+  be misheard. Infer the intended meaning from context and ask if something important
+  is unclear." The note is never stored in `body`, never returned by the API, never
+  rendered.
+
 ## 12. Work packets (do them in this order, one commit each)
 
 Rules while implementing and testing (the Pro account's weekly usage was 84% on
@@ -587,7 +668,7 @@ Rules while implementing and testing (the Pro account's weekly usage was 84% on
 - Keep test prompts read only ("kaç şablon var", "bugün ne var"). One write test only
   (add a comment to a test record) and only on the test database.
 - Do not change existing MCP tools, existing controllers or existing pages except the
-  router, sidebar and settings additions this plan names. `npm run build` and `npm test`
+  `App.tsx` mount and settings additions this plan names. `npm run build` and `npm test`
   must pass before every commit.
 
 1. **Core**: schema, migration, Zod schemas, `chat.ts` service, constants, 5 tests.
@@ -600,8 +681,9 @@ Rules while implementing and testing (the Pro account's weekly usage was 84% on
 3. **Runner + hub + controller**: process pool, turn queue, flush, SSE with replay,
    routes, boot cleanup, shutdown. Done when `curl -N` on the stream shows events for a
    message sent with `curl -X POST`, and killing curl mid reply does not stop the run.
-4. **Web**: page, components, hook, strings, routes, sidebar. Done when the manual
-   checks in §13 pass.
+4. **Web**: floating chat widget exactly as `docs/design/panel-chat.html` (§11, §11.1),
+   components, hook, strings, new tokens. Done when the manual checks 1 to 14 in §13
+   pass.
 5. **Settings**: pinned notes field and stale marking.
 6. **README**: this is a public project, so the README must let a stranger use the chat.
    Add a "Panel sohbeti" section to `README.md` (Turkish, like the rest of it) covering:
@@ -610,10 +692,14 @@ Rules while implementing and testing (the Pro account's weekly usage was 84% on
    done once so `packages/mcp/dist` exists), what the chat can and cannot do (only Full
    Follow tools, no file or shell access), the env vars `FF_CLAUDE_CLI`, `FF_CHAT_CWD`,
    `FF_CLAUDE_CONFIG_DIR` with defaults (a stranger has no `C:/Projects/Networking`, so
-   say the fallback is `data/chat/`), how to open it (sidebar "Sohbet"), the pinned notes
+   say the fallback is `data/chat/`), how to open it (the chat button above the + button), the pinned notes
    setting, the common errors from §8 with their fix, and a note that usage counts
    against the user's own Claude plan. Also update `.env.example`, the commands table if
    a script was added, and the "Durum" line.
+7. **Attachments** (§11.2): smoke test first, then table, upload route, CLI blocks, UI.
+   Done when check 15 in §13 passes. Extend the README section.
+8. **Voice** (§11.3): dictation, `input_mode`, hidden note. Done when check 16 passes.
+   Extend the README section (browser support, audio goes to the browser vendor).
 
 Commit rules (apply to every packet):
 
@@ -644,6 +730,16 @@ Commit rules (apply to every packet):
     same session remembers the earlier conversation.
 11. Ask "C: diskindeki dosyaları listele": no file system access happens.
 12. `npm run build` passes (includes the token check and type check).
+13. Send a question, minimize the window at once: the button becomes a pill with the
+    live status and seconds; navigate to another page, the pill stays; when the reply
+    ends it shows "Cevap hazır"; opening shows the full reply.
+14. At the bottom of the thread, type until the composer grows to its max: the last
+    message stays visible. Scroll up, type more: the thread does not jump.
+15. Attach one image and one PDF, ask "bunlarda ne var": both reach Claude, thumbnails
+    show in the thread after F5; a 6th file or an oversized file shows the refusal
+    reason.
+16. Dictate a sentence with the mic: words appear while speaking; the sent message has
+    no visible note, and Claude handles a misheard word sensibly.
 
 ## 14. Known risks
 
