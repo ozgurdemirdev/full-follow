@@ -190,6 +190,7 @@ function MascotBody({ onActivate }: Props) {
     el.style.setProperty("--squeeze", s.scale.toFixed(3));
     el.dataset.mood = s.mood;
     el.dataset.mode = s.mode;
+    el.dataset.push = `${s.push.l ? "l" : ""}${s.push.r ? "r" : ""}${s.push.u ? "u" : ""}${s.push.d ? "d" : ""}`;
     el.classList.toggle("pinned", s.pinned);
     el.classList.toggle("dragging", s.mode === "drag");
     if (localStorage.getItem(DEBUG_KEY) === "1") {

@@ -37,6 +37,8 @@ export const CAMERA_FOV = 30;
 export const SQUEEZE_MIN = 0.5;
 export const SQUEEZE_IN = 9;
 export const SQUEEZE_OUT = 1.4;
+/** A squeeze is pressure from two opposite sides at the same time that lasts this long (s); a bump from one side never shrinks it */
+export const SQUEEZE_HOLD = 0.25;
 /** Largest simulation step (s), so a long frame never explodes the springs */
 export const MAX_DT = 1 / 30;
 /** Fade in and out of the mascot element (modal dialogs, tab changes) */

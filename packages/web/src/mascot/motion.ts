@@ -1,6 +1,6 @@
 // The Three.js free part of the mascot: state, swim and wander physics, drag and throw, moods, springs.
 // Port of the page script of docs/design/maskot/prototype.html. Vectors are plain {x, y, z} objects; scene.ts converts.
-import { CFG, SQUEEZE_IN, SQUEEZE_MIN, SQUEEZE_OUT } from "./config";
+import { CFG, SQUEEZE_HOLD, SQUEEZE_IN, SQUEEZE_MIN, SQUEEZE_OUT } from "./config";
 
 export interface Vec2 { x: number; y: number }
 export interface Vec3 { x: number; y: number; z: number }
@@ -67,6 +67,10 @@ export interface MotionState {
   fallX: number;
   /** 1 normally, shrinks while the body is squeezed between obstacles and walls, then grows back */
   scale: number;
+  /** which sides pushed on it this frame (walls and obstacles): left, right, up, down */
+  push: { l: boolean; r: boolean; u: boolean; d: boolean };
+  /** how long it has been pushed from two opposite sides (s) */
+  pinchT: number;
 }
 
 export interface Pointer { px: number; py: number; lastMove: number }
@@ -87,7 +91,7 @@ export function createMotion(start: Vec2, anchor: Vec2 | null): MotionState {
     pinned: !!anchor, anchor: anchor ? { ...anchor } : null, tempAnchor: null, hovered: false, dragTarget: { x: 0, y: 0 },
     phase: 0, c: 0, lean: 0, yaw: 0, pitch: 0, sq: 0, sqV: 0,
     trail: { x: 0, y: 0, z: 0 }, trailV: { x: 0, y: 0, z: 0 }, nextBlink: 2, blinkT: -1, t: 0,
-    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0, scale: 1,
+    shear: 0, shearV: 0, limp: 0, mood: "normal", moodUntil: Infinity, shakeT: 0, fallX: 0, scale: 1, push: { l: false, r: false, u: false, d: false }, pinchT: 0,
   };
 }
 
@@ -151,6 +155,7 @@ export interface Status {
 }
 
 export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, status: Status = { running: false }) {
+  S.push = { l: false, r: false, u: false, d: false };
   const sz = { w: env.size.w * S.scale, h: env.size.h * S.scale };
   const b = bounds(sz, env.viewport.w, env.viewport.h, env.left);
   const lock = lockTarget(S, env);
@@ -213,6 +218,9 @@ export function simulate(S: MotionState, env: Env, dt: number, hooks: Hooks, sta
   for (const [ax, lo, hi] of [["x", b.x0, b.x1], ["y", b.y0, b.y1]] as const) {
     if (S.pos[ax] >= lo && S.pos[ax] <= hi) continue;
     const floor = ax === "y" && S.pos.y > hi;
+    // a wall pushes the body back in: from the left/top when it was past lo, from the right/bottom when past hi
+    if (S.pos[ax] < lo) S.push[ax === "x" ? "l" : "u"] = true;
+    else S.push[ax === "x" ? "r" : "d"] = true;
     S.pos[ax] = clamp(S.pos[ax], lo, hi);
     if (S.mode === "drag") {
       S.vel[ax] = 0;
@@ -243,9 +251,12 @@ function blocked(S: MotionState, env: Env, scale: number): boolean {
   });
 }
 
-/** Squeezed between an obstacle and a wall (or two obstacles): it shrinks quickly, and grows back slowly once the full body fits again */
+/** Squeezed: pushed from two opposite sides at once (a wall and an obstacle, or two obstacles) for a moment. It shrinks quickly and grows back slowly once the full body fits again. */
 function squeeze(S: MotionState, env: Env, dt: number) {
-  const target = blocked(S, env, 1) ? SQUEEZE_MIN : 1;
+  const pinched = (S.push.l && S.push.r) || (S.push.u && S.push.d);
+  S.pinchT = pinched ? S.pinchT + dt : Math.max(0, S.pinchT - dt * 2);
+  // while the full body would still be pinched it stays small, otherwise it grows
+  const target = pinched && S.pinchT > SQUEEZE_HOLD ? SQUEEZE_MIN : S.scale < 1 && blocked(S, env, 1) ? S.scale : 1;
   const rate = target < S.scale ? SQUEEZE_IN : SQUEEZE_OUT;
   S.scale += (target - S.scale) * (1 - Math.exp(-rate * dt));
 }
@@ -268,6 +279,7 @@ function collide(S: MotionState, env: Env, hooks: Hooks, size: { w: number; h: n
     ];
     const hit = sides.reduce((a, c) => (c.depth < a.depth ? c : a));
     S.pos[hit.ax] += hit.sign * hit.depth;
+    S.push[hit.ax === "x" ? (hit.sign < 0 ? "r" : "l") : hit.sign < 0 ? "d" : "u"] = true;
     if (S.mode === "drag") {
       S.vel[hit.ax] = 0;
       continue;
