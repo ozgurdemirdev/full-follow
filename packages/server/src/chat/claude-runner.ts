@@ -43,11 +43,14 @@ interface Slot {
 @Injectable()
 export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private slots = new Map<number, Slot>();
+  /** pinned notes as last written to system.md */
+  private notes = "";
 
   constructor(@Inject(CORE) private core: Core, private hub: ChatHub) {}
 
   onModuleInit() {
-    writeRuntimeFiles();
+    this.notes = this.core.settings.all().chat_pinned_notes;
+    writeRuntimeFiles(this.notes);
     const n = this.core.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
     if (n) console.log(`  ${n} yarım kalan sohbet cevabı hataya çevrildi`);
   }
@@ -61,7 +64,16 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     return this.slots.get(sessionId)?.turn?.messageId ?? null;
   }
 
-  /** Pinned notes changed: every live process picks them up on its next message */
+  /** Pinned notes saved in Settings (or by Claude): rewrite system.md and let every process pick them up on its next message */
+  private syncNotes() {
+    const now = this.core.settings.all().chat_pinned_notes;
+    if (now === this.notes) return;
+    this.notes = now;
+    writeRuntimeFiles(now);
+    this.markAllStale();
+  }
+
+  /** Every live process picks up changed settings on its next message */
   markAllStale() {
     for (const s of this.slots.values()) s.stale = true;
   }
@@ -70,6 +82,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     const chat = this.core.chat;
     const prior = chat.findSend(sessionId, input.client_id);
     if (prior) return { user_message: prior.user, assistant_message: prior.reply };
+    this.syncNotes();
     const target = resolveCli();
     if (!target) throw new ChatError("cli_missing", 503);
     const session = chat.getSession(sessionId);

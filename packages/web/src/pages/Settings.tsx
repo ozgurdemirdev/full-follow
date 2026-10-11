@@ -33,6 +33,7 @@ export default function Settings() {
           <TemplateCard key={`t${JSON.stringify(s.data.payment_template)}`} s={s.data} />
         </>
       )}
+      {s.data && <ChatNotesCard key={`c${s.data.chat_pinned_notes}`} notes={s.data.chat_pinned_notes} />}
       <TagsCard />
       <SectorsCard />
       <SourcesCard />
@@ -206,6 +207,25 @@ function MarketingFields({ cfg }: { cfg: NetworkSettings }) {
         <span className="text-sm text-text-muted">Dashboard’da bu haftanın ilerlemesi görünür</span>
       </div>
     </>
+  );
+}
+
+const PINNED_MAX = 4_000;
+
+/** Text added to every panel chat (rules, business context); the next message of each chat picks it up */
+function ChatNotesCard({ notes }: { notes: string }) {
+  const [v, setV] = useState(notes);
+  const save = () => {
+    if (v.trim() === notes) return setV(notes);
+    void run("put", "/settings", { chat_pinned_notes: v }, { ok: "Kaydedildi" }).catch(() => setV(notes));
+  };
+  return (
+    <section className="card rise flex flex-col gap-4 px-9 py-8" style={order(2)} aria-label="Sohbet sabit notları">
+      <Head title="Sohbet sabit notları" />
+      <p className="m-0 text-base-sm text-text-secondary">Panel sohbetindeki Claude her konuşmada bu notu da görür. Yeni açılan sohbetlerde geçerli olur; eski sohbetler ilk açıldıkları notla devam eder.</p>
+      <textarea id="set-chat-notes" className="inp min-h-textarea-lg" maxLength={PINNED_MAX} value={v} onChange={(e) => setV(e.target.value)} onBlur={save} aria-label="Sohbet sabit notları" />
+      <span className="text-xs text-text-muted">{v.length.toLocaleString("tr-TR")} / {PINNED_MAX.toLocaleString("tr-TR")}</span>
+    </section>
   );
 }
 

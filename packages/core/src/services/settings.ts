@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, SETTING_KEYS } from "../constants";
+import { CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, SETTING_KEYS } from "../constants";
 import { emit, FFError, parse, row, type Ctx } from "../context";
 import { settings } from "../db/schema";
 
@@ -52,6 +52,7 @@ export function settingsService(ctx: Ctx) {
       target_net_monthly: num(ctx, "target_net_monthly"),
       tax_rate_percent: num(ctx, "tax_rate_percent"),
       payment_template: readTemplate(ctx),
+      chat_pinned_notes: readSetting(ctx, "chat_pinned_notes") ?? "",
     };
   }
 
@@ -75,6 +76,8 @@ export function settingsService(ctx: Ctx) {
       stored = JSON.stringify(t);
     } else if (key === "followup_days") {
       stored = JSON.stringify(parse(followupSchema, value));
+    } else if (key === "chat_pinned_notes") {
+      stored = parse(z.string().trim().max(CHAT_PINNED_MAX), value);
     } else if (key === "tax_rate_percent") {
       const n = parse(z.coerce.number().min(0).lt(100), value);
       stored = String(n);

@@ -429,6 +429,7 @@ export interface PriceFloor {
   target_net_monthly: number;
   tax_rate_percent: number;
   payment_template: { milestone: string; percent: number; days: number }[];
+  chat_pinned_notes: string;
   subtotal: number;
   floor: number;
 }

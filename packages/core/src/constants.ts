@@ -83,7 +83,7 @@ export const MARKETING_DEFAULTS = { followup_days: [3, 7], weekly_target: 0 } as
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target",
+  "followup_days", "weekly_target", "chat_pinned_notes",
 ] as const;
 
 /** Network ayarlarının varsayılanları (gün) */
@@ -143,6 +143,8 @@ export const CHAT_LIMITS = {
   sseRetryMs: 3_000,
   haikuPriceStepTokens: 100_000,
 } as const;
+/** Max length of the pinned notes text that goes into every panel chat */
+export const CHAT_PINNED_MAX = 4_000;
 export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_TITLE_CHARS = 60;
 export const CHAT_ROLES = ["user", "assistant"] as const;
