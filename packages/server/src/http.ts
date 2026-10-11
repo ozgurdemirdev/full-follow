@@ -20,7 +20,7 @@ export class ErrorFilter implements ExceptionFilter {
     }
     if (e instanceof HttpException) {
       const body = e.getResponse() as any;
-      return res.status(e.getStatus()).json({ error: typeof body === "string" ? body : body.message ?? e.message, code: "http" });
+      return res.status(e.getStatus()).json({ error: typeof body === "string" ? body : body.message ?? e.message, code: body.code ?? "http" });
     }
     console.error(e);
     return res.status(500).json({ error: "beklenmeyen hata", code: "internal" });

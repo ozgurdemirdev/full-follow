@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { CHAT_DEFAULTS, CHAT_NEW_TITLE, CHAT_TITLE_CHARS } from "../constants";
 import { emit, FFError, parse, stamp, type Ctx } from "../context";
 import { chat_messages, chat_sessions } from "../db/schema";
@@ -110,6 +110,15 @@ export function chatService(ctx: Ctx) {
     });
   }
 
+  /** A retried send: the user row for this client_id and the reply that followed it, if any */
+  function findSend(sessionId: number, clientId: string) {
+    const user = ctx.db.select().from(chat_messages).where(and(eq(chat_messages.session_id, sessionId), eq(chat_messages.client_id, clientId))).get();
+    if (!user) return null;
+    const reply = ctx.db.select().from(chat_messages)
+      .where(and(eq(chat_messages.session_id, sessionId), eq(chat_messages.role, "assistant"), gt(chat_messages.id, user.id))).orderBy(chat_messages.id).limit(1).get();
+    return { user, reply: reply ?? null };
+  }
+
   function startAssistantMessage(sessionId: number) {
     sessionRow(sessionId);
     return ctx.db.insert(chat_messages).values({ session_id: sessionId, role: "assistant", state: "pending", ...stamp(ctx), created_by: "claude" }).returning().get();
@@ -158,6 +167,6 @@ export function chatService(ctx: Ctx) {
 
   return {
     createSession, listSessions, getSession: sessionRow, updateSession, deleteSession, restoreSession, listMessages, getMessage: messageRow,
-    addUserMessage, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, failDanglingRuns,
+    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, failDanglingRuns,
   };
 }

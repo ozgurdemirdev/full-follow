@@ -22,6 +22,9 @@ import { IdeasController } from "./controllers/ideas.controller";
 import { OwnProjectsController } from "./controllers/own-projects.controller";
 import { MarketingController } from "./controllers/marketing.controller";
 import { TagsController, TrashController } from "./controllers/tags.controller";
+import { ChatController } from "./chat/chat.controller";
+import { ChatHub } from "./chat/chat-hub";
+import { ClaudeRunner } from "./chat/claude-runner";
 import { coreProvider, followupsProvider } from "./core.provider";
 import { ErrorFilter } from "./http";
 
@@ -30,11 +33,13 @@ import { ErrorFilter } from "./http";
     AuthController, MiscController, PeopleController, CompaniesController, SourcesController,
     OpportunitiesController, ProjectsController, PaymentsController, TasksController, DraftsController,
     TouchesController, CommentsController, SectorsController, NotesController, LinksController, GoalsController,
-    PostsController, TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController,
+    PostsController, TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
   ],
   providers: [
     coreProvider,
     followupsProvider,
+    ChatHub,
+    ClaudeRunner,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: ErrorFilter },
   ],

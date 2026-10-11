@@ -67,6 +67,9 @@ async function bootstrap() {
     die(`Veritabanı ya da uygulama açılamadı (${mods.core.defaultDbPath()})`, "dosya başka bir programda kilitli olabilir; Full Follow'un başka bir penceresi açıksa kapat", e);
   }
 
+  // Ctrl+C ve SIGTERM: sohbet CLI süreçleri de kapansın (onModuleDestroy)
+  app.enableShutdownHooks();
+
   // Derlenmiş web arayüzü: hazır sıkıştırılmış (.br/.gz) dosyalar varsa onlar sunulur
   const webDist = path.resolve(__dirname, "../../web/dist");
   const index = path.join(webDist, "index.html");
