@@ -5,7 +5,7 @@ export const CFG = {
   shells: coarse ? 16 : 24, furLength: 0.04, furFreq: 40, glowStrength: 0.9, exposure: 0.85, envIntensity: 0.35,
   // The canvas is tiny, so it is always supersampled at 2x: alpha-tested fur needs it and the cost is about 140 k pixels.
   supersample: 2,
-  pulseTravel: 1.5, pulseIdle: 3.2, impulse: 95, waterDrag: 1.4, tossDrag: 0.9, maxToss: 2400,
+  pulseTravel: 1.5, pulseIdle: 3.2, impulse: 65, waterDrag: 1.4, tossDrag: 0.9, maxToss: 2400,
   restitution: 0.55, settleSpeed: 25, idleMin: 3, idleMax: 9, arrive: 36,
   holdK: 14, holdD: 6, dragK: 260, dragTap: 6,
   leanPerPx: 0.0011, leanMax: 0.5, trailPerPx: 0.0011, trailMax: 1.1, trailK: 40, trailD: 8,

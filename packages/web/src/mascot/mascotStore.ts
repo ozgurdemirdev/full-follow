@@ -59,7 +59,7 @@ function load(): MascotPrefs {
   const size = Number(read("size"));
   return {
     show: flag("show", true),
-    wander: flag("wander", true),
+    wander: flag("wander", false),
     variant: variant in VARIANTS ? variant : DEFAULT_VARIANT,
     color: color === "custom" || (PRESET_IDS as readonly string[]).includes(color ?? "") ? (color as ColorChoice) : "amber",
     custom: read("custom"),

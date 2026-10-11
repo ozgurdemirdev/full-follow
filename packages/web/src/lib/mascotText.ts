@@ -6,7 +6,7 @@ export const MASCOT_TEXT = {
   show: "Göster",
   showHint: "Kapalıysa sohbet eski düğmeyle açılır",
   wander: "Gezinsin",
-  wanderHint: "Kapalıysa + düğmesinin üstünde bekler",
+  wanderHint: "Kapalıysa + düğmesinin üstünde durur, yalnız yolundan çekilmesi gerekince hareket eder",
   model: "Model",
   color: "Renk",
   customColor: "Özel renk",
