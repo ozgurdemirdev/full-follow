@@ -97,7 +97,7 @@ export const T = {
   statusQueued: "Gönderildi",
   statusThinking: "Düşünüyor…",
   statusWriting: "Yazıyor…",
-  statusTool: (tool: string) => `Full Follow'da çalışıyor: ${tool}`,
+  statusTool: (tool: string) => (tool === "WebSearch" ? "İnternette arıyor" : tool === "WebFetch" ? "Sayfa okuyor" : `Full Follow'da çalışıyor: ${tool}`),
   pillReady: "Cevap hazır",
   live: "Çalışıyor",
   seconds: (n: number) => `${n} sn`,

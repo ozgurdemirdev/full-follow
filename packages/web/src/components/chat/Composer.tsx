@@ -57,12 +57,27 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
   });
   useEffect(() => () => filesRef.current.forEach((f) => f.url && URL.revokeObjectURL(f.url)), []);
 
-  useLayoutEffect(() => {
+  // Grows with the text. Empty it keeps the CSS height (a wrapping placeholder must not size it), and it refits when the width changes (session list opened or closed).
+  const fit = () => {
     const a = area.current;
     if (!a) return;
-    a.style.height = "auto";
-    a.style.height = `${a.scrollHeight}px`;
-  }, [text, files.length]);
+    a.style.height = "";
+    if (a.value) a.style.height = `${a.scrollHeight}px`;
+  };
+  useLayoutEffect(fit, [text, files.length]);
+  useEffect(() => {
+    const a = area.current;
+    if (!a) return;
+    let w = a.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (a.clientWidth !== w) {
+        w = a.clientWidth;
+        fit();
+      }
+    });
+    ro.observe(a);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     chatPrefs.setDraft(sessionId, text);
@@ -200,7 +215,7 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
           {running ? (
             <button className="send" type="submit" data-stop="" aria-label={T.stop}>
               <span className="sq" />
-              {T.stop}
+              <span className="stoplabel">{T.stop}</span>
             </button>
           ) : (
             <button className="send" type="submit" aria-label={T.send} disabled={disabled || !canSend}>

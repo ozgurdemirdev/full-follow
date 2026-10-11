@@ -15,6 +15,8 @@ export const ENV = { cli: "FF_CLAUDE_CLI", cwd: "FF_CHAT_CWD", configDir: "FF_CL
 export const MCP_SERVER_NAME = "full-follow";
 export const MCP_TOOL_PREFIX = `mcp__${MCP_SERVER_NAME}__`;
 export const TOOL_SEARCH = "ToolSearch";
+/** Built-in web tools the panel Claude may use besides the Full Follow MCP tools (page content is untrusted, see the rules in chat-files.ts) */
+export const WEB_TOOLS = ["WebSearch", "WebFetch"] as const;
 export const TOOL_SEARCH_LABEL = "Araçlar hazırlanıyor";
 export const TOOL_SUMMARY_CHARS = 80;
 /** After closing stdin, how long a process gets to exit before it is killed */

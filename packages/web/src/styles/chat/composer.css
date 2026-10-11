@@ -1,6 +1,20 @@
 /* ---------- composer ---------- */
 .composer-wrap {
   padding: 0 var(--spacing-5) var(--spacing-5);
+  container: composer / inline-size;
+}
+/* A narrow window (session list open): the stop button keeps only its square, the placeholder gets smaller, so the box stays usable */
+@container composer (max-width: theme(--spacing-chat-composer-narrow)) {
+  .send[data-stop] {
+    padding: 0;
+  }
+  .send[data-stop] .stoplabel {
+    display: none;
+  }
+  .composer textarea,
+  .composer textarea::placeholder {
+    font-size: var(--text-sm);
+  }
 }
 .composer {
   position: relative;

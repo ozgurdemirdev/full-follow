@@ -76,6 +76,7 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 **Ne yapabilir, ne yapamaz**
 
 - Sadece Full Follow araçlarını kullanır (MCP: `find`, `get`, `save`, `today` ve diğerleri). Claude'un yazdığı her kayıt "Claude" etiketiyle görünür.
+- İnternette arayabilir ve sayfa okuyabilir (`WebSearch`, `WebFetch`); dosya ve komut araçları kapalıdır. Web içeriği güvenilmez veri sayılır: sayfadaki talimatı uygulamaz, bulduklarını yalnız sen isteyince Full Follow'a kaydeder.
 - Dosya okuyamaz, kabuk komutu çalıştıramaz, internete çıkamaz.
 - Model (Opus 5.5, Sonnet 5.5, Haiku 5.5) ve efor (Düşük, Orta, Yüksek) her sohbet için başlıktaki düğmeden seçilir; değişiklik bir sonraki mesajdan geçerlidir. Varsayılan Haiku 5.5, düşük efor.
 - Eski sohbetler listede durur, tam bağlamıyla devam eder. Başlıktaki çubuk bağlam doluluğunu gösterir.

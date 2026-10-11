@@ -1,7 +1,7 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { CHAT_DATA_DIR, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, TOOL_SEARCH } from "./chat.config";
+import { CHAT_DATA_DIR, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, TOOL_SEARCH, WEB_TOOLS } from "./chat.config";
 
 export interface CliTarget {
   command: string;
@@ -73,8 +73,8 @@ export function buildArgv(s: RunSession): string[] {
     s.cli_started ? "--resume" : "--session-id", s.cli_session_id,
     "--strict-mcp-config",
     "--mcp-config", path.join(CHAT_DATA_DIR, "mcp.json"),
-    "--allowedTools", `mcp__${MCP_SERVER_NAME}`,
-    "--tools", TOOL_SEARCH,
+    "--allowedTools", `mcp__${MCP_SERVER_NAME}`, ...WEB_TOOLS,
+    "--tools", [TOOL_SEARCH, ...WEB_TOOLS].join(","),
     "--setting-sources", "project",
     "--append-system-prompt-file", path.join(CHAT_DATA_DIR, "system.md"),
   ];
