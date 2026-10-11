@@ -31,8 +31,10 @@ Must have:
 6. Stop button for a running reply.
 7. The chat is a floating window opened from a button above the existing + FAB, not a
    page. Minimizing it never stops a reply; the button shows the live status (§11).
-8. Later packets (after the core works): file and image attachments (§11.2) and voice
-   dictation with a hidden "dictated" note to Claude (§11.3).
+8. Later packets (after the core works): file and image attachments (§11.2), voice
+   dictation with a hidden "dictated" note to Claude (§11.3), opening a record in
+   the panel when Özgür asks for it (§11.4), and record cards, 👍 acknowledgements and
+   the panel brief (§11.5).
 
 Out of scope (do not build): Anthropic API path, Excel or Word file parsing, multi
 user, sharing, markdown export, editing past messages, branching, the mascot.
@@ -652,6 +654,109 @@ Rules:
   is unclear." The note is never stored in `body`, never returned by the API, never
   rendered.
 
+### 11.4 Open a record in the panel (packet 9)
+
+Özgür asks "26'yı aç", "şu firmayı göster", "bulamadım, nerede": Claude opens that
+record in the panel by itself. It never navigates as a side effect of other work
+(adding, updating, searching, reporting).
+
+- New MCP tool `open` in `packages/mcp/src/tools.ts` (adding a tool is allowed; the
+  existing tools stay unchanged). Input `{type, id}` with the same `type` names and
+  `idOrName` as `get`. It checks that the record exists through core and returns
+  "açıldı: <label>" or an error; it does nothing else. Its description must say:
+  "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım
+  dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası
+  olarak çağırma." Outside the panel chat (other Claude sessions) the tool only
+  returns that text.
+- `chat-files.ts` system rules get the same sentence in English: "Call open only when
+  Özgür explicitly asks to see or open a record; never as part of other work."
+- Stream parser: when the `tool_result` of an `mcp__full-follow__open` call is not an
+  error, emit `{type: "navigate", record_type, record_id}`. The hub sends SSE
+  `navigate` `{message_id, type, id, at}` (new event name, add it to the §7.2 table).
+  A failed `open` sends nothing.
+- Web: `recordPath(type, id)` in `app/routes.ts` next to `PATHS` (single home of
+  paths). On `navigate`: if `Date.now() - at` is below `NAVIGATE_MAX_AGE_MS` (5 s,
+  in `chatText.ts` or the chat constants) call wouter `navigate(recordPath(...))`;
+  older events (replay after F5) are ignored. Desktop: the chat window stays open.
+  Phone width: the chat minimizes so the page is visible.
+- The reply also gets a clickable chip under it, built from the `open` entry in
+  `tools_json`: "Fikir #26 · aç". Clicking navigates the same way, any time later.
+- Deep links: people, companies, posts, ideas, own projects and timeline already accept
+  `/:id`; reuse what each page already does with it. Add `/:id` to pipeline
+  (opportunity), projects, drafts, templates and comments, following the Posts pattern
+  (open or expand that row, `scrollIntoView` with `block: "center"`). Task and goal:
+  go to the dashboard and `openSheet(kind, { edit: id })`. A type without a page
+  (sector, tag, setting, touch, note) is refused by the tool with a short reason.
+- The opened row gets a short highlight with an existing token (`primary-soft-bg`
+  fading out over `dur-bar-grow`), respecting reduced motion.
+
+### 11.5 Record cards, 👍 acknowledgements, panel brief (packet 10)
+
+The design (`docs/design/panel-chat.html`, prototype buttons "Haftalık plan
+(kartlar)", "Şablon iste", "Tamamdır anladım", "Onaylıyorum", "Hallettim") is the
+reference for all of this.
+
+**Record cards.** When a reply lists panel records, Claude writes one short sentence
+and appends a fenced block instead of describing the records in text:
+
+````
+```ff-cards
+{"groups":[{"label":"Pzt 12 Ekim","items":[{"type":"task","id":7},{"type":"person","id":12}]}]}
+```
+````
+
+- Types: `task`, `goal`, `person`, `company`, `opportunity`, `draft`, `template`,
+  `idea`, `payment`, `post`, `comment`. `label` is optional. A `template` item may carry
+  `person_id`; the card then shows the template filled for that person.
+- Web: react-markdown `code` override renders `language-ff-cards` as
+  `components/chat/RecordCards.tsx`. While the block is still streaming (no closing
+  fence yet) render a one line skeleton, never raw JSON. Invalid JSON renders nothing
+  and logs once to the console.
+- Data: new `GET /api/chat/records?keys=task:7,person:12` (max 30 keys) returns the
+  live rows through core's existing `get` per type, plus `{key, missing: true}` for a
+  deleted or unknown record. One request per block, cached per message in memory.
+  Cards are never stored; reopening the session fetches fresh rows.
+- Card look and actions reuse what the panel already has, through existing endpoints
+  only: task checkbox (existing task PATCH), draft "Gönderildi" (existing
+  `/drafts/:id/send`), person "Taslağı aç" when an open draft exists, goal progress bar,
+  stage and status chips with the existing chip tokens. Clicking the title navigates
+  like §11.4. A missing record is one muted line "… bulunamadı".
+- Template card: name, kind and channel, reply rate from the existing template stats,
+  the body filled with the person's values using the same placeholder fill that
+  follow-up drafts use in core (`services/templates.ts` / `followups.ts`; do not write a
+  second one). Unfilled placeholders stay highlighted. Buttons: "Dolu / Ham", "Kopyala"
+  (clipboard with selection fallback), "Taslak olarak kaydet" (existing draft create).
+  Claude never invents a new template; if asked for one it proposes text in the reply
+  and saves it only after Özgür approves.
+
+**👍 acknowledgements.**
+
+- When Özgür's whole message is only a closing or an acknowledgement ("tamam",
+  "tamamdır anladım", "süpersin", "eyvallah") Claude replies with exactly `[[ack]]`.
+  When it approves something Claude proposed ("onaylıyorum", "tamam yap") the reply
+  starts with `[[ack]]`, then Claude does the work and ends with one short result line.
+  When the message contains anything new (a question, a condition, an idea: "tamamdır
+  anladım, peki şöyle yapsak") there is no `[[ack]]`, just a normal answer. Claude
+  decides; there is no word list in code.
+- Runner: hold back the first 7 characters of the text stream until it is clear whether
+  the reply starts with `[[ack]]`; strip the marker from deltas and body. Store
+  `chat_messages.ack` (integer bool, migration with the packet) on the assistant row.
+- Web: an ack sets a 👍 badge on the preceding user bubble (pop animation, token
+  durations). An ack with no text and no tools renders no assistant bubble at all, and
+  a minimized window does not show "Cevap hazır" for it.
+- "Hallettim" style messages: `[[ack]]` plus at most one suggestion block
+  ```` ```ff-suggest {"label":"Görev #7'yi kapat","action":"task_done","id":7}``` ````.
+  The web renders it as two buttons ("label" and "Gerek yok"). Only the whitelisted
+  action `task_done` exists; it calls the existing task endpoint directly, not Claude.
+  Claude never closes a task without this confirmation.
+
+**Panel brief.** `writeRuntimeFiles` appends the file `<chat cwd>/panel-brief.md` to
+`system.md` when it exists (it lives outside the repo because it holds private
+business context; never commit a copy). Re-read it on every `syncNotes` call by mtime
+and mark processes stale on change, like pinned notes. The marker rules above
+(`ff-cards`, `[[ack]]`, `ff-suggest`, `open`) go into `SYSTEM_RULES` in English, so they
+also apply when no brief file exists.
+
 ## 12. Work packets (do them in this order, one commit each)
 
 Rules while implementing and testing (the Pro account's weekly usage was 84% on
@@ -700,6 +805,10 @@ Rules while implementing and testing (the Pro account's weekly usage was 84% on
    Done when check 15 in §13 passes. Extend the README section.
 8. **Voice** (§11.3): dictation, `input_mode`, hidden note. Done when check 16 passes.
    Extend the README section (browser support, audio goes to the browser vendor).
+9. **Open in panel** (§11.4): deep links, `open` tool, `navigate` event, chip. Done when
+   checks 17 and 18 pass. Mention it in the README section.
+10. **Cards, 👍, brief** (§11.5). Done when checks 19 to 22 pass. Mention cards and 👍
+    in the README section (the brief file is optional and private; say so).
 
 Commit rules (apply to every packet):
 
@@ -740,6 +849,20 @@ Commit rules (apply to every packet):
     reason.
 16. Dictate a sentence with the mic: words appear while speaking; the sent message has
     no visible note, and Claude handles a misheard word sensibly.
+17. "26 numaralı fikri aç": the panel goes to that idea and highlights it, the chat
+    stays open, the reply has an "aç" chip that works again later. Same for a person,
+    a company, an opportunity and a draft.
+18. "26 numaralı fikre not ekle" and "bu haftanın raporu": no navigation happens.
+    F5 after check 17 does not navigate again.
+19. "Haftalık planım ne": Claude uses the `plan` tool (not files), the reply is one
+    sentence plus day grouped cards; ticking a task card updates the dashboard.
+20. "Mavi Ajans için takip şablonunu ver": template card filled for the person, copy
+    works, "Taslak olarak kaydet" creates a draft.
+21. "tamamdır anladım" gives only 👍 and no bubble; "tamamdır anladım, peki şöyle
+    yapsak …" gets a normal answer without 👍; "onaylıyorum" after a proposal gives 👍,
+    does the work, then one result line.
+22. "hallettim" after a task was discussed: 👍 plus the "Görev #N'yi kapat" button;
+    the task is closed only after clicking it.
 
 ## 14. Known risks
 

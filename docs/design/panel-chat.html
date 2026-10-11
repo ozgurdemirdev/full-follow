@@ -396,6 +396,54 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
 .pop .hint { font-size: var(--text-xs); color: var(--color-primary-text-soft); }
 .pop .group { display: flex; flex-direction: column; gap: var(--spacing-2); }
 
+/* record cards inside a reply: live rows from the panel, same look as dashboard rows */
+.rc { display: flex; flex-direction: column; gap: var(--spacing-3); }
+.rc-group { display: flex; flex-direction: column; border: var(--bw-default) solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface-inset); overflow: hidden; }
+.rc-label { padding: var(--spacing-3) var(--spacing-5) var(--spacing-1); font-size: var(--text-2xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+.rc-row { display: flex; align-items: center; gap: var(--spacing-4); padding: var(--spacing-4) var(--spacing-5); border-top: var(--bw-default) solid var(--color-border-subtle); font-size: var(--text-base-sm); transition: background var(--dur-hover); }
+.rc-label + .rc-row { border-top: 0; }
+.rc-row:hover { background: var(--color-surface-hover); }
+.rc-dot { width: var(--spacing-dot); height: var(--spacing-dot); border-radius: var(--radius-pill); flex: none; }
+.rc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; border: 0; padding: 0; background: transparent; text-align: left; color: var(--color-text-primary); }
+.rc-main b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-main span { color: var(--color-text-muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-main:hover b { color: var(--color-primary-text-soft); }
+.rc-row[data-done] .rc-main b { color: var(--color-text-muted); text-decoration: line-through; }
+.rc-chk { width: 18px; height: 18px; flex: none; display: grid; place-items: center; padding: 0; border-radius: var(--radius-sm); border: 1.5px solid var(--color-accent-neutral); background: transparent; color: var(--color-primary-on); transition: background var(--dur-fade), border-color var(--dur-fade); }
+.rc-chk svg.i { width: 12px; height: 12px; stroke-width: 2.6; opacity: 0; transition: opacity var(--dur-fade); }
+.rc-chk[aria-checked="true"] { background: var(--color-primary); border-color: var(--color-primary); }
+.rc-chk[aria-checked="true"] svg.i { opacity: 1; }
+.rc-act { height: 26px; flex: none; padding: 0 var(--spacing-4); border-radius: var(--radius-md); border: var(--bw-default) solid var(--color-border-strong); background: transparent; color: var(--color-text-primary); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
+.rc-act:hover { background: var(--color-surface-2); }
+.rc-goal { width: 72px; flex: none; }
+.rc-miss { padding: var(--spacing-4) var(--spacing-5); font-size: var(--text-xs); color: var(--color-text-disabled); border-top: var(--bw-default) solid var(--color-border-subtle); }
+.toast { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); z-index: 4; padding: var(--spacing-3) var(--spacing-6); border-radius: var(--radius-pill); background: var(--color-surface-menu-hover); border: var(--bw-default) solid var(--color-border-menu); box-shadow: var(--shadow-menu); font-size: var(--text-sm); color: var(--color-text-body); white-space: nowrap; max-width: calc(100% - var(--spacing-10)); overflow: hidden; text-overflow: ellipsis; }
+
+/* template card: the stored text, filled for the person, ready to copy */
+.rc-tpl { display: flex; flex-direction: column; gap: var(--spacing-4); padding: var(--spacing-5); border-top: var(--bw-default) solid var(--color-border-subtle); }
+.rc-label + .rc-tpl { border-top: 0; }
+.rc-tpl-head { display: flex; align-items: center; gap: var(--spacing-4); }
+.rc-tpl-body { margin: 0; padding: var(--spacing-5) var(--spacing-6); border-radius: var(--radius-lg); background: var(--color-surface-1); border: var(--bw-default) solid var(--color-border-subtle); font-family: var(--font-sans); font-size: var(--text-base-sm); line-height: var(--leading-relaxed); color: var(--color-text-body); white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.rc-tpl-body mark { background: var(--color-primary-soft-bg); color: var(--color-primary-text-soft); border-radius: var(--radius-sm); padding: 0 var(--spacing-0_5); }
+.rc-tpl-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-3); }
+.rc-tpl-foot .seg { padding: 2px; }
+.rc-tpl-foot .seg button { height: 24px; padding: 0 var(--spacing-4); font-size: var(--text-xs); }
+.rc-tpl-foot .sp { flex: 1; }
+.rc-act.pri { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-on); }
+.rc-act.pri:hover { filter: brightness(1.08); background: var(--color-primary); }
+
+/* thumbs up on the user's own message: an acknowledgement instead of a reply */
+.bubble-wrap { position: relative; max-width: 85%; display: flex; flex-direction: column; align-items: flex-end; }
+.bubble-wrap .bubble { max-width: 100%; }
+.react { position: absolute; left: calc(var(--spacing-3) * -1); bottom: calc(var(--spacing-3) * -1); height: 24px; min-width: 30px; padding: 0 var(--spacing-2); display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-surface-menu-hover); border: var(--bw-default) solid var(--color-border-menu); font-size: var(--text-base-sm); line-height: 1; animation: react-pop 420ms var(--ease-pop) both; }
+@keyframes react-pop { from { transform: scale(.3); opacity: 0; } }
+.sugrow { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--spacing-2); }
+.sugrow button { height: 28px; padding: 0 var(--spacing-5); border-radius: var(--radius-pill); border: var(--bw-default) solid var(--color-border); background: transparent; color: var(--color-text-secondary); font-size: var(--text-sm); }
+.sugrow button:first-child { border-color: var(--color-primary-soft-border); color: var(--color-primary-text-soft); }
+.sugrow button:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
+.sugdone { font-size: var(--text-xs); color: var(--color-status-text-success); }
+.ai.short .md { color: var(--color-text-secondary); font-size: var(--text-base-sm); }
+
 /* notes drawer */
 .notes { position: fixed; z-index: calc(var(--z-sheet) + 1); top: var(--spacing-10); left: calc(var(--spacing-sidebar-width) + var(--spacing-page-padding-x)); width: min(460px, calc(100vw - var(--spacing-sidebar-width) - var(--spacing-page-padding-x) * 2)); max-height: calc(100dvh - var(--spacing-10) * 2); overflow-y: auto; padding: var(--spacing-9) var(--spacing-10); background: var(--color-surface-menu); border: var(--bw-default) solid var(--color-border-menu); border-radius: var(--radius-card); box-shadow: var(--shadow-menu); font-size: var(--text-base-sm); color: var(--color-text-body); }
 .notes h3 { margin: 0 0 var(--spacing-3); font-size: var(--text-md); font-weight: 600; display: flex; align-items: center; }
@@ -451,6 +499,7 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
     <symbol id="i-funnel" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
     <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M11 20V5M17 20v-6M3 20h18"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   </defs>
 </svg>
@@ -476,6 +525,11 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
     <div class="proto" role="group" aria-label="Prototip kontrolleri">
       <strong>Prototip</strong>
       <button class="pbtn" type="button" data-act="stream">Cevabı akıt</button>
+      <button class="pbtn" type="button" data-act="plan">Haftalık plan (kartlar)</button>
+      <button class="pbtn" type="button" data-act="tpl">Şablon iste</button>
+      <button class="pbtn" type="button" data-act="ackOnly">"Tamamdır anladım"</button>
+      <button class="pbtn" type="button" data-act="ackWork">"Onaylıyorum"</button>
+      <button class="pbtn" type="button" data-act="ackDone">"Hallettim"</button>
       <button class="pbtn" type="button" data-act="drop">Bağlantıyı kopar</button>
       <button class="pbtn" type="button" data-act="error">Hata</button>
       <button class="pbtn" type="button" data-act="ctx">Bağlam 100 bin üstü</button>
@@ -616,6 +670,21 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
     <li>Bağlam çubuğu nötr renkte; Haiku'da 100 bin üstü sarıya döner ve altında uyarı şeridi çıkar.</li>
     <li>5 saat ve haftalık halka; %75 üstü sarı, %95 üstü kırmızı ve yazma alanının altında uyarı. Üzerine gelince yenilenme saati, bağlamda API karşılığı.</li>
   </ul>
+  <h4>Kayıt kartları</h4>
+  <ul>
+    <li>Panelde karşılığı olan kayıtlar (görev, takip, taslak, kişi, firma, fırsat, fikir, hedef, ödeme) metin olarak sayılmaz. Claude kısa bir cümle yazar, cevabın sonuna hangi kayıtları gösterdiğini bırakır; panel onları o anki haliyle çeker.</li>
+    <li>Kart panelin kendi satırı gibi: görevde işaret kutusu, takipte taslak düğmesi, taslakta Onayla, hedefte ilerleme. Başlığa tıklamak kaydı panelde açar (9. paket).</li>
+    <li>Bulunamayan kayıt cevabı bozmaz, soluk bir "bulunamadı" satırı olur. Örnek: ilk cevaptaki taslak #22.</li>
+    <li>Şablon istenince Full Follow'daki kayıtlı şablon kart olarak gelir: metin, dönüş oranı, kişiye göre doldurulmuş hali. Dolu ve ham arasında geçiş, boş kalan yer tutucu vurgulu, Kopyala ve Taslak olarak kaydet. Claude yeni şablon uydurmaz; istenirse taslak önerir, kaydetmek Özgür'ün onayıyla.</li>
+    <li>"Haftalık planım ne" takvime bakar (plan aracı), dosya aramaz; kartlar güne göre gruplanır.</li>
+  </ul>
+  <h4>👍 ile onay</h4>
+  <ul>
+    <li>Mesajın tamamı kapanış ya da onaysa ("tamamdır anladım", "süpersin") Claude yazmaz, mesajına 👍 koyar. Pencere küçükse "Cevap hazır" da demez.</li>
+    <li>"Onaylıyorum" gibi bir öneriye onaysa 👍 hemen düşer, iş yapılır, sonuç tek soluk satırla gelir.</li>
+    <li>"Hallettim" denince 👍 ve altında "Görev #7'yi kapat" önerisi; Claude sormadan görev kapatmaz.</li>
+    <li>Mesajda yeni bir fikir ya da soru varsa ("tamamdır anladım, peki şöyle yapsak") 👍 yok, normal cevap. Kararı Claude verir; prototipteki kelime listesi sadece gösterim için.</li>
+  </ul>
   <h4>Dosya ve resim</h4>
   <ul>
     <li>Ataş düğmesi, sürükle bırak ya da yapıştır (Ctrl+V). En fazla 5 dosya; resim 5 MB, diğerleri 10 MB. Türler: resim, PDF, txt, md, csv.</li>
@@ -666,7 +735,8 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
   let msgs = [
     { role: "me", text: "Bugün kime yazmalıyım", time: "09:12" },
     { role: "ai", time: "09:12", tools: [["today", "bugünün listesi"], ["find", "takip zamanı gelenler"]],
-      text: "Bugün **3 takip** zamanı gelmiş ve **2 taslak** onay bekliyor:\n- **Kuzey Mimarlık**: 3. gün takibi. İlk mesaja cevap yok, takip yeni bir soru taşımalı.\n- **Ada Diş Kliniği**: randevu hatırlatma derdini yazmıştı, görüşme sorusu sorulabilir.\n- **Mavi Ajans**: 7. gün, son takip. Cevap gelmezse bırak.\nTaslaklar ekranında ikisi hazır." },
+      text: "Bugün 3 takip ve 1 taslak var. Kuzey Mimarlık'a yeni bir soruyla dön, Mavi Ajans son takip.",
+      cards: [{ label: "Takip zamanı", items: ["follow:12", "follow:13", "follow:14"] }, { label: "Onay bekleyen", items: ["draft:21", "draft:22"] }] },
     { role: "me", text: "Mavi Ajans'ın son temasını göster", time: "09:14" },
     { role: "ai", time: "09:14", tools: [["timeline", "Mavi Ajans"]],
       text: "Son temas **4 Ekim**, e-posta, şablon `Ajans ilk`. Cevap yok. Bu firmaya ilk ve tek temas." },
@@ -695,12 +765,111 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
     const more = document.createElement("div"); more.className = "sess-more"; more.textContent = "Daha eski sohbetler kaydırınca yüklenir"; el.append(more);
   }
 
+  // Live records the cards read; in the app these come from the panel API by type and id
+  const TASKS = new Map([
+    [7, { type: "task", id: 7, title: "Muhasebeci ile görüşme", meta: "Pzt 10:00, şirket kuruluşu", done: false }],
+    [9, { type: "task", id: 9, title: "Liste yenileme: 50 yeni ajans", meta: "Perşembe rutini", done: false }],
+    [11, { type: "task", id: 11, title: "Haftalık değerlendirme", meta: "Cuma, Full Follow raporuyla", done: false }],
+  ]);
+  const RECORDS = {
+    "task:7": TASKS.get(7), "task:9": TASKS.get(9), "task:11": TASKS.get(11),
+    "follow:12": { type: "follow", title: "Kuzey Mimarlık", meta: "3. gün takibi, e-posta", act: "Taslağı aç" },
+    "follow:13": { type: "follow", title: "Ada Diş Kliniği", meta: "3. gün takibi, Instagram", act: "Taslağı aç" },
+    "follow:14": { type: "follow", title: "Mavi Ajans", meta: "7. gün, son takip", act: "Taslağı aç" },
+    "draft:21": { type: "draft", title: "Ada Diş Kliniği", meta: "Restoran ilk A, e-posta", act: "Onayla" },
+    "goal:3": { type: "goal", title: "Haftalık mesaj", meta: "0 / 150 gönderim", progress: 0 },
+    "template:5": { type: "template", title: "Ajans takip: mobil talep sorusu", meta: "Takip · e-posta · 12 gönderim, 2 cevap (%17)", for: "Selin, Mavi Ajans",
+      body: "Merhaba {ad}, geçen hafta yazmıştım. Son aylarda {firma} müşterilerinden mobil uygulama talebi geliyor mu, gelirse şu an nasıl karşılıyorsunuz?",
+      vars: { ad: "Selin", firma: "Mavi Ajans" }, filled: true },
+  };
+  const DOT = { template: "var(--color-accent-source)", task: "var(--color-accent-task)", follow: "var(--color-accent-person)", draft: "var(--color-primary)", goal: "var(--color-accent-payment)" };
+  const PAGE = { template: "Şablonlar", task: "Dashboard", follow: "Kişiler", draft: "Taslaklar", goal: "Dashboard" };
+  let toastTimer;
+  function toast(text) {
+    let t = document.querySelector(".toast");
+    if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.querySelector(".cm").append(t); }
+    t.textContent = text; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2200);
+  }
+  const fillTpl = (r) => r.body.replace(/\{(\w+)\}/g, (m, k) => (r.filled && r.vars[k]) || m);
+  function templateEl(r) {
+    const box = document.createElement("div"); box.className = "rc-tpl";
+    box.innerHTML = '<div class="rc-tpl-head"><span class="rc-dot"></span><button type="button" class="rc-main"><b></b><span></span></button></div><pre class="rc-tpl-body"></pre>'
+      + '<div class="rc-tpl-foot"><div class="seg" role="radiogroup" aria-label="Şablon görünümü"><button type="button" role="radio">Dolu</button><button type="button" role="radio">Ham</button></div><span class="sp"></span>'
+      + '<button type="button" class="rc-act">Taslak olarak kaydet</button><button type="button" class="rc-act pri">Kopyala</button></div>';
+    box.querySelector(".rc-dot").style.background = DOT.template;
+    const main = box.querySelector(".rc-main");
+    main.firstChild.textContent = r.title; main.lastChild.textContent = r.meta;
+    main.addEventListener("click", () => toast("Panelde açılır: Şablonlar › " + r.title));
+    const body = box.querySelector(".rc-tpl-body");
+    // placeholders that are still empty stay highlighted so they are not sent by mistake
+    body.innerHTML = esc(fillTpl(r)).replace(/\{(\w+)\}/g, "<mark>{$1}</mark>");
+    const [full, raw] = box.querySelectorAll(".seg button");
+    full.setAttribute("aria-checked", String(r.filled)); raw.setAttribute("aria-checked", String(!r.filled));
+    full.addEventListener("click", () => { r.filled = true; renderThread(); });
+    raw.addEventListener("click", () => { r.filled = false; renderThread(); });
+    const [save, copy] = box.querySelectorAll(".rc-tpl-foot .rc-act");
+    save.addEventListener("click", () => { save.textContent = "Taslaklara kaydedildi"; save.disabled = true; });
+    copy.addEventListener("click", () => {
+      const text = fillTpl(r);
+      const done = () => { copy.textContent = "Kopyalandı"; setTimeout(() => (copy.textContent = "Kopyala"), 1600); };
+      const fallback = () => { const sel = getSelection(); const rg = document.createRange(); rg.selectNodeContents(body); sel.removeAllRanges(); sel.addRange(rg); toast("Metin seçildi, Ctrl+C ile kopyala"); };
+      try { navigator.clipboard.writeText(text).then(done, fallback); } catch { fallback(); }
+    });
+    return box;
+  }
+
+  function cardsEl(groups) {
+    const box = document.createElement("div"); box.className = "rc";
+    for (const g of groups) {
+      const grp = document.createElement("div"); grp.className = "rc-group";
+      if (g.label) { const l = document.createElement("div"); l.className = "rc-label"; l.textContent = g.label; grp.append(l); }
+      for (const key of g.items) {
+        const r = RECORDS[key];
+        if (!r) { const miss = document.createElement("div"); miss.className = "rc-miss"; miss.textContent = key.replace(":", " #") + " bulunamadı (silinmiş olabilir)"; grp.append(miss); continue; }
+        if (r.type === "template") { grp.append(templateEl(r)); continue; }
+        const row = document.createElement("div"); row.className = "rc-row"; if (r.done) row.dataset.done = "";
+        if (r.type === "task") {
+          const c = document.createElement("button"); c.type = "button"; c.className = "rc-chk"; c.setAttribute("role", "checkbox");
+          c.innerHTML = '<svg class="i"><use href="#i-check"/></svg>';
+          c.setAttribute("aria-checked", String(!!r.done)); c.setAttribute("aria-label", r.title + " tamamlandı");
+          c.addEventListener("click", () => { r.done = !r.done; renderThread(); });
+          row.append(c);
+        } else { const d = document.createElement("span"); d.className = "rc-dot"; d.style.background = DOT[r.type]; row.append(d); }
+        const main = document.createElement("button"); main.type = "button"; main.className = "rc-main";
+        main.innerHTML = "<b></b><span></span>"; main.firstChild.textContent = r.title; main.lastChild.textContent = r.meta;
+        main.addEventListener("click", () => toast("Panelde açılır: " + PAGE[r.type] + " › " + r.title));
+        row.append(main);
+        if (r.type === "goal") { const t = document.createElement("div"); t.className = "track rc-goal"; t.innerHTML = '<i style="width:' + Math.max(2, r.progress) + '%"></i>'; row.append(t); }
+        if (r.act) {
+          const b = document.createElement("button"); b.type = "button"; b.className = "rc-act"; b.textContent = r.act;
+          b.addEventListener("click", () => { if (r.act === "Onayla") { r.act = null; r.meta = "Onaylandı, gönderilmeyi bekliyor"; renderThread(); } else toast("Panelde açılır: Taslaklar › " + r.title); });
+          row.append(b);
+        }
+        grp.append(row);
+      }
+      box.append(grp);
+    }
+    return box;
+  }
+
   function msgEl(m) {
     const a = document.createElement("article");
     if (m.role === "me") {
       a.className = "msg me"; if (m.pending) a.dataset.pending = "";
-      a.innerHTML = (m.atts && m.atts.length ? '<div class="matts"></div>' : "") + (m.text ? '<div class="bubble"></div>' : "") + "<time></time>";
+      a.innerHTML = (m.atts && m.atts.length ? '<div class="matts"></div>' : "") + (m.text ? '<div class="bubble-wrap"><div class="bubble"></div></div>' : "") + "<time></time>";
       if (m.text) a.querySelector(".bubble").textContent = m.text;
+      if (m.ack && m.text) a.querySelector(".bubble-wrap").insertAdjacentHTML("beforeend", '<span class="react" role="img" aria-label="Claude onayladı">👍</span>');
+      if (m.suggest) {
+        const row = document.createElement("div"); row.className = "sugrow";
+        if (m.suggest === "done") row.innerHTML = '<span class="sugdone">Görev #7 tamamlandı olarak işaretlendi</span>';
+        else {
+          row.innerHTML = '<button type="button">Görev #7\'yi kapat: Muhasebeci ile görüşme</button><button type="button">Gerek yok</button>';
+          const [yes, no] = row.querySelectorAll("button");
+          yes.addEventListener("click", () => { m.suggest = "done"; const t = TASKS.get(7); if (t) t.done = true; renderThread(); });
+          no.addEventListener("click", () => { m.suggest = null; renderThread(); });
+        }
+        a.append(row);
+      }
       if (m.atts) for (const f of m.atts) a.querySelector(".matts").append(attEl(f, false)); a.querySelector("time").textContent = m.pending ? "Gönderiliyor" : m.time;
       return a;
     }
@@ -725,6 +894,8 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
       t.addEventListener("click", () => { ul.hidden = !ul.hidden; t.setAttribute("aria-expanded", String(!ul.hidden)); });
       a.append(t, ul);
     }
+    if (m.short) a.classList.add("short");
+    if (m.cards && !m.streaming) a.insertBefore(cardsEl(m.cards), a.querySelector(".tools"));
     if (m.stopped) a.insertAdjacentHTML("beforeend", '<div class="endnote"><span class="chip c-neutral">Durduruldu</span></div>');
     return a;
   }
@@ -859,29 +1030,49 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
   const CANCEL = {};
   async function wait(ms) { let t = 0; while (t < ms) { await sleep(40); if (run.cancel) throw CANCEL; if (!S.paused) t += 40; } }
 
-  async function startRun(text, retry, voice) {
+  // Mockup only: the real app lets Claude decide; this word list just picks a demo scenario
+  const norm = (t) => t.toLocaleLowerCase("tr-TR").replace(/[.,!:;)(]/g, " ").replace(/\s+/g, " ").trim();
+  const ACK_ONLY = ["tamam", "tamamdır", "tamamdır anladım", "anladım", "süpersin", "süper", "eyvallah", "teşekkürler", "sağ ol", "okey"];
+  const APPROVE = ["onaylıyorum", "tamam yap", "onay", "yap", "tamam onaylıyorum"];
+  const DONE_WORDS = ["hallettim", "tamam hallettim", "yaptım", "bitti"];
+  const PLAN_CARDS = [
+    { label: "Pzt 12 Ekim", items: ["task:7", "follow:12"] },
+    { label: "Sal 13 Ekim", items: ["follow:13", "follow:14", "draft:21"] },
+    { label: "Per 15 Ekim", items: ["task:9"] },
+    { label: "Cum 16 Ekim", items: ["task:11"] },
+    { label: "Hafta boyu", items: ["goal:3"] },
+  ];
+  function pickScenario(text, voice) {
+    const t = norm(text);
+    if (voice) return { tools: [["find", "Ada Diş Kliniği", 1100], ["draft", "takip taslağı kaydedildi", 1000]], answer: VOICE_ANSWER };
+    if (ACK_ONLY.includes(t)) return { ack: "only" };
+    if (DONE_WORDS.includes(t)) return { ack: "only", suggest: true };
+    if (APPROVE.includes(t)) return { ack: "work", short: true, tools: [["draft", "Ada Diş taslağı onaylandı", 1400]], answer: "Ada Diş Kliniği taslağı onaylandı, Taslaklar'da gönderilmeyi bekliyor." };
+    if (/şablon/.test(t)) return { tools: [["find", "ajans takip şablonları", 900], ["get", "Mavi Ajans, Selin", 800]], answer: "En çok dönen takip şablonu bu, Selin ve Mavi Ajans ile dolduruldu.", cards: [{ items: ["template:5"] }] };
+    if (/haftal[ıi]k plan|bu hafta ne/.test(t)) return { tools: [["plan", "12 ile 18 Ekim", 1300]], answer: "Bu hafta 8 iş var. En önemlisi pazartesi muhasebeci görüşmesi; salı üç takip ve bir taslak onayı seni bekliyor.", cards: PLAN_CARDS };
+    return { tools: [["report", "41. hafta özeti", 1300], ["find", "şablon dönüş oranları", 1000]], answer: ANSWER };
+  }
+
+  async function startRun(text, retry, voice, sc) {
     if (S.running) return;
+    sc = sc || pickScenario(text, voice);
     // voice: the server appends a hidden note to the CLI turn; it is never stored in the message body or shown
     const me = { role: "me", text, time: now(), pending: true, atts: retry ? [] : atts, voice: !!voice };
     if (!retry) { atts = []; attWarn = ""; renderAtts(); }
     if (!retry) msgs.push(me);
-    const ai = { role: "ai", text: "", time: now(), streaming: true, tools: [] };
-    run = { t0: Date.now(), cancel: false, ai };
+    const ai = { role: "ai", text: "", time: now(), streaming: true, tools: [], short: !!sc.short, cards: sc.cards };
+    run = { t0: Date.now(), cancel: false, ai, quiet: sc.ack === "only" };
     S.running = true; S.ready = false; renderSessions();
     inp.value = ""; autosize(); renderThread(); toBottom(); setPhase("queued");
     try {
       await wait(500); me.pending = false; renderThread(); toBottom();
-      setPhase("thinking"); await wait(1600);
-      if (voice) {
-        setPhase("tool", "find"); ai.tools.push(["find", "Ada Diş Kliniği"]); await wait(1100);
-        setPhase("tool", "draft"); ai.tools.push(["draft", "takip taslağı kaydedildi"]); await wait(1000);
-      } else {
-        setPhase("tool", "report"); ai.tools.push(["report", "41. hafta özeti"]); await wait(1300);
-        setPhase("tool", "find"); ai.tools.push(["find", "şablon dönüş oranları"]); await wait(1000);
-      }
+      setPhase("thinking"); await wait(sc.ack ? 700 : 1600);
+      if (sc.ack) { me.ack = true; if (sc.suggest) me.suggest = true; renderThread(); toBottom(); }
+      if (sc.ack === "only") { finish(); return; }
+      for (const [name, summary, ms] of sc.tools) { setPhase("tool", name); ai.tools.push([name, summary]); await wait(ms); }
       setPhase("writing");
       msgs.push(ai); renderThread(); toBottom();
-      const parts = (voice ? VOICE_ANSWER : ANSWER).split(/(\s+)/); let i = 0, pending = false;
+      const parts = sc.answer.split(/(\s+)/); let i = 0, pending = false;
       while (i < parts.length) {
         const n = 2 + Math.floor(Math.random() * 4);
         ai.text += parts.slice(i, i + n).join(""); i += n;
@@ -898,7 +1089,7 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
     }
   }
   function finish(phase) {
-    S.running = false; if (!S.open) S.ready = true;
+    S.running = false; if (!S.open && !(run && run.quiet)) S.ready = true;
     const stick = nearBottom(); renderThread(); if (stick) toBottom();
     renderMeters(); renderSessions();
     if (phase) { setPhase(phase); setTimeout(() => { if (!S.running) { run = null; setPhase(null); } }, 2500); }
@@ -976,6 +1167,11 @@ svg.i { width: var(--spacing-icon-md); height: var(--spacing-icon-md); fill: non
     sessions: () => chat.toggleAttribute("data-sessions"),
     new: () => { if (S.running) return; msgs = []; S.olderLoaded = true; $("ttl").value = "Yeni sohbet"; S.ctx = 0; chat.removeAttribute("data-sessions"); renderThread(); renderMeters(); inp.focus(); },
     stream: () => { if (!S.open) setOpen(true); startRun("Bu haftanın raporunu çıkar"); },
+    plan: () => { if (!S.open) setOpen(true); startRun("Haftalık planım ne"); },
+    tpl: () => { if (!S.open) setOpen(true); startRun("Mavi Ajans için takip şablonunu ver"); },
+    ackOnly: () => { if (!S.open) setOpen(true); startRun("Tamamdır anladım"); },
+    ackWork: () => { if (!S.open) setOpen(true); startRun("Onaylıyorum"); },
+    ackDone: () => { if (!S.open) setOpen(true); startRun("Hallettim"); },
     drop: async () => {
       const b = $("banner"); S.paused = true;
       b.dataset.kind = "lost"; b.innerHTML = '<span class="spin"></span>Bağlantı koptu, yeniden bağlanıyor…'; b.hidden = false;
