@@ -1,14 +1,61 @@
 # Full Follow
 
-Küçük işletmeler ve şahıs şirketleri için CRM: müşteri ve firma kartları, sürükle bırak satış hunisi, proje ve ödeme takibi, her işlemin kim tarafından yapıldığını tutan işlem geçmişi. Web arayüzü ve yapay zeka asistanı (MCP) aynı iş kurallarından geçerek aynı veriye yazar. Plan: [docs/MIMARI.md](docs/MIMARI.md).
+Küçük işletmeler ve şahıs şirketleri için yapay zeka destekli CRM. Müşteri ve firma kartları, sürükle bırak satış hunisi, proje ve ödeme takibi tek yerde durur. Yapay zeka asistanı aynı veriyi okur, takip edilmesi gerekenleri bulur, mesaj taslağı hazırlar; hiçbir mesaj onay verilmeden gönderilmez.
 
-Durum: arka uç (core + testler, NestJS API, MCP), web arayüzü (`packages/web`) ve panel sohbeti hazır.
+![Dashboard](docs/screenshots/dashboard.png)
+
+## Özellikler
+
+- **Kişi ve firma kartları:** Bir kişiyle hangi kanaldan ne konuşulduğu, kimin tanıştırdığı, cevap bekleyip beklemediği tek ekranda.
+- **Satış hunisi:** Fırsatlar aşama aşama ilerler (temas, cevap, görüşme, teklif); kartlar sürükle bırak taşınır, kazanılan fırsat kendiliğinden projeye dönüşür.
+- **Proje ve ödeme takibi:** Her proje peşinat, tasarım onayı, test sürümü, yayın ve teslim adımlarından geçer; ödemesi gelmeyen adıma geçilmez, geciken ödeme Dashboard'da görünür.
+- **Dashboard:** Günlük hedefler, cevap bekleyenler, soğuyan bağlantılar ve temas grafiği.
+- **İşlem geçmişi:** Her değişiklik, kimin yaptığıyla (kullanıcı ya da asistan) birlikte zaman çizelgesine yazılır.
+
+### Yapay zeka asistanı
+
+- **Panel sohbeti:** Her sayfada açılan pencereden Claude ile CRM verisi üzerinde konuşulur: "bu hafta kime dönmem gerekiyor", "şu firmanın durumu ne". Asistan cevap verirken hangi araçları kullandığını gösterir.
+- **Onaylı taslaklar:** Asistan takip mesajlarını taslak olarak hazırlar; kullanıcı düzenler, onaylar ya da reddeder.
+- **Kayıt yorumları:** Asistan kayıtlara not bırakır, kullanıcı aynı yerden cevap verir.
+- **Aynı kurallar:** Web arayüzü de asistan da veriye yalnızca core katmanındaki iş kurallarından geçerek yazar (MCP sunucusu üzerinden). Asistanın yaptığı her işlem ayrıca etiketlenir.
+
+| Satış hunisi | Kişi kartı |
+|---|---|
+| ![Satış hunisi](docs/screenshots/huni.png) | ![Kişi kartı](docs/screenshots/kisi.png) |
+| **Asistan sohbeti** | **Onay bekleyen taslak** |
+| ![Asistan sohbeti](docs/screenshots/asistan.png) | ![Taslaklar](docs/screenshots/taslaklar.png) |
+| **Proje panosu** | |
+| ![Proje panosu](docs/screenshots/projeler.png) | |
+
+Ekran görüntülerindeki kişi, firma ve tutarların hepsi uydurmadır (`npm run demo:seed`).
+
+## Teknoloji
+
+| Katman | Seçim |
+|---|---|
+| Dil | TypeScript (her pakette strict) |
+| Arka uç | NestJS, Zod ile doğrulama |
+| Veritabanı | SQLite (better-sqlite3, WAL), Drizzle ORM ve migration |
+| Ön yüz | React 19, Vite, Tailwind 4, Motion, dnd-kit |
+| Yapay zeka | Claude, MCP sunucusu (`@modelcontextprotocol/sdk`) |
+| Test | Vitest, bellek içi SQLite |
+
+Mimari ve veri modeli: [docs/MIMARI.md](docs/MIMARI.md).
+
+## Demo verisiyle denemek
+
+```powershell
+npm install
+npm run build
+npm run demo:seed                  # data/demo.db: uydurma kişiler, fırsatlar, projeler ve bir asistan sohbeti
+$env:FF_DB="data/demo.db"; npm run serve
+```
 
 ## Çalıştırma (Windows, Node 22+)
 
 ```powershell
 npm install                        # bağımlılıklar
-npm test                           # 9 çekirdek test (bellek içi SQLite)
+npm test                           # çekirdek testleri (bellek içi SQLite)
 copy .env.example .env             # sonra .env içinde FF_PASSWORD yaz
 npm start                          # tek komut: kontrol eder, derler, sunucuyu açar, tarayıcıda http://localhost:3000 açılır
 ```
@@ -131,5 +178,6 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 | `npm start` | kontrol + derleme + sunucu + tarayıcı (tek komut) |
 | `npm run serve` | derlemeden sunucuyu açar |
 | `npm run backup` | veritabanını `data/backups` içine yedekler |
+| `npm run demo:seed` | uydurma verilerle `data/demo.db` kurar (açmak için `FF_DB=data/demo.db`) |
 | `npm run mcp` | MCP sunucusunu elle başlatır (stdio) |
 | `npm run db:generate` | şema (`packages/core/src/db/schema.ts`) değişince yeni migration üretir |
