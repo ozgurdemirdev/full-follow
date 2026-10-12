@@ -38,8 +38,9 @@ const FAB_MENU_SELECTOR = '[role="menu"][aria-label="Hızlı ekle"]:not([aria-hi
  */
 function perchSpot(r: DOMRect, e: Env, at: Vec2): Vec2 {
   const half = e.size.w * BODY_HALF_W + OBSTACLE_MARGIN + PERCH_GAP, y = r.top + r.height * PERCH_HEIGHT;
-  const left = r.left - half * 2 >= e.left ? { x: r.left - half, y } : null;
-  const right = r.right + half * 2 <= e.viewport.w ? { x: r.right + half, y } : null;
+  const reach = half + e.size.w * BODY_HALF_W;
+  const left = r.left - reach >= e.left ? { x: r.left - half, y } : null;
+  const right = r.right + reach <= e.viewport.w ? { x: r.right + half, y } : null;
   // the right side whenever it has room (a fixed rule never flips while it waits), else the left
   const spot = right ?? left ?? { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
   const across = r.top - e.size.h;
@@ -123,7 +124,7 @@ function MascotBody({ onActivate }: Props) {
     size.current = { w, h: w * SIZE.aspect };
     el.style.setProperty("--mascot-w", `${Math.round(w)}px`);
     el.style.setProperty("--mascot-h", `${Math.round(w * SIZE.aspect)}px`);
-    const vw = innerWidth, vh = innerHeight;
+    const { clientWidth: vw, clientHeight: vh } = document.documentElement;
     const r = pr.getBoundingClientRect();
     const sb = desk ? document.querySelector("nav.sb")?.getBoundingClientRect() : null;
     const b = bounds(size.current, vw, vh, sb ? sb.right : 0);
@@ -256,9 +257,13 @@ function MascotBody({ onActivate }: Props) {
     const vis = () => scene.current?.loop(document.hidden ? null : tick);
     document.addEventListener("visibilitychange", vis);
     addEventListener("resize", measure);
+    // a page scrollbar appearing or leaving changes the width without a window resize
+    const widthWatch = new ResizeObserver(measure);
+    widthWatch.observe(document.documentElement);
     return () => {
       document.removeEventListener("visibilitychange", vis);
       removeEventListener("resize", measure);
+      widthWatch.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
