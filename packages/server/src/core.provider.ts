@@ -27,8 +27,8 @@ function init() {
       try {
         const r = auto.run();
         if (r.created.length) console.log(`  Takip taslağı hazırlandı: ${r.effects.join(", ")}`);
-      } catch (e: any) {
-        console.warn("  Takip taslakları hazırlanamadı:", e?.message ?? e);
+      } catch (e) {
+        console.warn("  Takip taslakları hazırlanamadı:", e instanceof Error ? e.message : e);
       }
     };
     setTimeout(tick, 3000).unref();

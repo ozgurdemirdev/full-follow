@@ -43,11 +43,11 @@ export function draftsService(ctx: Ctx) {
     return { row: requireRow(ctx, "drafts", id), effects: [] as string[] };
   }
 
-  function setStatus(id: number, from: string[], to: string, type: string, summary: string, extra: Record<string, unknown> = {}) {
+  function setStatus(id: number, from: string[], to: (typeof drafts.$inferSelect)["status"], type: string, summary: string, extra: Record<string, unknown> = {}) {
     return ctx.db.transaction((tx) => {
       const cur = requireRow(ctx, "drafts", id);
       if (!from.includes(cur.status)) throw new FFError("rule", `Taslak "${cur.status}" durumunda; bu işlem yapılamaz`);
-      tx.update(drafts).set({ status: to as any, updated_at: ctx.clock.now(), ...extra }).where(eq(drafts.id, id)).run();
+      tx.update(drafts).set({ status: to, updated_at: ctx.clock.now(), ...extra }).where(eq(drafts.id, id)).run();
       emit(tx, ctx, { type, ...link(ctx, cur), summary, data: { draft_id: id } });
       return cur;
     });

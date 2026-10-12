@@ -90,10 +90,10 @@ export function companyKeys(c: { name?: string | null; website?: string | null; 
  */
 export function backfillKeys(sqlite: Database.Database): void {
   const people = sqlite.prepare(`SELECT id, email, instagram, linkedin FROM people WHERE
-    (email IS NOT NULL AND email_key IS NULL) OR (instagram IS NOT NULL AND instagram_key IS NULL) OR (linkedin IS NOT NULL AND linkedin_key IS NULL)`).all() as any[];
+    (email IS NOT NULL AND email_key IS NULL) OR (instagram IS NOT NULL AND instagram_key IS NULL) OR (linkedin IS NOT NULL AND linkedin_key IS NULL)`).all() as ({ id: number } & Parameters<typeof personKeys>[0])[];
   const companies = sqlite.prepare(`SELECT id, name, website, email, instagram, linkedin FROM companies WHERE name_key IS NULL
     OR (website IS NOT NULL AND domain_key IS NULL) OR (email IS NOT NULL AND email_key IS NULL)
-    OR (instagram IS NOT NULL AND instagram_key IS NULL) OR (linkedin IS NOT NULL AND linkedin_key IS NULL)`).all() as any[];
+    OR (instagram IS NOT NULL AND instagram_key IS NULL) OR (linkedin IS NOT NULL AND linkedin_key IS NULL)`).all() as ({ id: number } & Parameters<typeof companyKeys>[0])[];
   if (!people.length && !companies.length) return;
   const up = sqlite.prepare("UPDATE people SET email_key = @email_key, instagram_key = @instagram_key, linkedin_key = @linkedin_key WHERE id = @id");
   const uc = sqlite.prepare(`UPDATE companies SET name_key = @name_key, domain_key = @domain_key, email_key = @email_key,

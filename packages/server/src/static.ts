@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { NextFunction, Request, Response } from "express";
 
 const TYPES: Record<string, string> = {
   ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".html": "text/html; charset=utf-8",
@@ -18,7 +19,7 @@ export function precompressed(root: string) {
     if (v === undefined) exists.set(p, (v = fs.existsSync(p)));
     return v;
   };
-  return (req: any, res: any, next: any) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== "GET" && req.method !== "HEAD") return next();
     const rel = decodeURIComponent(req.path);
     if (rel.startsWith("/api") || rel.includes("..")) return next();

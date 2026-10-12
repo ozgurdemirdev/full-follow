@@ -1,6 +1,7 @@
 import { Body, BadRequestException, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import fs from "node:fs";
+import type { Request, Response } from "express";
 import { CORE, type Core } from "../core.provider";
 import { intId } from "../http";
 import { ChatHub } from "./chat-hub";
@@ -86,7 +87,7 @@ export class ChatController {
 
   /** Thumbnails and downloads; stored mime only, never sniffed by the browser */
   @Get("attachments/:id")
-  attachment(@Param("id") id: string, @Res() res: any) {
+  attachment(@Param("id") id: string, @Res() res: Response) {
     const a = attachmentFile(this.core, intId(id));
     // text files show as plain text in the tab (markdown and csv would download otherwise); images and PDF show as they are
     res.setHeader("Content-Type", a.mime.startsWith("text/") ? "text/plain; charset=utf-8" : a.mime);
@@ -105,7 +106,7 @@ export class ChatController {
 
   /** SSE: closing the connection never stops a run, it only unsubscribes */
   @Get("sessions/:id/stream")
-  stream(@Param("id") id: string, @Query("last_event_id") qLast: string | undefined, @Req() req: any, @Res() res: any) {
+  stream(@Param("id") id: string, @Query("last_event_id") qLast: string | undefined, @Req() req: Request, @Res() res: Response) {
     const n = intId(id);
     this.core.chat.getSession(n);
     res.writeHead(200, SSE_HEADERS);

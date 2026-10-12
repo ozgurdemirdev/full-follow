@@ -15,7 +15,7 @@ const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
  * Aşamayı uygular (kanban sütun sırası, closed_at, lost_reason, olay). Kurallar (proje açma vb.) çağıranda.
  * move() ve temasın otomatik ilerletmesi kullanır.
  */
-export function applyStage(q: Q, ctx: Ctx, cur: any, stage: OppStage, o: { reason?: string | null; position?: number; auto?: boolean } = {}) {
+export function applyStage(q: Q, ctx: Ctx, cur: typeof opportunities.$inferSelect, stage: OppStage, o: { reason?: string | null; position?: number; auto?: boolean } = {}) {
   const changed = stage !== cur.stage;
   const closed = isClosed(stage);
   const t = ctx.clock.now();

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { addDays } from "../dates";
 import { emit, FFError, money, parse, row, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
-import { payments, projects } from "../db/schema";
+import { opportunities, payments, projects } from "../db/schema";
 import { label } from "../constants";
 import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "../schemas";
 import { link, requireRow } from "./shared";
@@ -33,7 +33,7 @@ export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: numbe
 }
 
 /** Kazanılan fırsattan proje açar (fırsatın projesi yoksa) */
-export function createProjectFromOpportunity(q: Q, ctx: Ctx, opp: any): { project: any; planned: number } {
+export function createProjectFromOpportunity(q: Q, ctx: Ctx, opp: typeof opportunities.$inferSelect): { project: typeof projects.$inferSelect; planned: number } {
   const project = q.insert(projects).values({
     name: opp.title, opportunity_id: opp.id, person_id: opp.person_id, stage: "pesinat",
     price: opp.estimated_value ?? 0, started_at: ctx.clock.today(), ...stamp(ctx),

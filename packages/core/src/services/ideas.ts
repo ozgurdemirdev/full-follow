@@ -12,13 +12,13 @@ import { Bin } from "./trash";
  * Kişiyi fikre bağlar (yoksa "anlatıldı" olarak). Fikir hakkındaki temas da bunu çağırır.
  * Var olan bağda ilgi seviyesi verilmişse güncellenir.
  */
-export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: number; interest?: string; note?: string | null; touch_id?: number | null }) {
+export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: number; interest?: (typeof idea_people.$inferSelect)["interest"]; note?: string | null; touch_id?: number | null }) {
   const idea = requireRow(ctx, "ideas", d.idea_id);
   const person = requireRow(ctx, "people", d.person_id);
   const cur = row(ctx, "SELECT * FROM idea_people WHERE idea_id = ? AND person_id = ?", d.idea_id, d.person_id);
   if (!cur) {
     const r = q.insert(idea_people).values({
-      idea_id: d.idea_id, person_id: d.person_id, interest: (d.interest ?? "anlatildi") as any, note: d.note ?? null, touch_id: d.touch_id ?? null, ...stamp(ctx),
+      idea_id: d.idea_id, person_id: d.person_id, interest: d.interest ?? "anlatildi", note: d.note ?? null, touch_id: d.touch_id ?? null, ...stamp(ctx),
     }).returning().get();
     emit(q, ctx, { type: "idea.told", person_id: person.id, summary: `Fikir anlatıldı: ${truncate(idea.title, 50)}${d.interest && d.interest !== "anlatildi" ? ` (${label(d.interest)})` : ""}`, data: { idea_id: idea.id } });
     return { row: r, effects: [`${person.name} fikre bağlandı`] };

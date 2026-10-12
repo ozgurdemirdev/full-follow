@@ -128,9 +128,9 @@ export function restoreFromTrash(ctx: Ctx, type: TrashType, recordId: number, ch
         ...personLinkOf(type, parts),
       });
     });
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof FFError) throw e;
-    if (/FOREIGN KEY/i.test(String(e?.message))) {
+    if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) {
       throw new FFError("rule", `${t.label} geri yüklenemedi: bağlı olduğu kayıt da silinmiş, önce onu geri yükle`);
     }
     throw e;

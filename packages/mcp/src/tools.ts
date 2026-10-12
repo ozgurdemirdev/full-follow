@@ -8,8 +8,8 @@ const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 function run(fn: () => string) {
   try {
     return text(fn());
-  } catch (e: any) {
-    const msg = e instanceof FFError ? e.message : String(e?.message ?? e);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     return { content: [{ type: "text" as const, text: `hata: ${msg}` }], isError: true };
   }
 }

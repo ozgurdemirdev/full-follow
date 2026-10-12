@@ -19,8 +19,9 @@ export class ErrorFilter implements ExceptionFilter {
       return res.status(STATUS[e.code] ?? 500).json({ error: e.message, code: e.code, candidates: e.candidates, duplicate: e.duplicate });
     }
     if (e instanceof HttpException) {
-      const body = e.getResponse() as any;
-      return res.status(e.getStatus()).json({ error: typeof body === "string" ? body : body.message ?? e.message, code: body.code ?? "http" });
+      const body = e.getResponse() as string | { message?: string; code?: string };
+      if (typeof body === "string") return res.status(e.getStatus()).json({ error: body, code: "http" });
+      return res.status(e.getStatus()).json({ error: body.message ?? e.message, code: body.code ?? "http" });
     }
     console.error(e);
     return res.status(500).json({ error: "beklenmeyen hata", code: "internal" });
