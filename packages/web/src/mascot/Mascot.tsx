@@ -33,16 +33,15 @@ const FAB_SELECTOR = 'button[aria-label="Hızlı ekle"]';
 const FAB_MENU_SELECTOR = '[role="menu"][aria-label="Hızlı ekle"]:not([aria-hidden="true"])';
 
 /**
- * Beside the chat window at its middle, on the side the mascot already is (it cannot swim through the window), else the other
- * side, else on its top edge. Going to the other side is routed over the top of the window: up along its near side, across
+ * Beside the chat window at its middle, on its right side, else the left side, else on its top edge. Going to the other side is routed over the top of the window: up along its near side, across
  * above it, then down to the spot. The position decides the step, so there is no state to keep.
  */
 function perchSpot(r: DOMRect, e: Env, at: Vec2): Vec2 {
   const half = e.size.w * BODY_HALF_W + OBSTACLE_MARGIN + PERCH_GAP, y = r.top + r.height * PERCH_HEIGHT;
   const left = r.left - half * 2 >= e.left ? { x: r.left - half, y } : null;
   const right = r.right + half * 2 <= e.viewport.w ? { x: r.right + half, y } : null;
-  // both sides free: the one the mascot is on (a lone side never changes, so the route below stays stable)
-  const spot = left && right ? (at.x < (r.left + r.right) / 2 ? left : right) : left ?? right ?? { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
+  // the right side whenever it has room (a fixed rule never flips while it waits), else the left
+  const spot = right ?? left ?? { x: r.right - e.size.w * PERCH_X, y: r.top - e.size.h * PERCH_Y };
   const across = r.top - e.size.h;
   if ((spot !== left && spot !== right) || across < e.size.h * 0.3) return spot;
   const toLeft = spot === left;
