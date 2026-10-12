@@ -1,6 +1,6 @@
 # Full Follow
 
-Müşteri bulmaktan işin teslimine kadar her şeyi tek sistemde tutan kişisel CRM. Plan: [docs/MIMARI.md](docs/MIMARI.md).
+Küçük işletmeler ve şahıs şirketleri için CRM: müşteri ve firma kartları, sürükle bırak satış hunisi, proje ve ödeme takibi, her işlemin kim tarafından yapıldığını tutan işlem geçmişi. Web arayüzü ve yapay zeka asistanı (MCP) aynı iş kurallarından geçerek aynı veriye yazar. Plan: [docs/MIMARI.md](docs/MIMARI.md).
 
 Durum: arka uç (core + testler, NestJS API, MCP), web arayüzü (`packages/web`) ve panel sohbeti hazır.
 

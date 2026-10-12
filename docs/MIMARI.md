@@ -3,7 +3,7 @@
 Durum: **arka uç, ön yüz, Paket 1 (network paneli) ve Paket 2 (pazarlama, §11) yazıldı (2026-10-09).**
 Son güncelleme: 2026-10-09
 
-Amaç: **önce network ve pazarlama paneli.** Özgür ürün üretebiliyor; zorlandığı yer müşteri bulmak ve kendini duyurmak. Full Follow, kiminle hangi kanaldan temas kurduğunu, kimin döndüğünü, kimin soğuduğunu ve kimin kimi tanıttığını tek yerde tutar. Satış hunisi ve projeler (teslim, ödeme) küçük yan özellik olarak kalır. Özgür web arayüzünden, Claude MCP üzerinden aynı veritabanını kullanır. Kayıtların üzerinde ikisinin de yazabildiği yorumlar vardır (§2.11).
+Amaç: **önce ilişki ve pazarlama takibi.** Full Follow, bir işletmenin kiminle hangi kanaldan temas kurduğunu, kimin döndüğünü, kimin soğuduğunu ve kimin kimi tanıttığını tek yerde tutar. Satış hunisi ve projeler (teslim, ödeme) bunun üzerine kurulur. Kullanıcı web arayüzünden, yapay zeka asistanı (Claude) MCP üzerinden aynı veritabanını kullanır. Kayıtların üzerinde ikisinin de yazabildiği yorumlar vardır (§2.11).
 
 ### Ürün yönü (2026-10-09, Özgür)
 

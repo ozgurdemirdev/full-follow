@@ -2,7 +2,7 @@
   "name": "full-follow",
   "private": true,
   "version": "0.1.0",
-  "description": "Müşteri bulmaktan teslime tek sistemde kişisel CRM",
+  "description": "Küçük işletmeler ve şahıs şirketleri için CRM",
   "workspaces": [
     "packages/*"
   ],
