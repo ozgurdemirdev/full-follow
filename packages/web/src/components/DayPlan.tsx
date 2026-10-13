@@ -3,7 +3,7 @@ import { remove, run } from "../api/actions";
 import type { GoalDay, Plan, PlanTask } from "../api/types";
 import { openSheet } from "../app/ui";
 import { fmtDay, pct, todayIso } from "../lib/format";
-import { CHANNEL } from "../lib/labels";
+import { goalAutoNote } from "../lib/goals";
 import { EditDelete } from "./contact";
 import { Icon } from "./icons";
 import { toast } from "./toast";
@@ -30,7 +30,7 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
     await log({ add: n });
     toast(`${g.title} ${n > 0 ? "+" : ""}${n}`, "ok", { label: "Geri al", run: () => void log({ add: -n }) });
   };
-  const sub = [g.channel ? `${CHANNEL[g.channel]} otomatik${g.auto ? ` (${g.auto})` : ""}` : "", g.goal_note ?? "", g.note ?? ""].filter(Boolean).join(" · ");
+  const sub = [goalAutoNote(g), g.goal_note ?? "", g.note ?? ""].filter(Boolean).join(" · ");
 
   return (
     <div className="flex flex-col gap-2 py-4">

@@ -577,8 +577,12 @@ export interface GoalDay {
   title: string;
   target: number;
   channel: string | null;
+  /** counts new people and companies by itself (instead of a channel) */
+  metric: string | null;
   manual: number;
   auto: number;
+  /** new records goals: duplicates skipped by bulk saves that day */
+  duplicates: number;
   done: number;
   complete: boolean;
   note: string | null;
@@ -610,5 +614,6 @@ export interface Goal extends Base {
   target: number;
   days: string;
   channel: string | null;
+  metric: string | null;
   note: string | null;
 }
