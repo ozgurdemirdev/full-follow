@@ -6,6 +6,7 @@ import { opportunities, payments, projects } from "../db/schema";
 import { label } from "../constants";
 import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "../schemas";
 import { link, requireRow } from "./shared";
+import { acceptedAmount } from "./offers";
 import { readTemplate } from "./settings";
 import { Bin } from "./trash";
 
@@ -32,11 +33,11 @@ export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: numbe
   return tpl.length;
 }
 
-/** Kazanılan fırsattan proje açar (fırsatın projesi yoksa) */
+/** Kazanılan fırsattan proje açar (fırsatın projesi yoksa); fiyat kabul edilen tekliften, yoksa fırsat değerinden */
 export function createProjectFromOpportunity(q: Q, ctx: Ctx, opp: typeof opportunities.$inferSelect): { project: typeof projects.$inferSelect; planned: number } {
   const project = q.insert(projects).values({
     name: opp.title, opportunity_id: opp.id, person_id: opp.person_id, stage: "pesinat",
-    price: opp.estimated_value ?? 0, started_at: ctx.clock.today(), ...stamp(ctx),
+    price: acceptedAmount(ctx, opp.id) ?? opp.estimated_value ?? 0, started_at: ctx.clock.today(), ...stamp(ctx),
   }).returning().get();
   emit(q, ctx, { type: "project.created", ...link(ctx, { project_id: project.id }), summary: `Proje açıldı: ${project.name}` });
   return { project, planned: planPayments(q, ctx, project) };
@@ -120,6 +121,7 @@ export function projectsService(ctx: Ctx) {
       bin.take("payments", "project_id = ?", id);
       for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "project_id", id);
       bin.take("comments", "target_type = 'project' AND target_id = ?", id);
+      bin.take("files", "target_type = 'project' AND target_id = ?", id);
       bin.take("links", "target_type = 'project' AND target_id = ?", id);
       bin.take("projects", "id = ?", id);
       bin.commit(tx, "project", id, cur.name);

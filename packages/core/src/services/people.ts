@@ -110,6 +110,7 @@ export function peopleService(ctx: Ctx) {
         bin.take("comments", `target_type = '${type}' AND target_id IN (SELECT id FROM ${table} WHERE person_id = ?)`, id);
       }
       bin.take("idea_people", "person_id = ?", id);
+      bin.take("opportunity_people", "person_id = ?", id);
       bin.take("touches", "person_id = ?", id);
       bin.take("notes", "person_id = ?", id);
       bin.take("drafts", "person_id = ?", id);

@@ -1,8 +1,10 @@
+import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
+  OPP_ROLES, FILE_TARGETS,
   TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
 } from "../constants";
@@ -283,6 +285,43 @@ export const links = sqliteTable("links", {
   label: text("label").notNull(),
   url: text("url").notNull(),
 }, (t) => [index("links_target").on(t.target_type, t.target_id)]);
+
+/** Extra people on an opportunity (decision maker, technical contact, partner); the main contact stays opportunities.person_id */
+export const opportunityPeople = sqliteTable("opportunity_people", {
+  ...common(),
+  opportunity_id: integer("opportunity_id").notNull().references(() => opportunities.id),
+  person_id: integer("person_id").notNull().references(() => people.id),
+  role: text("role", { enum: OPP_ROLES }).notNull().default("diger"),
+  note: text("note"),
+}, (t) => [uniqueIndex("opp_people_pair").on(t.opportunity_id, t.person_id), index("opp_people_person").on(t.person_id)]);
+
+/** Files uploaded to an opportunity or project; the bytes live on disk (data/files/<stored_name>), deleted rows go to the trash */
+export const files = sqliteTable("files", {
+  ...common(),
+  target_type: text("target_type", { enum: FILE_TARGETS }).notNull(),
+  target_id: integer("target_id").notNull(),
+  name: text("name").notNull(),
+  mime: text("mime").notNull(),
+  size: integer("size").notNull(),
+  stored_name: text("stored_name").notNull(),
+}, (t) => [index("files_target").on(t.target_type, t.target_id)]);
+
+/** Offer versions of an opportunity; at most one is accepted (partial unique index) */
+export const offers = sqliteTable("offers", {
+  ...common(),
+  opportunity_id: integer("opportunity_id").notNull().references(() => opportunities.id),
+  version: integer("version").notNull(),
+  offered_at: text("offered_at").notNull(),
+  amount: integer("amount").notNull(),
+  /** JSON array of { label, amount }: price breakdown or options */
+  items: text("items").notNull().default("[]"),
+  note: text("note"),
+  accepted_at: text("accepted_at"),
+  file_id: integer("file_id").references(() => files.id),
+}, (t) => [
+  index("offers_opp").on(t.opportunity_id, t.version),
+  uniqueIndex("offers_one_accepted").on(t.opportunity_id).where(sql`${t.accepted_at} IS NOT NULL`),
+]);
 
 // ---------------------------------------------------------------- Paket 2: pazarlama
 

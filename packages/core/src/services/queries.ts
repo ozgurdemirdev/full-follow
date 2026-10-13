@@ -21,6 +21,9 @@ function sectorMatch(ctx: Ctx, sector: string | number): number[] {
 }
 import { ideaPeople, ideaStats } from "./ideas";
 import { goalsService } from "./goals";
+import { filesOf } from "./files";
+import { offersOf } from "./offers";
+import { teamOf } from "./oppPeople";
 import { ownProjectStats } from "./ownProjects";
 
 type Rows = { rows: any[]; total: number };
@@ -304,7 +307,7 @@ export function queriesService(ctx: Ctx) {
   const relatedFor: Record<string, string[]> = {
     person: ["touches", "tasks", "opportunities", "projects", "comments", "referrals", "drafts", "notes", "channels"],
     company: ["people", "touches", "opportunities", "drafts", "comments", "channels"],
-    opportunity: ["touches", "tasks", "comments", "drafts", "links"],
+    opportunity: ["touches", "tasks", "comments", "drafts", "links", "people", "offers", "files"],
     project: ["payments", "tasks", "touches", "comments", "drafts", "links"],
     payment: ["comments"], task: ["comments"], draft: ["comments"],
     own_project: ["ideas", "links", "comments"],
@@ -361,8 +364,10 @@ export function queriesService(ctx: Ctx) {
         case "projects": related.projects = cap(projects({ filter: by, limit: n })); break;
         case "payments": related.payments = cap(payments({ filter: by, limit: n })); break;
         case "drafts": related.drafts = cap(drafts({ filter: by, limit: n })); break;
+        case "offers": related.offers = offersOf(ctx, id).slice(0, n); break;
+        case "files": related.files = filesOf(ctx, "opportunity", id).slice(0, n); break;
         case "people":
-          related.people = type === "idea" ? ideaPeople(ctx, id).slice(0, n)
+          related.people = type === "opportunity" ? teamOf(ctx, id).slice(0, n) : type === "idea" ? ideaPeople(ctx, id).slice(0, n)
             : type === "post" ? cap(people({ filter: { post_id: id }, limit: n }))
             : cap(people({ filter: { company_id: id }, limit: n }));
           break;

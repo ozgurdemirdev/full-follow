@@ -426,3 +426,35 @@ describe("Paket 2: pazarlama kuralları", () => {
     expect(st.used).toBe(1);
   });
 });
+
+describe("fırsat detay: teklifler", () => {
+  let t: ReturnType<typeof setup>;
+  beforeEach(() => { t = setup(); });
+
+  it("tek kabul edilmiş teklif: kabul diğerlerini temizler ve fırsat değerini teklif tutarına çeker", () => {
+    const o = t.opp("Örnek Pizza", 50000);
+    const v1 = t.ozgur.offers.create({ opportunity_id: o.id, amount: 60000, items: [{ label: "Site", amount: 60000 }] }).row;
+    const v2 = t.ozgur.offers.create({ opportunity_id: o.id, amount: 80000 }).row;
+    expect([v1.version, v2.version]).toEqual([1, 2]);
+
+    t.ozgur.offers.update(v1.id, { accepted: true });
+    expect(t.sql("SELECT estimated_value FROM opportunities WHERE id = ?", o.id)[0].estimated_value).toBe(60000);
+
+    t.ozgur.offers.update(v2.id, { accepted: true });
+    expect(t.sql("SELECT id FROM offers WHERE opportunity_id = ? AND accepted_at IS NOT NULL", o.id)).toEqual([{ id: v2.id }]);
+    expect(t.sql("SELECT estimated_value FROM opportunities WHERE id = ?", o.id)[0].estimated_value).toBe(80000);
+    expect(t.sql("SELECT type FROM events WHERE type = 'offer.accepted'")).toHaveLength(2);
+  });
+
+  it("kazanınca ödeme planı kabul edilen teklif tutarından çıkar", () => {
+    const o = t.opp("Örnek Pizza", 50000);
+    const offer = t.ozgur.offers.create({ opportunity_id: o.id, amount: 80000 }).row;
+    t.ozgur.offers.update(offer.id, { accepted: true });
+    // fırsat değeri sonradan elle değişse de kabul edilen teklif belirleyici
+    t.ozgur.opportunities.update(o.id, { estimated_value: 50000 });
+
+    t.ozgur.opportunities.move(o.id, { stage: "kazanildi" });
+    expect(t.sql("SELECT price FROM projects")[0].price).toBe(80000);
+    expect(t.sql("SELECT expected_amount FROM payments ORDER BY id").map((p) => p.expected_amount)).toEqual([32000, 24000, 24000]);
+  });
+});

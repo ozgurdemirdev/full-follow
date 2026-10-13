@@ -120,6 +120,13 @@
       "when": 1791697362600,
       "tag": "0016_chat_ack",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791888253062,
+      "tag": "0017_opportunity_page",
+      "breakpoints": true
     }
   ]
 }
