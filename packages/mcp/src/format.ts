@@ -28,6 +28,9 @@ const LINE: Record<string, (r: Row) => string> = {
     r.cooling && "SOĞUYOR", r.next_follow_up_at && `takip ${d(r.next_follow_up_at)}`, r.handle, r.email, r.phone,
   ),
   sector: (r) => join(`#${r.id} ${r.path}`, `${r.people_count ?? 0} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
+  opp_person: (r) => join(`#${r.id} ${r.person_name}`, label(r.role), r.company_name, r.note && cut(r.note, 60)),
+  offer: (r) => join(`#${r.id} v${r.version} ${d(r.offered_at)} ${tl(r.amount)}`, r.accepted_at && `KABUL ${d(r.accepted_at)}`, !!r.items?.length && `${r.items.length} kalem`, r.note && cut(r.note, 60), r.file_id && `dosya #${r.file_id}`),
+  file: (r) => join(`#${r.id} ${r.name}`, `${Math.max(1, Math.round(r.size / 1024))} KB`, d(r.created_at)),
   link: (r) => join(`#${r.id} ${r.label}`, r.url, r.from && `(${r.from})`),
   note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, 80)),
   company: (r) => join(`#${r.id} ${r.name}`, label(r.contact_status), r.tags?.join(","), r.sector_path, r.source_name && `kaynak ${r.source_name}`,
@@ -124,7 +127,8 @@ export function block(res: { type: string; id: number; row: Row; related: Record
       continue;
     }
     const t = name === "people" && type === "idea" ? "interest"
-      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea" } as Record<string, string>)[name];
+      : name === "people" && type === "opportunity" ? "opp_person"
+      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
