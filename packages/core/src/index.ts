@@ -4,7 +4,7 @@ import type { DbHandle } from "./db/client";
 import { sourcesService, tagsService } from "./services/categories";
 import { commentsService } from "./services/comments";
 import { companiesService } from "./services/companies";
-import { assertKeysFree } from "./services/dupes";
+import { assertKeysFree, recordSkipped } from "./services/dupes";
 import { draftsService } from "./services/drafts";
 import { opportunitiesService } from "./services/opportunities";
 import { paymentsService } from "./services/payments";
@@ -13,6 +13,9 @@ import { projectsService } from "./services/projects";
 import { queriesService } from "./services/queries";
 import { networkLists } from "./services/network";
 import { linksService } from "./services/links";
+import { filesService } from "./services/files";
+import { offersService } from "./services/offers";
+import { oppPeopleService } from "./services/oppPeople";
 import { goalsService } from "./services/goals";
 import { notesService } from "./services/notes";
 import { normalizeType, resolveId } from "./services/records";
@@ -30,6 +33,8 @@ import { ownProjectsService } from "./services/ownProjects";
 import { chatService } from "./services/chat";
 import { followupsDue, generateFollowups } from "./services/followups";
 import { marketingReport } from "./services/marketing";
+import { quotaFor } from "./services/quota";
+import { weeklyReview } from "./services/review";
 import { isCategory, restoreFromTrash, trashList, TYPE_LABEL } from "./services/trash";
 import { TRASH_TYPES } from "./constants";
 
@@ -80,6 +85,9 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const sectors = sectorsService(ctx);
   const notes = notesService(ctx);
   const links = linksService(ctx);
+  const oppPeople = oppPeopleService(ctx);
+  const offers = offersService(ctx);
+  const files = filesService(ctx);
   const goals = goalsService(ctx);
   const settings = settingsService(ctx);
   const queries = queriesService(ctx);
@@ -125,6 +133,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "sector": return nid ? sectors.update(nid, d) : sectors.create(d);
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
       case "link": return nid ? links.update(nid, d) : links.create(d);
+      case "offer": return nid ? offers.update(nid, d) : offers.create(d);
       case "goal": return nid ? goals.update(nid, d) : goals.create(d);
       case "goal_log": return goals.log(nid ? { ...d, goal_id: nid } : d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
@@ -144,18 +153,20 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    * Tek transaction içinde çalışır (hızlı); hata veren kayıt sadece kendisini geri alır.
    */
   function saveMany(type: string, items: Record<string, any>[]): BulkResult {
+    const t = normalizeType(type);
     const out: BulkResult = { created: [], skipped: [], failed: [] };
     const labelOf = (d: Record<string, any>) => String(d?.name ?? d?.title ?? d?.email ?? d?.contact ?? d?.summary ?? "").slice(0, 60);
     ctx.sqlite.transaction(() => {
       items.forEach((item, index) => {
         try {
-          const r = save(type, item);
+          const r = save(t, item);
           out.created.push({ index, id: r.row?.id, label: labelOf(item), effects: r.effects });
         } catch (e) {
           if (e instanceof FFError && e.code === "duplicate" && e.duplicate) out.skipped.push({ index, label: labelOf(item), existing: e.duplicate });
           else out.failed.push({ index, label: labelOf(item), error: e instanceof Error ? e.message : String(e) });
         }
       });
+      if (t === "person" || t === "company") recordSkipped(ctx, t, out.skipped.map((s) => items[s.index]));
     })();
     return out;
   }
@@ -190,6 +201,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
+      case "offer": return offers.remove(nid);
       case "goal": return goals.remove(nid);
       case "goal_log": throw new FFError("validation", "ilerleme silinmez; count:0 ile sıfırla");
       case "post": return posts.remove(nid);
@@ -208,7 +220,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    */
   function restore(type: string, id: string | number): SaveResult {
     if (type === "chat_session") return chat.restoreSession(Number(id));
-    const t = normalizeType(type);
+    const t = isTrashType(type) ? type : normalizeType(type);
     if (isCategory(t)) {
       const nid = resolveId(ctx, t, id);
       return t === "tag" ? tags.restore(nid) : t === "sector" ? sectors.restore(nid) : sources.restore(nid);
@@ -242,10 +254,13 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     actor,
     // yazma servisleri (REST controller'ları ve testler kullanır)
     companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
+    oppPeople, offers, files,
     posts, templates, ideas, ownProjects, chat,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },
+    quota: (date = ctx.clock.today()) => quotaFor(ctx, date),
     marketing: () => marketingReport(ctx),
+    review: (week?: string) => weeklyReview(ctx, week),
     // Paket 3: çöp kutusu
     trash: { list: () => trashList(ctx), restore },
     // okuma

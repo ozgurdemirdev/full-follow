@@ -47,12 +47,14 @@ export function App() {
                   <Route path={PATHS.today} component={pages.today} />
                   <Route path={PATHS.calendar} component={pages.calendar} />
                   <Route path={`${PATHS.pipeline}/:id?`} component={pages.pipeline} />
+                  <Route path={`${PATHS.opportunity}/:id`} component={pages.opportunity} />
                   <Route path={`${PATHS.people}/:id?`} component={pages.people} />
                   <Route path={`${PATHS.companies}/:id?`} component={pages.companies} />
                   <Route path={PATHS.referrals} component={pages.referrals} />
                   <Route path={`${PATHS.projects}/:id?`} component={pages.projects} />
                   <Route path={`${PATHS.timeline}/:type?/:id?`} component={pages.timeline} />
                   <Route path={PATHS.report} component={pages.report} />
+                  <Route path={PATHS.review} component={pages.review} />
                   <Route path={`${PATHS.drafts}/:id?`} component={pages.drafts} />
                   <Route path={`${PATHS.comments}/:id?`} component={pages.comments} />
                   <Route path={`${PATHS.posts}/:id?`} component={pages.posts} />

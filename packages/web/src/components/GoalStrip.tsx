@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import type { Plan } from "../api/types";
 import { PATHS } from "../app/routes";
 import { pct } from "../lib/format";
+import { goalAutoNote } from "../lib/goals";
 
 /** Dashboard summary of today's goals: one thin bar per goal and a count of today's tasks. The full plan lives on the calendar page. */
 export function GoalStrip({ plan }: { plan: Plan }) {
@@ -27,6 +28,7 @@ export function GoalStrip({ plan }: { plan: Plan }) {
               <span className="track">
                 <i className={`grow-x ${g.complete ? "bg-status-text-success" : "bg-accent-payment"}`} style={{ width: `${Math.min(100, (g.done / g.target) * 100)}%` }} />
               </span>
+              {g.metric ? <span className="text-xs text-text-muted">{goalAutoNote(g)}</span> : null}
             </span>
           ))}
         </span>

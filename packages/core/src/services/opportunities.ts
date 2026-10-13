@@ -5,8 +5,9 @@ import { opportunities } from "../db/schema";
 import { label, OPEN_OPP_STAGES, type OppStage } from "../constants";
 import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "../schemas";
 import { addTagBySlug, checkSource } from "./categories";
+import { dropMember, upsertMember } from "./oppPeople";
 import { createProjectFromOpportunity } from "./projects";
-import { link, placeInGroup, requireRow } from "./shared";
+import { link, placeInGroup, requireRow, resolveRef } from "./shared";
 import { Bin } from "./trash";
 
 const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
@@ -15,7 +16,7 @@ const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
  * Aşamayı uygular (kanban sütun sırası, closed_at, lost_reason, olay). Kurallar (proje açma vb.) çağıranda.
  * move() ve temasın otomatik ilerletmesi kullanır.
  */
-export function applyStage(q: Q, ctx: Ctx, cur: any, stage: OppStage, o: { reason?: string | null; position?: number; auto?: boolean } = {}) {
+export function applyStage(q: Q, ctx: Ctx, cur: typeof opportunities.$inferSelect, stage: OppStage, o: { reason?: string | null; position?: number; auto?: boolean } = {}) {
   const changed = stage !== cur.stage;
   const closed = isClosed(stage);
   const t = ctx.clock.now();
@@ -55,7 +56,7 @@ export function opportunitiesService(ctx: Ctx) {
 
   function update(id: number, input: unknown) {
     if (input && typeof input === "object" && ("stage" in input || "position" in input)) throw new FFError("rule", "Aşama için move kullan");
-    const d = parse(oppUpdate, input);
+    const { add_people, remove_people, ...d } = parse(oppUpdate, input);
     return ctx.db.transaction((tx) => {
       const cur = requireRow(ctx, "opportunities", id);
       if (d.person_id) requireRow(ctx, "people", d.person_id);
@@ -64,7 +65,13 @@ export function opportunitiesService(ctx: Ctx) {
         tx.update(opportunities).set({ ...d, updated_at: ctx.clock.now() }).where(eq(opportunities.id, id)).run();
         emit(tx, ctx, { type: "opp.updated", ...link(ctx, { opportunity_id: id }), summary: `Fırsat güncellendi (${Object.keys(d).join(", ")})` });
       }
-      return { row: requireRow(ctx, "opportunities", id), effects: [] as string[] };
+      // team changes (the main contact may have just changed, so read the row again)
+      const now = requireRow(ctx, "opportunities", id);
+      const effects = [
+        ...(remove_people ?? []).map((p) => dropMember(tx, ctx, now, resolveRef(ctx, "person", p))),
+        ...(add_people ?? []).map((m) => upsertMember(tx, ctx, now, resolveRef(ctx, "person", m.person), m.role, m.note)),
+      ];
+      return { row: now, effects };
     });
   }
 
@@ -101,6 +108,10 @@ export function opportunitiesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "opportunity_id", id);
+      // offers point at files, so they go first
+      bin.take("offers", "opportunity_id = ?", id);
+      bin.take("files", "target_type = 'opportunity' AND target_id = ?", id);
+      bin.take("opportunity_people", "opportunity_id = ?", id);
       bin.take("comments", "target_type = 'opportunity' AND target_id = ?", id);
       bin.take("links", "target_type = 'opportunity' AND target_id = ?", id);
       bin.take("opportunities", "id = ?", id);

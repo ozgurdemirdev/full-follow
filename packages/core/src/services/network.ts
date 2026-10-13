@@ -123,11 +123,16 @@ export function referralValues(ctx: Ctx) {
   return result.sort((a, b) => b.won_value - a.won_value || b.collected - a.collected || b.opps - a.opps || b.network - a.network || a.name.localeCompare(b.name, "tr"));
 }
 
-/** Haftalık temas sayıları: bu hafta (pazartesiden) ve geçen hafta, kanal kırılımıyla */
-export function weekStats(ctx: Ctx) {
+/**
+ * Haftalık temas sayıları: `ref` gününün haftası (pazartesiden; varsayılan bugün) ve bir önceki hafta, kanal kırılımıyla.
+ * Yeni kayıt sayıları kişi ve firma ayrı. Açık teklif sayıları o anki durumdur, haftaya bağlı değildir.
+ */
+export function weekStats(ctx: Ctx, ref = ctx.clock.today()) {
   const today = ctx.clock.today();
-  const ws = weekStart(today);
+  const ws = weekStart(ref);
   const prev = addDays(ws, -7);
+  // gelecek günlerin temasları sayılmaz
+  const until = addDays(ws, 6) < today ? addDays(ws, 6) : today;
   // UTC/yerel farkı için bir gün geniş çek, gün yerel saate göre ayrılır
   const list = rows<{ happened_at: string; direction: string; kind: string; channel: string }>(ctx,
     "SELECT happened_at, direction, kind, channel FROM touches WHERE happened_at >= ?", addDays(prev, -1));
@@ -137,7 +142,7 @@ export function weekStats(ctx: Ctx) {
   const by = new Map<string, { sent: number; replies: number }>();
   for (const t of list) {
     const d = dayOf(t.happened_at);
-    if (d < prev || d > today) continue;
+    if (d < prev || d > until) continue;
     const bucket = d >= ws ? cur : last;
     if (t.direction === "giden") bucket.sent++;
     else bucket.replies++;
@@ -149,15 +154,15 @@ export function weekStats(ctx: Ctx) {
       by.set(t.channel, c);
     }
   }
-  const newPeople = (from: string, to: string) =>
-    rows<{ created_at: string }>(ctx, "SELECT created_at FROM people WHERE created_at >= ?", addDays(from, -1))
+  const newRecords = (table: "people" | "companies", from: string, to: string) =>
+    rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, addDays(from, -1))
       .filter((p) => { const d = dayOf(p.created_at); return d >= from && d <= to; }).length;
   const offers = rows<{ updated_at: string }>(ctx, "SELECT updated_at FROM opportunities WHERE stage = 'teklif'");
   const rate = (b: { sent: number; replies: number }) => (b.sent ? b.replies / b.sent : null);
   return {
     week_start: ws,
-    this_week: { ...cur, reply_rate: rate(cur), new_people: newPeople(ws, today) },
-    last_week: { ...last, reply_rate: rate(last), new_people: newPeople(prev, addDays(ws, -1)) },
+    this_week: { ...cur, reply_rate: rate(cur), new_people: newRecords("people", ws, until), new_companies: newRecords("companies", ws, until) },
+    last_week: { ...last, reply_rate: rate(last), new_people: newRecords("people", prev, addDays(ws, -1)), new_companies: newRecords("companies", prev, addDays(ws, -1)) },
     by_channel: CHANNELS.filter((c) => by.has(c)).map((c) => ({ channel: c, ...by.get(c)! })),
     open_offers: offers.length,
     silent_offers: offers.filter((o) => daysBetween(dayOf(o.updated_at), today) >= 3).length,

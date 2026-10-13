@@ -4,7 +4,7 @@ import { useOpps, usePeople, useProjects } from "../api/keys";
 import { Icon } from "../components/icons";
 import { norm } from "../lib/format";
 import { STAGE, PROJECT_STAGE } from "../lib/labels";
-import { timelinePath } from "./routes";
+import { opportunityPath, timelinePath } from "./routes";
 
 interface Hit {
   key: string;
@@ -48,7 +48,7 @@ export function GlobalSearch() {
     }
     for (const o of opps.rows) {
       if (norm(o.title).includes(n) || norm(o.person_name).includes(n))
-        out.push({ key: `o${o.id}`, label: o.title, sub: `Fırsat · ${STAGE[o.stage]} · ${o.person_name}`, href: timelinePath("opportunity", o.id) });
+        out.push({ key: `o${o.id}`, label: o.title, sub: `Fırsat · ${STAGE[o.stage]} · ${o.person_name}`, href: opportunityPath(o.id) });
     }
     for (const p of projects.rows) {
       if (norm(p.name).includes(n) || norm(p.person_name).includes(n))

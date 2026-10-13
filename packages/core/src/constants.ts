@@ -11,7 +11,7 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir */
-export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project"] as const;
+export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project", "opportunity_person", "offer", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -32,13 +32,18 @@ export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "
 export const ASSIGNEES = ACTORS;
 export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea", "own_project"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
+/** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */
+export const OPP_ROLES = ["karar_verici", "teknik", "ortak", "diger"] as const;
+export type OppRole = (typeof OPP_ROLES)[number];
+/** Records that can hold uploaded files */
+export const FILE_TARGETS = ["opportunity", "project"] as const;
 /** Records that carry labelled links (roadmap, proposal deck, Figma, repo) */
 export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 export const RECORD_TYPES = [
   "person", "company", "opportunity", "project", "task", "draft", "payment", "source", "comment", "touch", "setting",
-  "sector", "note", "tag", "trash", "link",
+  "sector", "note", "tag", "trash", "link", "offer",
   // günlük iş planı
   "goal", "goal_log",
   // Paket 2: pazarlama
@@ -54,7 +59,7 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   firma: "company", proje: "project", gorev: "task", görev: "task",
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
   yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
-  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link",
+  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
   paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   hedef: "goal", hedefler: "goal", goals: "goal", ilerleme: "goal_log", progress: "goal_log",
@@ -68,6 +73,20 @@ export const POST_PLATFORMS = ["r10", "linkedin", "instagram", "diger"] as const
 export const PLATFORM_LABEL: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 /** Mesaj şablonu türü: ilk mesaj, takip, teklif sonrası, diğer */
 export const TEMPLATE_KINDS = ["ilk", "takip", "teklif", "diger"] as const;
+/** A reply rate over fewer messages than this is "early": too noisy to rank on (templates, lead sources) */
+export const RATE_MIN_SAMPLE = 20;
+export const TEMPLATE_MIN_SAMPLE = RATE_MIN_SAMPLE;
+/** Lead source funnel steps, in order; each step counts the records that reached it (a later step implies the earlier ones) */
+export const SOURCE_FUNNEL_STEPS = ["found", "written", "replied", "meeting", "offer", "won"] as const;
+/** Funnel period in days by record creation date ("all" = no filter) and the one used when none is given */
+export const SOURCE_FUNNEL_PERIODS = [30, 90, "all"] as const;
+export const SOURCE_FUNNEL_DEFAULT_PERIOD = 90;
+/** Opportunity stages that mean an offer was made; a lost one is recognised from its stage events */
+export const OFFER_STAGES = ["teklif", "kazanildi"] as const;
+/** The lowest reply rate third of the sources with enough sample is flagged weak */
+export const SOURCE_WEAK_SHARE = 1 / 3;
+/** Sector label of recipients that have no sector, in the template breakdown */
+export const NO_SECTOR_LABEL = "Sektörsüz";
 /** Own product lifecycle */
 export const OWN_PROJECT_STATUSES = ["aktif", "beklemede", "tamamlandi", "birakildi"] as const;
 /** Could this own product be sold later */
@@ -79,11 +98,17 @@ export const IDEA_STAGES = ["fikir", "dogrulaniyor", "demo", "urun"] as const;
 export const INTEREST_LEVELS = ["anlatildi", "ilgilendi", "ilgilenmedi"] as const;
 /** Pazarlama ayarlarının varsayılanları: takip dizisi günleri (ilk cevapsız mesajdan sonra), haftalık giden mesaj hedefi (0 = kapalı) */
 export const MARKETING_DEFAULTS = { followup_days: [3, 7], weekly_target: 0 } as const;
+/** Daily outgoing message limit per channel (a channel without a limit has no counter) */
+export const CHANNEL_LIMIT_DEFAULTS: Readonly<Partial<Record<Channel, number>>> = { email: 20, instagram: 15, whatsapp: 15 };
+/** Highest daily limit a channel can be given */
+export const CHANNEL_LIMIT_MAX = 500;
+/** A channel counts as "near" its limit from this share of it */
+export const QUOTA_NEAR_RATIO = 0.8;
 
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target", "chat_pinned_notes",
+  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes",
 ] as const;
 
 /** Network ayarlarının varsayılanları (gün) */
@@ -105,14 +130,33 @@ export const LABELS: Record<string, string> = {
   linkedin: "LinkedIn", whatsapp: "WhatsApp", r10: "R10",
   dogrulaniyor: "doğrulanıyor", urun: "ürün", anlatildi: "anlatıldı", ilk: "ilk mesaj", diger: "diğer",
   yazilmadi: "yazılmadı", yazildi: "yazıldı", cevap_geldi: "cevap geldi", gorusuldu: "görüşüldü", es_gecildi: "es geçildi", tanidik: "tanıdık", arkadas: "arkadaş",
-  aktif: "aktif", beklemede: "beklemede", tamamlandi: "tamamlandı", birakildi: "bırakıldı",
+  new_records: "yeni kayıt", aktif: "aktif", beklemede: "beklemede", tamamlandi: "tamamlandı", birakildi: "bırakıldı",
   yuksek: "yüksek", orta: "orta", dusuk: "düşük", evet: "evet", belki: "belki", hayir: "hayır",
+  karar_verici: "karar verici", teknik: "teknik", ortak: "ortak",
 };
 export const label = (k: string) => LABELS[k] ?? k;
+
+// ---- Weekly review (Friday summary, services/review.ts) ----
+/** The weekly target counts as missed when fewer messages than this share of it went out (missed by more than a quarter) */
+export const REVIEW_TARGET_MISS_SHARE = 0.75;
+/** A lowered weekly target suggestion rounds the week's pace up to a multiple of this */
+export const REVIEW_TARGET_STEP = 5;
+/** A channel that hit its daily limit on at least this many days of the week is "mostly full" */
+export const REVIEW_LIMIT_DAYS = 3;
+export const REVIEW_MIN_SUGGESTIONS = 2;
+export const REVIEW_MAX_SUGGESTIONS = 4;
+/** The review is announced on the dashboard on this ISO weekday (5 = Friday); an unfinished week's target is judged from then on */
+export const REVIEW_WEEKDAY = 5;
+export const WEEK_DAYS = 7;
 
 // ---- Günlük iş planı ----
 /** Hafta günleri ISO numarasıyla (1 = pazartesi); hedef tekrarı bu numaraların virgüllü listesidir */
 export const GOAL_DAY_PRESETS = { her_gun: [1, 2, 3, 4, 5, 6, 7], hafta_ici: [1, 2, 3, 4, 5], hafta_sonu: [6, 7] } as const;
+/** What a goal counts by itself besides a channel: new people and companies created that day (deleted ones are gone from the tables) */
+export const GOAL_METRICS = ["new_records"] as const;
+export type GoalMetric = (typeof GOAL_METRICS)[number];
+/** Event written once per bulk save that skipped duplicates; data: { record_type, count, keys } */
+export const BULK_SKIPPED_EVENT = "bulk.skipped";
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
 
 // ---- Panel chat ----
@@ -160,6 +204,19 @@ export const CHAT_ATTACHMENT_TYPES = [
   { ext: "md", mime: "text/markdown", kind: "text" },
   { ext: "csv", mime: "text/csv", kind: "text" },
 ] as const;
+/** What an opportunity or project file may be: the chat types plus Office files (a zip container, told apart by extension) */
+export const FILE_TYPES = [
+  ...CHAT_ATTACHMENT_TYPES,
+  { ext: "docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", kind: "office" },
+  { ext: "pptx", mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation", kind: "office" },
+  { ext: "xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", kind: "office" },
+] as const;
+/** Upload limits of record files (offer decks and scans are bigger than chat attachments) */
+export const FILE_LIMITS = { maxImageBytes: 10 * 1024 * 1024, maxFileBytes: 25 * 1024 * 1024 } as const;
+/** Max name length kept for an uploaded file */
+export const FILE_NAME_MAX = 120;
+/** Max items in one offer price breakdown */
+export const OFFER_ITEMS_MAX = 30;
 /** Max length of the pinned notes text that goes into every panel chat */
 export const CHAT_PINNED_MAX = 4_000;
 export const CHAT_NEW_TITLE = "Yeni sohbet";

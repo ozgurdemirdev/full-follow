@@ -2,7 +2,7 @@
   "name": "full-follow",
   "private": true,
   "version": "0.1.0",
-  "description": "Müşteri bulmaktan teslime tek sistemde kişisel CRM",
+  "description": "Küçük işletmeler ve şahıs şirketleri için CRM",
   "workspaces": [
     "packages/*"
   ],
@@ -15,6 +15,7 @@
     "start": "node scripts/start.mjs",
     "serve": "node scripts/start.mjs --no-build",
     "backup": "node scripts/backup.cjs",
+    "demo:seed": "node scripts/demo-seed.cjs",
     "dev:web": "npm run dev -w @fullfollow/web",
     "mcp": "node packages/mcp/dist/index.js",
     "db:generate": "npm run db:generate -w @fullfollow/core"

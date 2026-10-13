@@ -107,4 +107,18 @@ describe("Günlük iş planı", () => {
     ozgur.remove("company", co.id);
     expect(ozgur.find("task").rows[0]).toMatchObject({ id: t.id, company_id: null });
   });
+
+  it("yeni kayıt hedefi o gün eklenen kişi ve firmaları sayar, silinenleri saymaz, atlanan mükerrerleri gösterir", () => {
+    ozgur.goals.create({ title: "Liste yenileme", target: 3, metric: "new_records" });
+    expect(() => ozgur.goals.create({ title: "x", target: 1, metric: "new_records", channel: "email" })).toThrow(FFError);
+    const bulk = claude.saveMany("person", [{ name: "A", email: "a@x.com" }, { name: "A kopya", email: "a@x.com" }, { name: "C", email: "c@x.com" }]);
+    expect(bulk.skipped).toHaveLength(1);
+    ozgur.companies.create({ name: "ABC" });
+    ozgur.remove("person", bulk.created[1].id);
+    day = "2026-10-10";
+    ozgur.people.create({ name: "Başka gün", email: "d@x.com" });
+    day = "2026-10-09";
+    expect(ozgur.goals.plan().goals[0]).toMatchObject({ metric: "new_records", auto: 2, duplicates: 1, done: 2, complete: false });
+    expect(ozgur.goals.plan("2026-10-10").goals[0]).toMatchObject({ auto: 1, duplicates: 0 });
+  });
 });

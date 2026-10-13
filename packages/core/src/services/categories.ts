@@ -51,11 +51,11 @@ export function tagsService(ctx: Ctx) {
   };
 }
 
-function insertTag(q: Q, ctx: Ctx, name: string, color?: string) {
+function insertTag(q: Q, ctx: Ctx, name: string, color?: (typeof tags.$inferSelect)["color"]) {
   assertFreeName(ctx, "tags", name);
   let slug = slugify(name);
   for (let i = 2; row(ctx, "SELECT 1 x FROM tags WHERE slug = ?", slug); i++) slug = `${slugify(name)}_${i}`;
-  const r = q.insert(tags).values({ name, slug, color: (color ?? "aday") as any, ...stamp(ctx) }).returning().get();
+  const r = q.insert(tags).values({ name, slug, color: color ?? "aday", ...stamp(ctx) }).returning().get();
   emit(q, ctx, { type: "tag.created", summary: `Etiket eklendi: ${name}` });
   return r;
 }

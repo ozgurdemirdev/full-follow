@@ -3,7 +3,7 @@
 Durum: **arka uç, ön yüz, Paket 1 (network paneli) ve Paket 2 (pazarlama, §11) yazıldı (2026-10-09).**
 Son güncelleme: 2026-10-09
 
-Amaç: **önce network ve pazarlama paneli.** Özgür ürün üretebiliyor; zorlandığı yer müşteri bulmak ve kendini duyurmak. Full Follow, kiminle hangi kanaldan temas kurduğunu, kimin döndüğünü, kimin soğuduğunu ve kimin kimi tanıttığını tek yerde tutar. Satış hunisi ve projeler (teslim, ödeme) küçük yan özellik olarak kalır. Özgür web arayüzünden, Claude MCP üzerinden aynı veritabanını kullanır. Kayıtların üzerinde ikisinin de yazabildiği yorumlar vardır (§2.11).
+Amaç: **önce ilişki ve pazarlama takibi.** Full Follow, bir işletmenin kiminle hangi kanaldan temas kurduğunu, kimin döndüğünü, kimin soğuduğunu ve kimin kimi tanıttığını tek yerde tutar. Satış hunisi ve projeler (teslim, ödeme) bunun üzerine kurulur. Kullanıcı web arayüzünden, yapay zeka asistanı (Claude) MCP üzerinden aynı veritabanını kullanır. Kayıtların üzerinde ikisinin de yazabildiği yorumlar vardır (§2.11).
 
 ### Ürün yönü (2026-10-09, Özgür)
 
@@ -278,6 +278,8 @@ R10 konusu, LinkedIn ya da Instagram gönderisi. Forum konuları belli aralıkla
 - Taslakta `drafts.template_id` kullanılan şablonu tutar; şablon başarısı hesaplanır: kullanım, gönderilen, gönderildikten sonra cevap gelen (dönüş oranı).
 - Şablon silinince taslaklar kalır, bağ kopar.
 
+**A/B kıyası** (Rapor ekranı, `templateComparison`, hesaplanır): gönderilmiş şablonlar tür + kanal grubunda karşılaştırılır (`channel` boşsa "tüm kanallar" grubu). `TEMPLATE_MIN_SAMPLE` (20) gönderimden azı `early` ("erken") sayılır: oranı güvenilir değildir. Grup içinde yeterli örneği olanlar cevap oranına göre, sonra erken olanlar gelir. `leader` ("önde") ancak grupta yeterli örneği olan en az iki şablon varsa ve en yüksek oran ikincisinden kesin büyükse işaretlenir; yoksa kazanan ilan edilmez. Her şablonda alıcı sektörüne göre döküm vardır: alıcının sektörü (kişinin, yoksa firmasının; birden çoksa en küçük sektör id'si), sektörü yoksa "Sektörsüz" kovası. Gönderilen ve cevap sayımı `templateStats` ile aynı kuraldır (`REPLIED_AFTER`).
+
 ### 2.16 Takip dizisi (Paket 2)
 
 Ayrı tablo yok. Cevap bekleyen kuralının (§3/10) verisinden hesaplanır; üretilen taslaklar `drafts.followup_step` (1 = ilk takip) taşır. Süreler `settings.followup_days` (varsayılan `[3,7]`, en fazla 5 adım, boş = kapalı).
@@ -296,6 +298,27 @@ Kapsam (Kendi projelerim, §13): `own_project_id` boşsa genel para kazanma fikr
 ### 2.18 Pazarlama ayarları (Paket 2)
 
 `followup_days` (JSON dizi, "3,7" de kabul edilir) ve `weekly_target` (haftalık giden mesaj hedefi, 0 = kapalı; Bugün ekranında ilerleme).
+
+**Günlük kota ve e-posta ısınması**: `channel_limits` (JSON nesne, kanal → günlük giden mesaj limiti; sadece `CHANNELS` kanalları, 0 ya da boş = limitsiz; varsayılan `{"email":20,"instagram":15,"whatsapp":15}`) ve `email_warmup_until` (ISO tarih ya da boş; bu tarihe kadar, o gün dahil, soğuk e-posta kapalı). "Gönderilen" = o gün `direction = giden` ve `kind = mesaj` olan temaslar (hedeflerle aynı sayım, `quota.ts` `outgoingMessageCounts`). Durum: `ok`, `near` (limitin %80'i, `QUOTA_NEAR_RATIO`), `over` (limit doldu ya da aşıldı). Soğuk e-posta = daha önce hiç temas olmayan kişiye, firmaya ya da adrese giden e-posta mesajı. Engel yok, sadece uyarı: bugünün giden temasında (taslak "gönderdim" ya da elle temas) kanal limite ulaşırsa/aşarsa ya da ısınma sürerken soğuk e-posta giderse sonucun `effects` listesine Türkçe uyarı eklenir (web bildirimde gösterir). Geçmiş tarihli temas uyarı üretmez.
+
+### 2.19 Kaynak hunisi (fikir #30)
+
+Hangi kaynak iş getiriyor, hangisine boşuna zaman gidiyor: `sourceFunnel` (`services/sourceFunnel.ts`, hesaplanır, saklanmaz). Birim, kaynağı (`source_id`) olan her **kişi ve firma**dır. Altı adım, her biri o adıma ulaşan kayıt sayısı ve bir önceki adıma göre oran: **bulundu** (kayıt) → **yazıldı** (en az bir giden temas) → **cevap** (giden temastan sonra gelen temas; şablonlardaki `REPLIED_AFTER` kuralı, ikinci bir eşleştirme yazılmadı) → **görüşme** (`contact_status = gorusuldu`, yani `status.ts` arama ve görüşme temasından bu durumu türetir, ya da `gorusme` türünde temas) → **teklif** (kaydın bir fırsatı `teklif` ya da `kazanildi` aşamasında; teklifte kaybedilen de `opp.stage` olayından sayılır) → **kazanıldı** (fırsat `kazanildi`). Firma kendi temaslarını, çalışanlarının temaslarını ve fırsatlarını sayar (`bumpStatus` ile aynı bakış). Sonraki adım önceki adımları gerektirir sayılır, yani sayılar huni boyunca artmaz.
+
+Dönem (`period`) kayıt oluşturma tarihine göre süzer: `30`, `90` ya da `all`; varsayılan `SOURCE_FUNNEL_DEFAULT_PERIOD` (90). `reply_rate` = cevap / yazıldı. Yazılanı `RATE_MIN_SAMPLE` (20; şablonlardaki `TEMPLATE_MIN_SAMPLE` ile aynı sabit) altında olan kaynak `early` ("erken") sayılır, oranı güvenilir değildir. Yeterli örneği olan kaynaklar arasında cevap oranı en düşük üçte biri (`SOURCE_WEAK_SHARE`) `weak` ("zayıf") işaretlenir; en az bir kaynak ondan daha iyi olmalıdır, hepsi eşitse kimse zayıf değildir. Uç: `GET /api/report/sources?period=`. MCP `report()` tek satır ekler: `Kaynak (90g): R10 40→22→6→2→1→0 zayıf · Ajans 12→9→3→1→0→0 erken`. Web: Rapor sayfasında "Kaynak hunisi" bölümü (`SourceFunnel.tsx`), kaynak başına altı adımlık çubuk ve dönem filtresi.
+
+### 2.20 Haftalık inceleme (fikir #31)
+
+Cuma günü elle toplanan haftalık özet tek yerden gelir: `weeklyReview(week?)` (`services/review.ts`, hesaplanır, saklanmaz; mevcut servisleri yeniden kullanır). `week` ISO hafta etiketi (`2026-W41`) ya da o haftadan bir tarihtir, boşsa bu hafta; geçersiz etiket doğrulama hatasıdır. İçerik:
+
+- **Giden mesaj** haftalık hedefe karşı (`weekStats(ctx, ref)`, hafta pazartesiden; hedef `weekly_target`, 0 = kapalı) ve geçen hafta; **dönüş oranı** (gelen / giden) geçen haftayla; **görüşme** (`gorusme` temas sayısı); **teklif** (o hafta `teklif` aşamasına geçen fırsatlar, `opp.stage` olaylarından); **yeni kayıt** (kişi ve firma ayrı).
+- **Şablonlar**: `templateComparison` içinden sadece net `leader` (önde) olan ya da `early` şablonu bulunan gruplar; lider ve yeterli örneği olan en geride şablon.
+- **Kaynaklar**: §2.19 hunisinin varsayılan döneminde en iyi (yeterli örnekli, en yüksek cevap oranı) ve en zayıf (`weak`) kaynak.
+- **Günlük limit**: `quotaOverDays` (`quota.ts`, günlük kota ile aynı sayım): kanal başına limitin dolduğu ya da aşıldığı gün sayısı.
+- **Gelecek hafta için öneriler** (2 ile 4 arası, kural tabanlı, yapay zeka çağrısı yok; Türkçe düz metin ve görev başlığı): giden mesaj hedefin altında `REVIEW_TARGET_MISS_SHARE` (%75, yani yüzde 25'ten fazla kaçırıldı) ise hedefi düşür ya da günlük hedef ekle (düşürülen sayı `REVIEW_TARGET_STEP` = 5'in katına yuvarlanır); net lideri olan şablon grubunda geride kalan şablonu bırak (en büyük oran farkı olan grup); zayıf kaynak varsa zamanı en iyi kaynağa kaydır; bir kanal limiti `REVIEW_LIMIT_DAYS` (3) ve üstü gün dolduysa limiti koru. En az `REVIEW_MIN_SUGGESTIONS` (2) öneriye tamamlamak için koşulsuz öneriler eklenir (hedef yoksa hedef koy, hedef tutturulduysa tempoyu koru, yeni kayıt sayısı, örnek azsa şablon ve kaynak gir); en fazla `REVIEW_MAX_SUGGESTIONS` (4).
+- `next_monday`: önerilerden "Göreve çevir" ile açılan görevin son tarihi, bugünden sonraki pazartesi (görev mevcut `tasks` servisiyle `POST /api/tasks`).
+
+Uç: `GET /api/review?week=`. `GET /api/today` yanıtında `review: {week, ready}` bulunur; `ready`, `REVIEW_WEEKDAY` (Cuma) günü doğrudur. MCP: ayrı araç yok, `report(week?)` (`week` etiket, tarih ya da `bu`) rapor yerine incelemeyi döner. Web: Sidebar'da Rapor'un altında "Haftalık inceleme" (`/inceleme`, ok düğmeleriyle önceki ve sonraki hafta), Cuma günü Dashboard'un üstünde "Cuma incelemesi hazır" bağlantı kartı.
 
 ### İlişki özeti
 
@@ -359,10 +382,11 @@ her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 | **Satış hunisi** | Aşamaya göre gruplu açık fırsatlar (kazanılan/kaybedilen sütunlar daraltılmış, son 30 gün) |
 | **Proje panosu** | Aşamaya göre projeler + her birinin sıradaki görevi ve sıradaki ödemesi |
 | **Zaman çizelgesi** | Bir kişi ya da projenin `events` kayıtları, eskiden yeniye |
-| **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı |
+| **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı · şablon kıyası (tür + kanal grubunda gönderim, cevap oranı, "erken" uyarısı, sektör dökümü, §2.15) · kaynak hunisi (§2.19) |
+| **Haftalık inceleme** | Bir ISO haftanın özeti: giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için öneriler ("Göreve çevir"); önceki/sonraki hafta okları (`GET /api/review?week=`, §2.20) |
 | Kayıt sayfaları | Kişi, firma, fırsat, proje detay ve formlar; her birinde yorum paneli (ekran sayısına dahil değil ama gerekli) |
 
-Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
+Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor, Haftalık inceleme), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
 
 Kişi kartı (Paket 2): kaynak paylaşım, anlatılan fikirler (ilgi seviyesiyle), "Taslak yaz". Kişi formunda "Kaynak paylaşım", temas formunda "Fikir" seçimi.
 
@@ -396,7 +420,7 @@ Hedef: Claude, Özgür'ün arayüzde yapabildiği her şeyi yapabilsin, ama her 
 | `draft(person, channel, body, reason?, opp?, project?)` | Onaya taslak bırakır; `reason` neden hazırlandığını söyler | `ok taslak #9 onay bekliyor` |
 | `pay(payment_id, amount, date?)` | Ödeme girer | `ok ödeme #5 · 15.000/15.000 ödendi` |
 | `timeline(type, id, limit?)` | Kişi/proje/fırsat olayları | `09.10 Claude · Taslak hazırlandı` |
-| `report(month?)` | Haftalık temas sayıları + referans değeri (ilk 5) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
+| `report(month?, week?)` | `week` verilirse haftalık inceleme (§2.20); yoksa haftalık temas sayıları + referans değeri (ilk 5) + kaynak hunisi (tek satır, §2.19) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
 | `delete(type, id)` | Silme (aynı kurallarla, olay yazar) | `ok` |
 
 Paket 1 araç sayısını artırmadı (11): sektör ve not `save`/`find` ile, network listeleri `today` ve `find("person", {awaiting|cooling})` ile gelir.
@@ -454,6 +478,11 @@ Kendi projelerim (`packages/core/test/own-projects.test.ts`):
 21. **Fikir kapsamı**: proje fikri üst fikir almaz, alt fikri olan fikir projeye girmez, proje fikri üst fikir olamaz, genele dönünce `done_at` silinir, genel fikirde `priority` hata verir.
 22. **Sıralama**: öncelik grubunda sıra 0..n, `position` ile sürükleme, öncelik değişince iki grup yeniden numaralanır, `done` gruptan çıkarır ve geri açınca sona koyar.
 23. **Fikirden proje**: alt fikirler projeye taşınır, kaynak fikir çöpe gider (geri yüklenince alt fikirsiz genel fikir); proje silinince fikirleri genele döner, geri yüklenince yeniden bağlanır.
+
+Fırsat detay sayfası (`packages/core/test/core.test.ts`):
+
+24. **Teklif kabulü**: bir fırsatta tek kabul edilmiş teklif olur (yenisini kabul etmek eskisinin kabulünü temizler) ve kabul edilen teklifin tutarı fırsatın `estimated_value` alanına yazılır.
+25. **Kazanınca ödeme planı**: fırsat kazanılınca proje fiyatı ve ödeme planı kabul edilen teklif tutarından çıkar (fırsat değeri sonradan elle değişmiş olsa bile).
 
 **Opsiyonel (gerekirse):**
 
@@ -573,18 +602,18 @@ REST uçları:
 | Uç | Ne verir |
 |---|---|
 | `GET/POST /api/posts`, `PATCH/DELETE /api/posts/:id`, `POST /api/posts/:id/refresh` | Paylaşımlar (`?platform=`, `?refresh_due=true`); her satırda `people_count`, `opp_count`, `won`, `won_value`, `next_refresh_at`, `refresh_due`. `GET /api/posts/:id?with=people` |
-| `GET/POST /api/templates`, `PATCH/DELETE /api/templates/:id` | Şablonlar (`?kind=&channel=&sector=`); `used`, `sent`, `replied`, `reply_rate` |
+| `GET/POST /api/templates`, `PATCH/DELETE /api/templates/:id` | Şablonlar (`?kind=&channel=&sector=`); `used`, `sent`, `replied`, `reply_rate`, `early` |
 | `GET /api/templates/suggest?person_id=&channel=&kind=` | Kişi ve kanala uyan şablonlar, en uygun önce |
 | `GET /api/templates/:id/render?person_id=` | Şablonun kişiye uygulanmış metni |
 | `GET/POST /api/ideas`, `PATCH/DELETE /api/ideas/:id` | Fikirler (`?stage=&sector=`); `told`, `interested`, `interest_rate`, `sectors`, `touch_count`, `post_count`. Girdi: `sector_ids` ya da `sectors: ["Ana > Alt"]` |
 | `GET /api/ideas/people?idea_id=&person_id=` · `POST /api/ideas/:id/people` · `PATCH/DELETE /api/ideas/people/:linkId` | Fikir ↔ kişi ilgisi |
 | `GET /api/followups` · `POST /api/followups/run` | Takip zamanı gelenler · şimdi hazırla (zamanlayıcının işini hemen yapar) |
-| `GET /api/report/marketing` | Paylaşım getirisi, güncellenecekler, fikir ilgisi, şablon dönüşü, kanal dönüşü (30 gün), takip zamanı gelenler |
-| `GET /api/today` | ek bölümler: `posts_due`, `followups`; `network.settings` içinde `followup_days`, `weekly_target` |
+| `GET /api/report/marketing` | Paylaşım getirisi, güncellenecekler, fikir ilgisi, şablon kıyası (`template_groups`: tür + kanal grupları; şablonda `sent`, `replied`, `reply_rate`, `early`, `leader`, `sectors`), kanal dönüşü (30 gün), takip zamanı gelenler |
+| `GET /api/today` | ek bölümler: `posts_due`, `followups`; `quota` (`{date, channels:[{channel,sent,limit,state}], email_warmup:{until,active}}`); `network.settings` içinde `followup_days`, `weekly_target`, `channel_limits`, `email_warmup_until` |
 | `POST /api/drafts` | `template_id` ile (metin boşsa şablondan doldurulur) |
-| `PUT /api/settings` | `followup_days` ("3,7" ya da dizi), `weekly_target` |
+| `PUT /api/settings` | `followup_days` ("3,7" ya da dizi), `weekly_target`, `channel_limits` (`{"email":20}`), `email_warmup_until` (ISO tarih ya da boş) |
 
-Web: sidebar "Pazarlama" bölümü (Paylaşımlar `/paylasimlar`, Fikirler `/fikirler`, Şablonlar `/sablonlar`), Bugün'de "Takip zamanı" ve "Güncellenecek paylaşımlar" kartları ve haftalık hedef, Taslaklar'da otomatik takip çipi ve "Taslak yaz" formu (şablon önerili), kişi kartında kaynak paylaşım ve fikirler, kişi formunda kaynak paylaşım, temas formunda fikir, Ayarlar'da takip günleri ve haftalık hedef.
+Web: sidebar "Pazarlama" bölümü (Paylaşımlar `/paylasimlar`, Fikirler `/fikirler`, Şablonlar `/sablonlar`), Bugün'de "Takip zamanı", "Güncellenecek paylaşımlar" ve "Günlük kota" kartları ve haftalık hedef, Taslaklar'da otomatik takip çipi ve "Taslak yaz" formu (şablon önerili), kişi kartında kaynak paylaşım ve fikirler, kişi formunda kaynak paylaşım, temas formunda fikir, Ayarlar'da takip günleri, haftalık hedef, kanal limitleri ve ısınma bitişi. MCP `today()` çıktısı tek satır `Kota: ...` ve ısınma sürerken `Soğuk e-posta kapalı (...)` satırı ekler.
 
 ## 12. Paket 3: firma, etiket, mükerrer kontrolü, çöp kutusu (2026-10-10)
 
@@ -662,6 +691,7 @@ Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
 
 - `daily_goals` (başlık, günlük sayı, tekrar günleri ISO "1,2,3,4,5", isteğe bağlı kanal, kalıcı not) ve `goal_logs` (hedef + gün başına elle sayı + gün notu).
 - Kanalı olan hedefte o günkü giden mesaj temasları kendiliğinden sayılır; kalanı elle (+1, +5, sayı).
+- **Yeni kayıt hedefi** (fikir #32, `daily_goals.metric = new_records`, migration `0017_goal_metric`, yeni sütun boş olabilir, veri değişmez): kanal yerine o gün oluşturulan kişi ve firmaları kendiliğinden sayar (silinenler çöp kutusuna gittiği için sayılmaz). Bir hedef ya kanaldan ya metrikten sayar, ikisinden birden değil (doğrulama hatası). Toplu eklemede (`saveMany`, MCP'ye verilen liste) mükerrer diye atlanan kişi ve firmalar toplu kayıt başına tek `bulk.skipped` olayı olarak yazılır: `data = {record_type, count, keys}` (`keys` atlanan kayıtların anahtarları, `email:a@b.com` biçimi). Hedef satırı o günün olaylarından toplayıp "12 eklendi · 3 mükerrer atlandı" gösterir (`GoalDay.duplicates`). Gerçek "Liste yenileme, 50, Perşembe" hedefini Özgür ekler: `save goal {title:"Liste yenileme", target:50, days:[4], metric:"new_records"}` ya da hedef formunda "Yeni kayıt" seçimi. Web: hedef formunda "Kendiliğinden say" seçimine "Yeni kayıt" eklendi, Günün planı ve Dashboard hedef şeridi mükerrer sayısını gösterir. MCP `plan` çıktısı `(12 eklendi, 3 mükerrer atlandı)` yazar.
 - Seri (üst üste tamamlanan gün) ve haftalık oran core'da hesaplanır; görevler mevcut `tasks.due_date` ile takvimde görünür.
 - Web: Dashboard üstünde Günün planı, `/takvim` hafta ve ay görünümü. MCP: `plan` aracı, `save goal`, `save goal_log`, `today` içinde plan.
 
@@ -675,3 +705,22 @@ Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
 - **Projeye dönüştür** (`save own_project {from_idea}` ya da `POST /api/own-projects/from-idea/:id`): fikir proje olur, alt fikirleri projenin fikirleri olur, kaynak fikir çöp kutusuna gider. Proje silinince fikirleri genele döner, geri yüklenince bağlanır.
 - **REST**: `/api/own-projects` (liste, detay `?with=ideas,links,comments`, ekle, düzenle, sil, `from-idea/:id`). **MCP**: yeni araç yok; `find|get|save|move|delete` `own_project` türünü tanır.
 - **Web**: `/projelerim` (Kendi projelerim) liste + detay, öncelik gruplu fikirler (masaüstünde sürükle, telefonda yukarı/aşağı), `Yapılanlar`. `/fikirler` artık "Para kazanma fikirleri".
+
+## 14. Fırsat detay sayfası (2026-10-13)
+
+Değerli bir fırsatın (ör. "Örnek Pizza") ekibi, teklif sürümleri, dosyaları ve değeri tek sayfada görünür. Eskiden fırsat sadece zaman çizelgesinde ve kanban kartı olarak vardı.
+
+- **Yeni tablolar** (migration `0017_opportunity_page`, mevcut veriye dokunmaz):
+  - `opportunity_people` (`opportunity_id`, `person_id`, `role` karar_verici|teknik|ortak|diger, `note`, `created_by`, zaman damgaları; çift tekil). Fırsatın `person_id` alanı ana muhatap olarak kalır, rolsüzdür ve bu tabloda yer almaz.
+  - `offers` (`opportunity_id`, `version` fırsat başına 1'den artar, `offered_at`, `amount` TL, `items` JSON `[{label, amount}]`, `note`, `accepted_at`, `file_id`). Kısmi tekil indeks: fırsat başına en fazla bir kabul edilmiş teklif.
+  - `files` (`target_type` opportunity|project, `target_id`, `name`, `mime`, `size`, `stored_name`). Baytlar diskte `data/files/<stored_name>` (veritabanı klasörünün yanında, `FF_DB` ile birlikte taşınır, git'e girmez). Silinen satır çöp kutusuna gider; `deleted_at` sütunu yok, baytlar diskte kalır ve geri yüklenince dosya yerine gelir.
+- **Kurallar** (core):
+  - Teklifi kabul etmek (`PATCH /api/offers/:id {accepted:true}`) diğerlerinin `accepted_at` alanını temizler, fırsatın `estimated_value` alanını teklif tutarına çeker, `offer.accepted` olayı yazar. Kabul edilmiş teklifin tutarı değişirse fırsat değeri de değişir. Kabulü geri almak (`accepted:false`) fırsat değerine dokunmaz.
+  - Kabul edilmiş teklif silinince kabulü kalkar (çöp kutusundan kabulsüz döner).
+  - Kazanınca açılan projenin fiyatı ve ödeme planı (`payment_template` yüzdeleri) kabul edilen teklifin tutarından çıkar; kabul yoksa eskisi gibi `estimated_value`.
+  - Ekip: ekleme, rol/not değiştirme (aynı kişiyi tekrar eklemek rolünü günceller), çıkarma. Ana muhatap ekibe eklenmez. Olaylar: `opp.person_added|person_updated|person_removed`. Teklif olayları `offer.created|updated|accepted|unaccepted|deleted`, dosya olayları `file.uploaded|deleted`; hepsi ilgili fırsat zaman çizelgesinde görünür.
+  - Fırsat, kişi ya da proje silinirken bu tabloların satırları aynı çöp kutusu kaydına girer ve geri yüklemede döner. Dosya silinirken ona bağlı tekliflerin `file_id` alanı boşaltılır, geri yüklenince yeniden bağlanır.
+- **Dosya yükleme** (server): `POST /api/files` (multipart: `file`, `target_type`, `target_id`). Tür baytlardan anlaşılır (png, jpg, gif, webp, pdf; docx, pptx, xlsx zip imzası + uzantı; txt, md, csv metin denetimiyle), uzantıya güvenilmez. Resim en fazla 10 MB, dosya 25 MB (`FILE_LIMITS`). Ortak kısım `packages/server/src/upload.ts` (chat ekleri de aynı `sniff` ve `cleanName` işlevini kullanır). `GET /api/files/:id` indirir (`Content-Disposition`: resim ve PDF sekmede açılır, kalanı iner, `nosniff`).
+- **Uç noktalar**: `GET /api/opportunities/:id?with=people,offers,files,links,tasks,touches,comments` (ekip ana muhatap hariç), `POST /api/opportunity-people` (`opportunity_id, person_id, role, note`), `PATCH|DELETE /api/opportunity-people/:id`, `POST /api/offers`, `PATCH|DELETE /api/offers/:id`, `POST /api/files`, `GET|DELETE /api/files/:id`.
+- **MCP** (yeni araç yok, `offer` kayıt türü eklendi): `get opportunity with:['people','offers','files']` ekip, teklif sürümleri ve dosya listesini kısa satırlarla verir. Ekip yazımı `save opportunity {add_people:[{person:'Deniz', role:'karar_verici', note?}], remove_people:['Ahmet']}` ile (id ile güncellerken; isim ya da id kabul eder). Teklifler `offer` türüyle: `save offer {opportunity:'Örnek Pizza'|id, amount, offered_at?, items:[{label,amount}]?, note?}` sıradaki sürümü açar, `save offer {...} id` günceller, `save offer {accepted:true|false} id` aynı çekirdek kuralla kabul eder ya da kabulü geri alır (tek kabul, fırsat değeri teklif tutarına çekilir), `delete offer id` çöp kutusuna atar (`restore:true` ile döner), `find offer {opportunity_id}` kısa satırlar verir (`#2 v2 · 12.10 · 85.000₺ · kabul edildi · Örnek Pizza`). Dosya yazımı MCP'de yok, web'den yapılır.
+- **Web**: `/firsatlar/:id` (Pipeline kartı, genel arama, Bugün, kişi ve firma kartları, zaman çizelgesindeki kişi kartı bu sayfaya açılır; `recordPath("opportunity")` de). Üstte özet kartı: tahmini değer (KDV hariç), kaynak ve ilan linki, tıklanır aşama çubuğu (telefonda yatay kayar, `kaybedildi` neden sorar, kazanılınca "Projeye git"), temas ekle. Sol sütunda Teklifler ve Akış (Hepsi, Temaslar, Yorumlar, Aşama süzgeçleri, yorum kutusu), sağ sütunda Sıradaki adım (takip tarihi gecikince vurgulu + en yakın açık görev), Ekip, Dosyalar, Linkler. Telefonda tek sütun: sıradaki adım, teklifler, ekip, dosyalar, linkler, akış. Akış, sıradaki adım ve "neden kaybedildi" sayfası zaman çizelgesi ve satış hunisinden çıkarılıp paylaşıldı (`components/Feed.tsx`, `NextStep.tsx`, `LostReason.tsx`); zaman çizelgesinde aşama olayları artık ayrı "Aşama" süzgecinde.

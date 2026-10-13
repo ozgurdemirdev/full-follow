@@ -83,7 +83,7 @@ export function peopleService(ctx: Ctx) {
       const keys = personKeys({ ...cur, ...f });
       const changedKeys = Object.fromEntries(Object.entries(keys).filter(([k, v]) => v !== cur[k]));
       assertUnique(ctx, changedKeys, { type: "person", id });
-      const changed = Object.keys(f).filter((k) => (f as any)[k] !== undefined && (f as any)[k] !== (cur as any)[k]);
+      const changed = Object.entries(f).filter(([k, v]) => v !== undefined && v !== cur[k]).map(([k]) => k);
       if (Object.keys(f).length) tx.update(people).set({ ...f, ...keys, updated_at: ctx.clock.now() }).where(eq(people.id, id)).run();
       if (assignTags(tx, ctx, "person", id, { set: tags, add: add_tags, remove: remove_tags })) changed.push("tags");
       if (assignSectors(tx, ctx, "person", id, sectors)) changed.push("sectors");
@@ -110,6 +110,7 @@ export function peopleService(ctx: Ctx) {
         bin.take("comments", `target_type = '${type}' AND target_id IN (SELECT id FROM ${table} WHERE person_id = ?)`, id);
       }
       bin.take("idea_people", "person_id = ?", id);
+      bin.take("opportunity_people", "person_id = ?", id);
       bin.take("touches", "person_id = ?", id);
       bin.take("notes", "person_id = ?", id);
       bin.take("drafts", "person_id = ?", id);

@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Post } from "@nestjs/common";
+import { Controller, Get, Inject, Post, Query } from "@nestjs/common";
 import { CORE, FOLLOWUPS, type AutoFollowups, type Core } from "../core.provider";
 
 @Controller("api")
@@ -21,5 +21,11 @@ export class MarketingController {
   @Get("report/marketing")
   marketing() {
     return this.core.marketing();
+  }
+
+  /** Haftalık inceleme (Cuma özeti): week = YYYY-Www ya da o haftadan bir tarih, boşsa bu hafta */
+  @Get("review")
+  review(@Query("week") week?: string) {
+    return this.core.review(week);
   }
 }

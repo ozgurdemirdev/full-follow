@@ -5,12 +5,14 @@ const loaders = {
   today: () => import("../pages/Today"),
   calendar: () => import("../pages/Calendar"),
   pipeline: () => import("../pages/Pipeline"),
+  opportunity: () => import("../pages/Opportunity"),
   people: () => import("../pages/People"),
   companies: () => import("../pages/Companies"),
   referrals: () => import("../pages/Referrals"),
   projects: () => import("../pages/Projects"),
   timeline: () => import("../pages/Timeline"),
   report: () => import("../pages/Report"),
+  review: () => import("../pages/Review"),
   drafts: () => import("../pages/Drafts"),
   comments: () => import("../pages/Comments"),
   posts: () => import("../pages/Posts"),
@@ -36,12 +38,14 @@ export const PATHS: Record<PageKey, string> = {
   today: "/",
   calendar: "/takvim",
   pipeline: "/huni",
+  opportunity: "/firsatlar",
   people: "/kisiler",
   companies: "/firmalar",
   referrals: "/referanslar",
   projects: "/projeler",
   timeline: "/zaman",
   report: "/rapor",
+  review: "/inceleme",
   drafts: "/taslaklar",
   comments: "/yorumlar",
   posts: "/paylasimlar",
@@ -52,6 +56,7 @@ export const PATHS: Record<PageKey, string> = {
 };
 
 export const settingsPath = (slug: string) => `${PATHS.settings}/${slug}`;
+export const opportunityPath = (id: number) => `${PATHS.opportunity}/${id}`;
 export const timelinePath = (type: "person" | "opportunity" | "project", id: number) => `/zaman/${type}/${id}`;
 
 /** Page of a record (people, companies, ideas, own projects, posts and timeline already take /:id; the rest follow the same pattern).
@@ -60,7 +65,7 @@ export function recordPath(type: string, id: number): string | null {
   switch (type) {
     case "person": return `${PATHS.people}/${id}`;
     case "company": return `${PATHS.companies}/${id}`;
-    case "opportunity": return `${PATHS.pipeline}/${id}`;
+    case "opportunity": return opportunityPath(id);
     case "project": return `${PATHS.projects}/${id}`;
     case "draft": return `${PATHS.drafts}/${id}`;
     case "template": return `${PATHS.templates}/${id}`;

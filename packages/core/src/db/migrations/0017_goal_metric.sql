@@ -1,0 +1,1 @@
+ALTER TABLE `daily_goals` ADD `metric` text;

@@ -95,6 +95,7 @@ export function trashList(ctx: Ctx): TrashItem[] {
 export const TYPE_LABEL: Record<string, string> = {
   person: "kişi", company: "firma", opportunity: "fırsat", project: "proje", task: "görev", touch: "temas", note: "not",
   post: "paylaşım", template: "şablon", idea: "fikir", own_project: "kendi projesi", draft: "taslak", payment: "ödeme", comment: "yorum", interest: "fikir ilgisi", link: "link", goal: "hedef",
+  opportunity_person: "ekip üyesi", offer: "teklif", file: "dosya",
   tag: "etiket", sector: "sektör", source: "kaynak", chat_session: "sohbet",
 };
 
@@ -128,9 +129,9 @@ export function restoreFromTrash(ctx: Ctx, type: TrashType, recordId: number, ch
         ...personLinkOf(type, parts),
       });
     });
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof FFError) throw e;
-    if (/FOREIGN KEY/i.test(String(e?.message))) {
+    if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) {
       throw new FFError("rule", `${t.label} geri yüklenemedi: bağlı olduğu kayıt da silinmiş, önce onu geri yükle`);
     }
     throw e;

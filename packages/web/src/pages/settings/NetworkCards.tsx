@@ -5,13 +5,14 @@ import { useQuery } from "../../api/store";
 import type { NetworkSettings, Today } from "../../api/types";
 import { order } from "../../components/ui";
 import { Head } from "./Head";
+import { QuotaFields } from "./QuotaFields";
 
 // Kaç gün cevapsız kalınca öne çıkar, kaç gün sessiz bağlantı soğumuş sayılır
 export function NetworkCard() {
   const t = useQuery<Today>(K.today);
   const cfg = t.data?.network.settings;
   if (!cfg) return null;
-  return <NetworkFields key={`${cfg.reply_wait_days}-${cfg.cooling_days}-${cfg.followup_days.join(",")}-${cfg.weekly_target}`} cfg={cfg} />;
+  return <NetworkFields key={`${cfg.reply_wait_days}-${cfg.cooling_days}-${cfg.followup_days.join(",")}-${cfg.weekly_target}-${JSON.stringify(cfg.channel_limits)}-${cfg.email_warmup_until}`} cfg={cfg} />;
 }
 
 function NetworkFields({ cfg }: { cfg: NetworkSettings }) {
@@ -39,6 +40,7 @@ function NetworkFields({ cfg }: { cfg: NetworkSettings }) {
           </div>
         ))}
         <MarketingFields cfg={cfg} />
+        <QuotaFields cfg={cfg} />
       </div>
     </section>
   );

@@ -85,6 +85,7 @@ export function Sidebar() {
     { key: "ownProjects", label: "Kendi projelerim", icon: "cube" },
     { key: "timeline", label: "Zaman çizelgesi", icon: "clock" },
     { key: "report", label: "Rapor", icon: "chart" },
+    { key: "review", label: "Haftalık inceleme", icon: "review" },
   ];
   const isActive = (k: PageKey) => (k === "today" ? path === "/" : path === PATHS[k] || path.startsWith(`${PATHS[k]}/`));
 

@@ -140,6 +140,16 @@ export interface NetworkSettings {
   cooling_days: number;
   followup_days: number[];
   weekly_target: number;
+  /** channel → daily outgoing message limit; a channel without an entry has no limit */
+  channel_limits: Record<string, number>;
+  /** ISO date or empty: cold email is off until then (inclusive) */
+  email_warmup_until: string;
+}
+export type QuotaState = "ok" | "near" | "over";
+export interface Quota {
+  date: string;
+  channels: { channel: string; sent: number; limit: number; state: QuotaState }[];
+  email_warmup: { until: string | null; active: boolean };
 }
 export interface NetworkLists {
   awaiting: List<Person>;
@@ -180,7 +190,33 @@ export interface Template extends Base {
   sent: number;
   replied: number;
   reply_rate: number | null;
+  /** too few sends to trust the rate */
+  early: boolean;
   score?: number;
+}
+export interface TemplateSectorStat {
+  sector_path: string;
+  sent: number;
+  replied: number;
+  reply_rate: number;
+  early: boolean;
+}
+export interface TemplateRank {
+  id: number;
+  name: string;
+  sent: number;
+  replied: number;
+  reply_rate: number | null;
+  early: boolean;
+  /** best rate of its group, claimed only with at least two non-early templates */
+  leader: boolean;
+  sectors: TemplateSectorStat[];
+}
+/** Templates of the same kind and channel (channel null = all channels), ranked */
+export interface TemplateGroup {
+  kind: Template["kind"];
+  channel: string | null;
+  templates: TemplateRank[];
 }
 export interface Idea extends Base {
   title: string;
@@ -275,6 +311,36 @@ export interface Source extends Base {
   people_count: number;
   company_count: number;
   deleted_at: string | null;
+}
+/** Extra person on an opportunity (the main contact is Opportunity.person_id) */
+export interface OppPerson extends Base {
+  opportunity_id: number;
+  person_id: number;
+  person_name: string;
+  company_name: string | null;
+  role: string;
+  note: string | null;
+}
+export interface OfferItem {
+  label: string;
+  amount: number;
+}
+export interface Offer extends Base {
+  opportunity_id: number;
+  version: number;
+  offered_at: string;
+  amount: number;
+  items: OfferItem[];
+  note: string | null;
+  accepted_at: string | null;
+  file_id: number | null;
+}
+export interface FileRow extends Base {
+  target_type: "opportunity" | "project";
+  target_id: number;
+  name: string;
+  mime: string;
+  size: number;
 }
 export interface Opportunity extends Base {
   title: string;
@@ -420,6 +486,9 @@ export interface Today {
   network: NetworkLists;
   posts_due: List<Post>;
   followups: List<FollowupDue>;
+  quota: Quota;
+  /** weekly review of the current week; ready on Fridays */
+  review: { week: string; ready: boolean };
   claude_last_at: string | null;
 }
 export interface PriceFloor {
@@ -451,6 +520,75 @@ export interface SourceReport {
   won_value: number;
   conversion: number | null;
 }
+export interface MarketingReport {
+  template_groups: TemplateGroup[];
+}
+/** Lead source funnel: found, written, replied, meeting, offer, won; rate = against the previous step */
+export interface FunnelStep {
+  key: string;
+  count: number;
+  rate: number | null;
+}
+export interface SourceFunnelRow {
+  source_id: number;
+  source: string;
+  steps: FunnelStep[];
+  reply_rate: number | null;
+  /** too few written messages for the reply rate to mean much */
+  early: boolean;
+  weak: boolean;
+}
+export interface SourceFunnel {
+  period: number | "all";
+  since: string | null;
+  sources: SourceFunnelRow[];
+}
+/** Weekly review (Friday summary) */
+export interface ReviewWeek {
+  sent: number;
+  replies: number;
+  meetings: number;
+  reply_rate: number | null;
+  new_people: number;
+  new_companies: number;
+  /** offers made that week */
+  offers: number;
+}
+export interface ReviewPick {
+  name: string;
+  reply_rate: number | null;
+}
+export interface ReviewTemplate {
+  kind: string;
+  channel: string | null;
+  leader: ReviewPick | null;
+  loser: ReviewPick | null;
+  /** templates with too few sends to rank */
+  early: number;
+}
+export interface ReviewSuggestion {
+  key: string;
+  text: string;
+  task_title: string;
+}
+export interface WeeklyReview {
+  week: string;
+  start: string;
+  end: string;
+  current: boolean;
+  prev_week: string;
+  next_week: string | null;
+  /** weekly outgoing message target, 0 = off */
+  target: number;
+  this_week: ReviewWeek;
+  last_week: ReviewWeek;
+  templates: ReviewTemplate[];
+  sources: { period: number | "all"; best: { source: string; reply_rate: number | null } | null; weakest: { source: string; reply_rate: number | null } | null };
+  quota: { channel: string; limit: number; over_days: number; max_sent: number }[];
+  suggestions: ReviewSuggestion[];
+  /** due date of the tasks made from suggestions */
+  next_monday: string;
+}
 export interface Report {
   sources: SourceReport[];
   month: MonthReport;
@@ -469,8 +607,12 @@ export interface GoalDay {
   title: string;
   target: number;
   channel: string | null;
+  /** counts new people and companies by itself (instead of a channel) */
+  metric: string | null;
   manual: number;
   auto: number;
+  /** new records goals: duplicates skipped by bulk saves that day */
+  duplicates: number;
   done: number;
   complete: boolean;
   note: string | null;
@@ -502,5 +644,6 @@ export interface Goal extends Base {
   target: number;
   days: string;
   channel: string | null;
+  metric: string | null;
   note: string | null;
 }
