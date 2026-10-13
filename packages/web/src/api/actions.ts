@@ -7,7 +7,7 @@ import type { Mutation } from "./types";
 
 /** Plan ekranları: günün planı ve takvim (giden temaslar hedeflere kendiliğinden sayılır) */
 const PLAN = ["/plan", "/calendar"];
-const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", ...PLAN];
+const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", "/review", ...PLAN];
 
 /** Her yazma işleminden sonra hangi listelerin tazeleneceği */
 const AFFECTS: Record<string, string[]> = {
@@ -26,7 +26,7 @@ const AFFECTS: Record<string, string[]> = {
   drafts: ["/drafts", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
   touches: [...CONTACTS, "/opportunities", "/ideas", "/followups", "/trash"],
   comments: ["/comments", "/own-projects", "/today", "/timeline", "/people", "/companies", "/trash"],
-  settings: ["/settings", "/report", "/today", "/people", "/network", "/followups"],
+  settings: ["/settings", "/report", "/review", "/today", "/people", "/network", "/followups"],
   posts: ["/posts", "/today", "/people", "/ideas", "/report", "/trash"],
   templates: ["/templates", "/trash"],
   ideas: ["/ideas", "/own-projects", "/people", "/posts", "/touches", "/timeline", "/trash"],

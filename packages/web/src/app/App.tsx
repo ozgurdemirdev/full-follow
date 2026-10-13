@@ -53,6 +53,7 @@ export function App() {
                   <Route path={`${PATHS.projects}/:id?`} component={pages.projects} />
                   <Route path={`${PATHS.timeline}/:type?/:id?`} component={pages.timeline} />
                   <Route path={PATHS.report} component={pages.report} />
+                  <Route path={PATHS.review} component={pages.review} />
                   <Route path={`${PATHS.drafts}/:id?`} component={pages.drafts} />
                   <Route path={`${PATHS.comments}/:id?`} component={pages.comments} />
                   <Route path={`${PATHS.posts}/:id?`} component={pages.posts} />

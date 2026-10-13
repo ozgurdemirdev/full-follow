@@ -18,6 +18,7 @@ import { openSheet } from "../app/ui";
 import { DashboardActivity } from "./DashboardActivity";
 import { GoalStrip } from "../components/GoalStrip";
 import { QuotaCard } from "../components/QuotaCard";
+import { ReviewCard } from "../components/ReviewCard";
 
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
@@ -33,6 +34,7 @@ export default function Today() {
         !today.error && <PageSkeleton />
       ) : (
         <>
+          {d.review.ready ? <ReviewCard /> : null}
           <GoalStrip plan={d.plan} />
           <DashboardActivity d={d} />
           <div className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] desk:gap-9">
