@@ -190,7 +190,33 @@ export interface Template extends Base {
   sent: number;
   replied: number;
   reply_rate: number | null;
+  /** too few sends to trust the rate */
+  early: boolean;
   score?: number;
+}
+export interface TemplateSectorStat {
+  sector_path: string;
+  sent: number;
+  replied: number;
+  reply_rate: number;
+  early: boolean;
+}
+export interface TemplateRank {
+  id: number;
+  name: string;
+  sent: number;
+  replied: number;
+  reply_rate: number | null;
+  early: boolean;
+  /** best rate of its group, claimed only with at least two non-early templates */
+  leader: boolean;
+  sectors: TemplateSectorStat[];
+}
+/** Templates of the same kind and channel (channel null = all channels), ranked */
+export interface TemplateGroup {
+  kind: Template["kind"];
+  channel: string | null;
+  templates: TemplateRank[];
 }
 export interface Idea extends Base {
   title: string;
@@ -461,6 +487,9 @@ export interface SourceReport {
   open: number;
   won_value: number;
   conversion: number | null;
+}
+export interface MarketingReport {
+  template_groups: TemplateGroup[];
 }
 export interface Report {
   sources: SourceReport[];
