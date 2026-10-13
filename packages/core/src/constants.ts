@@ -68,6 +68,10 @@ export const POST_PLATFORMS = ["r10", "linkedin", "instagram", "diger"] as const
 export const PLATFORM_LABEL: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 /** Mesaj şablonu türü: ilk mesaj, takip, teklif sonrası, diğer */
 export const TEMPLATE_KINDS = ["ilk", "takip", "teklif", "diger"] as const;
+/** A template with fewer sends than this is "early": its reply rate is too noisy to rank on */
+export const TEMPLATE_MIN_SAMPLE = 20;
+/** Sector label of recipients that have no sector, in the template breakdown */
+export const NO_SECTOR_LABEL = "Sektörsüz";
 /** Own product lifecycle */
 export const OWN_PROJECT_STATUSES = ["aktif", "beklemede", "tamamlandi", "birakildi"] as const;
 /** Could this own product be sold later */

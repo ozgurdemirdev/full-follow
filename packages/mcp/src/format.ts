@@ -188,6 +188,11 @@ export function todayText(t: any): string {
   return [`BUGÜN ${t.date}`, week, ...quotaText(t.quota), ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
 }
 
+/** One kind/channel group of the template comparison: `ilk mesaj/e-posta: "A" %18 (40) önde · "B" erken (12)` (at most 3 templates) */
+const templateGroupText = (g: Row) =>
+  `${label(g.kind)}/${g.channel ? label(g.channel) : "tüm kanallar"}: ${g.templates.slice(0, 3).map((t: Row) =>
+    `"${cut(t.name, 25)}" ${t.early ? "erken" : `%${Math.round(t.reply_rate * 100)}`} (${t.sent})${t.leader ? " önde" : ""}`).join(" · ")}`;
+
 /** Pazarlama özeti (report aracının ikinci bölümü) */
 export function marketingText(m: any): string {
   const out: string[] = [];
@@ -195,8 +200,7 @@ export function marketingText(m: any): string {
   if (posts.length) out.push(`Paylaşım getirisi: ${posts.map((p: Row) => `${cut(p.title, 30)} ${p.people_count} kişi, ${p.opp_count} fırsat${p.won ? `, ${tl(p.won_value)}` : ""}`).join(" · ")}`);
   if (m.posts_due.length) out.push(`Güncellenecek paylaşım: ${m.posts_due.length}`);
   if (m.ideas.length) out.push(`Fikirler: ${m.ideas.slice(0, 5).map((i: Row) => `${cut(i.title, 30)} (${label(i.stage)}) ${i.interested}/${i.told} ilgi`).join(" · ")}`);
-  const tpl = m.templates.filter((x: Row) => x.sent).slice(0, 3);
-  if (tpl.length) out.push(`Şablon dönüşü: ${tpl.map((x: Row) => `${cut(x.name, 25)} ${x.replied}/${x.sent}`).join(" · ")}`);
+  if (m.template_groups.length) out.push(`Şablon: ${m.template_groups.map(templateGroupText).join(" | ")}`);
   if (m.channels.length) out.push(`Kanal (30 gün, kişi): ${m.channels.map((c: Row) => `${label(c.channel)} ${c.replied}/${c.people}`).join(" · ")}`);
   if (m.followups.length) out.push(`Takip zamanı gelen: ${m.followups.length}`);
   return out.join("\n");
