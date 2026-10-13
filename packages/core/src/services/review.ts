@@ -1,5 +1,5 @@
-import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP } from "../constants";
-import { addDays, dayOf, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
+import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, WEEK_DAYS } from "../constants";
+import { addDays, dayOf, daysBetween, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
 import { FFError, rows, type Ctx } from "../context";
 import { weekStats } from "./network";
 import { quotaOverDays } from "./quota";
@@ -60,6 +60,8 @@ function buildFacts(ctx: Ctx, ws: string) {
   const prev = addDays(ws, -7);
   return {
     stats: w,
+    /** days of the week already lived: 7 for a finished week */
+    days: Math.min(WEEK_DAYS, daysBetween(ws, ctx.clock.today()) + 1),
     target: marketingSettings(ctx).weekly_target,
     offers: { this_week: offersMade(ctx, ws, until), last_week: offersMade(ctx, prev, addDays(ws, -1)) },
     templates: templateHighlights(ctx),
@@ -75,12 +77,14 @@ function buildFacts(ctx: Ctx, ws: string) {
 function suggestions(f: Facts): Suggestion[] {
   const out: Suggestion[] = [];
   const sent = f.stats.this_week.sent;
-  if (f.target && sent < f.target * REVIEW_TARGET_MISS_SHARE) {
-    const rounded = Math.ceil(sent / REVIEW_TARGET_STEP) * REVIEW_TARGET_STEP;
-    const lower = sent > 0 && rounded < f.target ? `hedefi ${rounded} yap ya da ` : "";
+  // An unfinished week is judged from Friday on, by the pace it would end the week with
+  const pace = Math.round((sent * WEEK_DAYS) / f.days);
+  if (f.target && f.days >= REVIEW_WEEKDAY && pace < f.target * REVIEW_TARGET_MISS_SHARE) {
+    const rounded = Math.ceil(pace / REVIEW_TARGET_STEP) * REVIEW_TARGET_STEP;
+    const lower = pace > 0 && rounded < f.target ? `hedefi ${rounded} yap ya da ` : "";
     out.push({
       key: "target",
-      text: `Haftalık hedef ${f.target}, giden ${sent}: ${lower}her güne ayrı bir giden mesaj hedefi ekle.`,
+      text: `Haftalık hedef ${f.target}, ${f.days < WEEK_DAYS ? `bu tempoyla ${pace}` : `giden ${sent}`}: ${lower}her güne ayrı bir giden mesaj hedefi ekle.`,
       task_title: `Haftalık hedefi gözden geçir (${f.target}, bu hafta ${sent})`,
     });
   }
