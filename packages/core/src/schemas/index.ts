@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
   ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS,
+  CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS, GOAL_METRICS,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
 
@@ -339,6 +339,7 @@ export const goalCreate = z.strictObject({
   target: z.coerce.number().int().positive(),
   days: goalDays.default("1,2,3,4,5,6,7"),
   channel: z.enum(CHANNELS).nullish(),
+  metric: z.enum(GOAL_METRICS).nullish(),
   note: optText,
 });
 export const goalUpdate = patch({
@@ -346,6 +347,7 @@ export const goalUpdate = patch({
   target: z.coerce.number().int().positive(),
   days: goalDays,
   channel: z.enum(CHANNELS).nullable(),
+  metric: z.enum(GOAL_METRICS).nullable(),
   note: optText,
 });
 

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { BULK_SKIPPED_EVENT } from "../constants";
 import { addDays, daysBetween } from "../dates";
 import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { daily_goals, goal_logs } from "../db/schema";
@@ -13,6 +14,7 @@ interface GoalRow {
   target: number;
   days: string;
   channel: string | null;
+  metric: string | null;
   note: string | null;
   created_at: string;
 }
@@ -22,8 +24,12 @@ export interface GoalDay {
   title: string;
   target: number;
   channel: string | null;
+  /** what the goal counts by itself instead of a channel (new_records) */
+  metric: string | null;
   manual: number;
   auto: number;
+  /** new_records goals: duplicates skipped by bulk saves that day */
+  duplicates: number;
   done: number;
   complete: boolean;
   /** the day's note */
@@ -43,6 +49,27 @@ const mondayOf = (date: string) => addDays(date, -(isoWeekday(date) - 1));
 /** A goal applies on a day if the weekday is in its repeat list and the goal already existed */
 const appliesOn = (g: GoalRow, date: string) => g.days.split(",").includes(String(isoWeekday(date))) && date >= g.created_at.slice(0, 10);
 
+/** New people and companies created per day (date → count); deleted records are gone from the tables, so they do not count */
+function newRecordCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
+  const list = rows<{ d: string; n: number }>(ctx, `SELECT d, SUM(n) AS n FROM (
+      SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM people GROUP BY d
+      UNION ALL SELECT substr(created_at, 1, 10), COUNT(*) FROM companies GROUP BY 1
+    ) WHERE d BETWEEN ? AND ? GROUP BY d`, from, to);
+  return new Map(list.map((r) => [r.d, r.n]));
+}
+
+/** Duplicates skipped by bulk saves per day (date → count), from the bulk skipped events */
+function skippedCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
+  const list = rows<{ d: string; n: number }>(ctx, `SELECT substr(created_at, 1, 10) AS d, SUM(json_extract(data, '$.count')) AS n FROM events
+    WHERE type = ? AND substr(created_at, 1, 10) BETWEEN ? AND ? GROUP BY d`, BULK_SKIPPED_EVENT, from, to);
+  return new Map(list.map((r) => [r.d, r.n]));
+}
+
+/** A goal counts by itself from a channel or from a metric, never both */
+const assertOneCounter = (channel?: string | null, metric?: string | null) => {
+  if (channel && metric) throw new FFError("validation", "hedef ya kanaldan ya da yeni kayıttan kendiliğinden sayar, ikisinden birden değil");
+};
+
 export function goalsService(ctx: Ctx) {
   const all = () => rows<GoalRow>(ctx, "SELECT * FROM daily_goals ORDER BY id");
 
@@ -57,16 +84,19 @@ export function goalsService(ctx: Ctx) {
   /** Goal state per day (from..to); days without applicable goals have an empty list */
   function days(from: string, to: string): { date: string; goals: GoalDay[] }[] {
     const goals = all();
-    // outgoing messages on the goal's channel count by themselves
+    // outgoing messages on the goal's channel and new records count by themselves
     const auto = outgoingMessageCounts(ctx, from, to);
+    const wantsRecords = goals.some((g) => g.metric === "new_records");
+    const added = wantsRecords ? newRecordCounts(ctx, from, to) : new Map<string, number>();
+    const skipped = wantsRecords ? skippedCounts(ctx, from, to) : new Map<string, number>();
     const logs = logsBetween(from, to);
     const out: { date: string; goals: GoalDay[] }[] = [];
     for (let d = from; d <= to; d = addDays(d, 1)) {
       const list = goals.filter((g) => appliesOn(g, d)).map((g) => {
         const log = logs.get(`${g.id}|${d}`);
-        const a = g.channel ? (auto.get(`${g.channel}|${d}`) ?? 0) : 0;
+        const a = g.metric === "new_records" ? (added.get(d) ?? 0) : g.channel ? (auto.get(`${g.channel}|${d}`) ?? 0) : 0;
         const manual = log?.count ?? 0;
-        return { id: g.id, title: g.title, target: g.target, channel: g.channel, manual, auto: a, done: manual + a, complete: manual + a >= g.target, note: log?.note ?? null, goal_note: g.note };
+        return { id: g.id, title: g.title, target: g.target, channel: g.channel, metric: g.metric, manual, auto: a, duplicates: g.metric === "new_records" ? (skipped.get(d) ?? 0) : 0, done: manual + a, complete: manual + a >= g.target, note: log?.note ?? null, goal_note: g.note };
       });
       out.push({ date: d, goals: list });
     }
@@ -119,6 +149,7 @@ export function goalsService(ctx: Ctx) {
 
   function create(input: unknown) {
     const d = parse(goalCreate, input);
+    assertOneCounter(d.channel, d.metric);
     return ctx.db.transaction((tx) => {
       const r = tx.insert(daily_goals).values({ ...d, ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "goal.created", summary: `Günlük hedef eklendi: ${truncate(r.title, 60)} (${r.target})`, data: { goal_id: r.id } });
@@ -130,6 +161,7 @@ export function goalsService(ctx: Ctx) {
     const d = parse(goalUpdate, input);
     return ctx.db.transaction((tx) => {
       const cur = requireRow<GoalRow>(ctx, "daily_goals", id, "hedef");
+      assertOneCounter(d.channel === undefined ? cur.channel : d.channel, d.metric === undefined ? cur.metric : d.metric);
       if (Object.keys(d).length) {
         tx.update(daily_goals).set({ ...d, updated_at: ctx.clock.now() }).where(eq(daily_goals.id, id)).run();
         emit(tx, ctx, { type: "goal.updated", summary: `Günlük hedef düzenlendi: ${truncate(d.title ?? cur.title, 60)}`, data: { goal_id: id } });

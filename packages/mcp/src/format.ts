@@ -61,7 +61,7 @@ const LINE: Record<string, (r: Row) => string> = {
     `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
     !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${cut(r.problem, 50)}`),
   own_project: (r) => join(`#${r.id} ${r.name}`, label(r.status), `satılabilir: ${label(r.sellable)}`, `${r.open_ideas} açık fikir`, r.sectors?.map((x: Row) => x.path).join(", ")),
-  goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
+  goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.metric && `otomatik: ${label(r.metric)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
   goal_log: (r) => join(`#${r.id} ${r.goal_title} ${d(r.date)}`, `elle ${r.count}`, r.note && `not: ${cut(r.note, 50)}`),
   interest: (r) => join(`#${r.id} ${r.person_name}`, r.idea_title, label(r.interest), r.note && cut(r.note, 50)),
 };
@@ -138,9 +138,13 @@ export function timelineText(events: Row[]): string {
 const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =>
   res.total ? `${title} (${res.total}):\n` + res.rows.map((r) => "  " + line(type, r)).join("\n") + (res.total > res.rows.length ? `\n  … +${res.total - res.rows.length}` : "") : "";
 
+/** Auto count of a goal: `(otomatik 8)` for a channel, `(12 eklendi, 3 mükerrer atlandı)` for new records */
+const autoText = (g: Row) =>
+  g.metric === "new_records" ? (g.auto || g.duplicates ? ` (${g.auto} eklendi${g.duplicates ? `, ${g.duplicates} mükerrer atlandı` : ""})` : "") : g.auto ? ` (otomatik ${g.auto})` : "";
+
 /** Günün planı: hedefler (yapılan/hedef), o günün görevleri, seri ve haftalık oran */
 export function planText(p: any): string {
-  const goals = p.goals.map((g: Row) => `  #${g.id} ${g.title} ${g.done}/${g.target}${g.complete ? " ✓" : ""}${g.auto ? ` (otomatik ${g.auto})` : ""}${g.note ? ` · not: ${cut(g.note, 50)}` : ""}`);
+  const goals = p.goals.map((g: Row) => `  #${g.id} ${g.title} ${g.done}/${g.target}${g.complete ? " ✓" : ""}${autoText(g)}${g.note ? ` · not: ${cut(g.note, 50)}` : ""}`);
   const tasks = p.tasks.map((t: Row) => "  " + line("task", t));
   const head = join(`PLAN ${p.date}`, p.streak ? `seri ${p.streak} gün` : "", p.week_ratio !== null && p.week_ratio !== undefined && `hafta %${Math.round(p.week_ratio * 100)}`);
   return [head, goals.length ? `Hedef:\n${goals.join("\n")}` : "hedef yok (save goal ile ekle)", tasks.length ? `Görev:\n${tasks.join("\n")}` : ""].filter(Boolean).join("\n");

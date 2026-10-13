@@ -4,7 +4,7 @@ import {
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
+  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES, GOAL_METRICS,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -262,6 +262,8 @@ export const daily_goals = sqliteTable("daily_goals", {
   /** ISO hafta günleri, virgüllü: "1,2,3,4,5" */
   days: text("days").notNull().default("1,2,3,4,5,6,7"),
   channel: text("channel", { enum: CHANNELS }),
+  /** counts new records of the day by itself (instead of a channel); a goal has a channel or a metric, not both */
+  metric: text("metric", { enum: GOAL_METRICS }),
   /** kalıcı not (örn. kişiye özel not yaz) */
   note: text("note"),
 });

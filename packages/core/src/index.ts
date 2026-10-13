@@ -4,7 +4,7 @@ import type { DbHandle } from "./db/client";
 import { sourcesService, tagsService } from "./services/categories";
 import { commentsService } from "./services/comments";
 import { companiesService } from "./services/companies";
-import { assertKeysFree } from "./services/dupes";
+import { assertKeysFree, recordSkipped } from "./services/dupes";
 import { draftsService } from "./services/drafts";
 import { opportunitiesService } from "./services/opportunities";
 import { paymentsService } from "./services/payments";
@@ -146,18 +146,20 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    * Tek transaction içinde çalışır (hızlı); hata veren kayıt sadece kendisini geri alır.
    */
   function saveMany(type: string, items: Record<string, any>[]): BulkResult {
+    const t = normalizeType(type);
     const out: BulkResult = { created: [], skipped: [], failed: [] };
     const labelOf = (d: Record<string, any>) => String(d?.name ?? d?.title ?? d?.email ?? d?.contact ?? d?.summary ?? "").slice(0, 60);
     ctx.sqlite.transaction(() => {
       items.forEach((item, index) => {
         try {
-          const r = save(type, item);
+          const r = save(t, item);
           out.created.push({ index, id: r.row?.id, label: labelOf(item), effects: r.effects });
         } catch (e) {
           if (e instanceof FFError && e.code === "duplicate" && e.duplicate) out.skipped.push({ index, label: labelOf(item), existing: e.duplicate });
           else out.failed.push({ index, label: labelOf(item), error: e instanceof Error ? e.message : String(e) });
         }
       });
+      if (t === "person" || t === "company") recordSkipped(ctx, t, out.skipped.map((s) => items[s.index]));
     })();
     return out;
   }

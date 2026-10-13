@@ -1,4 +1,5 @@
-import { FFError, row, type Ctx, type DuplicateHit } from "../context";
+import { BULK_SKIPPED_EVENT } from "../constants";
+import { emit, FFError, row, type Ctx, type DuplicateHit } from "../context";
 import { companyKeys, KEY_LABEL, personKeys, type KeyKind } from "../keys";
 import { trashKeyHit } from "./trash";
 
@@ -35,6 +36,20 @@ export function assertUnique(ctx: Ctx, keys: KeyCols, self?: { type: "person" | 
     const kind = t.key.split(":")[0] as KeyKind;
     throw duplicate({ type: t.type as "person" | "company", id: t.record_id, label: t.label, field: KEY_LABEL[kind], in_trash: true });
   }
+}
+
+/**
+ * Duplicates skipped by one bulk save (people and companies) become a single event: the skipped count and the keys of the
+ * skipped records. The daily goal row reads its "duplicates skipped" count from here. Called inside the bulk save transaction.
+ */
+export function recordSkipped(ctx: Ctx, type: "person" | "company", items: Record<string, any>[]) {
+  if (!items.length) return;
+  const keys = items.flatMap((i) => keyList(type === "person" ? personKeys(i) : companyKeys(i)));
+  emit(ctx.db, ctx, {
+    type: BULK_SKIPPED_EVENT,
+    summary: `Toplu eklemede ${items.length} mükerrer ${type === "person" ? "kişi" : "firma"} atlandı`,
+    data: { record_type: type, count: items.length, keys },
+  });
 }
 
 /** Çöp kutusundan geri gelecek kaydın anahtarları ("email:a@b.com") etkin bir kayıtta kullanılıyor mu */

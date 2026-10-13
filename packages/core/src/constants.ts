@@ -125,7 +125,7 @@ export const LABELS: Record<string, string> = {
   linkedin: "LinkedIn", whatsapp: "WhatsApp", r10: "R10",
   dogrulaniyor: "doğrulanıyor", urun: "ürün", anlatildi: "anlatıldı", ilk: "ilk mesaj", diger: "diğer",
   yazilmadi: "yazılmadı", yazildi: "yazıldı", cevap_geldi: "cevap geldi", gorusuldu: "görüşüldü", es_gecildi: "es geçildi", tanidik: "tanıdık", arkadas: "arkadaş",
-  aktif: "aktif", beklemede: "beklemede", tamamlandi: "tamamlandı", birakildi: "bırakıldı",
+  new_records: "yeni kayıt", aktif: "aktif", beklemede: "beklemede", tamamlandi: "tamamlandı", birakildi: "bırakıldı",
   yuksek: "yüksek", orta: "orta", dusuk: "düşük", evet: "evet", belki: "belki", hayir: "hayır",
 };
 export const label = (k: string) => LABELS[k] ?? k;
@@ -145,6 +145,11 @@ export const REVIEW_WEEKDAY = 5;
 // ---- Günlük iş planı ----
 /** Hafta günleri ISO numarasıyla (1 = pazartesi); hedef tekrarı bu numaraların virgüllü listesidir */
 export const GOAL_DAY_PRESETS = { her_gun: [1, 2, 3, 4, 5, 6, 7], hafta_ici: [1, 2, 3, 4, 5], hafta_sonu: [6, 7] } as const;
+/** What a goal counts by itself besides a channel: new people and companies created that day (deleted ones are gone from the tables) */
+export const GOAL_METRICS = ["new_records"] as const;
+export type GoalMetric = (typeof GOAL_METRICS)[number];
+/** Event written once per bulk save that skipped duplicates; data: { record_type, count, keys } */
+export const BULK_SKIPPED_EVENT = "bulk.skipped";
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
 
 // ---- Panel chat ----
