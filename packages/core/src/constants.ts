@@ -11,7 +11,7 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir */
-export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project"] as const;
+export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project", "opportunity_person", "offer", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -32,13 +32,18 @@ export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "
 export const ASSIGNEES = ACTORS;
 export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea", "own_project"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
+/** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */
+export const OPP_ROLES = ["karar_verici", "teknik", "ortak", "diger"] as const;
+export type OppRole = (typeof OPP_ROLES)[number];
+/** Records that can hold uploaded files */
+export const FILE_TARGETS = ["opportunity", "project"] as const;
 /** Records that carry labelled links (roadmap, proposal deck, Figma, repo) */
 export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 export const RECORD_TYPES = [
   "person", "company", "opportunity", "project", "task", "draft", "payment", "source", "comment", "touch", "setting",
-  "sector", "note", "tag", "trash", "link",
+  "sector", "note", "tag", "trash", "link", "offer",
   // günlük iş planı
   "goal", "goal_log",
   // Paket 2: pazarlama
@@ -54,7 +59,7 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   firma: "company", proje: "project", gorev: "task", görev: "task",
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
   yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
-  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link",
+  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
   paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   hedef: "goal", hedefler: "goal", goals: "goal", ilerleme: "goal_log", progress: "goal_log",
@@ -127,6 +132,7 @@ export const LABELS: Record<string, string> = {
   yazilmadi: "yazılmadı", yazildi: "yazıldı", cevap_geldi: "cevap geldi", gorusuldu: "görüşüldü", es_gecildi: "es geçildi", tanidik: "tanıdık", arkadas: "arkadaş",
   new_records: "yeni kayıt", aktif: "aktif", beklemede: "beklemede", tamamlandi: "tamamlandı", birakildi: "bırakıldı",
   yuksek: "yüksek", orta: "orta", dusuk: "düşük", evet: "evet", belki: "belki", hayir: "hayır",
+  karar_verici: "karar verici", teknik: "teknik", ortak: "ortak",
 };
 export const label = (k: string) => LABELS[k] ?? k;
 
@@ -197,6 +203,19 @@ export const CHAT_ATTACHMENT_TYPES = [
   { ext: "md", mime: "text/markdown", kind: "text" },
   { ext: "csv", mime: "text/csv", kind: "text" },
 ] as const;
+/** What an opportunity or project file may be: the chat types plus Office files (a zip container, told apart by extension) */
+export const FILE_TYPES = [
+  ...CHAT_ATTACHMENT_TYPES,
+  { ext: "docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", kind: "office" },
+  { ext: "pptx", mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation", kind: "office" },
+  { ext: "xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", kind: "office" },
+] as const;
+/** Upload limits of record files (offer decks and scans are bigger than chat attachments) */
+export const FILE_LIMITS = { maxImageBytes: 10 * 1024 * 1024, maxFileBytes: 25 * 1024 * 1024 } as const;
+/** Max name length kept for an uploaded file */
+export const FILE_NAME_MAX = 120;
+/** Max items in one offer price breakdown */
+export const OFFER_ITEMS_MAX = 30;
 /** Max length of the pinned notes text that goes into every panel chat */
 export const CHAT_PINNED_MAX = 4_000;
 export const CHAT_NEW_TITLE = "Yeni sohbet";

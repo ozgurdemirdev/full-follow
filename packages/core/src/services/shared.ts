@@ -12,7 +12,7 @@ export const TARGET_TABLE: Record<CommentTarget, string> = {
 export const TABLE_LABEL: Record<string, string> = {
   people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
   drafts: "taslak", payments: "ödeme", sources: "kaynak", comments: "yorum", touches: "temas",
-  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", own_projects: "kendi projesi", idea_people: "fikir ilgisi", tags: "etiket", links: "link", daily_goals: "hedef",
+  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", own_projects: "kendi projesi", idea_people: "fikir ilgisi", tags: "etiket", links: "link", daily_goals: "hedef", files: "dosya", offers: "teklif", opportunity_people: "ekip üyesi",
 };
 
 export function requireRow<T = any>(ctx: Ctx, table: string, id: number, what = TABLE_LABEL[table] ?? table): T {

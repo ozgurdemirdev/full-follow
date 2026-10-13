@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
   ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS, GOAL_METRICS,
+  CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS, GOAL_METRICS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
 
@@ -98,6 +98,8 @@ export const oppCreate = z.strictObject({
   source_url: optText,
   source_date: date.optional(),
 });
+/** Extra people on an opportunity: a person reference (id or name) with an optional role and note */
+const teamMember = z.strictObject({ person: z.union([id, text]), role: z.enum(OPP_ROLES).default("diger"), note: optText });
 export const oppUpdate = patch({
   title: text,
   person_id: id,
@@ -106,6 +108,42 @@ export const oppUpdate = patch({
   next_follow_up_at: date,
   source_url: optText,
   source_date: date,
+  /** team changes (MCP): add or change a member by person id or name, remove members */
+  add_people: z.array(teamMember),
+  remove_people: z.array(z.union([id, text])),
+});
+
+export const teamAdd = z.strictObject({ person_id: id, role: z.enum(OPP_ROLES).default("diger"), note: optText });
+export const teamUpdate = patch({ role: z.enum(OPP_ROLES), note: optText });
+
+const offerAmount = z.coerce.number().int().positive("teklif tutarı 0'dan büyük olmalı");
+const offerItem = z.strictObject({ label: text, amount: tl });
+const offerDate = date.refine((v) => v !== null, "teklif tarihi gerekli");
+export const offerCreate = z.strictObject({
+  opportunity_id: id,
+  offered_at: offerDate.optional(),
+  amount: offerAmount,
+  items: z.array(offerItem).max(OFFER_ITEMS_MAX).default([]),
+  note: optText,
+  file_id: id.nullish(),
+});
+export const offerUpdate = patch({
+  offered_at: offerDate,
+  amount: offerAmount,
+  items: z.array(offerItem).max(OFFER_ITEMS_MAX),
+  note: optText,
+  file_id: id.nullable(),
+  /** true accepts this offer (clears the others), false takes the acceptance back */
+  accepted: z.boolean(),
+});
+
+export const fileCreate = z.strictObject({
+  target_type: z.enum(FILE_TARGETS),
+  target_id: id,
+  name: text.max(FILE_NAME_MAX),
+  mime: text,
+  size: id,
+  stored_name: text,
 });
 
 export const projectCreate = z.strictObject({

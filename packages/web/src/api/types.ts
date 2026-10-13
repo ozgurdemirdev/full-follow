@@ -312,6 +312,36 @@ export interface Source extends Base {
   company_count: number;
   deleted_at: string | null;
 }
+/** Extra person on an opportunity (the main contact is Opportunity.person_id) */
+export interface OppPerson extends Base {
+  opportunity_id: number;
+  person_id: number;
+  person_name: string;
+  company_name: string | null;
+  role: string;
+  note: string | null;
+}
+export interface OfferItem {
+  label: string;
+  amount: number;
+}
+export interface Offer extends Base {
+  opportunity_id: number;
+  version: number;
+  offered_at: string;
+  amount: number;
+  items: OfferItem[];
+  note: string | null;
+  accepted_at: string | null;
+  file_id: number | null;
+}
+export interface FileRow extends Base {
+  target_type: "opportunity" | "project";
+  target_id: number;
+  name: string;
+  mime: string;
+  size: number;
+}
 export interface Opportunity extends Base {
   title: string;
   person_id: number;

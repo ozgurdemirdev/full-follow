@@ -74,3 +74,9 @@ export function norm(s: string | null | undefined): string {
     .replace(/[̀-ͯ]/g, "")
     .replace(/ı/g, "i");
 }
+
+/** File size: "812 KB", "3,4 MB" */
+export function fmtSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB`;
+}

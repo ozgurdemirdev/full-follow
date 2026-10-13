@@ -9,3 +9,4 @@ data/backups/
 data/*.log
 *.tgz
 data/chat/
+data/files/

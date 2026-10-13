@@ -28,6 +28,9 @@ const LINE: Record<string, (r: Row) => string> = {
     r.cooling && "SOĞUYOR", r.next_follow_up_at && `takip ${d(r.next_follow_up_at)}`, r.handle, r.email, r.phone,
   ),
   sector: (r) => join(`#${r.id} ${r.path}`, `${r.people_count ?? 0} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
+  opp_person: (r) => join(`#${r.id} ${r.person_name}`, label(r.role), r.company_name, r.note && cut(r.note, 60)),
+  offer: (r) => join(`#${r.id} v${r.version}`, d(r.offered_at), tl(r.amount), r.accepted_at && "kabul edildi", r.opportunity_title, !!r.items?.length && `${r.items.length} kalem`, r.note && cut(r.note, 60), r.file_id && `dosya #${r.file_id}`),
+  file: (r) => join(`#${r.id} ${r.name}`, `${Math.max(1, Math.round(r.size / 1024))} KB`, d(r.created_at)),
   link: (r) => join(`#${r.id} ${r.label}`, r.url, r.from && `(${r.from})`),
   note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, 80)),
   company: (r) => join(`#${r.id} ${r.name}`, label(r.contact_status), r.tags?.join(","), r.sector_path, r.source_name && `kaynak ${r.source_name}`,
@@ -82,7 +85,7 @@ const SKIP = new Set(["updated_at", "position", "tag_list", "created_at", "perso
   "post_title", "post_id", "idea_title", "idea_id", "template_id", "followup_step", "platform", "url", "posted_at", "refresh_days", "refreshed_at", "next_refresh_at", "refresh_due",
   "opp_count", "won", "won_value", "used", "sent", "replied", "reply_rate", "problem", "told", "interested", "not_interested", "interest_rate", "touch_count", "post_count", "post_people", "sectors", "interest", "note", "person_id", "idea_stage", "score",
   "tag_ids", "source_id", "source_name", "contact_status", "deleted_at", "slug", "color", "company_count", "open_opps", "touch_count", "to_name", "contact",
-  "company_id", "source_url", "source_date",
+  "company_id", "source_url", "source_date", "version", "offered_at", "amount", "accepted_at", "file_id", "opportunity_id",
   "description", "sellable", "sellable_note", "open_ideas", "done_ideas", "own_project_title", "own_project_id", "priority",
   "sector_name", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "days_since", "awaiting", "cooling", "referral_count", "referral_value", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"]);
 
@@ -124,7 +127,8 @@ export function block(res: { type: string; id: number; row: Row; related: Record
       continue;
     }
     const t = name === "people" && type === "idea" ? "interest"
-      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea" } as Record<string, string>)[name];
+      : name === "people" && type === "opportunity" ? "opp_person"
+      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -258,7 +262,7 @@ export function reviewText(r: any): string {
 
 export const KIND_NAME: Record<string, string> = {
   person: "kişi", company: "firma", source: "kaynak", opportunity: "fırsat", project: "proje", task: "görev",
-  draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",
+  draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", offer: "teklif",
   post: "paylaşım", template: "şablon", idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu", goal: "hedef", goal_log: "ilerleme",
 };
 

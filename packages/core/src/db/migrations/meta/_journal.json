@@ -127,6 +127,13 @@
       "when": 1791889198594,
       "tag": "0017_goal_metric",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1791889538766,
+      "tag": "0018_opportunity_page",
+      "breakpoints": true
     }
   ]
 }

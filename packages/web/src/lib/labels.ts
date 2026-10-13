@@ -18,6 +18,10 @@ export const PROJECT_STAGE: Record<ProjectStage, string> = {
 };
 export const MILESTONE: Record<string, string> = { ...PROJECT_STAGE };
 
+/** Role of an extra person on an opportunity, in display order */
+export const OPP_ROLE: Record<string, string> = { karar_verici: "Karar verici", teknik: "Teknik", ortak: "Ortak", diger: "Diğer" };
+export const OPP_ROLES = Object.keys(OPP_ROLE);
+
 /** Network kanalları önde (soğuk e-posta, Instagram DM, LinkedIn, telefon, yüz yüze) */
 export const CHANNEL: Record<string, string> = {
   email: "E-posta", instagram: "Instagram DM", linkedin: "LinkedIn", telefon: "Telefon", yuz_yuze: "Yüz yüze",
@@ -131,3 +135,6 @@ export function daysLabel(days: string): string {
   const preset = GOAL_PRESETS.find((p) => p.days.join(",") === days);
   return preset ? preset.label : days.split(",").map((n) => WEEKDAY_SHORT[Number(n) - 1]).join(" ");
 }
+
+/** File picker filter for record files (the server checks the real type; the limits live in core FILE_LIMITS) */
+export const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.csv,.docx,.pptx,.xlsx";

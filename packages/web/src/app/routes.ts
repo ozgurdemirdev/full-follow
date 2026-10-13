@@ -5,6 +5,7 @@ const loaders = {
   today: () => import("../pages/Today"),
   calendar: () => import("../pages/Calendar"),
   pipeline: () => import("../pages/Pipeline"),
+  opportunity: () => import("../pages/Opportunity"),
   people: () => import("../pages/People"),
   companies: () => import("../pages/Companies"),
   referrals: () => import("../pages/Referrals"),
@@ -37,6 +38,7 @@ export const PATHS: Record<PageKey, string> = {
   today: "/",
   calendar: "/takvim",
   pipeline: "/huni",
+  opportunity: "/firsatlar",
   people: "/kisiler",
   companies: "/firmalar",
   referrals: "/referanslar",
@@ -54,6 +56,7 @@ export const PATHS: Record<PageKey, string> = {
 };
 
 export const settingsPath = (slug: string) => `${PATHS.settings}/${slug}`;
+export const opportunityPath = (id: number) => `${PATHS.opportunity}/${id}`;
 export const timelinePath = (type: "person" | "opportunity" | "project", id: number) => `/zaman/${type}/${id}`;
 
 /** Page of a record (people, companies, ideas, own projects, posts and timeline already take /:id; the rest follow the same pattern).
@@ -62,7 +65,7 @@ export function recordPath(type: string, id: number): string | null {
   switch (type) {
     case "person": return `${PATHS.people}/${id}`;
     case "company": return `${PATHS.companies}/${id}`;
-    case "opportunity": return `${PATHS.pipeline}/${id}`;
+    case "opportunity": return opportunityPath(id);
     case "project": return `${PATHS.projects}/${id}`;
     case "draft": return `${PATHS.drafts}/${id}`;
     case "template": return `${PATHS.templates}/${id}`;
