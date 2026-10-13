@@ -491,6 +491,26 @@ export interface SourceReport {
 export interface MarketingReport {
   template_groups: TemplateGroup[];
 }
+/** Lead source funnel: found, written, replied, meeting, offer, won; rate = against the previous step */
+export interface FunnelStep {
+  key: string;
+  count: number;
+  rate: number | null;
+}
+export interface SourceFunnelRow {
+  source_id: number;
+  source: string;
+  steps: FunnelStep[];
+  reply_rate: number | null;
+  /** too few written messages for the reply rate to mean much */
+  early: boolean;
+  weak: boolean;
+}
+export interface SourceFunnel {
+  period: number | "all";
+  since: string | null;
+  sources: SourceFunnelRow[];
+}
 export interface Report {
   sources: SourceReport[];
   month: MonthReport;

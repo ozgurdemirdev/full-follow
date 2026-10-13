@@ -68,8 +68,18 @@ export const POST_PLATFORMS = ["r10", "linkedin", "instagram", "diger"] as const
 export const PLATFORM_LABEL: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 /** Mesaj şablonu türü: ilk mesaj, takip, teklif sonrası, diğer */
 export const TEMPLATE_KINDS = ["ilk", "takip", "teklif", "diger"] as const;
-/** A template with fewer sends than this is "early": its reply rate is too noisy to rank on */
-export const TEMPLATE_MIN_SAMPLE = 20;
+/** A reply rate over fewer messages than this is "early": too noisy to rank on (templates, lead sources) */
+export const RATE_MIN_SAMPLE = 20;
+export const TEMPLATE_MIN_SAMPLE = RATE_MIN_SAMPLE;
+/** Lead source funnel steps, in order; each step counts the records that reached it (a later step implies the earlier ones) */
+export const SOURCE_FUNNEL_STEPS = ["found", "written", "replied", "meeting", "offer", "won"] as const;
+/** Funnel period in days by record creation date ("all" = no filter) and the one used when none is given */
+export const SOURCE_FUNNEL_PERIODS = [30, 90, "all"] as const;
+export const SOURCE_FUNNEL_DEFAULT_PERIOD = 90;
+/** Opportunity stages that mean an offer was made; a lost one is recognised from its stage events */
+export const OFFER_STAGES = ["teklif", "kazanildi"] as const;
+/** The lowest reply rate third of the sources with enough sample is flagged weak */
+export const SOURCE_WEAK_SHARE = 1 / 3;
 /** Sector label of recipients that have no sector, in the template breakdown */
 export const NO_SECTOR_LABEL = "Sektörsüz";
 /** Own product lifecycle */

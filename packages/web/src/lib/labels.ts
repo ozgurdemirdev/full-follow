@@ -57,6 +57,9 @@ export const PLATFORMS = Object.keys(PLATFORM);
 export const PLATFORM_DOT: Record<string, string> = { r10: "bg-accent-warning", linkedin: "bg-chip-opportunity-fg", instagram: "bg-accent-source", diger: "bg-accent-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
 export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
+export const FUNNEL_STEP: Record<string, string> = { found: "Bulundu", written: "Yazıldı", replied: "Cevap", meeting: "Görüşme", offer: "Teklif", won: "Kazanıldı" };
+/** Funnel period choices; the values are what the endpoint accepts */
+export const FUNNEL_PERIODS = [{ value: "30", label: "Son 30 gün" }, { value: "90", label: "Son 90 gün" }, { value: "all", label: "Tümü" }];
 export const IDEA_STAGE: Record<string, string> = { fikir: "Fikir", dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" };
 export const IDEA_STAGES = Object.keys(IDEA_STAGE);
 export const IDEA_TONE: Record<string, Tone> = { fikir: "neutral", dogrulaniyor: "payment", demo: "opportunity", urun: "success" };

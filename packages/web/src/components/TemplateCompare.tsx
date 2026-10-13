@@ -79,7 +79,7 @@ function TemplateRow({ t }: { t: TemplateRank }) {
 export function TemplateCompare({ groups }: { groups: TemplateGroup[] }) {
   return (
     <MotionScope>
-      <section className="card rise overflow-hidden" style={order(4)} aria-label="Şablon kıyası">
+      <section className="card rise overflow-hidden" style={order(5)} aria-label="Şablon kıyası">
         <CardHead title="Şablon kıyası">
           <span className="text-sm text-text-secondary">cevap gelen / gönderilen</span>
         </CardHead>

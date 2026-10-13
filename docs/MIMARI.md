@@ -301,6 +301,12 @@ Kapsam (Kendi projelerim, §13): `own_project_id` boşsa genel para kazanma fikr
 
 **Günlük kota ve e-posta ısınması**: `channel_limits` (JSON nesne, kanal → günlük giden mesaj limiti; sadece `CHANNELS` kanalları, 0 ya da boş = limitsiz; varsayılan `{"email":20,"instagram":15,"whatsapp":15}`) ve `email_warmup_until` (ISO tarih ya da boş; bu tarihe kadar, o gün dahil, soğuk e-posta kapalı). "Gönderilen" = o gün `direction = giden` ve `kind = mesaj` olan temaslar (hedeflerle aynı sayım, `quota.ts` `outgoingMessageCounts`). Durum: `ok`, `near` (limitin %80'i, `QUOTA_NEAR_RATIO`), `over` (limit doldu ya da aşıldı). Soğuk e-posta = daha önce hiç temas olmayan kişiye, firmaya ya da adrese giden e-posta mesajı. Engel yok, sadece uyarı: bugünün giden temasında (taslak "gönderdim" ya da elle temas) kanal limite ulaşırsa/aşarsa ya da ısınma sürerken soğuk e-posta giderse sonucun `effects` listesine Türkçe uyarı eklenir (web bildirimde gösterir). Geçmiş tarihli temas uyarı üretmez.
 
+### 2.19 Kaynak hunisi (fikir #30)
+
+Hangi kaynak iş getiriyor, hangisine boşuna zaman gidiyor: `sourceFunnel` (`services/sourceFunnel.ts`, hesaplanır, saklanmaz). Birim, kaynağı (`source_id`) olan her **kişi ve firma**dır. Altı adım, her biri o adıma ulaşan kayıt sayısı ve bir önceki adıma göre oran: **bulundu** (kayıt) → **yazıldı** (en az bir giden temas) → **cevap** (giden temastan sonra gelen temas; şablonlardaki `REPLIED_AFTER` kuralı, ikinci bir eşleştirme yazılmadı) → **görüşme** (`contact_status = gorusuldu`, yani `status.ts` arama ve görüşme temasından bu durumu türetir, ya da `gorusme` türünde temas) → **teklif** (kaydın bir fırsatı `teklif` ya da `kazanildi` aşamasında; teklifte kaybedilen de `opp.stage` olayından sayılır) → **kazanıldı** (fırsat `kazanildi`). Firma kendi temaslarını, çalışanlarının temaslarını ve fırsatlarını sayar (`bumpStatus` ile aynı bakış). Sonraki adım önceki adımları gerektirir sayılır, yani sayılar huni boyunca artmaz.
+
+Dönem (`period`) kayıt oluşturma tarihine göre süzer: `30`, `90` ya da `all`; varsayılan `SOURCE_FUNNEL_DEFAULT_PERIOD` (90). `reply_rate` = cevap / yazıldı. Yazılanı `RATE_MIN_SAMPLE` (20; şablonlardaki `TEMPLATE_MIN_SAMPLE` ile aynı sabit) altında olan kaynak `early` ("erken") sayılır, oranı güvenilir değildir. Yeterli örneği olan kaynaklar arasında cevap oranı en düşük üçte biri (`SOURCE_WEAK_SHARE`) `weak` ("zayıf") işaretlenir; en az bir kaynak ondan daha iyi olmalıdır, hepsi eşitse kimse zayıf değildir. Uç: `GET /api/report/sources?period=`. MCP `report()` tek satır ekler: `Kaynak (90g): R10 40→22→6→2→1→0 zayıf · Ajans 12→9→3→1→0→0 erken`. Web: Rapor sayfasında "Kaynak hunisi" bölümü (`SourceFunnel.tsx`), kaynak başına altı adımlık çubuk ve dönem filtresi.
+
 ### İlişki özeti
 
 ```
@@ -363,7 +369,7 @@ her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 | **Satış hunisi** | Aşamaya göre gruplu açık fırsatlar (kazanılan/kaybedilen sütunlar daraltılmış, son 30 gün) |
 | **Proje panosu** | Aşamaya göre projeler + her birinin sıradaki görevi ve sıradaki ödemesi |
 | **Zaman çizelgesi** | Bir kişi ya da projenin `events` kayıtları, eskiden yeniye |
-| **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı · şablon kıyası (tür + kanal grubunda gönderim, cevap oranı, "erken" uyarısı, sektör dökümü, §2.15) |
+| **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı · şablon kıyası (tür + kanal grubunda gönderim, cevap oranı, "erken" uyarısı, sektör dökümü, §2.15) · kaynak hunisi (§2.19) |
 | Kayıt sayfaları | Kişi, firma, fırsat, proje detay ve formlar; her birinde yorum paneli (ekran sayısına dahil değil ama gerekli) |
 
 Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
@@ -400,7 +406,7 @@ Hedef: Claude, Özgür'ün arayüzde yapabildiği her şeyi yapabilsin, ama her 
 | `draft(person, channel, body, reason?, opp?, project?)` | Onaya taslak bırakır; `reason` neden hazırlandığını söyler | `ok taslak #9 onay bekliyor` |
 | `pay(payment_id, amount, date?)` | Ödeme girer | `ok ödeme #5 · 15.000/15.000 ödendi` |
 | `timeline(type, id, limit?)` | Kişi/proje/fırsat olayları | `09.10 Claude · Taslak hazırlandı` |
-| `report(month?)` | Haftalık temas sayıları + referans değeri (ilk 5) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
+| `report(month?)` | Haftalık temas sayıları + referans değeri (ilk 5) + kaynak hunisi (tek satır, §2.19) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
 | `delete(type, id)` | Silme (aynı kurallarla, olay yazar) | `ok` |
 
 Paket 1 araç sayısını artırmadı (11): sektör ve not `save`/`find` ile, network listeleri `today` ve `find("person", {awaiting|cooling})` ile gelir.

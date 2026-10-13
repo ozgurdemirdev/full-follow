@@ -29,7 +29,7 @@ function withSector(q: Q, ctx: Ctx, input: unknown): unknown {
 }
 
 /** SQL: touch `x` (a sent message) got a later incoming touch from the same person, company or bare contact */
-const REPLIED_AFTER = `EXISTS (
+export const REPLIED_AFTER = `EXISTS (
   SELECT 1 FROM touches g WHERE g.direction = 'gelen' AND g.happened_at > x.happened_at AND (g.person_id = x.person_id
     OR (x.person_id IS NULL AND g.company_id = x.company_id) OR (x.person_id IS NULL AND x.company_id IS NULL AND g.contact_key = x.contact_key)))`;
 

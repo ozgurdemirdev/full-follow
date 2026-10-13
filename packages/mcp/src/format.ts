@@ -206,6 +206,13 @@ export function marketingText(m: any): string {
   return out.join("\n");
 }
 
+/** One line: `Kaynak (90g): R10 40→22→6→2→1→0 zayıf · Ajans 12→9→3→1→0→0 erken` (found → written → replied → meeting → offer → won) */
+function sourceFunnelText(f: any): string {
+  if (!f?.sources.length) return "";
+  const flag = (s: Row) => (s.weak ? " zayıf" : s.early ? " erken" : "");
+  return `Kaynak (${f.period === "all" ? "tümü" : `${f.period}g`}): ${f.sources.map((s: Row) => `${s.source} ${s.steps.map((x: Row) => x.count).join("→")}${flag(s)}`).join(" · ")}`;
+}
+
 export function reportText(r: any): string {
   const src = r.sources.length
     ? r.sources.map((s: Row) => join(s.source, `${s.total} fırsat`, `${s.won} kazanıldı/${s.lost} kayıp/${s.open} açık`, s.conversion === null ? "dönüşüm –" : `dönüşüm %${Math.round(s.conversion * 100)}`, s.won_value ? `kazanılan ${tl(s.won_value)}` : "")).join("\n")
@@ -216,7 +223,8 @@ export function reportText(r: any): string {
   const week = w ? `Bu hafta: ${w.sent} giden · ${w.replies} dönüş${w.reply_rate !== null ? ` (%${Math.round(w.reply_rate * 100)})` : ""} · ${w.meetings} görüşme · ${w.new_people} yeni kişi\n` : "";
   const refs = r.referrals?.length ? `Referans: ${r.referrals.slice(0, 5).map((x: Row) => `${x.name} ${x.network} kişi, ${x.won} kazanıldı ${tl(x.won_value)}`).join(" · ")}\n` : "";
   const mk = r.marketing ? marketingText(r.marketing) : "";
-  return `${week}${refs}${mk ? `${mk}\n` : ""}${src}\n${m.month}: tahsilat ${tl(m.collected)} · taban ${tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${tl(m.outstanding_due)}` : ""}`;
+  const funnel = sourceFunnelText(r.source_funnel);
+  return `${week}${refs}${mk ? `${mk}\n` : ""}${funnel ? `${funnel}\n` : ""}${src}\n${m.month}: tahsilat ${tl(m.collected)} · taban ${tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${tl(m.outstanding_due)}` : ""}`;
 }
 
 export const KIND_NAME: Record<string, string> = {

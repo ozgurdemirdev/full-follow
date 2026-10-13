@@ -133,9 +133,9 @@ export function registerTools(server: McpServer, core: Core) {
   }, ({ type, id, limit }) => run(() => timelineText(core.timeline(type, id, limit ?? 20))));
 
   server.registerTool("report", {
-    description: "Haftalık temas sayıları, referans değeri, pazarlama (paylaşım getirisi, fikir ilgisi, şablon dönüşü, kanal dönüşü), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM.",
+    description: "Haftalık temas sayıları, referans değeri, pazarlama (paylaşım getirisi, fikir ilgisi, şablon dönüşü, kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM.",
     inputSchema: { month: z.string().optional() },
-  }, ({ month }) => run(() => reportText({ ...core.reports.report(month), week: core.reports.week(), referrals: core.reports.referrals(), marketing: core.marketing() })));
+  }, ({ month }) => run(() => reportText({ ...core.reports.report(month), week: core.reports.week(), referrals: core.reports.referrals(), marketing: core.marketing(), source_funnel: core.reports.sourceFunnel() })));
 
   server.registerTool("delete", {
     description: "Kayıt sil: çöp kutusuna gider (kurallar geçerli, olay yazılır); etiket/sektör/kaynak kayıtlarda kalır, yeni kayda seçilemez. restore:true silineni geri yükler (id ya da çöp kutusundaki ad; liste: find trash).",

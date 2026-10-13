@@ -59,6 +59,12 @@ export class MiscController {
     return this.core.reports.referrals();
   }
 
+  /** Kaynak hunisi: bulundu → yazıldı → cevap → görüşme → teklif → kazanıldı; period = 30 | 90 | all (kayıt tarihine göre) */
+  @Get("report/sources")
+  sourceFunnel(@Query("period") period?: string) {
+    return this.core.reports.sourceFunnel(period);
+  }
+
   /** Rapor: kaynak dönüşümü + ay tahsilatı vs fiyat tabanı */
   @Get("report")
   report(@Query("month") month?: string) {
