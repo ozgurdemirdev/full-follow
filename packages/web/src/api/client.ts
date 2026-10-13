@@ -27,8 +27,9 @@ export async function request<T>(method: string, path: string, body?: unknown, s
       method,
       signal,
       credentials: "same-origin",
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // a FormData body (file upload) sets its own multipart header
+      headers: body === undefined || body instanceof FormData ? undefined : { "content-type": "application/json" },
+      body: body === undefined || body instanceof FormData ? (body as FormData | undefined) : JSON.stringify(body),
     });
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;

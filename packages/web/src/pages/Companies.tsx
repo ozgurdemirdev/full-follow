@@ -5,7 +5,7 @@ import { companyCardKey, useCompanies, useSectors } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { CompanyCard, Company, List, Touch } from "../api/types";
 import { Page } from "../app/Page";
-import { PATHS, timelinePath } from "../app/routes";
+import { opportunityPath, PATHS } from "../app/routes";
 import { openSheet } from "../app/ui";
 import { Comments, ContactList, EditDelete, LabelLine, Section, TouchList } from "../components/contact";
 import { LabelFilters, matchLabels, noFilter, type LabelFilter } from "../components/filters";
@@ -164,7 +164,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
         <Section title="Satış">
           {c.drafts.length ? <Link href={PATHS.drafts} className="text-base-sm">{c.drafts.length} taslak onay bekliyor</Link> : null}
           {c.opportunities.map((o) => (
-            <Link key={o.id} href={timelinePath("opportunity", o.id)} className="inset flex items-center gap-3 px-5 py-4 text-text-primary hover:text-text-primary">
+            <Link key={o.id} href={opportunityPath(o.id)} className="inset flex items-center gap-3 px-5 py-4 text-text-primary hover:text-text-primary">
               <span className="min-w-0 flex-grow truncate text-base">{o.title} <span className="text-text-muted">· {o.person_name}</span></span>
               {o.estimated_value ? <span className="font-mono text-base-sm text-text-secondary">{tl(o.estimated_value)}</span> : null}
               <Chip tone={STAGE_TONE[o.stage]}>{STAGE[o.stage]}</Chip>

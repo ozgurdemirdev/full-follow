@@ -11,10 +11,10 @@ import { K, pickable, useBoard, usePeople, useSources } from "../api/keys";
 import { mutate } from "../api/store";
 import type { List, Opportunity } from "../api/types";
 import { Page } from "../app/Page";
-import { timelinePath } from "../app/routes";
+import { opportunityPath } from "../app/routes";
 import { openSheet } from "../app/ui";
 import { Icon } from "../components/icons";
-import { Field, Sheet } from "../components/Sheet";
+import { LostReason } from "../components/LostReason";
 import { Chip, ErrorBox, Filters, PageSkeleton, Who } from "../components/ui";
 import { fmtDay, followNote, norm, tl } from "../lib/format";
 import { useIsDesktop } from "../lib/media";
@@ -165,7 +165,7 @@ export default function Pipeline() {
               {/* telefonda yatay kaydırma yok: aşamalar alt alta, kart aşaması seçiciyle değişir */}
               {stages.map((s) => (
                 <StackColumn key={s} stage={s} items={cols[s].map((id) => board.byId.get(id)).filter(Boolean) as Opportunity[]}
-                  companyOf={(pid) => people.byId.get(pid)?.company_name ?? null} onOpen={(id) => navigate(timelinePath("opportunity", id))}
+                  companyOf={(pid) => people.byId.get(pid)?.company_name ?? null} onOpen={(id) => navigate(opportunityPath(id))}
                   onMove={(id, to) => (to === "kaybedildi" ? setLostAsk({ id, index: cols[to].length }) : void move(id, to, cols[to].length))} />
               ))}
             </>
@@ -173,7 +173,7 @@ export default function Pipeline() {
           {desk ? <DndContext sensors={sensors} collisionDetection={closestCorners} autoScroll={AUTO_SCROLL} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => setActiveId(null)}>
             <div className="-mx-page-padding-x-mobile flex snap-x snap-proximity gap-6 overflow-x-auto px-page-padding-x-mobile pb-5 desk:mx-0 desk:px-0" role="region" aria-label="Fırsat aşamaları">
               {stages.map((s) => (
-                <Column key={s} stage={s} ids={cols[s]} byId={board.byId} companyOf={(pid) => people.byId.get(pid)?.company_name ?? null} onOpen={(id) => navigate(timelinePath("opportunity", id))} />
+                <Column key={s} stage={s} ids={cols[s]} byId={board.byId} companyOf={(pid) => people.byId.get(pid)?.company_name ?? null} onOpen={(id) => navigate(opportunityPath(id))} />
               ))}
             </div>
             <DragOverlay>{active ? <Card o={active} company={people.byId.get(active.person_id)?.company_name ?? null} overlay /> : null}</DragOverlay>
@@ -325,25 +325,3 @@ const Card = memo(function Card({ o, company, overlay, actions }: { o: Opportuni
     </article>
   );
 });
-
-function LostReason({ open, onCancel, onSave }: { open: boolean; onCancel: () => void; onSave: (r: string) => void }) {
-  const [reason, setReason] = useState("");
-  useEffect(() => setReason(""), [open]);
-  return (
-    <Sheet
-      open={open}
-      title="Neden kaybedildi?"
-      onClose={onCancel}
-      footer={
-        <>
-          <button type="button" className="btn btn-sec btn-lg" onClick={onCancel}>Vazgeç</button>
-          <button type="button" className="btn btn-pri btn-lg" disabled={!reason.trim()} onClick={() => onSave(reason.trim())}>Kaydet</button>
-        </>
-      }
-    >
-      <Field label="Neden" htmlFor="lost-reason">
-        <textarea id="lost-reason" className="inp" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Örn. bütçe uymadı, başkasıyla anlaştı" />
-      </Field>
-    </Sheet>
-  );
-}
