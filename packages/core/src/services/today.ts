@@ -5,6 +5,7 @@ import { networkLists, weekStats } from "./network";
 import { queriesService } from "./queries";
 import { followupsDue } from "./followups";
 import { goalsService } from "./goals";
+import { quotaFor } from "./quota";
 
 /** "Bugün" ekranı: her bölüm {total, rows}, bölüm başına en fazla `limit` satır */
 export function todayService(ctx: Ctx) {
@@ -52,6 +53,8 @@ export function todayService(ctx: Ctx) {
       // Paket 2: güncellenecek paylaşımlar ve zamanı gelen takipler (taslak bekleyen)
       posts_due: q.posts({ limit, filter: { refresh_due: true } }),
       followups: (() => { const l = followupsDue(ctx); return { rows: l.slice(0, limit), total: l.length }; })(),
+      // daily quota per channel and the email warmup state
+      quota: quotaFor(ctx, date),
       week: (() => {
         const w = weekStats(ctx);
         return { ...week(date), replies_prev: w.last_week.replies, new_people: w.this_week.new_people, by_channel: w.by_channel };

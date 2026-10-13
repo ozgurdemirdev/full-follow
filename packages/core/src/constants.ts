@@ -79,11 +79,17 @@ export const IDEA_STAGES = ["fikir", "dogrulaniyor", "demo", "urun"] as const;
 export const INTEREST_LEVELS = ["anlatildi", "ilgilendi", "ilgilenmedi"] as const;
 /** Pazarlama ayarlarının varsayılanları: takip dizisi günleri (ilk cevapsız mesajdan sonra), haftalık giden mesaj hedefi (0 = kapalı) */
 export const MARKETING_DEFAULTS = { followup_days: [3, 7], weekly_target: 0 } as const;
+/** Daily outgoing message limit per channel (a channel without a limit has no counter) */
+export const CHANNEL_LIMIT_DEFAULTS: Readonly<Partial<Record<Channel, number>>> = { email: 20, instagram: 15, whatsapp: 15 };
+/** Highest daily limit a channel can be given */
+export const CHANNEL_LIMIT_MAX = 500;
+/** A channel counts as "near" its limit from this share of it */
+export const QUOTA_NEAR_RATIO = 0.8;
 
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target", "chat_pinned_notes",
+  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes",
 ] as const;
 
 /** Network ayarlarının varsayılanları (gün) */

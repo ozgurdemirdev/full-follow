@@ -155,6 +155,18 @@ export function calendarText(days: Row[]): string {
   ].join("\n")).join("\n");
 }
 
+const QUOTA_NOTE: Record<string, string> = { near: " (yakın)", over: " (doldu)" };
+
+/** One short line: sent/limit per limited channel, plus the email warmup notice while it is active */
+function quotaText(q: any): string[] {
+  if (!q) return [];
+  const w = q.email_warmup;
+  return [
+    q.channels.length ? `Kota: ${q.channels.map((c: Row) => `${label(c.channel)} ${c.sent}/${c.limit}${c.sent > c.limit ? " (aştı)" : (QUOTA_NOTE[c.state] ?? "")}`).join(" · ")}` : "",
+    w?.active ? `Soğuk e-posta kapalı (ısınma ${d(w.until)}'a kadar)` : "",
+  ].filter(Boolean);
+}
+
 export function todayText(t: any): string {
   const parts = [
     t.plan?.goals.length ? planText(t.plan) : "",
@@ -173,7 +185,7 @@ export function todayText(t: any): string {
   const w = t.week;
   const target = t.network?.settings?.weekly_target;
   const week = w ? `Hafta: ${w.sent}${target ? `/${target} hedef` : ""} giden (geçen ${w.sent_prev}) · ${w.replies} dönüş · ${w.meetings} görüşme${w.by_channel?.length ? ` · ${w.by_channel.map((c: Row) => `${label(c.channel)} ${c.sent}/${c.replies}`).join(", ")}` : ""}` : "";
-  return [`BUGÜN ${t.date}`, week, ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
+  return [`BUGÜN ${t.date}`, week, ...quotaText(t.quota), ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
 }
 
 /** Pazarlama özeti (report aracının ikinci bölümü) */

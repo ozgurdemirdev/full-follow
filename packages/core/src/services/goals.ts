@@ -3,6 +3,7 @@ import { addDays, daysBetween } from "../dates";
 import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { daily_goals, goal_logs } from "../db/schema";
 import { goalCreate, goalLogInput, goalUpdate } from "../schemas";
+import { outgoingMessageCounts } from "./quota";
 import { requireRow, truncate } from "./shared";
 import { Bin } from "./trash";
 
@@ -45,16 +46,6 @@ const appliesOn = (g: GoalRow, date: string) => g.days.split(",").includes(Strin
 export function goalsService(ctx: Ctx) {
   const all = () => rows<GoalRow>(ctx, "SELECT * FROM daily_goals ORDER BY id");
 
-  /** Outgoing messages on the goal's channel count by themselves */
-  function autoCounts(from: string, to: string): Map<string, number> {
-    const m = new Map<string, number>();
-    for (const r of rows<{ channel: string; d: string; n: number }>(ctx, `SELECT channel, substr(happened_at, 1, 10) AS d, COUNT(*) AS n
-        FROM touches WHERE direction = 'giden' AND kind = 'mesaj' AND substr(happened_at, 1, 10) BETWEEN ? AND ? GROUP BY channel, d`, from, to)) {
-      m.set(`${r.channel}|${r.d}`, r.n);
-    }
-    return m;
-  }
-
   function logsBetween(from: string, to: string): Map<string, { count: number; note: string | null }> {
     const m = new Map<string, { count: number; note: string | null }>();
     for (const l of rows<{ goal_id: number; date: string; count: number; note: string | null }>(ctx, "SELECT goal_id, date, count, note FROM goal_logs WHERE date BETWEEN ? AND ?", from, to)) {
@@ -66,7 +57,8 @@ export function goalsService(ctx: Ctx) {
   /** Goal state per day (from..to); days without applicable goals have an empty list */
   function days(from: string, to: string): { date: string; goals: GoalDay[] }[] {
     const goals = all();
-    const auto = autoCounts(from, to);
+    // outgoing messages on the goal's channel count by themselves
+    const auto = outgoingMessageCounts(ctx, from, to);
     const logs = logsBetween(from, to);
     const out: { date: string; goals: GoalDay[] }[] = [];
     for (let d = from; d <= to; d = addDays(d, 1)) {

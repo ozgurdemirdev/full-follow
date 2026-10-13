@@ -297,6 +297,8 @@ Kapsam (Kendi projelerim, §13): `own_project_id` boşsa genel para kazanma fikr
 
 `followup_days` (JSON dizi, "3,7" de kabul edilir) ve `weekly_target` (haftalık giden mesaj hedefi, 0 = kapalı; Bugün ekranında ilerleme).
 
+**Günlük kota ve e-posta ısınması**: `channel_limits` (JSON nesne, kanal → günlük giden mesaj limiti; sadece `CHANNELS` kanalları, 0 ya da boş = limitsiz; varsayılan `{"email":20,"instagram":15,"whatsapp":15}`) ve `email_warmup_until` (ISO tarih ya da boş; bu tarihe kadar, o gün dahil, soğuk e-posta kapalı). "Gönderilen" = o gün `direction = giden` ve `kind = mesaj` olan temaslar (hedeflerle aynı sayım, `quota.ts` `outgoingMessageCounts`). Durum: `ok`, `near` (limitin %80'i, `QUOTA_NEAR_RATIO`), `over` (limit doldu ya da aşıldı). Soğuk e-posta = daha önce hiç temas olmayan kişiye, firmaya ya da adrese giden e-posta mesajı. Engel yok, sadece uyarı: bugünün giden temasında (taslak "gönderdim" ya da elle temas) kanal limite ulaşırsa/aşarsa ya da ısınma sürerken soğuk e-posta giderse sonucun `effects` listesine Türkçe uyarı eklenir (web bildirimde gösterir). Geçmiş tarihli temas uyarı üretmez.
+
 ### İlişki özeti
 
 ```
@@ -580,11 +582,11 @@ REST uçları:
 | `GET /api/ideas/people?idea_id=&person_id=` · `POST /api/ideas/:id/people` · `PATCH/DELETE /api/ideas/people/:linkId` | Fikir ↔ kişi ilgisi |
 | `GET /api/followups` · `POST /api/followups/run` | Takip zamanı gelenler · şimdi hazırla (zamanlayıcının işini hemen yapar) |
 | `GET /api/report/marketing` | Paylaşım getirisi, güncellenecekler, fikir ilgisi, şablon dönüşü, kanal dönüşü (30 gün), takip zamanı gelenler |
-| `GET /api/today` | ek bölümler: `posts_due`, `followups`; `network.settings` içinde `followup_days`, `weekly_target` |
+| `GET /api/today` | ek bölümler: `posts_due`, `followups`; `quota` (`{date, channels:[{channel,sent,limit,state}], email_warmup:{until,active}}`); `network.settings` içinde `followup_days`, `weekly_target`, `channel_limits`, `email_warmup_until` |
 | `POST /api/drafts` | `template_id` ile (metin boşsa şablondan doldurulur) |
-| `PUT /api/settings` | `followup_days` ("3,7" ya da dizi), `weekly_target` |
+| `PUT /api/settings` | `followup_days` ("3,7" ya da dizi), `weekly_target`, `channel_limits` (`{"email":20}`), `email_warmup_until` (ISO tarih ya da boş) |
 
-Web: sidebar "Pazarlama" bölümü (Paylaşımlar `/paylasimlar`, Fikirler `/fikirler`, Şablonlar `/sablonlar`), Bugün'de "Takip zamanı" ve "Güncellenecek paylaşımlar" kartları ve haftalık hedef, Taslaklar'da otomatik takip çipi ve "Taslak yaz" formu (şablon önerili), kişi kartında kaynak paylaşım ve fikirler, kişi formunda kaynak paylaşım, temas formunda fikir, Ayarlar'da takip günleri ve haftalık hedef.
+Web: sidebar "Pazarlama" bölümü (Paylaşımlar `/paylasimlar`, Fikirler `/fikirler`, Şablonlar `/sablonlar`), Bugün'de "Takip zamanı", "Güncellenecek paylaşımlar" ve "Günlük kota" kartları ve haftalık hedef, Taslaklar'da otomatik takip çipi ve "Taslak yaz" formu (şablon önerili), kişi kartında kaynak paylaşım ve fikirler, kişi formunda kaynak paylaşım, temas formunda fikir, Ayarlar'da takip günleri, haftalık hedef, kanal limitleri ve ısınma bitişi. MCP `today()` çıktısı tek satır `Kota: ...` ve ısınma sürerken `Soğuk e-posta kapalı (...)` satırı ekler.
 
 ## 12. Paket 3: firma, etiket, mükerrer kontrolü, çöp kutusu (2026-10-10)
 
