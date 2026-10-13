@@ -1,9 +1,9 @@
 // Ideas of one own project: Yüksek / Orta / Düşük groups, drag order on desktop, up/down on mobile, done list
 import {
-  closestCorners, DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDroppable, useSensor, useSensors,
-  type DragEndEvent, type DragOverEvent, type DragStartEvent,
+  closestCenter, DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, useDroppable, useSensor, useSensors,
+  type CollisionDetection, type DragEndEvent, type DragOverEvent, type DragStartEvent,
 } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
 import { run } from "../api/actions";
@@ -27,6 +27,12 @@ function group(ideas: Idea[]): Cols {
 }
 /** sürükleme bitince hemen gelen tıklamayı yok saymak için */
 let lastDragEnd = 0;
+/** Stacked groups wrap their rows, so corner distance often picks the group: prefer the row under the pointer, then the group, then the nearest row */
+const collide: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  const rows = hits.filter((c) => typeof c.id === "number");
+  return rows.length ? rows : hits.length ? hits : closestCenter(args);
+};
 
 export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: number; ideas: Idea[]; detailKey: string }) {
   const desk = useIsDesktop();
@@ -73,10 +79,12 @@ export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: numbe
     const from = groupOf(id);
     const to = groupOf(over.id as number | string);
     if (!from || !to || from === to) return;
+    const dragged = active.rect.current.translated;
+    const below = !!dragged && dragged.top + dragged.height / 2 > over.rect.top + over.rect.height / 2;
     setCols((c) => {
       const target = c[to].filter((x) => x !== id);
-      const at = typeof over.id === "number" ? target.indexOf(over.id) : target.length;
-      target.splice(at < 0 ? target.length : at, 0, id);
+      const overAt = typeof over.id === "number" ? target.indexOf(over.id) : -1;
+      target.splice(overAt < 0 ? target.length : overAt + (below ? 1 : 0), 0, id);
       return { ...c, [from]: c[from].filter((x) => x !== id), [to]: target };
     });
   };
@@ -87,11 +95,12 @@ export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: numbe
     const cur = byId.get(id);
     const to = over ? groupOf(over.id as number | string) : undefined;
     if (!over || !to || !cur) return setCols(group(ideas));
-    const list = cols[to].filter((x) => x !== id);
-    let index = typeof over.id === "number" && over.id !== id ? list.indexOf(over.id) : cols[to].indexOf(id);
-    if (index < 0) index = list.length;
-    if (cur.priority === to && cur.position === index) return setCols(group(ideas));
-    list.splice(index, 0, id);
+    // onOver already moved the row into the target group; finish the move inside it
+    const from = cols[to].indexOf(id);
+    const overAt = typeof over.id === "number" ? cols[to].indexOf(over.id) : -1;
+    const list = from >= 0 && overAt >= 0 ? arrayMove(cols[to], from, overAt) : cols[to];
+    const index = list.indexOf(id);
+    if (index < 0 || (cur.priority === to && cur.position === index)) return setCols(group(ideas));
     const next = { ...cols, [to]: list };
     setCols(next);
     void save(id, next, cur.priority === to ? { position: index } : { priority: to, position: index });
@@ -136,7 +145,7 @@ export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: numbe
       <QuickAdd projectId={projectId} />
       {total === 0 && done.length === 0 ? <span className="text-base-sm text-text-muted">Bu projede fikir yok. Aklına geleni yukarıdan ekle; sürükleyerek sırala.</span> : null}
       {desk ? (
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => (setActiveId(null), setCols(group(ideas)))}>
+        <DndContext sensors={sensors} collisionDetection={collide} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => (setActiveId(null), setCols(group(ideas)))}>
           {groups}
           <DragOverlay>{active ? <RowBody idea={active} overlay /> : null}</DragOverlay>
         </DndContext>
