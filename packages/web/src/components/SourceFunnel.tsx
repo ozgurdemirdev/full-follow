@@ -5,7 +5,7 @@ import { pct } from "../lib/format";
 import { FUNNEL_PERIODS, FUNNEL_STEP } from "../lib/labels";
 import { CardHead, Chip, Empty, ErrorBox, Filters, order } from "./ui";
 
-/** One source: name with its flags, then the six steps side by side, each with a bar against the found count and the rate vs the previous step */
+/** One source: name with its flags, then the six steps (two rows of three on a phone), each with a bar against the found count and the rate vs the previous step */
 function SourceRow({ s }: { s: SourceFunnelRow }) {
   const found = s.steps[0].count;
   return (
@@ -16,7 +16,7 @@ function SourceRow({ s }: { s: SourceFunnelRow }) {
         {s.early ? <Chip>erken</Chip> : null}
         <span className="ml-auto text-sm text-text-secondary">cevap oranı {pct(s.reply_rate)}</span>
       </div>
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 gap-x-4 gap-y-5 desk:grid-cols-6 desk:gap-3">
         {s.steps.map((x) => (
           <div key={x.key} className="flex min-w-0 flex-col gap-2">
             <span className="truncate text-xs text-text-muted">{FUNNEL_STEP[x.key] ?? x.key}</span>
