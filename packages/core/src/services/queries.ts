@@ -260,12 +260,22 @@ export function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
     task: tasks, draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
+    sector: sectors, note: notes, link: linkList, offer: offerList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
     },
   };
+
+  /** Offer versions, newest first; filter: {opportunity_id} */
+  function offerList(o: ListOpts): Rows {
+    const f = o.filter ?? {};
+    let list = rows(ctx, "SELECT x.*, op.title AS opportunity_title FROM offers x JOIN opportunities op ON op.id = x.opportunity_id ORDER BY x.opportunity_id, x.version DESC")
+      .map((r) => ({ ...r, items: JSON.parse(r.items) }));
+    if (f.opportunity_id) list = list.filter((r) => r.opportunity_id === Number(f.opportunity_id));
+    list = list.filter((r) => has(o.q, r.opportunity_title, r.note));
+    return page(list, o.limit, o.offset);
+  }
 
   /** Links of an opportunity or project; a project also lists the links of its opportunity (from: "fırsat") */
   function linkList(o: ListOpts): Rows {
@@ -335,6 +345,7 @@ export function queriesService(ctx: Ctx) {
       case "goal": rowData = own(goals({ limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "goal_log": rowData = own(goalLogs({ limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
+      case "offer": rowData = own(offerList({ filter: {}, limit: 100000 }).rows.find((r) => r.id === id)); break;
       case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
       case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;
       case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;

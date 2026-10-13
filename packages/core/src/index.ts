@@ -132,6 +132,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "sector": return nid ? sectors.update(nid, d) : sectors.create(d);
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
       case "link": return nid ? links.update(nid, d) : links.create(d);
+      case "offer": return nid ? offers.update(nid, d) : offers.create(d);
       case "goal": return nid ? goals.update(nid, d) : goals.create(d);
       case "goal_log": return goals.log(nid ? { ...d, goal_id: nid } : d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
@@ -197,6 +198,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
+      case "offer": return offers.remove(nid);
       case "goal": return goals.remove(nid);
       case "goal_log": throw new FFError("validation", "ilerleme silinmez; count:0 ile sıfırla");
       case "post": return posts.remove(nid);

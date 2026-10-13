@@ -43,7 +43,7 @@ export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 /** find/get/save/delete için kayıt türleri */
 export const RECORD_TYPES = [
   "person", "company", "opportunity", "project", "task", "draft", "payment", "source", "comment", "touch", "setting",
-  "sector", "note", "tag", "trash", "link",
+  "sector", "note", "tag", "trash", "link", "offer",
   // günlük iş planı
   "goal", "goal_log",
   // Paket 2: pazarlama
@@ -59,7 +59,7 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   firma: "company", proje: "project", gorev: "task", görev: "task",
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
   yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
-  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link",
+  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
   paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   hedef: "goal", hedefler: "goal", goals: "goal", ilerleme: "goal_log", progress: "goal_log",
