@@ -31,6 +31,7 @@ import { chatService } from "./services/chat";
 import { followupsDue, generateFollowups } from "./services/followups";
 import { marketingReport } from "./services/marketing";
 import { quotaFor } from "./services/quota";
+import { weeklyReview } from "./services/review";
 import { isCategory, restoreFromTrash, trashList, TYPE_LABEL } from "./services/trash";
 import { TRASH_TYPES } from "./constants";
 
@@ -248,6 +249,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },
     quota: (date = ctx.clock.today()) => quotaFor(ctx, date),
     marketing: () => marketingReport(ctx),
+    review: (week?: string) => weeklyReview(ctx, week),
     // Paket 3: çöp kutusu
     trash: { list: () => trashList(ctx), restore },
     // okuma

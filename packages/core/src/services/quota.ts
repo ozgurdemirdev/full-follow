@@ -1,4 +1,5 @@
 import { CHANNELS, label, QUOTA_NEAR_RATIO, type Channel } from "../constants";
+import { addDays } from "../dates";
 import { row, rows, type Ctx } from "../context";
 import { marketingSettings } from "./settings";
 import type { ResolvedSubject } from "./subject";
@@ -44,6 +45,24 @@ export function quotaFor(ctx: Ctx, date: string): Quota {
     return [{ channel, sent, limit, state: stateOf(sent, limit) }];
   });
   return { date, channels, email_warmup: { until: email_warmup_until || null, active: !!email_warmup_until && date <= email_warmup_until } };
+}
+
+/** Per limited channel: on how many days from..to the limit was reached or passed, and the most sent in a day */
+export function quotaOverDays(ctx: Ctx, from: string, to: string) {
+  const { channel_limits } = marketingSettings(ctx);
+  const counts = outgoingMessageCounts(ctx, from, to);
+  return CHANNELS.flatMap((channel) => {
+    const limit = channel_limits[channel];
+    if (!limit) return [];
+    let over_days = 0;
+    let max_sent = 0;
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      const sent = counts.get(`${channel}|${d}`) ?? 0;
+      max_sent = Math.max(max_sent, sent);
+      if (stateOf(sent, limit) === "over") over_days++;
+    }
+    return [{ channel, limit, over_days, max_sent }];
+  });
 }
 
 const dayMonth = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;

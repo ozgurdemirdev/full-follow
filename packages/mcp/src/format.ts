@@ -227,6 +227,31 @@ export function reportText(r: any): string {
   return `${week}${refs}${mk ? `${mk}\n` : ""}${funnel ? `${funnel}\n` : ""}${src}\n${m.month}: tahsilat ${tl(m.collected)} · taban ${tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${tl(m.outstanding_due)}` : ""}`;
 }
 
+const pctText = (r: number | null | undefined) => (r === null || r === undefined ? "–" : `%${Math.round(r * 100)}`);
+
+/** Weekly review (report with week): header, counts against last week, template and source highlights, limit overruns, suggestions */
+export function reviewText(r: any): string {
+  const w = r.this_week;
+  const l = r.last_week;
+  const target = r.target ? `/${r.target} hedef` : "";
+  const tpl = r.templates.map((g: Row) => `${label(g.kind)}/${g.channel ? label(g.channel) : "tüm kanallar"}: ${[
+    g.leader ? `"${cut(g.leader.name, 25)}" önde ${pctText(g.leader.reply_rate)}` : "",
+    g.loser ? `"${cut(g.loser.name, 25)}" geride ${pctText(g.loser.reply_rate)}` : "",
+    g.early ? `${g.early} erken` : "",
+  ].filter(Boolean).join(", ")}`);
+  const src = [r.sources.best && `en iyi ${r.sources.best.source} ${pctText(r.sources.best.reply_rate)}`, r.sources.weakest && `zayıf ${r.sources.weakest.source} ${pctText(r.sources.weakest.reply_rate)}`].filter(Boolean);
+  const full = r.quota.filter((c: Row) => c.over_days).map((c: Row) => `${label(c.channel)} ${c.over_days} gün (limit ${c.limit})`);
+  return [
+    `HAFTALIK İNCELEME ${r.week} (${d(r.start)} → ${d(r.end)})`,
+    `Giden ${w.sent}${target} (geçen ${l.sent}) · dönüş ${w.replies} ${pctText(w.reply_rate)} (geçen ${pctText(l.reply_rate)}) · görüşme ${w.meetings} · teklif ${w.offers} · yeni ${w.new_people} kişi, ${w.new_companies} firma (geçen ${l.new_people + l.new_companies})`,
+    tpl.length ? `Şablon: ${tpl.join(" | ")}` : "",
+    src.length ? `Kaynak (${r.sources.period === "all" ? "tümü" : `${r.sources.period}g`}): ${src.join(" · ")}` : "",
+    full.length ? `Limit doldu: ${full.join(" · ")}` : "",
+    "Gelecek hafta için öneriler:",
+    ...r.suggestions.map((x: Row, i: number) => `  ${i + 1}. ${x.text}`),
+  ].filter(Boolean).join("\n");
+}
+
 export const KIND_NAME: Record<string, string> = {
   person: "kişi", company: "firma", source: "kaynak", opportunity: "fırsat", project: "proje", task: "görev",
   draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",

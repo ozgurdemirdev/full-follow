@@ -130,6 +130,18 @@ export const LABELS: Record<string, string> = {
 };
 export const label = (k: string) => LABELS[k] ?? k;
 
+// ---- Weekly review (Friday summary, services/review.ts) ----
+/** The weekly target counts as missed when fewer messages than this share of it went out (missed by more than a quarter) */
+export const REVIEW_TARGET_MISS_SHARE = 0.75;
+/** A lowered weekly target suggestion rounds the sent count up to a multiple of this */
+export const REVIEW_TARGET_STEP = 5;
+/** A channel that hit its daily limit on at least this many days of the week is "mostly full" */
+export const REVIEW_LIMIT_DAYS = 3;
+export const REVIEW_MIN_SUGGESTIONS = 2;
+export const REVIEW_MAX_SUGGESTIONS = 4;
+/** The review is announced on the dashboard on this ISO weekday (5 = Friday) */
+export const REVIEW_WEEKDAY = 5;
+
 // ---- Günlük iş planı ----
 /** Hafta günleri ISO numarasıyla (1 = pazartesi); hedef tekrarı bu numaraların virgüllü listesidir */
 export const GOAL_DAY_PRESETS = { her_gun: [1, 2, 3, 4, 5, 6, 7], hafta_ici: [1, 2, 3, 4, 5], hafta_sonu: [6, 7] } as const;

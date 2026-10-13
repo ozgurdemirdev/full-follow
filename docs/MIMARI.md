@@ -307,6 +307,19 @@ Hangi kaynak iş getiriyor, hangisine boşuna zaman gidiyor: `sourceFunnel` (`se
 
 Dönem (`period`) kayıt oluşturma tarihine göre süzer: `30`, `90` ya da `all`; varsayılan `SOURCE_FUNNEL_DEFAULT_PERIOD` (90). `reply_rate` = cevap / yazıldı. Yazılanı `RATE_MIN_SAMPLE` (20; şablonlardaki `TEMPLATE_MIN_SAMPLE` ile aynı sabit) altında olan kaynak `early` ("erken") sayılır, oranı güvenilir değildir. Yeterli örneği olan kaynaklar arasında cevap oranı en düşük üçte biri (`SOURCE_WEAK_SHARE`) `weak` ("zayıf") işaretlenir; en az bir kaynak ondan daha iyi olmalıdır, hepsi eşitse kimse zayıf değildir. Uç: `GET /api/report/sources?period=`. MCP `report()` tek satır ekler: `Kaynak (90g): R10 40→22→6→2→1→0 zayıf · Ajans 12→9→3→1→0→0 erken`. Web: Rapor sayfasında "Kaynak hunisi" bölümü (`SourceFunnel.tsx`), kaynak başına altı adımlık çubuk ve dönem filtresi.
 
+### 2.20 Haftalık inceleme (fikir #31)
+
+Cuma günü elle toplanan haftalık özet tek yerden gelir: `weeklyReview(week?)` (`services/review.ts`, hesaplanır, saklanmaz; mevcut servisleri yeniden kullanır). `week` ISO hafta etiketi (`2026-W41`) ya da o haftadan bir tarihtir, boşsa bu hafta; geçersiz etiket doğrulama hatasıdır. İçerik:
+
+- **Giden mesaj** haftalık hedefe karşı (`weekStats(ctx, ref)`, hafta pazartesiden; hedef `weekly_target`, 0 = kapalı) ve geçen hafta; **dönüş oranı** (gelen / giden) geçen haftayla; **görüşme** (`gorusme` temas sayısı); **teklif** (o hafta `teklif` aşamasına geçen fırsatlar, `opp.stage` olaylarından); **yeni kayıt** (kişi ve firma ayrı).
+- **Şablonlar**: `templateComparison` içinden sadece net `leader` (önde) olan ya da `early` şablonu bulunan gruplar; lider ve yeterli örneği olan en geride şablon.
+- **Kaynaklar**: §2.19 hunisinin varsayılan döneminde en iyi (yeterli örnekli, en yüksek cevap oranı) ve en zayıf (`weak`) kaynak.
+- **Günlük limit**: `quotaOverDays` (`quota.ts`, günlük kota ile aynı sayım): kanal başına limitin dolduğu ya da aşıldığı gün sayısı.
+- **Gelecek hafta için öneriler** (2 ile 4 arası, kural tabanlı, yapay zeka çağrısı yok; Türkçe düz metin ve görev başlığı): giden mesaj hedefin altında `REVIEW_TARGET_MISS_SHARE` (%75, yani yüzde 25'ten fazla kaçırıldı) ise hedefi düşür ya da günlük hedef ekle (düşürülen sayı `REVIEW_TARGET_STEP` = 5'in katına yuvarlanır); net lideri olan şablon grubunda geride kalan şablonu bırak (en büyük oran farkı olan grup); zayıf kaynak varsa zamanı en iyi kaynağa kaydır; bir kanal limiti `REVIEW_LIMIT_DAYS` (3) ve üstü gün dolduysa limiti koru. En az `REVIEW_MIN_SUGGESTIONS` (2) öneriye tamamlamak için koşulsuz öneriler eklenir (hedef yoksa hedef koy, hedef tutturulduysa tempoyu koru, yeni kayıt sayısı, örnek azsa şablon ve kaynak gir); en fazla `REVIEW_MAX_SUGGESTIONS` (4).
+- `next_monday`: önerilerden "Göreve çevir" ile açılan görevin son tarihi, bugünden sonraki pazartesi (görev mevcut `tasks` servisiyle `POST /api/tasks`).
+
+Uç: `GET /api/review?week=`. `GET /api/today` yanıtında `review: {week, ready}` bulunur; `ready`, `REVIEW_WEEKDAY` (Cuma) günü doğrudur. MCP: ayrı araç yok, `report(week?)` (`week` etiket, tarih ya da `bu`) rapor yerine incelemeyi döner. Web: Sidebar'da Rapor'un altında "Haftalık inceleme" (`/inceleme`, ok düğmeleriyle önceki ve sonraki hafta), Cuma günü Dashboard'un üstünde "Cuma incelemesi hazır" bağlantı kartı.
+
 ### İlişki özeti
 
 ```
@@ -370,9 +383,10 @@ her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 | **Proje panosu** | Aşamaya göre projeler + her birinin sıradaki görevi ve sıradaki ödemesi |
 | **Zaman çizelgesi** | Bir kişi ya da projenin `events` kayıtları, eskiden yeniye |
 | **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı · şablon kıyası (tür + kanal grubunda gönderim, cevap oranı, "erken" uyarısı, sektör dökümü, §2.15) · kaynak hunisi (§2.19) |
+| **Haftalık inceleme** | Bir ISO haftanın özeti: giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için öneriler ("Göreve çevir"); önceki/sonraki hafta okları (`GET /api/review?week=`, §2.20) |
 | Kayıt sayfaları | Kişi, firma, fırsat, proje detay ve formlar; her birinde yorum paneli (ekran sayısına dahil değil ama gerekli) |
 
-Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
+Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor, Haftalık inceleme), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
 
 Kişi kartı (Paket 2): kaynak paylaşım, anlatılan fikirler (ilgi seviyesiyle), "Taslak yaz". Kişi formunda "Kaynak paylaşım", temas formunda "Fikir" seçimi.
 
@@ -406,7 +420,7 @@ Hedef: Claude, Özgür'ün arayüzde yapabildiği her şeyi yapabilsin, ama her 
 | `draft(person, channel, body, reason?, opp?, project?)` | Onaya taslak bırakır; `reason` neden hazırlandığını söyler | `ok taslak #9 onay bekliyor` |
 | `pay(payment_id, amount, date?)` | Ödeme girer | `ok ödeme #5 · 15.000/15.000 ödendi` |
 | `timeline(type, id, limit?)` | Kişi/proje/fırsat olayları | `09.10 Claude · Taslak hazırlandı` |
-| `report(month?)` | Haftalık temas sayıları + referans değeri (ilk 5) + kaynak hunisi (tek satır, §2.19) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
+| `report(month?, week?)` | `week` verilirse haftalık inceleme (§2.20); yoksa haftalık temas sayıları + referans değeri (ilk 5) + kaynak hunisi (tek satır, §2.19) + kaynak dönüşümü + aylık gelir vs. taban | küçük tablo |
 | `delete(type, id)` | Silme (aynı kurallarla, olay yazar) | `ok` |
 
 Paket 1 araç sayısını artırmadı (11): sektör ve not `save`/`find` ile, network listeleri `today` ve `find("person", {awaiting|cooling})` ile gelir.

@@ -1,10 +1,11 @@
-import { addDays } from "../dates";
+import { REVIEW_WEEKDAY } from "../constants";
+import { addDays, isoWeekOf } from "../dates";
 import { row } from "../context";
 import type { Ctx } from "../context";
 import { networkLists, weekStats } from "./network";
 import { queriesService } from "./queries";
 import { followupsDue } from "./followups";
-import { goalsService } from "./goals";
+import { goalsService, isoWeekday } from "./goals";
 import { quotaFor } from "./quota";
 
 /** "Bugün" ekranı: her bölüm {total, rows}, bölüm başına en fazla `limit` satır */
@@ -53,6 +54,8 @@ export function todayService(ctx: Ctx) {
       // Paket 2: güncellenecek paylaşımlar ve zamanı gelen takipler (taslak bekleyen)
       posts_due: q.posts({ limit, filter: { refresh_due: true } }),
       followups: (() => { const l = followupsDue(ctx); return { rows: l.slice(0, limit), total: l.length }; })(),
+      // the weekly review of the current week; ready on Fridays (the dashboard links to it)
+      review: { week: isoWeekOf(date), ready: isoWeekday(date) === REVIEW_WEEKDAY },
       // daily quota per channel and the email warmup state
       quota: quotaFor(ctx, date),
       week: (() => {
