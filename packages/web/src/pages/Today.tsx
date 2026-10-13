@@ -5,7 +5,7 @@ import { K, useBoard, usePeople, useThreads } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Draft, FollowupDue, List, Person, Post, Today as TodayData } from "../api/types";
 import { Page } from "../app/Page";
-import { PATHS, timelinePath } from "../app/routes";
+import { opportunityPath, PATHS, timelinePath } from "../app/routes";
 import { GlobalSearch } from "../app/Search";
 import { Icon } from "../components/icons";
 import { Avatar, CardHead, Chip, ErrorBox, order, PageSkeleton, Who } from "../components/ui";
@@ -17,6 +17,8 @@ import { refreshNote } from "../lib/marketing";
 import { openSheet } from "../app/ui";
 import { DashboardActivity } from "./DashboardActivity";
 import { GoalStrip } from "../components/GoalStrip";
+import { QuotaCard } from "../components/QuotaCard";
+import { ReviewCard } from "../components/ReviewCard";
 
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
@@ -32,6 +34,7 @@ export default function Today() {
         !today.error && <PageSkeleton />
       ) : (
         <>
+          {d.review.ready ? <ReviewCard /> : null}
           <GoalStrip plan={d.plan} />
           <DashboardActivity d={d} />
           <div className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] desk:gap-9">
@@ -42,6 +45,7 @@ export default function Today() {
               <FollowUps data={d} />
             </div>
             <div className="flex flex-col gap-7 desk:gap-9">
+              <QuotaCard quota={d.quota} />
               <PostsDue list={d.posts_due} />
               <Cooling list={d.network.cooling} days={d.network.settings.cooling_days} />
               <Comments />
@@ -272,7 +276,7 @@ function FollowUps({ data }: { data: TodayData }) {
     const out: { key: string; name: string; org: string | null; note: ReturnType<typeof followNote>; stage?: string; href: string }[] = [];
     for (const o of data.follow_ups.opportunities.rows) {
       seen.add(o.person_id);
-      out.push({ key: `o${o.id}`, name: o.person_name, org: o.title, note: followNote(o.next_follow_up_at), stage: STAGE[o.stage], href: timelinePath("opportunity", o.id) });
+      out.push({ key: `o${o.id}`, name: o.person_name, org: o.title, note: followNote(o.next_follow_up_at), stage: STAGE[o.stage], href: opportunityPath(o.id) });
     }
     for (const p of data.follow_ups.people.rows) {
       if (seen.has(p.id)) continue;

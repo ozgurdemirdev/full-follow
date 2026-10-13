@@ -32,7 +32,7 @@ export function tasksService(ctx: Ctx) {
       const merged = { person_id: cur.person_id, company_id: cur.company_id, opportunity_id: cur.opportunity_id, project_id: cur.project_id } as Record<string, number | null>;
       // bağlantı alanlarından biri değişiyorsa diğerleri temizlenir
       const targetKey = (["person_id", "company_id", "opportunity_id", "project_id"] as const).find((k) => f[k]);
-      if (targetKey) for (const k of Object.keys(merged)) merged[k] = k === targetKey ? (f as any)[k] : null;
+      if (targetKey) for (const k of Object.keys(merged)) merged[k] = k === targetKey ? f[targetKey] ?? null : null;
       checkTargets(ctx, merged);
       const set: Record<string, unknown> = { ...f, ...(targetKey ? merged : {}), updated_at: ctx.clock.now() };
       if (done !== undefined) set.done_at = done ? (cur.done_at ?? ctx.clock.now()) : null;

@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { NestExpressApplication } from "@nestjs/platform-express";
+import type { NextFunction, Request, Response } from "express";
 
 const red = (s: string) => (process.stdout.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
 const green = (s: string) => (process.stdout.isTTY ? `\x1b[32m${s}\x1b[0m` : s);
@@ -77,17 +78,17 @@ async function bootstrap() {
     const { precompressed } = await import("./static");
     app.use(precompressed(webDist));
     app.useStaticAssets(webDist, { index: false });
-    app.use((req: any, res: any, next: any) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       // index.html her seferinde tazelenir (yeni derleme hemen görünsün)
-      if (req.method === "GET" && !req.path.startsWith("/api")) return res.setHeader("Cache-Control", "no-cache"), res.sendFile(index);
+      if (req.method === "GET" && !req.path.startsWith("/api")) return res.setHeader("Cache-Control", "no-cache"), res.sendFile("index.html", { root: webDist });
       next();
     });
   }
 
   try {
     await app.listen(port, host);
-  } catch (e: any) {
-    if (e?.code === "EADDRINUSE") {
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "EADDRINUSE") {
       await app.close().catch(() => {});
       if (await alreadyRunning(port)) {
         console.log(green(`\nFull Follow zaten açık: ${url}`));

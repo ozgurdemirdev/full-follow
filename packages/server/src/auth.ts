@@ -1,5 +1,6 @@
 import { BadRequestException, CanActivate, Controller, ExecutionContext, Injectable, Post, Get, Body, Req, Res, UnauthorizedException, HttpException } from "@nestjs/common";
 import { createHmac, createHash, timingSafeEqual } from "node:crypto";
+import type { Request, Response } from "express";
 
 const COOKIE = "ff_session";
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -49,12 +50,12 @@ const attempts = new Map<string, { n: number; reset: number }>();
 export class AuthController {
   /** Oturum durumu: { auth: false } şifresiz mod, { auth: true, loggedIn } */
   @Get("me")
-  me(@Req() req: any) {
+  me(@Req() req: Request) {
     return { auth: authEnabled(), loggedIn: !authEnabled() || validSession(req.headers.cookie) };
   }
 
   @Post("login")
-  login(@Body() b: { password?: string }, @Req() req: any, @Res({ passthrough: true }) res: any) {
+  login(@Body() b: { password?: string }, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     if (!authEnabled()) return { ok: true };
     const ip = req.ip ?? "?";
     const a = attempts.get(ip);
@@ -71,7 +72,7 @@ export class AuthController {
   }
 
   @Post("logout")
-  logout(@Res({ passthrough: true }) res: any) {
+  logout(@Res({ passthrough: true }) res: Response) {
     res.setHeader("Set-Cookie", `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
     return { ok: true };
   }

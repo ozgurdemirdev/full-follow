@@ -4,6 +4,7 @@ import { referralValues, weekStats } from "./network";
 import { collectedIn } from "./payments";
 import { settingsService } from "./settings";
 import { activity } from "./activity";
+import { sourceFunnel } from "./sourceFunnel";
 
 export function reportsService(ctx: Ctx) {
   /** Kaynak bazında dönüşüm: kazanılan / kapanan (kazanılan + kaybedilen). Açık fırsatlar paydaya girmez. */
@@ -45,5 +46,5 @@ export function reportsService(ctx: Ctx) {
     return { sources: bySource(), month: month(m) };
   }
 
-  return { bySource, month, months, report, referrals: () => referralValues(ctx), week: () => weekStats(ctx), activity: (period?: string) => activity(ctx, period) };
+  return { bySource, sourceFunnel: (period?: unknown) => sourceFunnel(ctx, period), month, months, report, referrals: () => referralValues(ctx), week: () => weekStats(ctx), activity: (period?: string) => activity(ctx, period) };
 }

@@ -58,3 +58,19 @@ export function weekStart(iso: string): string {
   const day = (new Date(y, m - 1, d).getDay() + 6) % 7;
   return addDays(iso, -day);
 }
+
+/** ISO week label of a date: "2026-W41" (the ISO year is the year of the week's Thursday) */
+export function isoWeekOf(iso: string): string {
+  const monday = weekStart(iso);
+  const year = Number(addDays(monday, 3).slice(0, 4));
+  const week = daysBetween(weekStart(`${year}-01-04`), monday) / 7 + 1;
+  return `${year}-W${pad(week)}`;
+}
+
+/** Monday of an ISO week label ("2026-W41"); null when the label is not a real ISO week */
+export function isoWeekStart(week: string): string | null {
+  const m = /^(\d{4})-W(\d{2})$/.exec(week);
+  if (!m) return null;
+  const monday = addDays(weekStart(`${m[1]}-01-04`), (Number(m[2]) - 1) * 7);
+  return isoWeekOf(monday) === week ? monday : null;
+}

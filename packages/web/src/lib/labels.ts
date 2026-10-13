@@ -18,6 +18,10 @@ export const PROJECT_STAGE: Record<ProjectStage, string> = {
 };
 export const MILESTONE: Record<string, string> = { ...PROJECT_STAGE };
 
+/** Role of an extra person on an opportunity, in display order */
+export const OPP_ROLE: Record<string, string> = { karar_verici: "Karar verici", teknik: "Teknik", ortak: "Ortak", diger: "Diğer" };
+export const OPP_ROLES = Object.keys(OPP_ROLE);
+
 /** Network kanalları önde (soğuk e-posta, Instagram DM, LinkedIn, telefon, yüz yüze) */
 export const CHANNEL: Record<string, string> = {
   email: "E-posta", instagram: "Instagram DM", linkedin: "LinkedIn", telefon: "Telefon", yuz_yuze: "Yüz yüze",
@@ -29,6 +33,8 @@ export const CHANNEL_DOT: Record<string, string> = {
   yuz_yuze: "bg-primary", whatsapp: "bg-status-text-success", r10: "bg-accent-warning", diger: "bg-accent-neutral",
 };
 export const CHANNELS = Object.keys(CHANNEL);
+/** Channels that get a daily outgoing message limit in Settings */
+export const QUOTA_CHANNELS = ["email", "instagram", "linkedin", "whatsapp"];
 
 /** Firma ve kişinin temas durumu (temaslarla ilerler; "olumsuz" ve "es geçildi" elle) */
 export const CONTACT_STATUS: Record<string, string> = {
@@ -55,6 +61,11 @@ export const PLATFORMS = Object.keys(PLATFORM);
 export const PLATFORM_DOT: Record<string, string> = { r10: "bg-accent-warning", linkedin: "bg-chip-opportunity-fg", instagram: "bg-accent-source", diger: "bg-accent-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
 export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
+/** What a goal can count by itself besides a channel */
+export const GOAL_METRIC: Record<string, string> = { new_records: "Yeni kayıt (kişi ve firma)" };
+export const FUNNEL_STEP: Record<string, string> = { found: "Bulundu", written: "Yazıldı", replied: "Cevap", meeting: "Görüşme", offer: "Teklif", won: "Kazanıldı" };
+/** Funnel period choices; the values are what the endpoint accepts */
+export const FUNNEL_PERIODS = [{ value: "30", label: "Son 30 gün" }, { value: "90", label: "Son 90 gün" }, { value: "all", label: "Tümü" }];
 export const IDEA_STAGE: Record<string, string> = { fikir: "Fikir", dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" };
 export const IDEA_STAGES = Object.keys(IDEA_STAGE);
 export const IDEA_TONE: Record<string, Tone> = { fikir: "neutral", dogrulaniyor: "payment", demo: "opportunity", urun: "success" };
@@ -124,3 +135,6 @@ export function daysLabel(days: string): string {
   const preset = GOAL_PRESETS.find((p) => p.days.join(",") === days);
   return preset ? preset.label : days.split(",").map((n) => WEEKDAY_SHORT[Number(n) - 1]).join(" ");
 }
+
+/** File picker filter for record files (the server checks the real type; the limits live in core FILE_LIMITS) */
+export const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.csv,.docx,.pptx,.xlsx";

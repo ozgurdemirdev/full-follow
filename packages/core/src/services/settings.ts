@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, SETTING_KEYS } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, SETTING_KEYS, type Channel } from "../constants";
 import { emit, FFError, parse, row, type Ctx } from "../context";
+import { isIsoDate, resolveRelativeDate } from "../dates";
 import { settings } from "../db/schema";
 
 export const readSetting = (ctx: Ctx, key: string): string | undefined =>
@@ -26,8 +27,22 @@ const followupSchema = z.preprocess(
   z.array(z.coerce.number().int().min(1).max(90)).max(5),
 ).refine((a) => a.every((n, i) => i === 0 || n > a[i - 1]), "takip günleri artan sırada olmalı (örn. 3,7)");
 
-/** Pazarlama ayarları (Paket 2): takip dizisi günleri ve haftalık giden mesaj hedefi */
-export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_target: number } {
+export type ChannelLimits = Partial<Record<Channel, number>>;
+
+/** Daily limit per channel: {"email":20}. Only known channels; 0 or empty removes a limit. */
+const channelLimitsSchema = z.preprocess(
+  (v) => (typeof v === "string" ? (v.trim() ? JSON.parse(v) : {}) : (v ?? {})),
+  z.partialRecord(z.enum(CHANNELS), z.preprocess((n) => (n === "" || n === null ? 0 : n), z.coerce.number().int().min(0).max(CHANNEL_LIMIT_MAX))),
+).transform((o): ChannelLimits => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0)));
+
+/** Date the email warmup ends (inclusive); empty = no warmup */
+const warmupUntilSchema = z.preprocess(
+  (v) => (v === null || v === undefined ? "" : resolveRelativeDate(v)),
+  z.union([z.literal(""), z.string().refine(isIsoDate, "tarih YYYY-AA-GG olmalı")]),
+);
+
+/** Marketing settings: follow-up days, weekly outgoing target, daily channel limits and the email warmup end date */
+export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_target: number; channel_limits: ChannelLimits; email_warmup_until: string } {
   let followup_days: number[] = [...MARKETING_DEFAULTS.followup_days];
   const raw = readSetting(ctx, "followup_days");
   if (raw !== undefined) {
@@ -37,7 +52,19 @@ export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_t
       /* bozuk değer: varsayılan */
     }
   }
-  return { followup_days, weekly_target: Number(readSetting(ctx, "weekly_target") ?? MARKETING_DEFAULTS.weekly_target) || 0 };
+  let channel_limits: ChannelLimits = { ...CHANNEL_LIMIT_DEFAULTS };
+  const limits = readSetting(ctx, "channel_limits");
+  if (limits !== undefined) {
+    try {
+      channel_limits = channelLimitsSchema.parse(limits);
+    } catch {
+      /* broken value: defaults */
+    }
+  }
+  return {
+    followup_days, channel_limits, email_warmup_until: readSetting(ctx, "email_warmup_until") ?? "",
+    weekly_target: Number(readSetting(ctx, "weekly_target") ?? MARKETING_DEFAULTS.weekly_target) || 0,
+  };
 }
 
 const num = (ctx: Ctx, key: string) => Number(readSetting(ctx, key) ?? 0) || 0;
@@ -76,6 +103,10 @@ export function settingsService(ctx: Ctx) {
       stored = JSON.stringify(t);
     } else if (key === "followup_days") {
       stored = JSON.stringify(parse(followupSchema, value));
+    } else if (key === "channel_limits") {
+      stored = JSON.stringify(parse(channelLimitsSchema, value));
+    } else if (key === "email_warmup_until") {
+      stored = parse(warmupUntilSchema, value);
     } else if (key === "chat_pinned_notes") {
       stored = parse(z.string().trim().max(CHAT_PINNED_MAX), value);
     } else if (key === "tax_rate_percent") {

@@ -42,7 +42,7 @@ export function companiesService(ctx: Ctx) {
       const keys = companyKeys({ ...cur, ...d });
       const changedKeys = Object.fromEntries(Object.entries(keys).filter(([k, v]) => v !== cur[k]));
       assertUnique(ctx, changedKeys, { type: "company", id });
-      const changed = Object.keys(d).filter((k) => (d as any)[k] !== undefined && (d as any)[k] !== (cur as any)[k]);
+      const changed = Object.entries(d).filter(([k, v]) => v !== undefined && v !== cur[k]).map(([k]) => k);
       if (Object.keys(d).length) tx.update(companies).set({ ...d, ...keys, updated_at: ctx.clock.now() }).where(eq(companies.id, id)).run();
       if (assignTags(tx, ctx, "company", id, { set: tags, add: add_tags, remove: remove_tags })) changed.push("tags");
       if (assignSectors(tx, ctx, "company", id, sectors)) changed.push("sectors");

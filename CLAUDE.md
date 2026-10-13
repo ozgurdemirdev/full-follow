@@ -1,6 +1,6 @@
 # Full Follow
 
-Müşteri bulmaktan işin teslimine kadar her şeyi tek sistemde tutan kişisel CRM. Özgür web arayüzünden, Claude MCP üzerinden aynı veritabanını kullanır. Ayrıntılı plan: [docs/MIMARI.md](docs/MIMARI.md).
+Küçük işletmeler ve şahıs şirketleri için CRM: müşteri ilişkileri, satış hunisi, proje ve ödeme takibi tek sistemde. Özgür web arayüzünden, Claude MCP üzerinden aynı veritabanını kullanır. Ayrıntılı plan: [docs/MIMARI.md](docs/MIMARI.md).
 
 ## İletişim
 

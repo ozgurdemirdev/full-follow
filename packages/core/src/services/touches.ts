@@ -5,6 +5,7 @@ import type { Q } from "../db/client";
 import { touches } from "../db/schema";
 import { touchCreate, touchUpdate } from "../schemas";
 import { applyStage } from "./opportunities";
+import { isColdEmail, sendWarnings } from "./quota";
 import { link, requireRow, truncate } from "./shared";
 import { upsertInterest } from "./ideas";
 import { bumpStatus, statusOfTouch } from "./status";
@@ -14,7 +15,7 @@ import { z } from "zod";
 
 type TouchInput = z.infer<typeof touchCreate> & { draft_id?: number };
 
-/** The record's own person, a colleague at the same company, or that company itself (e.g. a reply sent "as Örnek Pizza") */
+/** The record's own person, a colleague at the same company, or that company itself (e.g. a reply sent "as Pizza Z") */
 export function sameSide(ctx: Ctx, ownerId: number, s: { person_id?: number | null; company_id?: number | null }) {
   if (s.person_id === ownerId) return true;
   const own = rows<{ company_id: number | null }>(ctx, "SELECT company_id FROM people WHERE id = ?", ownerId)[0]?.company_id;
@@ -47,6 +48,7 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput) {
   }
   if (d.idea_id) requireRow(ctx, "ideas", d.idea_id);
 
+  const cold = isColdEmail(ctx, d, s);
   const r = q.insert(touches).values({
     ...s, opportunity_id: oppId, project_id: d.project_id ?? null,
     channel: d.channel, direction: d.direction, kind: d.kind, summary: d.summary, outcome: d.outcome ?? null,
@@ -63,6 +65,7 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput) {
   });
 
   const effects: string[] = bumpStatus(ctx, s, statusOfTouch(d));
+  effects.push(...sendWarnings(ctx, d, r.happened_at.slice(0, 10), cold));
   // fikir hakkındaki temas: kişi fikre "anlatıldı" olarak bağlanır (zaten bağlıysa ilgisi değişmez)
   if (d.idea_id && s.person_id) effects.push(...upsertInterest(q, ctx, { idea_id: d.idea_id, person_id: s.person_id, touch_id: r.id }).effects);
   if (oppId) {

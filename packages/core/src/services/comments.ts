@@ -19,12 +19,14 @@ export interface Thread {
   last_body: string;
   root_by: Actor;
   root_body: string;
-  comments?: any[];
+  comments?: CommentRow[];
 }
 
+type CommentRow = typeof comments.$inferSelect;
+
 /** Konular: kök yorum + cevaplar. Son yorumu Özgür yazdıysa konu "cevapsız" (Claude'dan cevap bekliyor). */
-export function threadOf(ctx: Ctx, root: any, withComments = false): Thread {
-  const all = rows(ctx, "SELECT * FROM comments WHERE id = ? OR parent_id = ? ORDER BY id", root.id, root.id);
+export function threadOf(ctx: Ctx, root: CommentRow, withComments = false): Thread {
+  const all = rows<CommentRow>(ctx, "SELECT * FROM comments WHERE id = ? OR parent_id = ? ORDER BY id", root.id, root.id);
   const last = all[all.length - 1];
   return {
     id: root.id, target_type: root.target_type, target_id: root.target_id,

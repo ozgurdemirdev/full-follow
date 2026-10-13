@@ -28,6 +28,9 @@ const LINE: Record<string, (r: Row) => string> = {
     r.cooling && "SOĞUYOR", r.next_follow_up_at && `takip ${d(r.next_follow_up_at)}`, r.handle, r.email, r.phone,
   ),
   sector: (r) => join(`#${r.id} ${r.path}`, `${r.people_count ?? 0} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
+  opp_person: (r) => join(`#${r.id} ${r.person_name}`, label(r.role), r.company_name, r.note && cut(r.note, 60)),
+  offer: (r) => join(`#${r.id} v${r.version}`, d(r.offered_at), tl(r.amount), r.accepted_at && "kabul edildi", r.opportunity_title, !!r.items?.length && `${r.items.length} kalem`, r.note && cut(r.note, 60), r.file_id && `dosya #${r.file_id}`),
+  file: (r) => join(`#${r.id} ${r.name}`, `${Math.max(1, Math.round(r.size / 1024))} KB`, d(r.created_at)),
   link: (r) => join(`#${r.id} ${r.label}`, r.url, r.from && `(${r.from})`),
   note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, 80)),
   company: (r) => join(`#${r.id} ${r.name}`, label(r.contact_status), r.tags?.join(","), r.sector_path, r.source_name && `kaynak ${r.source_name}`,
@@ -61,7 +64,7 @@ const LINE: Record<string, (r: Row) => string> = {
     `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
     !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${cut(r.problem, 50)}`),
   own_project: (r) => join(`#${r.id} ${r.name}`, label(r.status), `satılabilir: ${label(r.sellable)}`, `${r.open_ideas} açık fikir`, r.sectors?.map((x: Row) => x.path).join(", ")),
-  goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
+  goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.metric && `otomatik: ${label(r.metric)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
   goal_log: (r) => join(`#${r.id} ${r.goal_title} ${d(r.date)}`, `elle ${r.count}`, r.note && `not: ${cut(r.note, 50)}`),
   interest: (r) => join(`#${r.id} ${r.person_name}`, r.idea_title, label(r.interest), r.note && cut(r.note, 50)),
 };
@@ -82,7 +85,7 @@ const SKIP = new Set(["updated_at", "position", "tag_list", "created_at", "perso
   "post_title", "post_id", "idea_title", "idea_id", "template_id", "followup_step", "platform", "url", "posted_at", "refresh_days", "refreshed_at", "next_refresh_at", "refresh_due",
   "opp_count", "won", "won_value", "used", "sent", "replied", "reply_rate", "problem", "told", "interested", "not_interested", "interest_rate", "touch_count", "post_count", "post_people", "sectors", "interest", "note", "person_id", "idea_stage", "score",
   "tag_ids", "source_id", "source_name", "contact_status", "deleted_at", "slug", "color", "company_count", "open_opps", "touch_count", "to_name", "contact",
-  "company_id", "source_url", "source_date",
+  "company_id", "source_url", "source_date", "version", "offered_at", "amount", "accepted_at", "file_id", "opportunity_id",
   "description", "sellable", "sellable_note", "open_ideas", "done_ideas", "own_project_title", "own_project_id", "priority",
   "sector_name", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "days_since", "awaiting", "cooling", "referral_count", "referral_value", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"]);
 
@@ -124,7 +127,8 @@ export function block(res: { type: string; id: number; row: Row; related: Record
       continue;
     }
     const t = name === "people" && type === "idea" ? "interest"
-      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea" } as Record<string, string>)[name];
+      : name === "people" && type === "opportunity" ? "opp_person"
+      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -138,9 +142,13 @@ export function timelineText(events: Row[]): string {
 const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =>
   res.total ? `${title} (${res.total}):\n` + res.rows.map((r) => "  " + line(type, r)).join("\n") + (res.total > res.rows.length ? `\n  … +${res.total - res.rows.length}` : "") : "";
 
+/** Auto count of a goal: `(otomatik 8)` for a channel, `(12 eklendi, 3 mükerrer atlandı)` for new records */
+const autoText = (g: Row) =>
+  g.metric === "new_records" ? (g.auto || g.duplicates ? ` (${g.auto} eklendi${g.duplicates ? `, ${g.duplicates} mükerrer atlandı` : ""})` : "") : g.auto ? ` (otomatik ${g.auto})` : "";
+
 /** Günün planı: hedefler (yapılan/hedef), o günün görevleri, seri ve haftalık oran */
 export function planText(p: any): string {
-  const goals = p.goals.map((g: Row) => `  #${g.id} ${g.title} ${g.done}/${g.target}${g.complete ? " ✓" : ""}${g.auto ? ` (otomatik ${g.auto})` : ""}${g.note ? ` · not: ${cut(g.note, 50)}` : ""}`);
+  const goals = p.goals.map((g: Row) => `  #${g.id} ${g.title} ${g.done}/${g.target}${g.complete ? " ✓" : ""}${autoText(g)}${g.note ? ` · not: ${cut(g.note, 50)}` : ""}`);
   const tasks = p.tasks.map((t: Row) => "  " + line("task", t));
   const head = join(`PLAN ${p.date}`, p.streak ? `seri ${p.streak} gün` : "", p.week_ratio !== null && p.week_ratio !== undefined && `hafta %${Math.round(p.week_ratio * 100)}`);
   return [head, goals.length ? `Hedef:\n${goals.join("\n")}` : "hedef yok (save goal ile ekle)", tasks.length ? `Görev:\n${tasks.join("\n")}` : ""].filter(Boolean).join("\n");
@@ -153,6 +161,18 @@ export function calendarText(days: Row[]): string {
       c.ratio === null ? "hedef yok" : `hedef %${Math.round(c.ratio * 100)}`, c.tasks.length && `görev ${c.tasks.filter((t: Row) => t.done_at).length}/${c.tasks.length}`),
     ...c.tasks.map((t: Row) => "  " + line("task", t)),
   ].join("\n")).join("\n");
+}
+
+const QUOTA_NOTE: Record<string, string> = { near: " (yakın)", over: " (doldu)" };
+
+/** One short line: sent/limit per limited channel, plus the email warmup notice while it is active */
+function quotaText(q: any): string[] {
+  if (!q) return [];
+  const w = q.email_warmup;
+  return [
+    q.channels.length ? `Kota: ${q.channels.map((c: Row) => `${label(c.channel)} ${c.sent}/${c.limit}${c.sent > c.limit ? " (aştı)" : (QUOTA_NOTE[c.state] ?? "")}`).join(" · ")}` : "",
+    w?.active ? `Soğuk e-posta kapalı (ısınma ${d(w.until)}'a kadar)` : "",
+  ].filter(Boolean);
 }
 
 export function todayText(t: any): string {
@@ -173,8 +193,13 @@ export function todayText(t: any): string {
   const w = t.week;
   const target = t.network?.settings?.weekly_target;
   const week = w ? `Hafta: ${w.sent}${target ? `/${target} hedef` : ""} giden (geçen ${w.sent_prev}) · ${w.replies} dönüş · ${w.meetings} görüşme${w.by_channel?.length ? ` · ${w.by_channel.map((c: Row) => `${label(c.channel)} ${c.sent}/${c.replies}`).join(", ")}` : ""}` : "";
-  return [`BUGÜN ${t.date}`, week, ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
+  return [`BUGÜN ${t.date}`, week, ...quotaText(t.quota), ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
 }
+
+/** One kind/channel group of the template comparison: `ilk mesaj/e-posta: "A" %18 (40) önde · "B" erken (12)` (at most 3 templates) */
+const templateGroupText = (g: Row) =>
+  `${label(g.kind)}/${g.channel ? label(g.channel) : "tüm kanallar"}: ${g.templates.slice(0, 3).map((t: Row) =>
+    `"${cut(t.name, 25)}" ${t.early ? "erken" : `%${Math.round(t.reply_rate * 100)}`} (${t.sent})${t.leader ? " önde" : ""}`).join(" · ")}`;
 
 /** Pazarlama özeti (report aracının ikinci bölümü) */
 export function marketingText(m: any): string {
@@ -183,11 +208,17 @@ export function marketingText(m: any): string {
   if (posts.length) out.push(`Paylaşım getirisi: ${posts.map((p: Row) => `${cut(p.title, 30)} ${p.people_count} kişi, ${p.opp_count} fırsat${p.won ? `, ${tl(p.won_value)}` : ""}`).join(" · ")}`);
   if (m.posts_due.length) out.push(`Güncellenecek paylaşım: ${m.posts_due.length}`);
   if (m.ideas.length) out.push(`Fikirler: ${m.ideas.slice(0, 5).map((i: Row) => `${cut(i.title, 30)} (${label(i.stage)}) ${i.interested}/${i.told} ilgi`).join(" · ")}`);
-  const tpl = m.templates.filter((x: Row) => x.sent).slice(0, 3);
-  if (tpl.length) out.push(`Şablon dönüşü: ${tpl.map((x: Row) => `${cut(x.name, 25)} ${x.replied}/${x.sent}`).join(" · ")}`);
+  if (m.template_groups.length) out.push(`Şablon: ${m.template_groups.map(templateGroupText).join(" | ")}`);
   if (m.channels.length) out.push(`Kanal (30 gün, kişi): ${m.channels.map((c: Row) => `${label(c.channel)} ${c.replied}/${c.people}`).join(" · ")}`);
   if (m.followups.length) out.push(`Takip zamanı gelen: ${m.followups.length}`);
   return out.join("\n");
+}
+
+/** One line: `Kaynak (90g): R10 40→22→6→2→1→0 zayıf · Ajans 12→9→3→1→0→0 erken` (found → written → replied → meeting → offer → won) */
+function sourceFunnelText(f: any): string {
+  if (!f?.sources.length) return "";
+  const flag = (s: Row) => (s.weak ? " zayıf" : s.early ? " erken" : "");
+  return `Kaynak (${f.period === "all" ? "tümü" : `${f.period}g`}): ${f.sources.map((s: Row) => `${s.source} ${s.steps.map((x: Row) => x.count).join("→")}${flag(s)}`).join(" · ")}`;
 }
 
 export function reportText(r: any): string {
@@ -200,12 +231,38 @@ export function reportText(r: any): string {
   const week = w ? `Bu hafta: ${w.sent} giden · ${w.replies} dönüş${w.reply_rate !== null ? ` (%${Math.round(w.reply_rate * 100)})` : ""} · ${w.meetings} görüşme · ${w.new_people} yeni kişi\n` : "";
   const refs = r.referrals?.length ? `Referans: ${r.referrals.slice(0, 5).map((x: Row) => `${x.name} ${x.network} kişi, ${x.won} kazanıldı ${tl(x.won_value)}`).join(" · ")}\n` : "";
   const mk = r.marketing ? marketingText(r.marketing) : "";
-  return `${week}${refs}${mk ? `${mk}\n` : ""}${src}\n${m.month}: tahsilat ${tl(m.collected)} · taban ${tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${tl(m.outstanding_due)}` : ""}`;
+  const funnel = sourceFunnelText(r.source_funnel);
+  return `${week}${refs}${mk ? `${mk}\n` : ""}${funnel ? `${funnel}\n` : ""}${src}\n${m.month}: tahsilat ${tl(m.collected)} · taban ${tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${tl(m.outstanding_due)}` : ""}`;
+}
+
+const pctText = (r: number | null | undefined) => (r === null || r === undefined ? "–" : `%${Math.round(r * 100)}`);
+
+/** Weekly review (report with week): header, counts against last week, template and source highlights, limit overruns, suggestions */
+export function reviewText(r: any): string {
+  const w = r.this_week;
+  const l = r.last_week;
+  const target = r.target ? `/${r.target} hedef` : "";
+  const tpl = r.templates.map((g: Row) => `${label(g.kind)}/${g.channel ? label(g.channel) : "tüm kanallar"}: ${[
+    g.leader ? `"${cut(g.leader.name, 25)}" önde ${pctText(g.leader.reply_rate)}` : "",
+    g.loser ? `"${cut(g.loser.name, 25)}" geride ${pctText(g.loser.reply_rate)}` : "",
+    g.early ? `${g.early} erken` : "",
+  ].filter(Boolean).join(", ")}`);
+  const src = [r.sources.best && `en iyi ${r.sources.best.source} ${pctText(r.sources.best.reply_rate)}`, r.sources.weakest && `zayıf ${r.sources.weakest.source} ${pctText(r.sources.weakest.reply_rate)}`].filter(Boolean);
+  const full = r.quota.filter((c: Row) => c.over_days).map((c: Row) => `${label(c.channel)} ${c.over_days} gün (limit ${c.limit})`);
+  return [
+    `HAFTALIK İNCELEME ${r.week} (${d(r.start)} → ${d(r.end)})`,
+    `Giden ${w.sent}${target} (geçen ${l.sent}) · dönüş ${w.replies} ${pctText(w.reply_rate)} (geçen ${pctText(l.reply_rate)}) · görüşme ${w.meetings} · teklif ${w.offers} · yeni ${w.new_people} kişi, ${w.new_companies} firma (geçen ${l.new_people + l.new_companies})`,
+    tpl.length ? `Şablon: ${tpl.join(" | ")}` : "",
+    src.length ? `Kaynak (${r.sources.period === "all" ? "tümü" : `${r.sources.period}g`}): ${src.join(" · ")}` : "",
+    full.length ? `Limit doldu: ${full.join(" · ")}` : "",
+    "Gelecek hafta için öneriler:",
+    ...r.suggestions.map((x: Row, i: number) => `  ${i + 1}. ${x.text}`),
+  ].filter(Boolean).join("\n");
 }
 
 export const KIND_NAME: Record<string, string> = {
   person: "kişi", company: "firma", source: "kaynak", opportunity: "fırsat", project: "proje", task: "görev",
-  draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",
+  draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", offer: "teklif",
   post: "paylaşım", template: "şablon", idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu", goal: "hedef", goal_log: "ilerleme",
 };
 

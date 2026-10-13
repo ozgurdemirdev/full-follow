@@ -38,7 +38,7 @@ export const SETTINGS: SettingsCategory[] = [
     slug: "network",
     name: "Network ve takip",
     cards: [
-      { id: "network", title: "Network", keywords: ["cevap bekleme", "soğuma", "takip dizisi", "takip", "haftalık hedef", "giden mesaj", "linkedin", "Cevap bekleme süresi (gün)", "Soğuma süresi (gün)", "Takip dizisi (gün)", "Haftalık giden mesaj hedefi"], render: () => <NetworkCard /> },
+      { id: "network", title: "Network", keywords: ["cevap bekleme", "soğuma", "takip dizisi", "takip", "haftalık hedef", "giden mesaj", "linkedin", "Cevap bekleme süresi (gün)", "Soğuma süresi (gün)", "Takip dizisi (gün)", "Haftalık giden mesaj hedefi", "kota", "günlük limit", "kanal limiti", "ısınma", "soğuk e-posta", "Soğuk e-posta ısınma bitişi"], render: () => <NetworkCard /> },
     ],
   },
   {

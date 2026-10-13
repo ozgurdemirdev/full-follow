@@ -4,7 +4,7 @@ import { rows, type Ctx } from "../context";
 import { followupsDue } from "./followups";
 import { ideaStats } from "./ideas";
 import { postStats } from "./posts";
-import { templateStats } from "./templates";
+import { templateComparison } from "./templates";
 
 /**
  * Kanal performansı (son `days` gün): kaç kişiye yazıldı, kaçı sonra döndü, oran.
@@ -24,14 +24,14 @@ export function channelPerformance(ctx: Ctx, days = 30) {
     .map((x) => ({ ...x, reply_rate: x.people ? x.replied / x.people : null }));
 }
 
-/** Pazarlama özeti: paylaşımlar (getirdikleri), fikirler (ilgi), şablonlar (dönüş), kanal performansı, takip dizisi */
+/** Pazarlama özeti: paylaşımlar (getirdikleri), fikirler (ilgi), şablonlar (tür ve kanal gruplarında kıyas), kanal performansı, takip dizisi */
 export function marketingReport(ctx: Ctx) {
   const posts = postStats(ctx);
   return {
     posts: posts.slice().sort((a, b) => b.won_value - a.won_value || b.people_count - a.people_count || b.opp_count - a.opp_count),
     posts_due: posts.filter((p) => p.refresh_due),
     ideas: ideaStats(ctx),
-    templates: templateStats(ctx).sort((a, b) => (b.reply_rate ?? -1) - (a.reply_rate ?? -1) || b.sent - a.sent),
+    template_groups: templateComparison(ctx),
     channels: channelPerformance(ctx, 30),
     followups: followupsDue(ctx),
   };

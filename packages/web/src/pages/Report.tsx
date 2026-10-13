@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "../api/store";
-import type { MonthReport, Report as ReportData } from "../api/types";
+import type { MarketingReport, MonthReport, Report as ReportData } from "../api/types";
 import { Page } from "../app/Page";
+import { SourceFunnel } from "../components/SourceFunnel";
+import { TemplateCompare } from "../components/TemplateCompare";
 import { Chip, ErrorBox, order, PageSkeleton } from "../components/ui";
 import { fmtMonth, fmtMonthShort, pct, tl } from "../lib/format";
 
 export default function Report() {
   const months = useQuery<MonthReport[]>("/report/months?count=6");
   const report = useQuery<ReportData>("/report");
+  const marketing = useQuery<MarketingReport>("/report/marketing");
   const [sel, setSel] = useState<number | null>(null);
 
   const list = months.data ?? [];
@@ -138,6 +141,10 @@ export default function Report() {
             </div>
             <p className="m-0 px-9 py-5 text-sm text-text-muted">Dönüşüm = kazanılan / kapanan (kazanılan + kaybedilen). Açık fırsatlar hesaba girmez.</p>
           </section>
+
+          <SourceFunnel />
+
+          {marketing.data ? <TemplateCompare groups={marketing.data.template_groups} /> : null}
         </>
       )}
     </Page>

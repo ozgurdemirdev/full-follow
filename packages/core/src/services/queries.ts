@@ -21,6 +21,9 @@ function sectorMatch(ctx: Ctx, sector: string | number): number[] {
 }
 import { ideaPeople, ideaStats } from "./ideas";
 import { goalsService } from "./goals";
+import { filesOf } from "./files";
+import { offersOf } from "./offers";
+import { teamOf } from "./oppPeople";
 import { ownProjectStats } from "./ownProjects";
 
 type Rows = { rows: any[]; total: number };
@@ -257,12 +260,22 @@ export function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
     task: tasks, draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
+    sector: sectors, note: notes, link: linkList, offer: offerList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
     },
   };
+
+  /** Offer versions, newest first; filter: {opportunity_id} */
+  function offerList(o: ListOpts): Rows {
+    const f = o.filter ?? {};
+    let list = rows(ctx, "SELECT x.*, op.title AS opportunity_title FROM offers x JOIN opportunities op ON op.id = x.opportunity_id ORDER BY x.opportunity_id, x.version DESC")
+      .map((r) => ({ ...r, items: JSON.parse(r.items) }));
+    if (f.opportunity_id) list = list.filter((r) => r.opportunity_id === Number(f.opportunity_id));
+    list = list.filter((r) => has(o.q, r.opportunity_title, r.note));
+    return page(list, o.limit, o.offset);
+  }
 
   /** Links of an opportunity or project; a project also lists the links of its opportunity (from: "fırsat") */
   function linkList(o: ListOpts): Rows {
@@ -304,7 +317,7 @@ export function queriesService(ctx: Ctx) {
   const relatedFor: Record<string, string[]> = {
     person: ["touches", "tasks", "opportunities", "projects", "comments", "referrals", "drafts", "notes", "channels"],
     company: ["people", "touches", "opportunities", "drafts", "comments", "channels"],
-    opportunity: ["touches", "tasks", "comments", "drafts", "links"],
+    opportunity: ["touches", "tasks", "comments", "drafts", "links", "people", "offers", "files"],
     project: ["payments", "tasks", "touches", "comments", "drafts", "links"],
     payment: ["comments"], task: ["comments"], draft: ["comments"],
     own_project: ["ideas", "links", "comments"],
@@ -332,6 +345,7 @@ export function queriesService(ctx: Ctx) {
       case "goal": rowData = own(goals({ limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "goal_log": rowData = own(goalLogs({ limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
+      case "offer": rowData = own(offerList({ filter: {}, limit: 100000 }).rows.find((r) => r.id === id)); break;
       case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
       case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;
       case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;
@@ -361,8 +375,10 @@ export function queriesService(ctx: Ctx) {
         case "projects": related.projects = cap(projects({ filter: by, limit: n })); break;
         case "payments": related.payments = cap(payments({ filter: by, limit: n })); break;
         case "drafts": related.drafts = cap(drafts({ filter: by, limit: n })); break;
+        case "offers": related.offers = offersOf(ctx, id).slice(0, n); break;
+        case "files": related.files = filesOf(ctx, "opportunity", id).slice(0, n); break;
         case "people":
-          related.people = type === "idea" ? ideaPeople(ctx, id).slice(0, n)
+          related.people = type === "opportunity" ? teamOf(ctx, id).slice(0, n) : type === "idea" ? ideaPeople(ctx, id).slice(0, n)
             : type === "post" ? cap(people({ filter: { post_id: id }, limit: n }))
             : cap(people({ filter: { company_id: id }, limit: n }));
           break;
