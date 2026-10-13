@@ -140,6 +140,16 @@ export interface NetworkSettings {
   cooling_days: number;
   followup_days: number[];
   weekly_target: number;
+  /** channel → daily outgoing message limit; a channel without an entry has no limit */
+  channel_limits: Record<string, number>;
+  /** ISO date or empty: cold email is off until then (inclusive) */
+  email_warmup_until: string;
+}
+export type QuotaState = "ok" | "near" | "over";
+export interface Quota {
+  date: string;
+  channels: { channel: string; sent: number; limit: number; state: QuotaState }[];
+  email_warmup: { until: string | null; active: boolean };
 }
 export interface NetworkLists {
   awaiting: List<Person>;
@@ -420,6 +430,7 @@ export interface Today {
   network: NetworkLists;
   posts_due: List<Post>;
   followups: List<FollowupDue>;
+  quota: Quota;
   claude_last_at: string | null;
 }
 export interface PriceFloor {

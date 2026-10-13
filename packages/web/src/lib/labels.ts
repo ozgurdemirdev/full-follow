@@ -29,6 +29,8 @@ export const CHANNEL_DOT: Record<string, string> = {
   yuz_yuze: "bg-primary", whatsapp: "bg-status-text-success", r10: "bg-accent-warning", diger: "bg-accent-neutral",
 };
 export const CHANNELS = Object.keys(CHANNEL);
+/** Channels that get a daily outgoing message limit in Settings */
+export const QUOTA_CHANNELS = ["email", "instagram", "linkedin", "whatsapp"];
 
 /** Firma ve kişinin temas durumu (temaslarla ilerler; "olumsuz" ve "es geçildi" elle) */
 export const CONTACT_STATUS: Record<string, string> = {

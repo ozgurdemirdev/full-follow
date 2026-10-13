@@ -17,6 +17,7 @@ import { refreshNote } from "../lib/marketing";
 import { openSheet } from "../app/ui";
 import { DashboardActivity } from "./DashboardActivity";
 import { GoalStrip } from "../components/GoalStrip";
+import { QuotaCard } from "../components/QuotaCard";
 
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
@@ -42,6 +43,7 @@ export default function Today() {
               <FollowUps data={d} />
             </div>
             <div className="flex flex-col gap-7 desk:gap-9">
+              <QuotaCard quota={d.quota} />
               <PostsDue list={d.posts_due} />
               <Cooling list={d.network.cooling} days={d.network.settings.cooling_days} />
               <Comments />
