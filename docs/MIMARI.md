@@ -457,6 +457,11 @@ Kendi projelerim (`packages/core/test/own-projects.test.ts`):
 22. **Sıralama**: öncelik grubunda sıra 0..n, `position` ile sürükleme, öncelik değişince iki grup yeniden numaralanır, `done` gruptan çıkarır ve geri açınca sona koyar.
 23. **Fikirden proje**: alt fikirler projeye taşınır, kaynak fikir çöpe gider (geri yüklenince alt fikirsiz genel fikir); proje silinince fikirleri genele döner, geri yüklenince yeniden bağlanır.
 
+Fırsat detay sayfası (`packages/core/test/core.test.ts`):
+
+24. **Teklif kabulü**: bir fırsatta tek kabul edilmiş teklif olur (yenisini kabul etmek eskisinin kabulünü temizler) ve kabul edilen teklifin tutarı fırsatın `estimated_value` alanına yazılır.
+25. **Kazanınca ödeme planı**: fırsat kazanılınca proje fiyatı ve ödeme planı kabul edilen teklif tutarından çıkar (fırsat değeri sonradan elle değişmiş olsa bile).
+
 **Opsiyonel (gerekirse):**
 
 9. Bugün sorgusu: dünkü açık görev gecikmiş olarak gelir, tamamlanan gelmez.
@@ -677,3 +682,22 @@ Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
 - **Projeye dönüştür** (`save own_project {from_idea}` ya da `POST /api/own-projects/from-idea/:id`): fikir proje olur, alt fikirleri projenin fikirleri olur, kaynak fikir çöp kutusuna gider. Proje silinince fikirleri genele döner, geri yüklenince bağlanır.
 - **REST**: `/api/own-projects` (liste, detay `?with=ideas,links,comments`, ekle, düzenle, sil, `from-idea/:id`). **MCP**: yeni araç yok; `find|get|save|move|delete` `own_project` türünü tanır.
 - **Web**: `/projelerim` (Kendi projelerim) liste + detay, öncelik gruplu fikirler (masaüstünde sürükle, telefonda yukarı/aşağı), `Yapılanlar`. `/fikirler` artık "Para kazanma fikirleri".
+
+## 14. Fırsat detay sayfası (2026-10-13)
+
+Değerli bir fırsatın (ör. "Örnek Pizza") ekibi, teklif sürümleri, dosyaları ve değeri tek sayfada görünür. Eskiden fırsat sadece zaman çizelgesinde ve kanban kartı olarak vardı.
+
+- **Yeni tablolar** (migration `0017_opportunity_page`, mevcut veriye dokunmaz):
+  - `opportunity_people` (`opportunity_id`, `person_id`, `role` karar_verici|teknik|ortak|diger, `note`, `created_by`, zaman damgaları; çift tekil). Fırsatın `person_id` alanı ana muhatap olarak kalır, rolsüzdür ve bu tabloda yer almaz.
+  - `offers` (`opportunity_id`, `version` fırsat başına 1'den artar, `offered_at`, `amount` TL, `items` JSON `[{label, amount}]`, `note`, `accepted_at`, `file_id`). Kısmi tekil indeks: fırsat başına en fazla bir kabul edilmiş teklif.
+  - `files` (`target_type` opportunity|project, `target_id`, `name`, `mime`, `size`, `stored_name`). Baytlar diskte `data/files/<stored_name>` (veritabanı klasörünün yanında, `FF_DB` ile birlikte taşınır, git'e girmez). Silinen satır çöp kutusuna gider; `deleted_at` sütunu yok, baytlar diskte kalır ve geri yüklenince dosya yerine gelir.
+- **Kurallar** (core):
+  - Teklifi kabul etmek (`PATCH /api/offers/:id {accepted:true}`) diğerlerinin `accepted_at` alanını temizler, fırsatın `estimated_value` alanını teklif tutarına çeker, `offer.accepted` olayı yazar. Kabul edilmiş teklifin tutarı değişirse fırsat değeri de değişir. Kabulü geri almak (`accepted:false`) fırsat değerine dokunmaz.
+  - Kabul edilmiş teklif silinince kabulü kalkar (çöp kutusundan kabulsüz döner).
+  - Kazanınca açılan projenin fiyatı ve ödeme planı (`payment_template` yüzdeleri) kabul edilen teklifin tutarından çıkar; kabul yoksa eskisi gibi `estimated_value`.
+  - Ekip: ekleme, rol/not değiştirme (aynı kişiyi tekrar eklemek rolünü günceller), çıkarma. Ana muhatap ekibe eklenmez. Olaylar: `opp.person_added|person_updated|person_removed`. Teklif olayları `offer.created|updated|accepted|unaccepted|deleted`, dosya olayları `file.uploaded|deleted`; hepsi ilgili fırsat zaman çizelgesinde görünür.
+  - Fırsat, kişi ya da proje silinirken bu tabloların satırları aynı çöp kutusu kaydına girer ve geri yüklemede döner. Dosya silinirken ona bağlı tekliflerin `file_id` alanı boşaltılır, geri yüklenince yeniden bağlanır.
+- **Dosya yükleme** (server): `POST /api/files` (multipart: `file`, `target_type`, `target_id`). Tür baytlardan anlaşılır (png, jpg, gif, webp, pdf; docx, pptx, xlsx zip imzası + uzantı; txt, md, csv metin denetimiyle), uzantıya güvenilmez. Resim en fazla 10 MB, dosya 25 MB (`FILE_LIMITS`). Ortak kısım `packages/server/src/upload.ts` (chat ekleri de aynı `sniff` ve `cleanName` işlevini kullanır). `GET /api/files/:id` indirir (`Content-Disposition`: resim ve PDF sekmede açılır, kalanı iner, `nosniff`).
+- **Uç noktalar**: `GET /api/opportunities/:id?with=people,offers,files,links,tasks,touches,comments` (ekip ana muhatap hariç), `POST /api/opportunity-people` (`opportunity_id, person_id, role, note`), `PATCH|DELETE /api/opportunity-people/:id`, `POST /api/offers`, `PATCH|DELETE /api/offers/:id`, `POST /api/files`, `GET|DELETE /api/files/:id`.
+- **MCP** (yeni araç yok): `get opportunity with:['people','offers','files']` ekip, teklif sürümleri ve dosya listesini kısa satırlarla verir. Ekip yazımı `save opportunity {add_people:[{person:'Deniz', role:'karar_verici', note?}], remove_people:['Ahmet']}` ile (id ile güncellerken; isim ya da id kabul eder). Teklif ve dosya yazımı MCP'de yok, web'den yapılır.
+- **Web**: `/firsatlar/:id` (Pipeline kartı, genel arama, Bugün, kişi ve firma kartları, zaman çizelgesindeki kişi kartı bu sayfaya açılır; `recordPath("opportunity")` de). Üstte özet kartı: tahmini değer (KDV hariç), kaynak ve ilan linki, tıklanır aşama çubuğu (telefonda yatay kayar, `kaybedildi` neden sorar, kazanılınca "Projeye git"), temas ekle. Sol sütunda Teklifler ve Akış (Hepsi, Temaslar, Yorumlar, Aşama süzgeçleri, yorum kutusu), sağ sütunda Sıradaki adım (takip tarihi gecikince vurgulu + en yakın açık görev), Ekip, Dosyalar, Linkler. Telefonda tek sütun: sıradaki adım, teklifler, ekip, dosyalar, linkler, akış. Akış, sıradaki adım ve "neden kaybedildi" sayfası zaman çizelgesi ve satış hunisinden çıkarılıp paylaşıldı (`components/Feed.tsx`, `NextStep.tsx`, `LostReason.tsx`); zaman çizelgesinde aşama olayları artık ayrı "Aşama" süzgecinde.
