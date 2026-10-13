@@ -80,7 +80,7 @@ async function bootstrap() {
     app.useStaticAssets(webDist, { index: false });
     app.use((req: Request, res: Response, next: NextFunction) => {
       // index.html her seferinde tazelenir (yeni derleme hemen görünsün)
-      if (req.method === "GET" && !req.path.startsWith("/api")) return res.setHeader("Cache-Control", "no-cache"), res.sendFile(index);
+      if (req.method === "GET" && !req.path.startsWith("/api")) return res.setHeader("Cache-Control", "no-cache"), res.sendFile("index.html", { root: webDist });
       next();
     });
   }

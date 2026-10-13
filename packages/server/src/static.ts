@@ -33,6 +33,6 @@ export function precompressed(root: string) {
     res.setHeader("Content-Type", type);
     res.setHeader("Content-Encoding", enc);
     res.setHeader("Vary", "Accept-Encoding");
-    res.sendFile(`${file}.${enc === "br" ? "br" : "gz"}`);
+    res.sendFile(`${rel}.${enc === "br" ? "br" : "gz"}`, { root });
   };
 }
