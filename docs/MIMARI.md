@@ -278,6 +278,8 @@ R10 konusu, LinkedIn ya da Instagram gönderisi. Forum konuları belli aralıkla
 - Taslakta `drafts.template_id` kullanılan şablonu tutar; şablon başarısı hesaplanır: kullanım, gönderilen, gönderildikten sonra cevap gelen (dönüş oranı).
 - Şablon silinince taslaklar kalır, bağ kopar.
 
+**A/B kıyası** (Rapor ekranı, `templateComparison`, hesaplanır): gönderilmiş şablonlar tür + kanal grubunda karşılaştırılır (`channel` boşsa "tüm kanallar" grubu). `TEMPLATE_MIN_SAMPLE` (20) gönderimden azı `early` ("erken") sayılır: oranı güvenilir değildir. Grup içinde yeterli örneği olanlar cevap oranına göre, sonra erken olanlar gelir. `leader` ("önde") ancak grupta yeterli örneği olan en az iki şablon varsa ve en yüksek oran ikincisinden kesin büyükse işaretlenir; yoksa kazanan ilan edilmez. Her şablonda alıcı sektörüne göre döküm vardır: alıcının sektörü (kişinin, yoksa firmasının; birden çoksa en küçük sektör id'si), sektörü yoksa "Sektörsüz" kovası. Gönderilen ve cevap sayımı `templateStats` ile aynı kuraldır (`REPLIED_AFTER`).
+
 ### 2.16 Takip dizisi (Paket 2)
 
 Ayrı tablo yok. Cevap bekleyen kuralının (§3/10) verisinden hesaplanır; üretilen taslaklar `drafts.followup_step` (1 = ilk takip) taşır. Süreler `settings.followup_days` (varsayılan `[3,7]`, en fazla 5 adım, boş = kapalı).
@@ -361,7 +363,7 @@ her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 | **Satış hunisi** | Aşamaya göre gruplu açık fırsatlar (kazanılan/kaybedilen sütunlar daraltılmış, son 30 gün) |
 | **Proje panosu** | Aşamaya göre projeler + her birinin sıradaki görevi ve sıradaki ödemesi |
 | **Zaman çizelgesi** | Bir kişi ya da projenin `events` kayıtları, eskiden yeniye |
-| **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı |
+| **Rapor** | Kaynak bazında fırsat sayısı, kazanılan, dönüşüm oranı, kazanılan tutar · aylık tahsilat (`paid_at`) vs. fiyat tabanı · şablon kıyası (tür + kanal grubunda gönderim, cevap oranı, "erken" uyarısı, sektör dökümü, §2.15) |
 | Kayıt sayfaları | Kişi, firma, fırsat, proje detay ve formlar; her birinde yorum paneli (ekran sayısına dahil değil ama gerekli) |
 
 Sidebar: **Network** bölümü önde (Bugün, Kişiler, Referanslar, Taslaklar, Yorumlar), **Pazarlama** (Paket 2: Paylaşımlar, Fikirler, Şablonlar), **Satış ve projeler** geride (Satış hunisi, Projeler, Zaman çizelgesi, Rapor), en altta Ayarlar (network süreleri, takip dizisi günleri, haftalık hedef). Mobilde soldan açılan çekmece.
@@ -575,13 +577,13 @@ REST uçları:
 | Uç | Ne verir |
 |---|---|
 | `GET/POST /api/posts`, `PATCH/DELETE /api/posts/:id`, `POST /api/posts/:id/refresh` | Paylaşımlar (`?platform=`, `?refresh_due=true`); her satırda `people_count`, `opp_count`, `won`, `won_value`, `next_refresh_at`, `refresh_due`. `GET /api/posts/:id?with=people` |
-| `GET/POST /api/templates`, `PATCH/DELETE /api/templates/:id` | Şablonlar (`?kind=&channel=&sector=`); `used`, `sent`, `replied`, `reply_rate` |
+| `GET/POST /api/templates`, `PATCH/DELETE /api/templates/:id` | Şablonlar (`?kind=&channel=&sector=`); `used`, `sent`, `replied`, `reply_rate`, `early` |
 | `GET /api/templates/suggest?person_id=&channel=&kind=` | Kişi ve kanala uyan şablonlar, en uygun önce |
 | `GET /api/templates/:id/render?person_id=` | Şablonun kişiye uygulanmış metni |
 | `GET/POST /api/ideas`, `PATCH/DELETE /api/ideas/:id` | Fikirler (`?stage=&sector=`); `told`, `interested`, `interest_rate`, `sectors`, `touch_count`, `post_count`. Girdi: `sector_ids` ya da `sectors: ["Ana > Alt"]` |
 | `GET /api/ideas/people?idea_id=&person_id=` · `POST /api/ideas/:id/people` · `PATCH/DELETE /api/ideas/people/:linkId` | Fikir ↔ kişi ilgisi |
 | `GET /api/followups` · `POST /api/followups/run` | Takip zamanı gelenler · şimdi hazırla (zamanlayıcının işini hemen yapar) |
-| `GET /api/report/marketing` | Paylaşım getirisi, güncellenecekler, fikir ilgisi, şablon dönüşü, kanal dönüşü (30 gün), takip zamanı gelenler |
+| `GET /api/report/marketing` | Paylaşım getirisi, güncellenecekler, fikir ilgisi, şablon kıyası (`template_groups`: tür + kanal grupları; şablonda `sent`, `replied`, `reply_rate`, `early`, `leader`, `sectors`), kanal dönüşü (30 gün), takip zamanı gelenler |
 | `GET /api/today` | ek bölümler: `posts_due`, `followups`; `quota` (`{date, channels:[{channel,sent,limit,state}], email_warmup:{until,active}}`); `network.settings` içinde `followup_days`, `weekly_target`, `channel_limits`, `email_warmup_until` |
 | `POST /api/drafts` | `template_id` ile (metin boşsa şablondan doldurulur) |
 | `PUT /api/settings` | `followup_days` ("3,7" ya da dizi), `weekly_target`, `channel_limits` (`{"email":20}`), `email_warmup_until` (ISO tarih ya da boş) |
