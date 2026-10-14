@@ -24,7 +24,13 @@ export class TouchesController {
     return this.touches.create(b);
   }
 
-  /** Özet, sonuç, kanal, tarih ve cevap bekleme bayrağı */
+  /** Kişisiz adres temaslarından önerisi olanları önerilen kişiye ya da firmaya bağlar; `{contact}` tek adresle sınırlar */
+  @Post("adopt-suggested")
+  adopt(@Body() b?: unknown) {
+    return this.touches.adoptSuggested(b);
+  }
+
+  /** Özet, sonuç, kanal, tarih, cevap bekleme bayrağı; kişisiz adres temasında `person_id` ya da `company_id` ile muhatap */
   @Patch(":id")
   update(@Param("id") id: string, @Body() b: unknown) {
     return this.touches.update(intId(id), b);

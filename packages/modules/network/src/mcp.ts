@@ -13,6 +13,7 @@ export const mcp: McpDef = {
       line: (r, f) => f.join(
         `#${r.id} ${f.d(r.happened_at)} ${r.direction} ${f.label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && "firma", f.cut(r.summary, 60),
         r.outcome && `→ ${f.cut(r.outcome, 30)}`, r.expects_reply && "cevap bekler",
+        r.suggested_match && `öneri: ${r.suggested_match.type === "person" ? "kişi" : "firma"} #${r.suggested_match.id} ${r.suggested_match.name}`,
       ),
     },
   },
@@ -37,7 +38,7 @@ export const mcp: McpDef = {
       { at: 310, text: "touches," },
       { at: 430, text: ",touches" },
     ],
-    save: [{ at: 145, text: "touch id + {expects_reply:false} cevap beklemeyi kapatır. " }],
+    save: [{ at: 145, text: "touch id + {expects_reply:false} cevap beklemeyi kapatır; id + {person_id|company_id} kişisiz adres temasını o kayda bağlar (find loose çıktısındaki öneri). " }],
     report: [{ at: 100, text: "Haftalık temas sayıları, " }],
   },
   tools: [{
