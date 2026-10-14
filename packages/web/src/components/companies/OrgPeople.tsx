@@ -1,35 +1,52 @@
 import { Link } from "wouter";
+import { run } from "../../api/actions";
 import type { Person } from "../../api/types";
 import { PATHS } from "../../app/routes";
-import { COLD_DAYS, daysSince, INFLUENCE_LABEL, INFLUENCE_TONE, lastText, warmthOf } from "../../lib/companies";
+import { COLD_DAYS, daysSince, INFLUENCE_LABEL, INFLUENCE_TONE, lastText, warmthOf, type Influence } from "../../lib/companies";
 import { TONE_CLS } from "../../lib/labels";
 import { Avatar } from "../ui";
+
+const ROLES = Object.keys(INFLUENCE_LABEL) as Influence[];
+
+/** The three buying roles as pills; the person's own is lit, a click sets it, a click on the lit one clears it */
+function RolePicker({ p }: { p: Person }) {
+  const pick = (role: Influence) => void run("patch", `/people/${p.id}`, { influence: p.influence === role ? null : role }).catch(() => {});
+  return (
+    <span className="co-infl" role="group" aria-label={`${p.name} karar rolü`}>
+      {ROLES.map((role) => (
+        <button key={role} type="button" className={`co-chip ${p.influence === role ? TONE_CLS[INFLUENCE_TONE[role]] : "is-idle"}`} aria-pressed={p.influence === role} onClick={() => pick(role)}>
+          {INFLUENCE_LABEL[role]}
+        </button>
+      ))}
+    </span>
+  );
+}
 
 function OrgCard({ p }: { p: Person }) {
   const days = p.last_touch_at ? daysSince(p.last_touch_at) : null;
   const alert = p.influence === "karar_verici" && days === null;
   const tone = days === null ? "is-none" : days > COLD_DAYS ? "is-cold" : "";
   return (
-    <Link href={`${PATHS.people}/${p.id}`} className="co-org" data-alert={alert}>
-      <span className="flex items-center gap-4">
-        <span className="ppl-av" data-warm={warmthOf(days)}>
-          <Avatar name={p.name} id={p.id} size="list" />
-          <span className="ppl-warm" />
+    <div className="co-org" data-alert={alert}>
+      <Link href={`${PATHS.people}/${p.id}`} className="co-org-link">
+        <span className="flex items-center gap-4">
+          <span className="ppl-av" data-warm={warmthOf(days)}>
+            <Avatar name={p.name} id={p.id} size="list" />
+            <span className="ppl-warm" />
+          </span>
+          <span className="flex min-w-0 flex-grow flex-col">
+            <span className="truncate text-base font-medium">{p.name}</span>
+            <span className="truncate text-sm text-text-secondary">{p.role}</span>
+          </span>
+          <span className={`co-last ${tone}`}>{lastText(days)}</span>
         </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-base font-medium">{p.name}</span>
-          <span className="truncate text-sm text-text-secondary">{p.role}</span>
-        </span>
-      </span>
-      <span className="flex flex-wrap items-center gap-3">
-        {p.influence ? <span className={`co-chip ${TONE_CLS[INFLUENCE_TONE[p.influence]]}`}>{INFLUENCE_LABEL[p.influence]}</span> : null}
-        <span className={`co-last ${tone}`}>{lastText(days)}</span>
-      </span>
-    </Link>
+      </Link>
+      <RolePicker p={p} />
+    </div>
   );
 }
 
-/** "İçerideki kişiler": who decides and who is spoken to; the role chip shows when core provides the influence role */
+/** "İçerideki kişiler": who decides and who is spoken to; the role is picked right on the card */
 export function OrgPeople({ people }: { people: Person[] }) {
   return (
     <div className="co-section">

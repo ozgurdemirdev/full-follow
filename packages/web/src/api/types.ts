@@ -54,8 +54,8 @@ export interface Person extends Base, Labeled {
   cooling: boolean;
   /** touches per ISO week, the last 12 weeks, oldest first */
   rhythm: number[];
-  /** not provided yet (plan gap G6): the role of the person inside the company */
-  influence?: "karar_verici" | "etkileyici" | "kullanici" | null;
+  /** role in a buying decision (null = not set) */
+  influence: "karar_verici" | "etkileyici" | "kullanici" | null;
 }
 /** Cevap bekleme: son gelen temastan sonra cevapsız giden temas */
 export interface Awaiting {
@@ -297,8 +297,11 @@ export interface Company extends Base, Labeled {
   last_touch_at: string | null;
   touch_count: number;
   open_opps: number;
-  /** not provided yet (plan gap G5): the city of the company */
-  city?: string | null;
+  city: string | null;
+  /** client (has a project), partner (partner tag) or lead */
+  segment: "client" | "partner" | "lead";
+  /** TL: paid on its projects, still due on them, value of its open opportunities */
+  money: { won: number; due: number; open: number };
 }
 export interface CompanyCard {
   row: Company;
@@ -366,8 +369,13 @@ export interface Opportunity extends Base {
   closed_at: string | null;
   position: number;
   project_id: number | null;
-  /** when the opportunity entered its current stage (gap G9, not sent yet; the pipeline falls back to updated_at) */
-  stage_since?: string | null;
+  /** when the opportunity entered its current stage */
+  stage_since: string | null;
+}
+/** What the opportunity list adds: the stage rules and the stage to stage rates of the last 90 days */
+export interface PipelineMeta {
+  stages: { stage: OppStage; probability: number; stale_days: number }[];
+  stage_rates: { stage: OppStage; to_next: number | null }[];
 }
 export interface Project extends Base {
   name: string;
@@ -452,7 +460,7 @@ export interface Touch extends Base {
   idea_id: number | null;
   idea_title: string | null;
   /** not provided yet (plan gap G8): the person or company an address-only touch most likely belongs to */
-  suggested_match?: { type: "person" | "company"; id: number; name: string } | null;
+  suggested_match: { type: "person" | "company"; id: number; name: string } | null;
 }
 export interface Comment extends Base {
   target_type: string;
