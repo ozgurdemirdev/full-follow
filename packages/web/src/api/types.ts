@@ -360,9 +360,18 @@ export interface OppPerson extends Base {
   role: string;
   note: string | null;
 }
+/** One offer line: `amount` is the unit price, `line` is qty x unit price (the server computes it) */
 export interface OfferItem {
   label: string;
   amount: number;
+  qty: number;
+  line: number;
+}
+/** One part of an offer's payment plan: a project milestone and its share of the total, whole percent */
+export interface OfferPlanPart {
+  key: ProjectStage;
+  label: string;
+  pct: number;
 }
 export interface Offer extends Base {
   opportunity_id: number;
@@ -370,6 +379,8 @@ export interface Offer extends Base {
   offered_at: string;
   amount: number;
   items: OfferItem[];
+  /** how the project's payments split once won; null = the payment template of the settings */
+  plan: OfferPlanPart[] | null;
   note: string | null;
   accepted_at: string | null;
   file_id: number | null;
@@ -584,6 +595,8 @@ export interface Detail<T, R = { [k: string]: unknown[] | undefined }> {
   row: T;
   related: R;
   comments_open?: number;
+  /** who made the latest change of the record (null until it has one); the edit sheet's "Son değişiklik" line */
+  last_actor?: Actor | null;
 }
 
 // ---- Günlük iş planı ----

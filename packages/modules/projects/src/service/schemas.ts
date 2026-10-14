@@ -10,6 +10,8 @@ export const projectCreate = z.strictObject({
   price: tl.default(0),
   started_at: date.optional(),
   maintenance_fee: tl.nullish(),
+  /** the milestone the project starts at (a job already under way); default is the first, pesinat */
+  stage: z.enum(PROJECT_STAGES).optional(),
 });
 export const projectUpdate = patch({
   name: text,

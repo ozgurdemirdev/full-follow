@@ -162,6 +162,13 @@
       "when": 1791997300001,
       "tag": "0022_draft_subject",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1791999102032,
+      "tag": "0023_offer_qty_plan",
+      "breakpoints": true
     }
   ]
 }

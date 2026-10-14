@@ -1,15 +1,23 @@
 import { eq } from "drizzle-orm";
 import {
   Bin, eventLink as link, FFError, money, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
-  type Ctx, type OfferItem, type Q,
+  type Ctx, type OfferItem, type OfferPlanPart, type Q,
 } from "@fullfollow/core";
 import { offerCreate, offerUpdate } from "./schemas";
 
 const { offers, opportunities } = schema;
 type Offer = typeof offers.$inferSelect;
 
-/** items is stored as JSON text; callers get the parsed array */
-export const present = (o: Offer) => ({ ...o, items: JSON.parse(o.items) as OfferItem[] });
+/** items are stored as JSON text ({ label, amount = unit price, qty }; rows from before quantities have no qty = 1); readers get the line amount (qty x unit price) too */
+export const readItems = (json: string): OfferItem[] =>
+  (JSON.parse(json) as { label: string; amount: number; qty?: number }[]).map((i) => {
+    const qty = i.qty ?? 1;
+    return { label: i.label, amount: i.amount, qty, line: qty * i.amount };
+  });
+export const readPlan = (json: string | null): OfferPlanPart[] | null => (json ? JSON.parse(json) : null);
+
+/** items and plan are stored as JSON text; callers get them parsed */
+export const present = (o: Offer) => ({ ...o, items: readItems(o.items), plan: readPlan(o.plan) });
 
 /** Offer versions of an opportunity, newest first */
 export function offersOf(ctx: Ctx, opportunityId: number) {
@@ -39,7 +47,7 @@ export function offersService(ctx: Ctx) {
       checkFile(d.file_id, d.opportunity_id);
       const version = (row(ctx, "SELECT COALESCE(MAX(version), 0) + 1 v FROM offers WHERE opportunity_id = ?", d.opportunity_id)?.v ?? 1) as number;
       const r = tx.insert(offers).values({
-        ...d, items: JSON.stringify(d.items), offered_at: d.offered_at ?? ctx.clock.today(), file_id: d.file_id ?? null, version, ...stamp(ctx),
+        ...d, items: JSON.stringify(d.items), plan: d.plan ? JSON.stringify(d.plan) : null, offered_at: d.offered_at ?? ctx.clock.today(), file_id: d.file_id ?? null, version, ...stamp(ctx),
       }).returning().get();
       emit(tx, ctx, { type: "offer.created", ...link(ctx, { opportunity_id: d.opportunity_id }), summary: `Teklif v${version} eklendi: ${money(r.amount)}`, data: { offer_id: r.id } });
       return { row: present(r), effects: [] as string[] };
@@ -47,14 +55,15 @@ export function offersService(ctx: Ctx) {
   }
 
   function update(id: number, input: unknown) {
-    const { accepted, items, ...f } = parse(offerUpdate, input);
+    const { accepted, items, plan, ...f } = parse(offerUpdate, input);
     return ctx.db.transaction((tx) => {
       const cur = requireRow<Offer>(ctx, "offers", id);
       checkFile(f.file_id, cur.opportunity_id);
       const at = link(ctx, { opportunity_id: cur.opportunity_id });
-      const changed = { ...f, ...(items ? { items } : {}) };
+      const stored = { ...f, ...(items ? { items: JSON.stringify(items) } : {}), ...(plan !== undefined ? { plan: plan ? JSON.stringify(plan) : null } : {}) };
+      const changed = { ...f, ...(items ? { items } : {}), ...(plan !== undefined ? { plan } : {}) };
       if (Object.keys(changed).length) {
-        tx.update(offers).set({ ...f, ...(items ? { items: JSON.stringify(items) } : {}), updated_at: ctx.clock.now() }).where(eq(offers.id, id)).run();
+        tx.update(offers).set({ ...stored, updated_at: ctx.clock.now() }).where(eq(offers.id, id)).run();
         emit(tx, ctx, { type: "offer.updated", ...at, summary: `Teklif v${cur.version} güncellendi (${Object.keys(changed).join(", ")})`, data: { offer_id: id } });
       }
       const effects: string[] = [];

@@ -8,6 +8,7 @@ import { DuplicateBanner, ErrorSummary } from "../components/forms/Banners";
 import { FormErrorsContext } from "../components/forms/context";
 import { FormSheet } from "../components/forms/FormSheet";
 import { ago } from "../lib/format";
+import { ASSIGNEE } from "../lib/labels";
 import { editOf, FORM_META } from "./meta";
 import type { FormProps } from "./shared";
 
@@ -55,7 +56,7 @@ export default function QuickAdd() {
   const editId = sheet ? editOf(sheet) : null;
   const row = useQuery<Detail<{ updated_at: string }>>(meta && editId && sheet?.kind !== "offer" ? `${meta.base}/${editId}` : null);
   const noun = meta?.noun ?? "";
-  const dest = editId && row.data ? `Son değişiklik ${ago(row.data.row.updated_at)}` : (meta?.dest ?? "");
+  const dest = editId && row.data ? `Son değişiklik ${ago(row.data.row.updated_at)}${row.data.last_actor ? ` · ${ASSIGNEE[row.data.last_actor]}` : ""}` : (meta?.dest ?? "");
   const del = meta && editId ? () => void remove(`${meta.base}/${editId}`, noun).then(closeSheet).catch(() => {}) : undefined;
 
   return (

@@ -6,6 +6,7 @@ import type { Company, Detail, Person, Touch } from "../api/types";
 import { Form, Note } from "../components/forms/Form";
 import { AreaField, ChipsField, DateField, SegField, TextField, ToggleField } from "../components/forms/fields";
 import { ComboField } from "../components/forms/fields-rich";
+import { INFLUENCE_LABEL } from "../lib/companies";
 import { PLATFORM, STAGE, CHANNEL, CHANNELS } from "../lib/labels";
 import { todayIso } from "../lib/format";
 import { emptyRef, ensureCompany, ensurePerson, localToIso, nowLocal, toLocal, type Ref } from "./helpers";
@@ -14,6 +15,7 @@ import { useLabels } from "./pickers";
 import { badEmail, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "./shared";
 
 const EMAIL_ERROR = "Geçerli bir e-posta yaz";
+const INFLUENCE_OPTIONS = (Object.keys(INFLUENCE_LABEL) as (keyof typeof INFLUENCE_LABEL)[]).map((value) => ({ value, label: INFLUENCE_LABEL[value] }));
 
 /** Adres (e-posta ya da hesap) → form alanları: dönüştürmede önceden doldurulur */
 function fromContact(contact?: string) {
@@ -55,6 +57,7 @@ export function PersonForm(p: FormProps) {
   const [linkedin, setLinkedin] = useState(personLinkedin.show(conv.linkedin));
   const [referrer, setReferrer] = useState<Ref>(emptyRef);
   const [follow, setFollow] = useState("");
+  const [influence, setInfluence] = useState<NonNullable<Person["influence"]> | "">("");
   const [notes, setNotes] = useState("");
   const posts = usePosts();
   const [postRef, setPostRef] = useState<Ref>(emptyRef);
@@ -82,6 +85,7 @@ export function PersonForm(p: FormProps) {
     setLinkedin(personLinkedin.show(row.linkedin));
     setReferrer({ id: row.referred_by_id, text: row.referred_by_name ?? "" });
     setFollow(row.next_follow_up_at ?? "");
+    setInfluence(row.influence ?? "");
     setNotes(row.notes ?? "");
     setPostRef({ id: row.post_id, text: "" });
   }, [row]);
@@ -93,7 +97,7 @@ export function PersonForm(p: FormProps) {
       const body = {
         name: name.trim(), company_id, role, email, phone, handle, instagram: ig.save(instagram), linkedin: personLinkedin.save(linkedin), ...labels.body,
         referred_by_id: referrer.id, next_follow_up_at: follow || null, notes,
-        post_id: postRef.id,
+        post_id: postRef.id, influence: influence || null,
       };
       await saveRecord(p, editId, body, { ...body, next_follow_up_at: follow || undefined });
     },
@@ -114,6 +118,7 @@ export function PersonForm(p: FormProps) {
       <DateField name="follow" label="Sonraki takip tarihi" half opt quick value={follow} onChange={setFollow} placeholder="Örn. 17 Ekim" />
       <TextField label="Diğer hesap (R10 vb.)" half opt value={handle} onChange={setHandle} />
       {labels.statusField}
+      <ChipsField label="Karar rolü" opt clearable value={influence} onChange={setInfluence} options={INFLUENCE_OPTIONS} />
       {posts.rows.length ? (
         <ComboField label="Kaynak paylaşım" opt hint="Bu kişi hangi paylaşımdan geldi" value={postRef} onChange={setPostRef} options={postOptions} placeholder="Paylaşım ara" />
       ) : null}
@@ -132,6 +137,7 @@ export function CompanyForm(p: FormProps) {
   const row = existing.data?.row;
   const conv = fromContact(pre?.contact);
   const [name, setName] = useState("");
+  const [city, setCity] = useState("");
   const [site, setSite] = useState(conv.email ? (conv.email.split("@")[1] ?? "") : "");
   const [email, setEmail] = useState(conv.email ?? "");
   const [phone, setPhone] = useState("");
@@ -142,6 +148,7 @@ export function CompanyForm(p: FormProps) {
   useEffect(() => {
     if (!row) return;
     setName(row.name);
+    setCity(row.city ?? "");
     setSite(website.show(row.website));
     setEmail(row.email ?? "");
     setPhone(row.phone ?? "");
@@ -153,7 +160,7 @@ export function CompanyForm(p: FormProps) {
   const submit = useSubmit(
     p,
     async () => {
-      const body = { name: name.trim(), website: website.save(site), email, phone, instagram: ig.save(instagram), linkedin: companyLinkedin.save(linkedin), notes, ...labels.body };
+      const body = { name: name.trim(), city, website: website.save(site), email, phone, instagram: ig.save(instagram), linkedin: companyLinkedin.save(linkedin), notes, ...labels.body };
       await saveRecord(p, editId, body);
     },
     () => errorsOf({ name: !name.trim() && "Firma adı gerekli", email: badEmail(email) && EMAIL_ERROR }),
@@ -162,6 +169,7 @@ export function CompanyForm(p: FormProps) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <TextField name="name" label="Firma adı" req value={name} onChange={setName} autoFocus />
+      <TextField label="Şehir" half value={city} onChange={setCity} placeholder="Örn. İstanbul, Kadıköy" />
       <TextField label="Web" half prefix={leadFor(site, "https://")} value={site} onChange={setSite} placeholder="firma.com" />
       <TextField name="email" label="E-posta" half type="email" value={email} onChange={setEmail} placeholder="info@firma.com" />
       <TextField label="Telefon" half type="tel" value={phone} onChange={setPhone} />

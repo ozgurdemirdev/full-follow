@@ -1,34 +1,39 @@
 import { eq } from "drizzle-orm";
 import {
   addDays, announceTrashed, Bin, eventLink as link, FFError, keptRow, label, money, parse, readTemplate, requireRow, row, schema, stamp, writeEvent as emit,
-  type Ctx, type OpportunityWon, type Q,
+  type Ctx, type OfferPlanPart, type OpportunityWon, type Q,
 } from "@fullfollow/core";
 import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "./schemas";
 
 const { payments, projects } = schema;
 type Project = typeof projects.$inferSelect;
 
-/** Şablondan ödeme planı üretir (zaten ödeme varsa ya da fiyat 0 ise üretmez). Üretilen sayıyı döner. */
-export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: number; started_at: string | null }): number {
+/**
+ * Ödeme planı üretir (zaten ödeme varsa ya da fiyat 0 ise üretmez): kazanılan teklifin planından (yüzde yuvarlanır, kalan son taksitte),
+ * teklifin planı yoksa ayarlardaki şablondan. Vade, şablondaki aynı aşamanın gününden gelir (şablonda yoksa vade boş). Üretilen sayıyı döner.
+ */
+export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: number; started_at: string | null }, plan?: OfferPlanPart[] | null): number {
   if (project.price <= 0) return 0;
   if (row(ctx, "SELECT COUNT(*) n FROM payments WHERE project_id = ?", project.id)?.n) return 0;
   const tpl = readTemplate(ctx);
+  const parts = plan ? plan.map((p) => ({ milestone: p.key, percent: p.pct, days: tpl.find((t) => t.milestone === p.key)?.days })) : tpl;
+  const share = plan ? Math.round : Math.floor;
   const base = project.started_at ?? ctx.clock.today();
   let allocated = 0;
-  tpl.forEach((t, i) => {
-    const last = i === tpl.length - 1;
-    const amount = last ? project.price - allocated : Math.floor((project.price * t.percent) / 100);
+  parts.forEach((t, i) => {
+    const last = i === parts.length - 1;
+    const amount = last ? project.price - allocated : share((project.price * t.percent) / 100);
     allocated += amount;
     q.insert(payments).values({
       project_id: project.id, milestone: t.milestone, expected_amount: amount,
-      due_date: addDays(base, t.days), paid_amount: 0, ...stamp(ctx),
+      due_date: t.days === undefined ? null : addDays(base, t.days), paid_amount: 0, ...stamp(ctx),
     }).run();
   });
   emit(q, ctx, {
     type: "payment.planned", ...link(ctx, { project_id: project.id }),
-    summary: `Ödeme planı oluşturuldu: ${tpl.length} taksit, toplam ${money(project.price)}`,
+    summary: `Ödeme planı oluşturuldu: ${parts.length} taksit, toplam ${money(project.price)}${plan ? " (tekliften)" : ""}`,
   });
-  return tpl.length;
+  return parts.length;
 }
 
 /**
@@ -42,7 +47,7 @@ export function openProjectForWonOpportunity(q: Q, ctx: Ctx, won: OpportunityWon
     price: won.price, started_at: ctx.clock.today(), ...stamp(ctx),
   }).returning().get();
   emit(q, ctx, { type: "project.created", ...link(ctx, { project_id: project.id }), summary: `Proje açıldı: ${project.name}` });
-  const planned = planPayments(q, ctx, project);
+  const planned = planPayments(q, ctx, project, won.offer?.plan);
   return [`proje #${project.id} açıldı`, planned ? `${planned} ödeme planlandı` : "fiyat girilmediği için ödeme planı yok"];
 }
 
@@ -69,7 +74,11 @@ export function projectsService(ctx: Ctx) {
           throw new FFError("rule", "Bu fırsatın zaten bir projesi var");
         }
       }
-      const r = tx.insert(projects).values({ ...d, started_at: d.started_at ?? ctx.clock.today(), stage: "pesinat", ...stamp(ctx) }).returning().get();
+      // a project created at a later stage is a job already under way: the deposit rule guards the moves after it, not the start
+      const stage = d.stage ?? "pesinat";
+      const r = tx.insert(projects).values({
+        ...d, started_at: d.started_at ?? ctx.clock.today(), stage, delivered_at: stage === "teslim" ? ctx.clock.today() : null, ...stamp(ctx),
+      }).returning().get();
       emit(tx, ctx, { type: "project.created", ...link(ctx, { project_id: r.id }), summary: `Proje açıldı: ${r.name}` });
       const planned = planPayments(tx, ctx, r);
       return { row: r, effects: planned ? [`${planned} ödeme planlandı`] : [] };

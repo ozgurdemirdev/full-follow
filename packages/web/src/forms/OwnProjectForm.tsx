@@ -2,16 +2,18 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "../api/store";
-import type { Detail, OwnProject } from "../api/types";
+import type { Detail, OwnProject, OwnStage } from "../api/types";
 import { PATHS } from "../app/routes";
 import { Form } from "../components/forms/Form";
 import { AreaField, ChipsField, SegField, TextField } from "../components/forms/fields";
 import { OWN_STATUS, OWN_STATUSES, SELLABLE, SELLABLES } from "../lib/labels";
+import { JOURNEY } from "../lib/ownProjects";
 import { SectorTagsField } from "./pickers";
 import { errorsOf, saveRecord, useSubmit, type FormProps } from "./shared";
 
 const SELL_OPTIONS = SELLABLES.map((s) => ({ value: s, label: SELLABLE[s] }));
 const STATUS_OPTIONS = OWN_STATUSES.map((s) => ({ value: s, label: OWN_STATUS[s] }));
+const STAGE_OPTIONS: { value: OwnStage | ""; label: string }[] = JOURNEY.map((j) => ({ value: j.key, label: j.label }));
 
 export function OwnProjectForm(p: FormProps) {
   const editId = p.sheet.preset?.own_project_id;
@@ -22,6 +24,7 @@ export function OwnProjectForm(p: FormProps) {
   const [status, setStatus] = useState("aktif");
   const [sellable, setSellable] = useState("belki");
   const [sellableNote, setSellableNote] = useState("");
+  const [stage, setStage] = useState<OwnStage | "">(editId ? "" : JOURNEY[0].key);
   const [sectors, setSectors] = useState<(number | string)[]>([]);
   const [notes, setNotes] = useState("");
 
@@ -33,6 +36,7 @@ export function OwnProjectForm(p: FormProps) {
     setStatus(row.status);
     setSellable(row.sellable);
     setSellableNote(row.sellable_note ?? "");
+    setStage(row.stage ?? "");
     setSectors(row.sectors.map((s) => s.id));
     setNotes(row.notes ?? "");
   }, [row]);
@@ -40,7 +44,7 @@ export function OwnProjectForm(p: FormProps) {
   const submit = useSubmit(
     p,
     async () => {
-      const data = { name: name.trim(), description, status, sellable, sellable_note: sellable === "hayir" ? "" : sellableNote, sectors, notes };
+      const data = { name: name.trim(), description, status, sellable, sellable_note: sellable === "hayir" ? "" : sellableNote, stage: stage || null, sectors, notes };
       const res = await saveRecord<OwnProject>(p, editId, data);
       if (!editId && res.row) navigate(`${PATHS.ownProjects}/${res.row.id}`);
     },
@@ -54,6 +58,7 @@ export function OwnProjectForm(p: FormProps) {
       <ChipsField label="Durum" value={status} onChange={(v) => v && setStatus(v)} options={STATUS_OPTIONS} />
       <SegField label="Satılabilirlik" options={SELL_OPTIONS} value={sellable} onChange={setSellable} />
       {sellable !== "hayir" ? <TextField label="Kime, nasıl satılabilir" opt value={sellableNote} onChange={setSellableNote} placeholder="Örn. Freelancer ve küçük ajanslara kişisel CRM" /> : null}
+      <SegField label="Aşama" options={STAGE_OPTIONS} value={stage} onChange={setStage} />
       <SectorTagsField label="Uygun sektörler" value={sectors} onChange={setSectors} />
       <AreaField label="Notlar" opt value={notes} onChange={setNotes} rows={3} />
     </Form>

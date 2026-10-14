@@ -1,4 +1,5 @@
 import type { OppRole, OppStage } from "../constants";
+import type { Milestone } from "./projects";
 import type { ListOpts } from "../context";
 
 /** An opportunity row as stored */
@@ -59,9 +60,19 @@ export interface OpportunityRef {
   person_id: number;
 }
 
+/** One line of an offer: `amount` is the unit price, `line` is qty x unit price (computed on every read) */
 export interface OfferItem {
   label: string;
   amount: number;
+  qty: number;
+  line: number;
+}
+
+/** One part of an offer's payment plan: a project milestone (`key`) and its share of the total, whole percent */
+export interface OfferPlanPart {
+  key: Milestone;
+  label: string;
+  pct: number;
 }
 
 /** An offer version as stored (items parsed) */
@@ -72,6 +83,8 @@ export interface OfferRecord {
   offered_at: string;
   amount: number;
   items: OfferItem[];
+  /** how the project's payments split once the opportunity is won; null = the settings template decides */
+  plan: OfferPlanPart[] | null;
   note: string | null;
   /** ISO date, null while the offer is not the accepted one */
   accepted_at: string | null;
@@ -150,7 +163,7 @@ export interface OpportunityFollowUp {
 export interface OpportunityWon {
   opportunity: { id: number; title: string; person_id: number; company_id: number | null; estimated_value: number | null };
   /** the accepted offer, null when none is accepted */
-  offer: { id: number; amount: number; items: OfferItem[] } | null;
+  offer: { id: number; amount: number; items: OfferItem[]; plan: OfferPlanPart[] | null } | null;
   /** the project price: the accepted offer's amount, else the opportunity's estimate, else 0 */
   price: number;
 }

@@ -181,6 +181,10 @@ export const FILE_LIMITS = { maxImageBytes: 10 * 1024 * 1024, maxFileBytes: 25 *
 export const FILE_NAME_MAX = 120;
 /** Max items in one offer price breakdown */
 export const OFFER_ITEMS_MAX = 30;
+/** Max parts of an offer's payment plan (one per project milestone) */
+export const OFFER_PLAN_PARTS_MAX = MILESTONES.length;
+/** The percentages of an offer's payment plan add up to this */
+export const OFFER_PLAN_TOTAL_PCT = 100;
 /** Max length of the pinned notes text that goes into every panel chat */
 export const CHAT_PINNED_MAX = 4_000;
 export const CHAT_NEW_TITLE = "Yeni sohbet";

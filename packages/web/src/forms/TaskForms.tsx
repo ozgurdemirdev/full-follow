@@ -7,11 +7,10 @@ import { Form, Note } from "../components/forms/Form";
 import { AreaField, DateField, SegField, TextField, TimeField } from "../components/forms/fields";
 import { ComboField } from "../components/forms/fields-rich";
 import { todayIso } from "../lib/format";
-import { TASK_KIND_ITEMS } from "../lib/labels";
+import { ASSIGNEE_ITEMS, TASK_KIND_ITEMS, type TaskAssignee } from "../lib/labels";
 import { emptyRef, type Ref } from "./helpers";
 import { errorsOf, saveRecord, useLinkOptions, useSubmit, type FormProps } from "./shared";
 
-const WHO = [{ value: "ozgur" as const, label: "Sen" }, { value: "claude" as const, label: "Claude" }];
 /** Task kinds in the board's order: Görüşme, Takip, Görev */
 const KINDS = (["gorusme", "takip", "gorev"] as const).map((v) => TASK_KIND_ITEMS.find((k) => k.value === v)!);
 
@@ -25,7 +24,7 @@ export function TaskForm(p: FormProps) {
   const [due, setDue] = useState(pre?.date ?? todayIso());
   const [time, setTime] = useState("");
   const [kind, setKind] = useState<TaskKind>("gorev");
-  const [who, setWho] = useState<Task["assignee"]>("ozgur");
+  const [who, setWho] = useState<TaskAssignee>("ozgur");
   const [target, setTarget] = useState<Ref>(emptyRef);
   const row = existing.data?.row;
   /** The record the task is already tied to (edit) or was opened from (preset) */
@@ -66,7 +65,7 @@ export function TaskForm(p: FormProps) {
       <DateField label="Gün" half quick value={due} onChange={setDue} />
       <TimeField label="Saat" half opt value={time} onChange={setTime} placeholder="Gün içi" />
       <SegField label="Tür" options={KINDS} value={kind} onChange={setKind} />
-      <SegField label="Kim yapacak" options={WHO} value={who} onChange={setWho} />
+      <SegField label="Kim yapacak" options={ASSIGNEE_ITEMS} value={who} onChange={setWho} />
       <ComboField label="Neyle ilgili" opt value={target} onChange={setTarget} options={options} placeholder="Kişi, firma, fırsat ya da proje ara" />
     </Form>
   );

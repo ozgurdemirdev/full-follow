@@ -37,7 +37,7 @@ export function tasksService(ctx: Ctx) {
     checkTargets(ctx, d);
     return ctx.db.transaction((tx) => {
       const r = tx.insert(tasks).values({ ...d, ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "task.created", ...link(ctx, r), summary: `Görev eklendi (${r.assignee}): ${truncate(r.title, 60)}` });
+      emit(tx, ctx, { type: "task.created", ...link(ctx, r), summary: `Görev eklendi (${r.assignee}): ${truncate(r.title, 60)}`, data: { task_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
@@ -60,7 +60,8 @@ export function tasksService(ctx: Ctx) {
       const set: Record<string, unknown> = { ...f, ...(targetKey ? merged : {}), updated_at: ctx.clock.now() };
       if (done !== undefined) set.done_at = done ? (cur.done_at ?? ctx.clock.now()) : null;
       tx.update(tasks).set(set).where(eq(tasks.id, id)).run();
-      if (done === true && !cur.done_at) emit(tx, ctx, { type: "task.done", ...link(ctx, cur), summary: `Görev tamamlandı: ${truncate(cur.title, 60)}` });
+      if (Object.keys(f).length) emit(tx, ctx, { type: "task.updated", ...link(ctx, { person_id: merged.person_id, opportunity_id: merged.opportunity_id, project_id: merged.project_id }), summary: `Görev düzenlendi: ${truncate(f.title ?? cur.title, 60)}`, data: { task_id: id } });
+      if (done === true && !cur.done_at) emit(tx, ctx, { type: "task.done", ...link(ctx, cur), summary: `Görev tamamlandı: ${truncate(cur.title, 60)}`, data: { task_id: id } });
       return { row: requireRow(ctx, "tasks", id), effects: [] as string[] };
     });
   }
@@ -72,7 +73,7 @@ export function tasksService(ctx: Ctx) {
       bin.take("comments", "target_type = 'task' AND target_id = ?", id);
       bin.take("tasks", "id = ?", id);
       bin.commit(tx, "task", id, cur.title);
-      emit(tx, ctx, { type: "task.deleted", ...link(ctx, cur), summary: `Görev silindi: ${truncate(cur.title, 60)}` });
+      emit(tx, ctx, { type: "task.deleted", ...link(ctx, cur), summary: `Görev silindi: ${truncate(cur.title, 60)}`, data: { task_id: id } });
       return { effects: [] as string[], trash: { type: "task", id } };
     });
   }

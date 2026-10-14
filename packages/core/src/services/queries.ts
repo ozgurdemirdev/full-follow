@@ -2,6 +2,7 @@ import type { RecordType } from "../constants";
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
 import { bool, has, tagsList } from "./directory";
 import { listThreads, threadOf } from "./comments";
+import { lastActorOf } from "./lastActor";
 import { networkSettings, settingsService } from "./settings";
 
 import { trashList } from "./trash";
@@ -153,7 +154,7 @@ function queriesService(ctx: Ctx) {
     // açık yorum konusu sayısı (Claude cevapsız yorumu fark etsin)
     let comments_open: number | undefined;
     if (targetTable(ctx, type)) comments_open = listThreads(ctx, { target_type: type, target_id: id }).length;
-    return { type, id, row: rowData, related, comments_open };
+    return { type, id, row: rowData, related, comments_open, last_actor: lastActorOf(ctx, type, id) };
   }
 
   return { find, get, sectors, tags, notes, comments, sources };

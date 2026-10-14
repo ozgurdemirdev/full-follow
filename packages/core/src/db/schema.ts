@@ -335,8 +335,10 @@ export const offers = sqliteTable("offers", {
   version: integer("version").notNull(),
   offered_at: text("offered_at").notNull(),
   amount: integer("amount").notNull(),
-  /** JSON array of { label, amount }: price breakdown or options */
+  /** JSON array of { label, amount (unit price), qty }: price breakdown or options; the line amount is computed on read */
   items: text("items").notNull().default("[]"),
+  /** JSON array of { key, label, pct }: how the project's payments split once won; null = the settings template */
+  plan: text("plan"),
   note: text("note"),
   accepted_at: text("accepted_at"),
   file_id: integer("file_id").references(() => files.id),
