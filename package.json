@@ -12,7 +12,8 @@
   },
   "scripts": {
     "gen:modules": "node scripts/gen-modules.mjs",
-    "build": "node scripts/gen-modules.mjs && tsc -b packages/core packages/app packages/server packages/mcp && npm run build -w @fullfollow/web",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "build": "node scripts/gen-modules.mjs && npm run check:boundaries && tsc -b packages/core packages/app packages/server packages/mcp && npm run build -w @fullfollow/web",
     "test": "node scripts/gen-modules.mjs && npm run test -w @fullfollow/core && npm run test -w @fullfollow/app",
     "start": "node scripts/start.mjs",
     "serve": "node scripts/start.mjs --no-build",
