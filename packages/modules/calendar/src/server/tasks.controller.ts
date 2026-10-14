@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from "@nestjs/common";
-import { APP_TOKEN, intId, listOpts, withList, type Core } from "@fullfollow/core";
+import { APP_TOKEN, bool, intId, listOpts, withList, type Core } from "@fullfollow/core";
 
 @Controller("api/tasks")
 export class TasksController {
@@ -12,6 +12,12 @@ export class TasksController {
   @Get()
   list(@Query() query: Record<string, any>) {
     return this.app.find("task", listOpts(query));
+  }
+
+  /** Görevler projeye göre gruplu: project_ids = virgülle id listesi (yoksa görevi olan her proje), done=true bitenleri de getirir */
+  @Get("by-project")
+  byProject(@Query("project_ids") ids?: string, @Query("done") done?: string) {
+    return { rows: this.cal.tasks.byProject({ project_ids: ids ? ids.split(",").map(intId) : undefined, done: bool(done) }) };
   }
 
   @Get(":id")

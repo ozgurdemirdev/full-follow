@@ -10,7 +10,7 @@ import { BoardIcon } from "../components/boardIcons";
 import { TileColumns } from "../components/layout";
 import { TemplateOverlay } from "../components/templates/TemplateOverlay";
 import { TemplateTile } from "../components/templates/TemplateTile";
-import { Card, Empty, ErrorBox, Filters, PageSkeleton } from "../components/ui";
+import { Card, Empty, ErrorBox, Filters, order, PageSkeleton } from "../components/ui";
 import { TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
 import { byRate } from "../lib/templates";
 
@@ -54,7 +54,7 @@ export default function Templates() {
         !templates.error && <PageSkeleton />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 rise" style={order(1)}>
             <Filters label="Tür" value={kind} onChange={setKind} items={KIND_ITEMS} />
             <span className="flex-grow" />
             <span className="text-base-sm text-text-muted">Cevap oranına göre sıralı</span>
@@ -62,7 +62,9 @@ export default function Templates() {
           {shown.length === 0 ? (
             <Card label="Şablonlar"><Empty>Şablon yok. Sektöre ve kanala göre ilk mesaj ve takip şablonları ekle; takip dizisi de “Takip” türündeki şablonu kullanır.</Empty></Card>
           ) : (
-            <TileColumns>{shown.map((t) => <TemplateTile key={t.id} t={t} onOpen={open} />)}</TileColumns>
+            <div className="rise" style={order(2)}>
+              <TileColumns>{shown.map((t) => <TemplateTile key={t.id} t={t} onOpen={open} />)}</TileColumns>
+            </div>
           )}
           <TemplateOverlay t={current} from={openId ? (from ?? fallbackRect()) : from} people={people.rows} groups={marketing.data?.template_groups ?? []}
             onClose={() => navigate(PATHS.templates, { replace: true })} />

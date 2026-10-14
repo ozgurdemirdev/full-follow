@@ -6,6 +6,13 @@ import type { FileRow, Project, Task } from "./types";
 export type TaskAssignee = Actor | "musteri";
 export type ProjectTask = Omit<Task, "assignee"> & { assignee: TaskAssignee };
 
+/** `GET /api/tasks/by-project` (calendar module): the tasks of one project; the name is null without the projects module */
+export interface ProjectTaskGroup {
+  project_id: number;
+  project_name: string | null;
+  tasks: ProjectTask[];
+}
+
 /** Who a project waits on: Özgür, the client, or overdue money or work */
 export type WaitKey = "me" | "client" | "late";
 
