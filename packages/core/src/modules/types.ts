@@ -19,12 +19,31 @@ export type Hook = (ctx: Ctx, payload: any) => string[] | void;
 /** Typed access to another module's API; `undefined` when that module is not installed. */
 export type ModAccess = <K extends string>(key: K) => (K extends keyof ModuleApis ? ModuleApis[K] : unknown) | undefined;
 
-/** Save / get / find / delete handlers for a record type a module owns. */
+/** Where a record type keeps its display name: lets `id or name` input resolve to an id, and a `<type>` input key become `<type>_id`. */
+export interface EntityRef {
+  table: string;
+  /** column holding the display name */
+  col: string;
+  /** Turkish name used in error messages */
+  label: string;
+}
+
+/**
+ * A record type a module owns: its save / get / find / delete handlers and how the generic dispatch (save, find, get, delete,
+ * restore, `name or id` references) treats it. The key under `ModuleDef.entities` is the canonical type name.
+ */
 export interface EntityHandler {
   save?(ctx: Ctx, data: Record<string, any>, id?: number): SaveResult;
-  get?(ctx: Ctx, id: number, withRel: string[], relLimit?: number): unknown;
-  find?(ctx: Ctx, opts: ListOpts): unknown;
+  /** the record's row (same shape as its list rows), or undefined when it does not exist */
+  get?(ctx: Ctx, id: number): Record<string, any> | undefined;
+  find?(ctx: Ctx, opts: ListOpts): { rows: any[]; total: number };
   delete?(ctx: Ctx, id: number): SaveResult;
+  /** other names for this type, lower case (Turkish names, plurals) */
+  aliases?: string[];
+  /** set when records of this type can be given by name */
+  ref?: EntityRef;
+  /** relation names `get(..., with)` accepts for this type */
+  related?: string[];
 }
 
 export interface SearchHit {
@@ -66,8 +85,27 @@ export interface ModuleDef {
   contribute?: Contributions;
 }
 
-/** A registry bound to one context: what services use as `ctx.mod` and `ctx.emit`. */
+/** What the installed modules say about record types; the generic dispatch (save, find, get, delete, restore, refs) reads it. */
+export interface TypeRegistry {
+  /** the handler of a module-owned record type */
+  entity(type: string): EntityHandler | undefined;
+  /** alias or type name to the canonical module type */
+  canonical(name: string): string | undefined;
+  /** canonical names of every module-owned record type, in registration order */
+  entityTypes(): string[];
+  /** Turkish display name of a module-owned type (record labels and trash types) */
+  label(type: string): string | undefined;
+  /** module-owned types whose deleted records go to the trash */
+  trashTypes(): TrashTypeDef[];
+  /** how a module-owned type is looked up by name */
+  ref(type: string): EntityRef | undefined;
+  /** every module-owned reference: input key (the type name) and its ref */
+  refs(): [string, EntityRef][];
+}
+
+/** A registry bound to one context: what services use as `ctx.mod`, `ctx.emit` and `ctx.types`. */
 export interface ModuleRuntime {
   mod: ModAccess;
   emit<N extends EventName>(name: N, payload: EventPayload<N>): string[];
+  types: TypeRegistry;
 }

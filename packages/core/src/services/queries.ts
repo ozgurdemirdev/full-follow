@@ -9,6 +9,7 @@ import { channelSummary, networkSettings, referralValues } from "./network";
 import { sectorIds } from "./sectors";
 
 import { trashList } from "./trash";
+import { entityHandler, isCoreType } from "./records";
 import { requireRow, resolveRef } from "./shared";
 import { postStats } from "./posts";
 import { templateStats } from "./templates";
@@ -306,9 +307,9 @@ export function queriesService(ctx: Ctx) {
     return page(list.filter((l) => has(o.q, l.goal_title, l.note)), o.limit, o.offset);
   }
 
-  function find(type: RecordType, o: ListOpts = {}) {
-    const r = LISTS[type]({ ...o, limit: o.limit ?? 20, offset: o.offset ?? 0 });
-    return r;
+  function find(type: string, o: ListOpts = {}) {
+    const opts = { ...o, limit: o.limit ?? 20, offset: o.offset ?? 0 };
+    return isCoreType(type) ? LISTS[type](opts) : entityHandler(ctx, type, "find")(ctx, opts);
   }
 
   // ---------- tek kayıt ----------
@@ -325,10 +326,11 @@ export function queriesService(ctx: Ctx) {
   };
 
   /** Tek kayıt + isteğe bağlı ilişkili kayıtlar (with). Her ilişkili liste en fazla relLimit (varsayılan 10) satır. */
-  function get(type: RecordType, id: number, withRel: string[] = [], relLimit = 10) {
+  function get(type: string, id: number, withRel: string[] = [], relLimit = 10) {
     const own = (r: any) => (r === undefined ? undefined : r);
     let rowData: any;
-    switch (type) {
+    if (!isCoreType(type)) rowData = entityHandler(ctx, type, "get")(ctx, id);
+    else switch (type) {
       case "person": rowData = own(find("person", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "company": rowData = own(find("company", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "source": rowData = own(find("source", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
@@ -362,7 +364,7 @@ export function queriesService(ctx: Ctx) {
     if (!rowData) throw new FFError("not_found", `${type} #${id} bulunamadı`);
 
     const related: Record<string, any[]> = {};
-    const allowed = relatedFor[type] ?? [];
+    const allowed = relatedFor[type] ?? ctx.types.entity(type)?.related ?? [];
     const n = Math.min(Math.max(1, relLimit), 200);
     const cap = (r: Rows) => r.rows.slice(0, n);
     for (const name of withRel) {

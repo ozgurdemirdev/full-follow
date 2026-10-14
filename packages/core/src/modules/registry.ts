@@ -1,5 +1,5 @@
 import { FFError, type Ctx } from "../context";
-import type { EventName, EventPayload, ModAccess, ModuleDef, ModuleRuntime } from "./types";
+import type { EntityHandler, EntityRef, EventName, EventPayload, ModAccess, ModuleDef, ModuleRuntime, TrashTypeDef, TypeRegistry } from "./types";
 
 /** Identity helper: gives a module definition its type and checks the key shape. */
 export function defineModule<const D extends ModuleDef>(def: D): D {
@@ -21,6 +21,38 @@ export interface ModuleRegistry {
  * Duplicate keys are rejected even when one of them is off. Off modules are invisible:
  * not in `has`/`list`, not reachable through `mod`, and their hooks never run.
  */
+/** Record types, aliases, labels, trash types and name lookups of the installed modules. A type or alias given twice is rejected. */
+function buildTypes(installed: ModuleDef[]): TypeRegistry {
+  const entities = new Map<string, EntityHandler>();
+  const names = new Map<string, string>();
+  const labels = new Map<string, string>();
+  const trash: TrashTypeDef[] = [];
+  for (const def of installed) {
+    for (const [type, handler] of Object.entries(def.entities ?? {})) {
+      for (const name of [type, ...(handler.aliases ?? [])]) {
+        if (names.has(name)) throw new FFError("validation", `record type name "${name}" is claimed twice (module "${def.key}")`);
+        names.set(name, type);
+      }
+      entities.set(type, handler);
+    }
+    for (const [type, label] of Object.entries(def.contribute?.recordLabels ?? {})) labels.set(type, label);
+    for (const t of def.contribute?.trashTypes ?? []) {
+      labels.set(t.type, t.label);
+      trash.push(t);
+    }
+  }
+  const refs = [...entities].flatMap(([type, h]) => (h.ref ? [[type, h.ref] as [string, EntityRef]] : []));
+  return {
+    entity: (type) => entities.get(type),
+    canonical: (name) => names.get(name),
+    entityTypes: () => [...entities.keys()],
+    label: (type) => labels.get(type),
+    trashTypes: () => [...trash],
+    ref: (type) => entities.get(type)?.ref,
+    refs: () => refs,
+  };
+}
+
 export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): ModuleRegistry {
   const seen = new Set<string>();
   for (const d of defs) {
@@ -30,6 +62,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
   const offSet = new Set(off);
   const installed = defs.filter((d) => !offSet.has(d.key));
   const byKey = new Map(installed.map((d) => [d.key, d]));
+  const types = buildTypes(installed);
 
   return {
     has: (key) => byKey.has(key),
@@ -56,7 +89,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
         }
         return effects;
       };
-      return { mod, emit };
+      return { mod, emit, types };
     },
   };
 }

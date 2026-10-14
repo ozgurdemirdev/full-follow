@@ -3,6 +3,7 @@ import { FFError, norm, row, rows, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { ideas, opportunities } from "../db/schema";
 import type { CommentTarget } from "../constants";
+import type { EntityRef } from "../modules/types";
 
 export const TARGET_TABLE: Record<CommentTarget, string> = {
   person: "people", company: "companies", opportunity: "opportunities", project: "projects",
@@ -94,7 +95,7 @@ export const truncate = (s: string | null | undefined, n: number) => {
 
 // ---- İsimle referans ----
 
-const REF_TABLES = {
+const CORE_REFS = {
   person: { table: "people", col: "name", label: "kişi" },
   company: { table: "companies", col: "name", label: "firma" },
   opportunity: { table: "opportunities", col: "title", label: "fırsat" },
@@ -108,12 +109,16 @@ const REF_TABLES = {
   tag: { table: "tags", col: "name", label: "etiket" },
   goal: { table: "daily_goals", col: "title", label: "hedef" },
 } as const;
-export type RefType = keyof typeof REF_TABLES;
-export const isRefType = (t: string): t is RefType => t in REF_TABLES;
+export type RefType = keyof typeof CORE_REFS;
+
+/** Table and name column of a type that can be given by name: core types here, module types from the registry */
+const refOf = (ctx: Ctx, type: string): EntityRef | undefined => (CORE_REFS as Record<string, EntityRef>)[type] ?? ctx.types.ref(type);
+export const isRefType = (ctx: Ctx, t: string): boolean => !!refOf(ctx, t);
 
 /** id (12, "12", "#12") ya da isim → id. İsim birden fazla kaydı eşliyorsa 'ambiguous' hatası kısa liste verir. */
-export function resolveRef(ctx: Ctx, type: RefType, ref: string | number): number {
-  const t = REF_TABLES[type];
+export function resolveRef(ctx: Ctx, type: string, ref: string | number): number {
+  const t = refOf(ctx, type);
+  if (!t) throw new FFError("validation", `${type} isimle verilemez`);
   const s = String(ref).trim();
   const m = /^#?(\d+)$/.exec(s);
   if (m) {
@@ -131,17 +136,18 @@ export function resolveRef(ctx: Ctx, type: RefType, ref: string | number): numbe
   throw new FFError("ambiguous", `"${s}" birden fazla ${t.label} ile eşleşiyor: ${cand.map((c) => `#${c.id} ${c.label}`).join(", ")}`, cand);
 }
 
-const INPUT_REFS: Record<string, [string, RefType]> = {
+const CORE_INPUT_REFS: Record<string, [string, string]> = {
   person: ["person_id", "person"], company: ["company_id", "company"], source: ["source_id", "source"],
   opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
   project: ["project_id", "project"], referred_by: ["referred_by_id", "person"],
   goal: ["goal_id", "goal"], post: ["post_id", "post"], idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
 };
 
-/** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template) *_id'ye çevirir */
+/** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template ve kurulu modüllerin türleri) *_id'ye çevirir */
 export function resolveInput<T extends Record<string, any>>(ctx: Ctx, data: T): Record<string, any> {
   const out: Record<string, any> = { ...data };
-  for (const [key, [idKey, type]] of Object.entries(INPUT_REFS)) {
+  const moduleRefs = ctx.types.refs().map(([type]): [string, [string, string]] => [type, [`${type}_id`, type]]);
+  for (const [key, [idKey, type]] of [...Object.entries(CORE_INPUT_REFS), ...moduleRefs]) {
     if (out[key] === undefined) continue;
     const v = out[key];
     delete out[key];

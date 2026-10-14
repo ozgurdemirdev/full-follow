@@ -18,7 +18,7 @@ import { offersService } from "./services/offers";
 import { oppPeopleService } from "./services/oppPeople";
 import { goalsService } from "./services/goals";
 import { notesService } from "./services/notes";
-import { normalizeType, resolveId } from "./services/records";
+import { entityHandler, isCoreType, normalizeType, resolveId } from "./services/records";
 import { sectorsService } from "./services/sectors";
 import { reportsService } from "./services/reports";
 import { settingsService } from "./services/settings";
@@ -35,8 +35,7 @@ import { followupsDue, generateFollowups } from "./services/followups";
 import { marketingReport } from "./services/marketing";
 import { quotaFor } from "./services/quota";
 import { weeklyReview } from "./services/review";
-import { isCategory, restoreFromTrash, trashList, TYPE_LABEL } from "./services/trash";
-import { TRASH_TYPES } from "./constants";
+import { isCategory, isTrashType, restoreFromTrash, trashList, typeLabel } from "./services/trash";
 import { createRegistry, type ModuleRegistry } from "./modules/registry";
 import type { SaveResult } from "./modules/types";
 
@@ -46,7 +45,6 @@ export { parseQuickTask, taskKindOf, type QuickTask } from "./quickAdd";
 export { openDb, defaultDbPath, loadRootEnv, backupDb, type DbHandle, type Db } from "./db/client";
 export { FFError, systemClock, type Clock, type ListOpts, type ErrorCode, type DuplicateHit } from "./context";
 export { paymentStatus } from "./services/payments";
-export { normalizeType } from "./services/records";
 export type { Thread } from "./services/comments";
 export type { TrashItem } from "./services/trash";
 
@@ -60,9 +58,6 @@ export interface BulkResult {
   failed: { index: number; label: string; error: string }[];
 }
 
-type TrashType = (typeof TRASH_TYPES)[number];
-const isTrashType = (t: string): t is TrashType => (TRASH_TYPES as readonly string[]).includes(t);
-
 /**
  * Çekirdek: web (NestJS, actor="ozgur") ve MCP (actor="claude") sadece buradan geçer.
  * `actor` giriş noktasından gelir; girdideki created_by asla kabul edilmez.
@@ -70,6 +65,8 @@ const isTrashType = (t: string): t is TrashType => (TRASH_TYPES as readonly stri
 export function createCore(handle: DbHandle, actor: Actor, clock: Clock = systemClock, registry: ModuleRegistry = createRegistry()) {
   const ctx = { db: handle.db, sqlite: handle.sqlite, actor, clock } as Ctx;
   Object.assign(ctx, registry.bind(ctx));
+  /** alias or name to the canonical record type; core types and the installed modules' types */
+  const typeOf = (type: string) => normalizeType(ctx, type);
 
   const companies = companiesService(ctx);
   const people = peopleService(ctx);
@@ -103,7 +100,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    * Kişinin firması adla verilip (`company: "ABC Ltd"`) bulunamazsa firma açılır: toplu listede firmalar ayrıca eklenmesin.
    * Firma çöp kutusundaysa mükerrer hatası döner.
    */
-  function withCompany(t: RecordType, data: Record<string, any>): Record<string, any> {
+  function withCompany(t: string, data: Record<string, any>): Record<string, any> {
     if (t !== "person" || typeof data.company !== "string" || !data.company.trim() || data.company_id !== undefined) return data;
     const { company, ...rest } = data;
     try {
@@ -116,9 +113,10 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
 
   /** Kayıt oluştur ya da güncelle (id verilirse güncelle). Aşama değişikliği burada yapılmaz. */
   function save(type: string, data: Record<string, any>, id?: string | number): SaveResult {
-    const t = normalizeType(type);
+    const t = typeOf(type);
     const d = resolveInput(ctx, withCompany(t, data ?? {}));
     const nid = id === undefined || id === null || id === "" ? undefined : resolveId(ctx, t, id);
+    if (!isCoreType(t)) return entityHandler(ctx, t, "save")(ctx, d, nid);
     switch (t) {
       case "person": return nid ? people.update(nid, d) : people.create(d);
       case "company": return nid ? companies.update(nid, d) : companies.create(d);
@@ -153,7 +151,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    * Tek transaction içinde çalışır (hızlı); hata veren kayıt sadece kendisini geri alır.
    */
   function saveMany(type: string, items: Record<string, any>[]): BulkResult {
-    const t = normalizeType(type);
+    const t = typeOf(type);
     const out: BulkResult = { created: [], skipped: [], failed: [] };
     const labelOf = (d: Record<string, any>) => String(d?.name ?? d?.title ?? d?.email ?? d?.contact ?? d?.summary ?? "").slice(0, 60);
     ctx.sqlite.transaction(() => {
@@ -173,7 +171,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
 
   /** Fırsat ya da proje aşaması */
   function move(type: string, id: string | number, stage: string, reason?: string, position?: number): SaveResult {
-    const t = normalizeType(type);
+    const t = typeOf(type);
     const nid = resolveId(ctx, t, id);
     if (t === "opportunity") return opportunities.move(nid, { stage, reason, position });
     if (t === "project") return projects.move(nid, { stage });
@@ -184,8 +182,9 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
 
   /** Silme: kayıt çöp kutusuna gider (restore ile geri gelir); etiket, sektör ve kaynak yerinde gizlenir */
   function remove(type: string, id: string | number): SaveResult {
-    const t = normalizeType(type);
+    const t = typeOf(type);
     const nid = resolveId(ctx, t, id);
+    if (!isCoreType(t)) return entityHandler(ctx, t, "delete")(ctx, nid);
     switch (t) {
       case "person": return people.remove(nid);
       case "company": return companies.remove(nid);
@@ -220,32 +219,32 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    */
   function restore(type: string, id: string | number): SaveResult {
     if (type === "chat_session") return chat.restoreSession(Number(id));
-    const t = isTrashType(type) ? type : normalizeType(type);
+    const t = isTrashType(ctx, type) ? type : typeOf(type);
     if (isCategory(t)) {
       const nid = resolveId(ctx, t, id);
       return t === "tag" ? tags.restore(nid) : t === "sector" ? sectors.restore(nid) : sources.restore(nid);
     }
-    if (!isTrashType(t)) throw new FFError("validation", `${t} geri yüklenemez`);
+    if (!isTrashType(ctx, t)) throw new FFError("validation", `${t} geri yüklenemez`);
     const s = String(id).trim().replace(/^#/, "");
     const rid = /^\d+$/.test(s) ? Number(s) : trashIdByLabel(t, s);
     return restoreFromTrash(ctx, t, rid, (keys) => assertKeysFree(ctx, keys));
   }
 
-  function trashIdByLabel(t: TrashType, label: string): number {
+  function trashIdByLabel(t: string, label: string): number {
     const hits = rows<{ record_id: number; label: string }>(ctx, "SELECT record_id, label FROM trash WHERE type = ? ORDER BY id DESC", t)
       .filter((x) => norm(x.label).includes(norm(label)));
     if (hits.length === 1) return hits[0].record_id;
-    if (!hits.length) throw new FFError("not_found", `çöp kutusunda "${label}" adlı ${TYPE_LABEL[t]} yok`);
+    if (!hits.length) throw new FFError("not_found", `çöp kutusunda "${label}" adlı ${typeLabel(ctx, t)} yok`);
     throw new FFError("ambiguous", `"${label}" birden fazla kayıtla eşleşiyor: ${hits.slice(0, 8).map((h) => `#${h.record_id} ${h.label}`).join(", ")}`);
   }
 
-  const find = (type: string, o: ListOpts = {}) => queries.find(normalizeType(type), o);
+  const find = (type: string, o: ListOpts = {}) => queries.find(typeOf(type), o);
   const get = (type: string, id: string | number, withRel: string[] = [], relLimit?: number) => {
-    const t = normalizeType(type);
+    const t = typeOf(type);
     return queries.get(t, resolveId(ctx, t, id), withRel, relLimit);
   };
   const timeline = (type: string, id: string | number, limit = 20) => {
-    const t = normalizeType(type);
+    const t = typeOf(type);
     if (t !== "person" && t !== "opportunity" && t !== "project") throw new FFError("validation", "timeline için person, opportunity ya da project");
     return queries.timeline(t, resolveId(ctx, t, id), limit);
   };
@@ -254,6 +253,12 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     actor,
     /** installed feature modules (key, label) */
     modules: { has: registry.has, list: registry.list },
+    /** typed access to another module's API; undefined when that module is not installed */
+    mod: ctx.mod,
+    /** the context services run with (actor, clock, db): module tools (MCP) call their module's API through it */
+    ctx,
+    /** alias or name to the canonical record type; unknown types and types of modules that are not installed are a clear error */
+    normalizeType: typeOf,
     // yazma servisleri (REST controller'ları ve testler kullanır)
     companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
     oppPeople, offers, files,
@@ -272,7 +277,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     companyCard: (id: string | number) => queries.companyCard(resolveId(ctx, "company", id)),
     // genel giriş (MCP araçları)
     find, get, save, saveMany, move, remove, restore, timeline,
-    resolveRef: (type: "person" | "company" | "opportunity" | "project" | "source" | "sector" | "post" | "idea" | "own_project" | "template" | "tag", ref: string | number) => resolveRef(ctx, type, ref),
+    resolveRef: (type: string, ref: string | number) => resolveRef(ctx, type, ref),
   };
 }
 

@@ -5,7 +5,7 @@ import {
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, TASK_KINDS, DEFAULT_TASK_KIND, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES, FILE_TARGETS,
-  TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES, GOAL_METRICS,
 } from "../constants";
 
@@ -118,7 +118,7 @@ export const company_sectors = sqliteTable("company_sectors", {
  */
 export const trash = sqliteTable("trash", {
   ...common(),
-  type: text("type", { enum: TRASH_TYPES }).notNull(),
+  type: text("type").notNull(),
   record_id: integer("record_id").notNull(),
   label: text("label").notNull(),
   payload: text("payload").notNull(),

@@ -10,8 +10,8 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 /** Firma ve kişinin temas durumu: temaslarla ileri gider, geri gitmez; "olumsuz", "tanidik" ve "arkadas" sadece elle */
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
-/** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir */
-export const TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project", "opportunity_person", "offer", "file"] as const;
+/** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
+export const CORE_TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project", "opportunity_person", "offer", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -50,6 +50,9 @@ export const FILE_TARGETS = ["opportunity", "project"] as const;
 export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
+/** Record types that belong to a feature module, and the module key that owns each: names the missing module in the error when it is not installed */
+export const MODULE_TYPE_OWNER = {} as const;
+
 export const RECORD_TYPES = [
   "person", "company", "opportunity", "project", "task", "draft", "payment", "source", "comment", "touch", "setting",
   "sector", "note", "tag", "trash", "link", "offer",
