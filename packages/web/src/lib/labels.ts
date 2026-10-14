@@ -128,6 +128,11 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
 };
 
 /** Günlük iş planı: hafta günü kısa adları (ISO sırası, pazartesi önde) ve hazır tekrarlar */
+/** Who a task belongs to: Özgür, Claude, or the client (the project then waits on the client) */
+export type TaskAssignee = Actor | "musteri";
+export const ASSIGNEE: Record<TaskAssignee, string> = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" };
+export const ASSIGNEE_ITEMS = (Object.keys(ASSIGNEE) as TaskAssignee[]).map((value) => ({ value, label: ASSIGNEE[value] }));
+
 /** Task kinds for the task form */
 export const TASK_KIND_ITEMS: { value: "gorusme" | "takip" | "gorev"; label: string }[] = [
   { value: "gorev", label: "Görev" }, { value: "gorusme", label: "Görüşme" }, { value: "takip", label: "Takip" },
