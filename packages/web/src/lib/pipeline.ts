@@ -1,19 +1,19 @@
-// Pipeline screen logic: stage rules, forecast, age meter, funnel rates. Pure functions over the lists the page already loaded.
-import type { Opportunity, SourceFunnel, Task, Thread } from "../api/types";
+// Pipeline screen logic: forecast, age meter, funnel rates. Pure functions over the lists the page already loaded;
+// the stage rules (win probability, stale days) and the stage to stage rates come from core with the opportunity list.
+import { createContext, useContext } from "react";
+import type { Opportunity, PipelineMeta, Task, Thread } from "../api/types";
 import { daysFrom, followNote, lira, todayIso } from "./format";
 import { OPEN_STAGES, type OppStage } from "./labels";
 
-/**
- * Win probability and stale limit (days) per open stage.
- * Gap G9: these constants move into packages/core/src/constants.ts with the pipeline module; until then the web owns them.
- */
-export const STAGE_RULES: Record<string, { prob: number; staleDays: number }> = {
-  bulundu: { prob: 0.05, staleDays: 14 },
-  temas: { prob: 0.1, staleDays: 7 },
-  cevap: { prob: 0.25, staleDays: 5 },
-  gorusme: { prob: 0.45, staleDays: 10 },
-  teklif: { prob: 0.65, staleDays: 7 },
-};
+/** Win probability (0 to 1) and stale limit (days) per open stage */
+export type StageRules = ReadonlyMap<string, { prob: number; staleDays: number }>;
+export const stageRulesOf = (meta: PipelineMeta | undefined): StageRules =>
+  new Map((meta?.stages ?? []).map((s) => [s.stage, { prob: s.probability, staleDays: s.stale_days }]));
+/** The page provides the rules it loaded; the cards and columns read them */
+const RulesContext = createContext<StageRules>(new Map());
+export const StageRulesProvider = RulesContext.Provider;
+export const useStageRules = () => useContext(RulesContext);
+
 /** The forecast is shown rounded to this step (TL) */
 const FORECAST_STEP = 1000;
 /** From this amount on a value is written short: "₺45B" for 45 thousand */
@@ -25,16 +25,16 @@ const NO_DUE = "9999-12-31";
 export const isLive = (o: Pick<Opportunity, "stage">) => OPEN_STAGES.includes(o.stage);
 /** Value written short in the funnel: ₺45B */
 export const shortLira = (n: number) => (n >= SHORT_FROM ? `₺${Math.round(n / SHORT_FROM)}B` : lira(n));
-export const probOf = (stage: OppStage) => STAGE_RULES[stage]?.prob ?? 0;
-export const percentOf = (stage: OppStage) => `%${Math.round(probOf(stage) * PERCENT)}`;
+export const probOf = (stage: OppStage, rules: StageRules) => rules.get(stage)?.prob ?? 0;
+export const percentOf = (stage: OppStage, rules: StageRules) => `%${Math.round(probOf(stage, rules) * PERCENT)}`;
 
-/** Days an open opportunity has sat in its stage: `stage_since` when the API sends it, else the last change of the record */
+/** Days an open opportunity has sat in its stage, from `stage_since` */
 export function ageDays(o: Opportunity, today = todayIso()): number {
   return Math.max(0, -daysFrom(o.stage_since ?? o.updated_at, today));
 }
 /** Share of the stage's stale limit used (0 to 100) and whether the card is past it */
-export function ageMeter(o: Opportunity, today = todayIso()) {
-  const limit = STAGE_RULES[o.stage]?.staleDays ?? 0;
+export function ageMeter(o: Opportunity, rules: StageRules, today = todayIso()) {
+  const limit = rules.get(o.stage)?.staleDays ?? 0;
   const days = ageDays(o, today);
   return { days, late: limit > 0 && days > limit, share: limit > 0 ? Math.min(PERCENT, Math.round((days / limit) * PERCENT)) : 0 };
 }
@@ -47,7 +47,7 @@ export interface PipelineStats {
   stale: number;
 }
 /** KPI row: open count and value, weighted forecast, won this month, stale count */
-export function pipelineStats(rows: Opportunity[], today = todayIso()): PipelineStats {
+export function pipelineStats(rows: Opportunity[], rules: StageRules, today = todayIso()): PipelineStats {
   const month = today.slice(0, 7);
   const s: PipelineStats = { open: 0, openValue: 0, weighted: 0, wonValue: 0, stale: 0 };
   for (const o of rows) {
@@ -55,31 +55,18 @@ export function pipelineStats(rows: Opportunity[], today = todayIso()): Pipeline
     if (isLive(o)) {
       s.open++;
       s.openValue += v;
-      s.weighted += v * probOf(o.stage);
-      if (ageMeter(o, today).late) s.stale++;
+      s.weighted += v * probOf(o.stage, rules);
+      if (ageMeter(o, rules, today).late) s.stale++;
     } else if (o.stage === "kazanildi" && o.closed_at?.slice(0, 7) === month) s.wonValue += v;
   }
   s.weighted = Math.round(s.weighted / FORECAST_STEP) * FORECAST_STEP;
   return s;
 }
 
-/** Step of the source funnel that ends each stage column (the first stage has no entry: its rate is "written / found") */
-const FUNNEL_AFTER: Record<string, [string, string]> = {
-  bulundu: ["found", "written"], temas: ["written", "replied"], cevap: ["replied", "meeting"], gorusme: ["meeting", "offer"],
-};
-/**
- * Stage to stage rates of the last 90 days, from the lead source funnel summed over all sources
- * (people and companies by the day their record was made). Gap G9: `stage_rates` from core replaces this.
- */
-export function stageRates(funnel: SourceFunnel | undefined): Partial<Record<OppStage, number>> {
+/** Stage to stage rates of the last 90 days, as core counts them from the stage change events (a stage nothing left has none) */
+export function stageRates(meta: PipelineMeta | undefined): Partial<Record<OppStage, number>> {
   const out: Partial<Record<OppStage, number>> = {};
-  if (!funnel) return out;
-  const total = new Map<string, number>();
-  for (const src of funnel.sources) for (const st of src.steps) total.set(st.key, (total.get(st.key) ?? 0) + st.count);
-  for (const [stage, [from, to]] of Object.entries(FUNNEL_AFTER)) {
-    const base = total.get(from) ?? 0;
-    if (base) out[stage as OppStage] = (total.get(to) ?? 0) / base;
-  }
+  for (const r of meta?.stage_rates ?? []) if (r.to_next !== null) out[r.stage] = r.to_next;
   return out;
 }
 
