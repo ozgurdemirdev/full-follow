@@ -1,143 +1,134 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { K, useBoard, useThreads } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Today } from "../api/types";
-import { Icon, type IconName } from "../components/icons";
+import { BoardIcon, type BoardIconName } from "../components/boardIcons";
 import { ago } from "../lib/format";
 import { OPEN_STAGES } from "../lib/labels";
+import { useIsDesktop } from "../lib/media";
 import { PATHS, preload, type PageKey } from "./routes";
 import { setUI, useUI } from "./ui";
 
 interface NavItem {
   key: PageKey;
   label: string;
-  icon: IconName;
+  icon: BoardIconName;
   count?: number;
-  tone?: "opportunity" | "claude";
 }
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, active, phoneOnly }: { item: NavItem; active: boolean; phoneOnly?: boolean }) {
   return (
     <Link
       href={PATHS[item.key]}
       onPointerEnter={() => preload(item.key)}
       onFocus={() => preload(item.key)}
-      onClick={() => setUI({ drawer: false })}
       aria-current={active ? "page" : undefined}
+      aria-label={item.label}
       title={item.label}
-      className={`group flex h-nav-item-height items-center gap-5 rounded-lg px-4 text-base transition-colors dur-hover ${
-        active ? "bg-surface-2 text-text-primary" : "text-text-secondary hover:bg-surface-nav-hover hover:text-text-primary"
-      }`}
+      className={`ff-item ${phoneOnly ? "ff-item-phone" : ""}`}
     >
-      <span className={`flex-none ${active ? "text-accent-text" : ""}`}>
-        <Icon name={item.icon} />
-      </span>
-      <span className="lbl">{item.label}</span>
-      {item.count ? (
-        <span
-          className={`lbl ml-auto rounded-pill px-2 text-xs font-medium ${
-            item.tone === "opportunity" ? "bg-chip-opportunity-bg text-chip-opportunity-fg" : "bg-claude-bg text-claude-soft"
-          }`}
-        >
-          {item.count}
-        </span>
-      ) : null}
+      <BoardIcon name={item.icon} />
+      <span className="ff-label">{item.label}</span>
+      {item.count ? <span className="ff-badge">{item.count}</span> : null}
     </Link>
   );
 }
 
+const SETTINGS: NavItem = { key: "settings", label: "Ayarlar", icon: "settings" };
+
 export function Sidebar() {
   const collapsed = useUI((s) => s.collapsed);
-  const drawer = useUI((s) => s.drawer);
+  const desk = useIsDesktop();
   const [path] = useLocation();
+  const strip = useRef<HTMLDivElement>(null);
   const today = useQuery<Today>(K.today);
   const board = useBoard();
   const threads = useThreads();
   const openOpps = board.rows.filter((o) => OPEN_STAGES.includes(o.stage)).length;
 
-  // Esc ile çekmeceyi kapat
-  useEffect(() => {
-    if (!drawer) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setUI({ drawer: false });
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [drawer]);
-
-  // Network önce: kime yazdım, kim döndü; satış ve projeler ikinci planda
-  const main: NavItem[] = [
-    { key: "today", label: "Dashboard", icon: "grid" },
-    { key: "calendar", label: "Takvim", icon: "calendar" },
-    { key: "people", label: "Kişiler", icon: "people", count: today.data?.network.awaiting.total, tone: "opportunity" },
-    { key: "companies", label: "Firmalar", icon: "building" },
-    { key: "referrals", label: "Referanslar", icon: "referral" },
-    { key: "drafts", label: "Taslaklar", icon: "pen", count: today.data?.drafts.total },
-    { key: "comments", label: "Yorumlar", icon: "comment", count: threads.rows.length },
-  ];
-  const marketing: NavItem[] = [
-    { key: "posts", label: "Paylaşımlar", icon: "megaphone", count: today.data?.posts_due.total, tone: "opportunity" },
-    { key: "ideas", label: "Para fikirleri", icon: "bulb" },
-    { key: "templates", label: "Şablonlar", icon: "template" },
-  ];
-  const second: NavItem[] = [
-    { key: "pipeline", label: "Satış hunisi", icon: "funnel", count: openOpps, tone: "opportunity" },
-    { key: "projects", label: "Müşteri projeleri", icon: "folder" },
-    { key: "ownProjects", label: "Kendi projelerim", icon: "cube" },
-    { key: "timeline", label: "Zaman çizelgesi", icon: "clock" },
-    { key: "report", label: "Rapor", icon: "chart" },
-    { key: "review", label: "Haftalık inceleme", icon: "review" },
+  // Network first: who I wrote to, who answered; sales and projects come second
+  const groups: { label: string; items: NavItem[] }[] = [
+    {
+      label: "Network",
+      items: [
+        { key: "today", label: "Dashboard", icon: "grid" },
+        { key: "calendar", label: "Takvim", icon: "calendar" },
+        { key: "people", label: "Kişiler", icon: "users", count: today.data?.network.awaiting.total },
+        { key: "companies", label: "Firmalar", icon: "building" },
+        { key: "referrals", label: "Referanslar", icon: "link" },
+        { key: "drafts", label: "Taslaklar", icon: "pen", count: today.data?.drafts.total },
+        { key: "comments", label: "Yorumlar", icon: "comment", count: threads.rows.length },
+      ],
+    },
+    {
+      label: "Pazarlama",
+      items: [
+        { key: "posts", label: "Paylaşımlar", icon: "megaphone", count: today.data?.posts_due.total },
+        { key: "ideas", label: "Gelir fikirleri", icon: "bulb" },
+        { key: "templates", label: "Şablonlar", icon: "template" },
+      ],
+    },
+    {
+      label: "Satış ve projeler",
+      items: [
+        { key: "pipeline", label: "Satış hunisi", icon: "funnel", count: openOpps },
+        { key: "projects", label: "Müşteri projeleri", icon: "folder" },
+        { key: "ownProjects", label: "Kendi projelerim", icon: "cube" },
+        { key: "timeline", label: "Zaman çizelgesi", icon: "clock" },
+        { key: "report", label: "Rapor", icon: "chart" },
+        { key: "review", label: "Haftalık inceleme", icon: "review" },
+      ],
+    },
   ];
   const isActive = (k: PageKey) => (k === "today" ? path === "/" : path === PATHS[k] || path.startsWith(`${PATHS[k]}/`));
 
+  // On the phone strip the current page scrolls into view
+  useEffect(() => {
+    if (desk) return;
+    strip.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [desk, path]);
+
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Menüyü kapat"
-        tabIndex={drawer ? 0 : -1}
-        className={`fixed inset-0 z-scrim border-0 bg-bg-scrim p-0 transition-opacity dur-sidebar desk:hidden ${drawer ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={() => setUI({ drawer: false })}
-      />
-      <nav
-        aria-label="Ana menü"
-        data-collapsed={collapsed || undefined}
-        className={`sb fixed inset-y-0 left-0 z-sidebar flex w-drawer-width flex-none flex-col gap-2 overflow-y-auto overflow-x-hidden border-r border-border-sidebar bg-bg-sidebar px-4 py-6 shadow-drawer transition-transform dur-drawer ease-out
-          desk:sticky desk:top-0 desk:h-dvh desk:translate-x-0 desk:shadow-none desk:transition-[width] desk:dur-sidebar
-          ${drawer ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "desk:w-sidebar-collapsed" : "desk:w-sidebar-width"}`}
-      >
-        <div className="mb-4 flex h-control-height-lg items-center gap-4 pl-2 pr-2">
-          <div className="flex size-logo flex-none items-center justify-center rounded-lg bg-accent text-base-sm font-semibold tracking-title text-accent-on">FF</div>
-          <span className="lbl text-md font-semibold tracking-subtitle">Full Follow</span>
-        </div>
+    <nav aria-label="Ana menü" className={`sb ff-side ${collapsed ? "is-mini" : ""}`}>
+      <div className="ff-brand">
+        <div className="ff-logo">ff</div>
+        <span className="ff-brandname">Full Follow</span>
+        <button
+          type="button"
+          className="ff-toggle"
+          aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+          onClick={() => setUI({ collapsed: !collapsed })}
+        >
+          <BoardIcon name="sidebar" className="size-icon-md" />
+        </button>
+      </div>
 
-        <span className="lbl px-4 pb-2 text-xs font-medium text-text-muted">Network</span>
-        {main.map((it) => <NavLink key={it.key} item={it} active={isActive(it.key)} />)}
-        <div className="mx-1 my-5 h-px bg-border-sidebar" />
-        <span className="lbl px-4 pb-2 text-xs font-medium text-text-muted">Pazarlama</span>
-        {marketing.map((it) => <NavLink key={it.key} item={it} active={isActive(it.key)} />)}
-        <div className="mx-1 my-5 h-px bg-border-sidebar" />
-        <span className="lbl px-4 pb-2 text-xs font-medium text-text-muted">Satış ve projeler</span>
-        {second.map((it) => <NavLink key={it.key} item={it} active={isActive(it.key)} />)}
-
-        <div className="flex-grow" />
-        <NavLink item={{ key: "settings", label: "Ayarlar", icon: "sliders" }} active={isActive("settings")} />
-
-        <div className="mt-2 flex items-center gap-4 border-t border-border-sidebar px-1 pb-0.5 pt-3">
-          <div className="flex size-avatar-sm flex-none items-center justify-center rounded-pill bg-author-ozgur-bg text-base-sm font-semibold text-author-ozgur-fg">Ö</div>
-          <div className="lbl flex min-w-0 flex-grow flex-col">
-            <span className="text-base-sm font-medium">Özgür</span>
-            <span className="truncate text-sm text-text-secondary" title="Claude’un MCP ile yaptığı son işlem">{today.data?.claude_last_at ? `Claude: ${ago(today.data.claude_last_at)}` : "Claude henüz bağlanmadı"}</span>
+      <div ref={strip} className="ff-nav">
+        {groups.map((g) => (
+          <div key={g.label} className="ff-group">
+            <span className="ff-glabel">{g.label}</span>
+            {g.items.map((it) => <NavLink key={it.key} item={it} active={isActive(it.key)} />)}
           </div>
-          <button type="button" className="ibtn lbl hidden desk:inline-flex" aria-label="Menüyü daralt" onClick={() => setUI({ collapsed: true })}>
-            <Icon name="panel" />
-          </button>
+        ))}
+        <NavLink item={SETTINGS} active={isActive("settings")} phoneOnly />
+      </div>
+
+      <div className="ff-sidefoot">
+        <NavLink item={SETTINGS} active={isActive("settings")} />
+        <div className="ff-user">
+          <div className="ff-user-avatar">ÖD</div>
+          <div className="ff-userinfo">
+            <span className="ff-username">Özgür</span>
+            <span className="ff-userstatus" title="Claude’un MCP ile yaptığı son işlem">
+              <i />
+              <span>{today.data?.claude_last_at ? `Claude: ${ago(today.data.claude_last_at)}` : "Claude henüz bağlanmadı"}</span>
+            </span>
+          </div>
         </div>
-        {collapsed ? (
-          <button type="button" className="ibtn mx-auto mt-2 hidden desk:inline-flex" aria-label="Menüyü genişlet" onClick={() => setUI({ collapsed: false })}>
-            <Icon name="panelOpen" />
-          </button>
-        ) : null}
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }

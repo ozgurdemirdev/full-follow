@@ -16,7 +16,6 @@ export interface SheetState {
 }
 interface UI {
   collapsed: boolean;
-  drawer: boolean;
   sheet: SheetState | null;
 }
 
@@ -29,7 +28,6 @@ let state: UI = {
       return false;
     }
   })(),
-  drawer: false,
   sheet: null,
 };
 const subs = new Set<() => void>();
@@ -53,5 +51,5 @@ export function useUI<T>(select: (s: UI) => T): T {
   );
 }
 
-export const openSheet = (kind: SheetKind, preset?: SheetState["preset"]) => setUI({ sheet: { kind, preset }, drawer: false });
+export const openSheet = (kind: SheetKind, preset?: SheetState["preset"]) => setUI({ sheet: { kind, preset } });
 export const closeSheet = () => setUI({ sheet: null });

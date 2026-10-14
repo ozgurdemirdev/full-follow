@@ -1,0 +1,309 @@
+/* App shell from the design boards: sidebar (256 / 80 rail), phone strip, page frame.
+   Phone first: the base rules are the strip, `desk` is the sidebar. */
+
+.ff-shell {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  min-height: 100dvh;
+}
+.ff-shell :where(button) {
+  transition:
+    transform var(--dur-press) var(--ease-standard),
+    filter var(--dur-hover) var(--ease-standard),
+    background-color var(--dur-hover) var(--ease-standard),
+    border-color var(--dur-hover) var(--ease-standard);
+}
+.ff-shell :where(button):hover {
+  filter: brightness(1.12);
+}
+.ff-shell :where(button):active {
+  transform: scale(var(--press-scale));
+}
+
+/* ---------- sidebar ---------- */
+.ff-side {
+  flex: 0 0 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  padding: var(--spacing-7);
+  overflow: hidden;
+  background: var(--color-bg-canvas);
+  border-bottom: var(--bw-default) solid var(--color-border-subtle);
+}
+.ff-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-1) var(--spacing-3);
+}
+.ff-logo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-logo);
+  height: var(--spacing-logo);
+  border-radius: var(--radius-logo);
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-logo);
+}
+.ff-brandname {
+  font-size: var(--text-brand);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-title);
+  white-space: nowrap;
+}
+.ff-toggle {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-control-height-sm);
+  height: var(--spacing-control-height-sm);
+  margin-left: auto;
+  border-radius: var(--radius-logo);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.ff-nav {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ff-group {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-1);
+}
+.ff-glabel {
+  display: none;
+  padding: 0 var(--spacing-5) var(--spacing-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+}
+.ff-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-5);
+  min-height: var(--spacing-nav-item-height);
+  padding: 0 var(--spacing-5);
+  border-radius: var(--radius-nav);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transition:
+    background var(--dur-hover) var(--ease-standard),
+    color var(--dur-hover) var(--ease-standard);
+}
+.ff-item:hover,
+.ff-item[aria-current="page"] {
+  background: var(--color-surface-nav-hover);
+  color: var(--color-text-primary);
+}
+.ff-item svg {
+  flex: none;
+  transition: transform var(--dur-icon-pop) var(--ease-pop);
+}
+.ff-item:hover svg {
+  transform: scale(var(--icon-scale));
+}
+.ff-label {
+  flex-grow: 1;
+  font-size: var(--text-base);
+}
+.ff-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--spacing-badge);
+  height: var(--spacing-badge);
+  padding: 0 var(--spacing-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-badge-bg);
+  color: var(--color-badge-fg);
+  font-size: var(--text-xs);
+}
+.ff-sidefoot {
+  display: none;
+}
+.ff-user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-5);
+  padding: var(--spacing-5);
+  border-radius: var(--radius-inner);
+  background: var(--color-surface-1);
+  border: var(--bw-default) solid var(--color-border-subtle);
+}
+.ff-user-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-avatar-user);
+  height: var(--spacing-avatar-user);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-track);
+  color: var(--color-text-primary);
+  font-size: var(--text-base-sm);
+  font-weight: var(--font-weight-medium);
+}
+.ff-userinfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  white-space: nowrap;
+}
+.ff-username {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+}
+.ff-userstatus {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+.ff-userstatus i {
+  flex: none;
+  width: var(--spacing-dot-sm);
+  height: var(--spacing-dot-sm);
+  border-radius: var(--radius-pill);
+  background: var(--color-claude);
+}
+.ff-userstatus span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@variant desk {
+  .ff-side {
+    flex: 0 0 var(--spacing-sidebar-width);
+    max-width: var(--spacing-sidebar-width);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100dvh;
+    gap: var(--spacing-sidebar-gap);
+    padding: var(--spacing-10) var(--spacing-7);
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    border-bottom: 0;
+    border-right: var(--bw-default) solid var(--color-border-subtle);
+    transition:
+      flex-basis var(--dur-sidebar) var(--ease-out),
+      max-width var(--dur-sidebar) var(--ease-out),
+      padding var(--dur-sidebar) var(--ease-out);
+  }
+  .ff-side.is-mini {
+    flex-basis: var(--spacing-sidebar-collapsed);
+    max-width: var(--spacing-sidebar-collapsed);
+    padding: var(--spacing-10) var(--spacing-5);
+  }
+  .ff-toggle {
+    display: flex;
+  }
+  .ff-nav {
+    flex-direction: column;
+    gap: var(--spacing-nav-gap);
+    overflow-x: visible;
+  }
+  .ff-group {
+    flex-direction: column;
+    gap: var(--spacing-0_5);
+  }
+  .ff-glabel {
+    display: block;
+  }
+  /* stays in view when the menu is taller than the window; the extra padding hides the items scrolling under it */
+  .ff-sidefoot {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    margin: auto 0 calc(var(--spacing-10) * -1);
+    padding-bottom: var(--spacing-10);
+    background: var(--color-bg-canvas);
+  }
+  .ff-item-phone {
+    display: none;
+  }
+  .is-mini .ff-brand {
+    flex-direction: column;
+    padding: var(--spacing-1) 0;
+  }
+  .is-mini .ff-toggle {
+    margin-left: 0;
+  }
+  .is-mini .ff-item {
+    justify-content: center;
+    padding: 0;
+  }
+  .is-mini .ff-user {
+    justify-content: center;
+    padding: var(--spacing-3);
+  }
+  .is-mini .ff-label,
+  .is-mini .ff-glabel,
+  .is-mini .ff-badge,
+  .is-mini .ff-brandname,
+  .is-mini .ff-userinfo {
+    display: none;
+  }
+}
+
+/* ---------- page frame ---------- */
+.ff-main {
+  flex: 999 1 var(--spacing-main-basis);
+  min-width: 0;
+  padding: var(--spacing-page-padding-top-mobile) var(--spacing-page-padding-x-mobile) var(--spacing-content-bottom-pad);
+}
+@variant desk {
+  .ff-main {
+    padding: var(--spacing-page-padding-top) var(--spacing-page-padding-x) var(--spacing-content-bottom-pad);
+  }
+}
+.ff-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10);
+  max-width: var(--container-content);
+  margin: 0 auto;
+}
+.ff-wrap[data-width="narrow"] {
+  max-width: var(--container-content-narrow);
+}
+.ff-wrap[data-width="wide"] {
+  max-width: none;
+}
+.ff-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-7);
+  animation: rise var(--dur-rise) var(--ease-out) backwards;
+}
+.ff-headtext {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  min-width: 0;
+}
+.ff-sub {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}

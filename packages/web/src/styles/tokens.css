@@ -21,6 +21,7 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
+  --font-weight-light: 300;
   --text-2xs: 10px;
   --text-xs: 11px;
   --text-sm: 12px;
@@ -32,14 +33,19 @@
   --text-2xl: 24px;
   --text-3xl: 28px;
   --text-kpi: 30px;
+  --text-brand: 17px;
+  --text-display: 40px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
+  --leading-display: 1.1;
+  --leading-heading: 1.15;
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
   --tracking-label: 0.06em;
   --tracking-label-wide: 0.08em;
+  --tracking-logo: -0.04em;
   --spacing-0: 0px;
   --spacing-1: 4px;
   --spacing-2: 6px;
@@ -56,9 +62,8 @@
   --spacing-px: 1px;
   --spacing-0_5: 2px;
   --spacing-0_75: 3px;
-  --spacing-sidebar-width: 248px;
-  --spacing-sidebar-collapsed: 64px;
-  --spacing-drawer-width: 280px;
+  --spacing-sidebar-width: 256px;
+  --spacing-sidebar-collapsed: 80px;
   --spacing-content-max-narrow: 920px;
   --spacing-detail-panel: 360px;
   --spacing-aside-panel: 320px;
@@ -73,7 +78,9 @@
   --spacing-control-height-sm: 32px;
   --spacing-control-height-md: 36px;
   --spacing-control-height-lg: 40px;
-  --spacing-nav-item-height: 38px;
+  --spacing-control-height-xl: 38px;
+  --spacing-control-height-2xl: 44px;
+  --spacing-nav-item-height: 40px;
   --spacing-fab-size: 56px;
   --spacing-fab-offset: 28px;
   --spacing-fab-offset-mobile: 18px;
@@ -82,7 +89,7 @@
   --spacing-avatar-list: 36px;
   --spacing-avatar-lg: 44px;
   --spacing-avatar-xl: 48px;
-  --spacing-logo: 30px;
+  --spacing-logo: 32px;
   --spacing-icon-sm: 12px;
   --spacing-icon-md: 16px;
   --spacing-icon-lg: 18px;
@@ -99,10 +106,6 @@
   --spacing-fab-menu-width: 208px;
   --spacing-chart-height: 200px;
   --spacing-chart-height-mobile: 170px;
-  --spacing-seg-tab: 140px;
-  --spacing-seg-tab-wide: 150px;
-  --spacing-seg-tab-mobile: 104px;
-  --spacing-seg-height: 32px;
   --spacing-rail: 2px;
   --spacing-tl-node: 32px;
   --spacing-comment-who: 54px;
@@ -139,9 +142,47 @@
   --spacing-mascot-min: 56px;
   --spacing-mascot-max: 180px;
   --spacing-mascot-default: 96px;
-  --container-content: undefined;
+  --spacing-content-max: 1240px;
+  --spacing-page-padding-top: 28px;
+  --spacing-page-padding-top-mobile: 20px;
+  --spacing-sidebar-gap: 22px;
+  --spacing-nav-gap: 18px;
+  --spacing-badge: 20px;
+  --spacing-dot-sm: 7px;
+  --spacing-icon-xs: 14px;
+  --spacing-icon-chip: 15px;
+  --spacing-icon-btn: 17px;
+  --spacing-overlay-gap: 16px;
+  --spacing-overlay-gap-mobile: 12px;
+  --spacing-scrim-blur: 6px;
+  --spacing-more-icon: 30px;
+  --spacing-cta-icon: 28px;
+  --spacing-meter-xl: 22px;
+  --spacing-meter-knob-height: 28px;
+  --spacing-meter-knob-min: 44px;
+  --spacing-meter-knob-offset: 30px;
+  --spacing-meter-knob-rise: 3px;
+  --spacing-meter-marker-overhang: 6px;
+  --spacing-hatch-line: 2px;
+  --spacing-hatch-period: 7px;
+  --spacing-stepper-height: 38px;
+  --spacing-stepper-button: 30px;
+  --spacing-stepper-value: 76px;
+  --spacing-mic-bars: 14px;
+  --spacing-avatar-user: 36px;
+  --spacing-avatar-row: 38px;
+  --spacing-avatar-tile: 40px;
+  --spacing-avatar-hero: 56px;
+  --spacing-main-basis: 560px;
+  --spacing-seg-tab: 140px;
+  --spacing-seg-tab-wide: 150px;
+  --spacing-seg-tab-mobile: 104px;
+  --spacing-seg-height: 32px;
+  --spacing-drawer-width: 280px;
+  --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
+  --breakpoint-wide: 1181px;
   --radius-xs: 5px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -152,12 +193,19 @@
   --radius-fab: 18px;
   --radius-sheet-mobile: 18px;
   --radius-pill: 999px;
-  --shadow-card-hover: 0 10px 24px rgba(4,4,5,.4);
+  --radius-nav: 12px;
+  --radius-logo: 10px;
+  --radius-overlay: 28px;
+  --radius-bar: 2px;
+  --shadow-card-hover: 0 22px 48px rgba(0,0,0,.38);
   --shadow-fab: 0 10px 28px rgba(4,4,5,.55);
   --shadow-menu: 0 16px 40px rgba(4,4,5,.6);
+  --shadow-focus-ring: 0 0 0 3px rgba(212,242,90,.35);
+  --shadow-toast: 0 16px 48px rgba(0,0,0,.5);
+  --shadow-overlay: 0 40px 120px rgba(0,0,0,.6);
+  --shadow-knob: 0 4px 14px rgba(0,0,0,.45);
   --shadow-drawer: 24px 0 48px rgba(4,4,5,.55);
   --shadow-sheet: -24px 0 60px rgba(4,4,5,.6);
-  --shadow-focus-ring: 0 0 0 3px rgba(212,242,90,.35);
   --ease-out: cubic-bezier(.2,.8,.2,1);
   --ease-pop: cubic-bezier(.2,1.4,.4,1);
   --ease-standard: ease;
@@ -282,6 +330,13 @@
   --color-mascot-mouth-dark: #2A0E08;
   --color-mascot-tongue: #E8737C;
   --color-mascot-dot: #FFFFFF;
+  --color-badge-bg: var(--palette-ink-700);
+  --color-badge-fg: var(--palette-bone-200);
+  --color-meter-track: var(--palette-ink-800);
+  --color-meter-hatch: var(--palette-ink-650);
+  --color-listening-bg: var(--palette-rec-950);
+  --color-listening-fg: var(--palette-coral-200);
+  --color-listening-border: var(--palette-rec-800);
 }
 
 :root {
@@ -325,13 +380,17 @@
   --palette-mint-950: #1F3326;
   --palette-mint-300: #9EE0B0;
   --palette-rose-950: #3A1F2A;
+  --palette-bone-200: #D8D8D4;
+  --palette-coral-200: #FF9A8C;
+  --palette-rec-950: #2A1512;
+  --palette-rec-800: #5A2A24;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
-  --dur-sidebar: 300ms;
+  --dur-sidebar: 320ms;
   --dur-segment: 350ms;
   --dur-drawer: 340ms;
-  --dur-rise: 550ms;
+  --dur-rise: 600ms;
   --dur-rise-item: 450ms;
   --dur-bar-grow: 800ms;
   --dur-sheet: 450ms;
@@ -344,22 +403,38 @@
   --dur-wave: 900ms;
   --dur-wave-step: 100ms;
   --dur-react-pop: 420ms;
+  --dur-overlay: 450ms;
+  --dur-overlay-fade: 380ms;
+  --dur-overlay-body: 300ms;
+  --dur-overlay-body-delay: 120ms;
+  --dur-overlay-slide: 400ms;
+  --dur-overlay-slide-delay: 100ms;
+  --dur-lift: 350ms;
+  --dur-toast: 300ms;
+  --dur-mic: 800ms;
+  --dur-mic-step: 150ms;
+  --dur-icon-pop: 250ms;
   --stagger: 50ms;
-  --rise-distance: 10px;
+  --rise-distance: 14px;
   --press-scale: 0.97;
   --hover-lift: translateY(-2px);
-  --z-scrim: 25;
+  --card-lift: translateY(-3px);
+  --icon-scale: 1.12;
+  --more-turn: 45deg;
   --z-sidebar: 30;
   --z-fab: 40;
   --z-sheet: 50;
   --z-toast: 60;
   --z-mascot: 45;
   --z-mascot-perch: 55;
+  --z-overlay: 48;
+  --z-scrim: 25;
   --bw-default: 1px;
   --bw-check: 1.5px;
   --bw-strong: 2px;
   --opacity-muted: 0.5;
   --opacity-disabled: 0.45;
+  --opacity-count: 0.6;
 }
 
 @utility dur-press {
@@ -438,8 +513,48 @@
   transition-duration: var(--dur-react-pop);
 }
 
-@utility z-scrim {
-  z-index: var(--z-scrim);
+@utility dur-overlay {
+  transition-duration: var(--dur-overlay);
+}
+
+@utility dur-overlay-fade {
+  transition-duration: var(--dur-overlay-fade);
+}
+
+@utility dur-overlay-body {
+  transition-duration: var(--dur-overlay-body);
+}
+
+@utility dur-overlay-body-delay {
+  transition-duration: var(--dur-overlay-body-delay);
+}
+
+@utility dur-overlay-slide {
+  transition-duration: var(--dur-overlay-slide);
+}
+
+@utility dur-overlay-slide-delay {
+  transition-duration: var(--dur-overlay-slide-delay);
+}
+
+@utility dur-lift {
+  transition-duration: var(--dur-lift);
+}
+
+@utility dur-toast {
+  transition-duration: var(--dur-toast);
+}
+
+@utility dur-mic {
+  transition-duration: var(--dur-mic);
+}
+
+@utility dur-mic-step {
+  transition-duration: var(--dur-mic-step);
+}
+
+@utility dur-icon-pop {
+  transition-duration: var(--dur-icon-pop);
 }
 
 @utility z-sidebar {
@@ -466,6 +581,14 @@
   z-index: var(--z-mascot-perch);
 }
 
+@utility z-overlay {
+  z-index: var(--z-overlay);
+}
+
+@utility z-scrim {
+  z-index: var(--z-scrim);
+}
+
 @utility bw-default {
   border-width: var(--bw-default);
 }
@@ -484,4 +607,8 @@
 
 @utility opacity-disabled {
   opacity: var(--opacity-disabled);
+}
+
+@utility opacity-count {
+  opacity: var(--opacity-count);
 }

@@ -74,12 +74,12 @@ export function Segmented({
   );
 }
 
-/** Sayfa başlığı (menü düğmesi kabukta) */
+/** Page title with a subtitle line (the menu lives in the shell) */
 export function PageHead({ title, sub, children }: { title: ReactNode; sub?: ReactNode; children?: ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-grow flex-col gap-0.5">
+    <div className="ff-headtext">
       <h1 className="page-title">{title}</h1>
-      {sub ? <span className="text-base-sm text-text-secondary">{sub}</span> : null}
+      {sub ? <div className="ff-sub">{sub}</div> : null}
       {children}
     </div>
   );
