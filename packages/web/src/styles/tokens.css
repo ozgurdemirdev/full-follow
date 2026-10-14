@@ -38,12 +38,15 @@
   --text-currency: 22px;
   --text-section: 22px;
   --text-cal-num: 26px;
+  --text-templates-title: 17px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
   --leading-display: 1.1;
   --leading-heading: 1.15;
   --leading-snug: 1.45;
+  --leading-templates-body: 1.7;
+  --leading-templates-text: 1.55;
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
@@ -384,6 +387,8 @@
   --color-listening-fg: var(--palette-coral-200);
   --color-listening-border: var(--palette-rec-800);
   --color-danger-soft: var(--palette-coral-200);
+  --color-templates-tip-bg: var(--palette-ember-950);
+  --color-templates-tip-fg: var(--palette-ember-200);
   --color-kind-meet: var(--palette-purple-400);
   --color-kind-follow: var(--palette-blue-400);
   --color-kind-pay: var(--palette-gold-400);
@@ -445,6 +450,8 @@
   --palette-gold-400: #E8B44C;
   --palette-green-400: #4CC97A;
   --palette-lime-850: #2E3A1A;
+  --palette-ember-950: #1F1712;
+  --palette-ember-200: #F2C3AE;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;

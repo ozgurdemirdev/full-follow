@@ -24,6 +24,7 @@ export const K = {
   settings: "/settings",
   sectors: `/sectors?all=true&limit=${ALL}`,
   referrals: "/report/referrals",
+  marketing: "/report/marketing",
   posts: `/posts?limit=${ALL}`,
   templates: `/templates?limit=${ALL}`,
   ideas: `/ideas?limit=${ALL}`,
