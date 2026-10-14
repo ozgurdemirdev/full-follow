@@ -40,18 +40,6 @@ export class MiscController {
     return this.core.today(limit ? Number(limit) : 50);
   }
 
-  /** Rapor: kaynak dönüşümü + ay tahsilatı vs fiyat tabanı */
-  @Get("report")
-  report(@Query("month") month?: string) {
-    return this.core.reports.report(month);
-  }
-
-  /** Son N ayın tahsilat/taban serisi (grafik) */
-  @Get("report/months")
-  months(@Query("count") count?: string) {
-    return this.core.reports.months(count ? Number(count) : 6);
-  }
-
   /** Kişi / fırsat / proje zaman çizelgesi (eskiden yeniye) */
   @Get("timeline/:type/:id")
   timeline(@Param("type") type: string, @Param("id") id: string, @Query("limit") limit?: string) {
@@ -60,12 +48,12 @@ export class MiscController {
 
   @Get("settings")
   settings() {
-    return this.core.settings.priceFloor();
+    return this.core.settings.view();
   }
 
   @Put("settings")
   saveSettings(@Body() b: Record<string, unknown>) {
     this.core.settings.setMany(b);
-    return this.core.settings.priceFloor();
+    return this.core.settings.view();
   }
 }

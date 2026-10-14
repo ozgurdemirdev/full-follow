@@ -1,12 +1,10 @@
-import { CHANNELS } from "../constants";
-import { addDays } from "../dates";
-import { rows, type Ctx } from "../context";
+import { addDays, CHANNELS, rows, type ChannelPerformance, type Ctx, type MarketingReport } from "@fullfollow/core";
 
 /**
  * Kanal performansı (son `days` gün): kaç kişiye yazıldı, kaçı sonra döndü, oran.
  * Kişi bazında sayılır: aynı kişiye 3 mesaj = 1 kişi.
  */
-export function channelPerformance(ctx: Ctx, days = 30) {
+export function channelPerformance(ctx: Ctx, days = 30): ChannelPerformance[] {
   const since = addDays(ctx.clock.today(), -days);
   const list = rows<{ channel: string; people: number; replied: number; sent: number }>(ctx, `
     WITH o AS (
@@ -21,7 +19,7 @@ export function channelPerformance(ctx: Ctx, days = 30) {
 }
 
 /** Pazarlama özeti: paylaşımlar (getirdikleri), fikirler (ilgi), şablonlar (tür ve kanal gruplarında kıyas), kanal performansı, takip dizisi; kurulu olmayan modülün parçası boş gelir */
-export function marketingReport(ctx: Ctx) {
+export function marketingReport(ctx: Ctx): MarketingReport {
   // posts come from the posts module; without it the lists are empty
   const posts = ctx.mod("posts")?.stats() ?? [];
   return {

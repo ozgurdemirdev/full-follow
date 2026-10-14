@@ -34,6 +34,7 @@ import type { PostsApi } from "./posts";
 import type { ProjectsApi } from "./projects";
 import type { ReferralsApi } from "./referrals";
 import type { RecordRestored, RecordTrashed } from "./records";
+import type { ReportsApi } from "./reports";
 import type { TemplatesApi } from "./templates";
 
 export type * from "./calendar";
@@ -48,6 +49,7 @@ export type * from "./posts";
 export type * from "./projects";
 export type * from "./records";
 export type * from "./referrals";
+export type * from "./reports";
 export type * from "./templates";
 
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
@@ -63,6 +65,7 @@ export interface ModuleApis {
   posts: PostsApi;
   projects: ProjectsApi;
   referrals: ReferralsApi;
+  reports: ReportsApi;
   templates: TemplatesApi;
 }
 

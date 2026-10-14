@@ -42,7 +42,7 @@ suite("pipeline and projects together", () => {
     expect(bare.mod("pipeline")!.opportunities.move(o.id, { stage: "kazanildi" }).effects).toEqual(["müşteri etiketi eklendi"]);
     expect(sql("SELECT COUNT(*) n FROM projects")[0].n).toBe(0);
     expect(bare.get("opportunity", o.id).row).toMatchObject({ stage: "kazanildi", project_id: null });
-    expect(bare.reports.month("2026-10")).toMatchObject({ collected: 0, outstanding_due: 0 });
+    expect(bare.mod("reports")!.month("2026-10")).toMatchObject({ collected: 0, outstanding_due: 0 });
     expect(bare.ctx.mod("calendar")!.calendar("2026-10-01", "2026-10-31")[0].payments).toEqual([]);
     expect(() => bare.save("task", { title: "x", project_id: 1 })).toThrow(/"projects" modülü kurulu değil/);
   });

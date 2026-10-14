@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { FFError, type Core } from "@fullfollow/core";
 import { z } from "zod";
 import { describer } from "./describe";
-import { block, bulkText, kindName, list, mcpFormat, ok, reportText, reviewText, timelineText, todayText, useMcpDefs } from "./format";
+import { block, bulkText, kindName, list, mcpFormat, ok, timelineText, todayText, useMcpDefs } from "./format";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
@@ -125,14 +125,6 @@ export function registerTools(server: McpServer, core: Core) {
     inputSchema: { type: z.string(), id: idOrName, limit: z.number().optional() },
   }, ({ type, id, limit }) => run(() => timelineText(core.timeline(type, id, limit ?? 20))));
 
-  server.registerTool("report", {
-    description: describe("report", [
-      [120, "pazarlama ("],
-      [202, "kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM. week: YYYY-Www, haftadan bir tarih ya da \"bu\" verilirse rapor yerine o haftanın incelemesi (Cuma özeti): giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için 2-4 öneri."],
-    ]),
-    inputSchema: { month: z.string().optional(), week: z.string().optional() },
-  }, ({ month, week }) => run(() => (week ? reviewText(core.review(week === "bu" ? undefined : week)) : reportText({ ...core.reports.report(month), week: core.mod("network")?.weekStats(), referrals: core.mod("referrals")?.report() ?? [], marketing: core.marketing(), source_funnel: core.reports.sourceFunnel() }))));
-
   server.registerTool("delete", {
     description: "Kayıt sil (offer dahil): çöp kutusuna gider (kurallar geçerli, olay yazılır); etiket/sektör/kaynak kayıtlarda kalır, yeni kayda seçilemez. restore:true silineni geri yükler (id ya da çöp kutusundaki ad; liste: find trash).",
     inputSchema: { type: z.string(), id: idOrName, restore: z.boolean().optional() },
@@ -144,6 +136,7 @@ export function registerTools(server: McpServer, core: Core) {
 
   // tools only an installed module has (the calendar's plan, the payments' pay, ...)
   for (const tool of defs.flatMap((d) => d.tools ?? [])) {
-    server.registerTool(tool.name, { description: tool.description, inputSchema: tool.input }, (args: any) => run(() => tool.run(core.ctx, args, mcpFormat)));
+    const description = typeof tool.description === "string" ? tool.description : describe(tool.name, tool.description.map((x): [number, string] => [x.at, x.text]));
+    server.registerTool(tool.name, { description, inputSchema: tool.input }, (args: any) => run(() => tool.run(core.ctx, args, mcpFormat)));
   }
 }

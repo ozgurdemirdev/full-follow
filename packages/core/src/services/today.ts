@@ -1,5 +1,4 @@
-import { REVIEW_WEEKDAY } from "../constants";
-import { addDays, isoWeekday, isoWeekOf } from "../dates";
+import { addDays } from "../dates";
 import { row } from "../context";
 import type { Ctx } from "../context";
 import { queriesFor } from "./queries";
@@ -27,8 +26,6 @@ export function todayService(ctx: Ctx) {
       // Claude'un cevap vermesi gereken yorumlar (son yorum Özgür'den)
       comments: q.comments({ ...o, filter: { unanswered: true } }),
       window_end: addDays(date, 7),
-      // the weekly review of the current week; ready on Fridays (the dashboard links to it)
-      review: { week: isoWeekOf(date), ready: isoWeekday(date) === REVIEW_WEEKDAY },
       // Claude'un MCP üzerinden yaptığı son işlem (bağlı mı, ne zaman çalıştı)
       claude_last_at: row<{ at: string | null }>(ctx, "SELECT MAX(created_at) AS at FROM events WHERE created_by = 'claude'")?.at ?? null,
       // sections the installed modules add (the day plan and tasks, the drafts, follow-ups of people and opportunities, the network lists, the weekly review, ...)

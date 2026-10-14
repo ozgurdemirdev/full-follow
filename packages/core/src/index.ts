@@ -10,13 +10,10 @@ import { filesService } from "./services/files";
 import { notesService } from "./services/notes";
 import { entityHandler, isCoreType, normalizeType, resolveId } from "./services/records";
 import { sectorsService } from "./services/sectors";
-import { reportsService } from "./services/reports";
 import { settingsService } from "./services/settings";
 import { resolveInput, resolveRef } from "./services/shared";
 import { todayService } from "./services/today";
 import { chatService } from "./services/chat";
-import { marketingReport } from "./services/marketing";
-import { weeklyReview } from "./services/review";
 import { isCategory, isTrashType, restoreFromTrash, trashList, typeLabel } from "./services/trash";
 import { createRegistry, type ModuleRegistry } from "./modules/registry";
 import type { SaveResult } from "./modules/types";
@@ -41,7 +38,7 @@ export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sect
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, isColdEmail, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
 export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLinks } from "./services/sectors";
-export { marketingSettings, networkSettings, readSetting, readTemplate } from "./services/settings";
+export { marketingSettings, networkSettings, readSetting, readTemplate, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
 export { companyKeys, contactKey, personKeys } from "./keys";
@@ -76,7 +73,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const files = filesService(ctx);
   const settings = settingsService(ctx);
   const queries = queriesFor(ctx);
-  const reports = reportsService(ctx);
   const todayFn = todayService(ctx);
   const chat = chatService(ctx);
 
@@ -205,13 +201,10 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     sources, tags, comments, settings, sectors, notes, links,
     files,
     chat,
-    // Paket 2: pazarlama özeti
-    marketing: () => marketingReport(ctx),
-    review: (week?: string) => weeklyReview(ctx, week),
     // Paket 3: çöp kutusu
     trash: { list: () => trashList(ctx), restore },
     // okuma
-    queries, reports, today: todayFn,
+    queries, today: todayFn,
     // genel giriş (MCP araçları)
     find, get, save, saveMany, move, remove, restore, timeline,
     resolveRef: (type: string, ref: string | number) => resolveRef(ctx, type, ref),

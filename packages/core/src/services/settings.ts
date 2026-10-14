@@ -69,26 +69,26 @@ export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_t
 
 const num = (ctx: Ctx, key: string) => Number(readSetting(ctx, key) ?? 0) || 0;
 
-export function settingsService(ctx: Ctx) {
-  /** Tüm ayarlar (girilmemiş sayılar 0, şablon varsayılan) */
-  function all() {
-    return {
-      bagkur_monthly: num(ctx, "bagkur_monthly"),
-      accounting_monthly: num(ctx, "accounting_monthly"),
-      other_fixed_monthly: num(ctx, "other_fixed_monthly"),
-      target_net_monthly: num(ctx, "target_net_monthly"),
-      tax_rate_percent: num(ctx, "tax_rate_percent"),
-      payment_template: readTemplate(ctx),
-      chat_pinned_notes: readSetting(ctx, "chat_pinned_notes") ?? "",
-    };
-  }
+/** Tüm ayarlar (girilmemiş sayılar 0, şablon varsayılan) */
+export function settingValues(ctx: Ctx) {
+  return {
+    bagkur_monthly: num(ctx, "bagkur_monthly"),
+    accounting_monthly: num(ctx, "accounting_monthly"),
+    other_fixed_monthly: num(ctx, "other_fixed_monthly"),
+    target_net_monthly: num(ctx, "target_net_monthly"),
+    tax_rate_percent: num(ctx, "tax_rate_percent"),
+    payment_template: readTemplate(ctx),
+    chat_pinned_notes: readSetting(ctx, "chat_pinned_notes") ?? "",
+  };
+}
 
-  /** Fiyat tabanı (aylık) = (Bağkur + muhasebe + diğer sabit + hedef net) / (1 − vergi oranı) */
-  function priceFloor() {
-    const s = all();
-    const subtotal = s.bagkur_monthly + s.accounting_monthly + s.other_fixed_monthly + s.target_net_monthly;
-    const floor = Math.ceil(subtotal / (1 - s.tax_rate_percent / 100));
-    return { ...s, subtotal, floor };
+export function settingsService(ctx: Ctx) {
+  const all = () => settingValues(ctx);
+
+  /** The settings the settings screen reads: the values plus the figures the installed modules compute from them (the price floor) */
+  function view(): Record<string, unknown> {
+    const values = all();
+    return Object.assign({}, values, ...ctx.contrib("settingsView").map((extra) => extra(ctx, values)));
   }
 
   function set(key: string, value: unknown): void {
@@ -130,7 +130,7 @@ export function settingsService(ctx: Ctx) {
     return { keys, effects: [] as string[] };
   }
 
-  return { all, priceFloor, set, setMany };
+  return { all, view, set, setMany };
 }
 
 /** Network settings: the days an answer is awaited and a connection takes to cool, plus the marketing settings */

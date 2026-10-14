@@ -1,15 +1,5 @@
-import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, SOURCE_FUNNEL_DEFAULT_PERIOD, WEEK_DAYS } from "../constants";
-import { addDays, daysBetween, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
-import { FFError, type Ctx } from "../context";
-import type { WeekStats } from "../contracts";
-import { marketingSettings } from "./settings";
-
-export interface Suggestion {
-  key: string;
-  text: string;
-  /** title of the task "Göreve çevir" creates */
-  task_title: string;
-}
+import { addDays, daysBetween, FFError, isIsoDate, isoWeekOf, isoWeekStart, label, marketingSettings, SOURCE_FUNNEL_DEFAULT_PERIOD, weekStart, type Ctx, type ReviewSuggestion, type WeekStats, type WeeklyReview } from "@fullfollow/core";
+import { REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, WEEK_DAYS } from "../constants";
 
 const pct = (r: number | null | undefined) => `%${Math.round((r ?? 0) * 100)}`;
 
@@ -73,8 +63,8 @@ function buildFacts(ctx: Ctx, ws: string) {
  * 2 to 4 plain suggestions for next week, rule based (no AI): a missed weekly target, a template group with a clear leader,
  * a weak lead source, a channel that is full most days; unconditional ones fill up to the minimum.
  */
-function suggestions(f: Facts): Suggestion[] {
-  const out: Suggestion[] = [];
+function suggestions(f: Facts): ReviewSuggestion[] {
+  const out: ReviewSuggestion[] = [];
   const sent = f.stats.this_week.sent;
   // An unfinished week is judged from Friday on, by the pace it would end the week with
   const pace = Math.round((sent * WEEK_DAYS) / f.days);
@@ -112,7 +102,7 @@ function suggestions(f: Facts): Suggestion[] {
     });
   }
   const added = f.stats.this_week.new_people + f.stats.this_week.new_companies;
-  const fillers: Suggestion[] = [
+  const fillers: ReviewSuggestion[] = [
     ...(!f.target
       ? [{ key: "target_set", text: "Haftalık giden mesaj hedefi yok: Ayarlar'dan bir hedef koy, haftayı ona göre ölçersin.", task_title: "Haftalık giden mesaj hedefi koy" }]
       : sent >= f.target ? [{ key: "target_met", text: `Haftalık hedef ${f.target}, giden ${sent}: bu tempoyu koru.`, task_title: "Haftalık giden mesaj temposunu koru" }] : []),
@@ -128,7 +118,7 @@ function suggestions(f: Facts): Suggestion[] {
  * meetings, offers, new records, template and source highlights, daily limit overruns and suggestions for next week.
  * Everything is computed from existing services; nothing is stored.
  */
-export function weeklyReview(ctx: Ctx, week?: string) {
+export function weeklyReview(ctx: Ctx, week?: string): WeeklyReview {
   const ws = weekStartOf(ctx, week);
   const f = buildFacts(ctx, ws);
   const currentStart = weekStart(ctx.clock.today());

@@ -26,10 +26,10 @@ describe("Paylaşımlar", () => {
     expect(ozgur.moduleMeta().post_platforms).toEqual(["r10", "linkedin", "instagram", "diger"]);
   });
 
-  it("modül yokken: Bugün'de posts_due yok, pazarlama raporunda paylaşım listeleri boş, tür kurulu değil hatası verir", () => {
+  it("modül yokken: Bugün'de posts_due yok, tür kurulu değil hatası verir", () => {
     const bare = createCore(openDb(":memory:"), "ozgur", clock);
     expect(bare.today()).not.toHaveProperty("posts_due");
-    expect(bare.marketing()).toMatchObject({ posts: [], posts_due: [] });
+    expect(bare.mod("posts")).toBeUndefined();
     expect(() => bare.save("post", { title: "x" })).toThrow(/"post" türü için "posts" modülü kurulu değil/);
   });
 });

@@ -8,7 +8,6 @@ import { NotesController } from "./controllers/notes.controller";
 import { SectorsController } from "./controllers/sectors.controller";
 import { MiscController } from "./controllers/misc.controller";
 import { SourcesController } from "./controllers/sources.controller";
-import { MarketingController } from "./controllers/marketing.controller";
 import { TagsController, TrashController } from "./controllers/tags.controller";
 import { ChatController } from "./chat/chat.controller";
 import { ChatHub } from "./chat/chat-hub";
@@ -22,7 +21,7 @@ import { moduleControllers } from "./modules.generated";
   controllers: [
     AuthController, MiscController, SourcesController,
     CommentsController, SectorsController, NotesController, LinksController, FilesController,
-    MarketingController, TagsController, TrashController, ChatController,
+    TagsController, TrashController, ChatController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,
   ],

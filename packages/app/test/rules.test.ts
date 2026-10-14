@@ -126,9 +126,9 @@ suite("çekirdek kurallar", () => {
 
   it("6. fiyat tabanı ve aylık rapor (kısmi ödeme ödendiği aya yazılır)", () => {
     t.ozgur.settings.setMany({ bagkur_monthly: 5000, accounting_monthly: 1000, other_fixed_monthly: 2000, target_net_monthly: 22000 });
-    expect(t.ozgur.settings.priceFloor().floor).toBe(30000);
+    expect(t.ozgur.reports.priceFloor().floor).toBe(30000);
     t.ozgur.settings.set("tax_rate_percent", 25);
-    expect(t.ozgur.settings.priceFloor().floor).toBe(40000); // 30000 / 0.75
+    expect(t.ozgur.reports.priceFloor().floor).toBe(40000); // 30000 / 0.75
 
     const proj = t.ozgur.projects.create({ name: "P", person_id: t.person.id, price: 100000 }).row;
     const pays = t.sql("SELECT id, milestone FROM payments WHERE project_id = ? ORDER BY id", proj.id);

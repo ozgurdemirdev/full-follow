@@ -136,6 +136,8 @@ export interface Contributions {
   commentTargets?: Record<string, CommentTargetDef>;
   /** record types the panel chat can show as a chip (`<type>:<id>` keys) */
   chatCards?: Record<string, ChatCard>;
+  /** figures computed from the settings values, added to what `GET /api/settings` returns (the price floor) */
+  settingsView?: (ctx: Ctx, settings: Record<string, unknown>) => Record<string, unknown>;
   /** extra count columns of the sources list: column name to the count per source id (the opportunities of a source) */
   sourceCounts?: (ctx: Ctx) => Record<string, Map<number, number>>;
   /** scheduled work for the server host */
@@ -161,6 +163,8 @@ export interface McpFormat {
   line(type: string, r: Row): string;
   /** a titled list section of a today style view (empty text when the list is empty) */
   section(title: string, type: string, res: { rows: Row[]; total: number }): string;
+  /** the lines the installed modules contribute to the marketing part of the report (`marketing` in their MCP part), unsorted */
+  marketingParts(): { at: number; render(m: any, f: McpFormat): string[] }[];
   /** the confirmation line of a write: `ok · <kind> #<id> <extra> · <effect> · ...` */
   ok(kind: string, id: number | undefined, effects?: string[], extra?: string): string;
 }
@@ -186,7 +190,8 @@ export interface DocFragment {
 /** A tool only this module has */
 export interface McpToolDef {
   name: string;
-  description: string;
+  /** a plain text, or fragments continued by the `docs` fragments the other modules contribute for this tool (the `report` tool) */
+  description: string | DocFragment[];
   input: Record<string, z.ZodType>;
   run(ctx: Ctx, args: any, f: McpFormat): string;
 }
