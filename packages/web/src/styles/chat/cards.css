@@ -7,7 +7,7 @@
 .rc-skel {
   padding: var(--spacing-4) var(--spacing-5);
   border: var(--bw-default) solid var(--color-border-subtle);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-inner);
   background: var(--color-surface-inset);
   color: var(--color-text-muted);
   font-size: var(--text-xs);
@@ -17,7 +17,7 @@
   display: flex;
   flex-direction: column;
   border: var(--bw-default) solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-inner);
   background: var(--color-surface-inset);
   overflow: hidden;
 }
@@ -75,7 +75,7 @@
   white-space: nowrap;
 }
 .rc-main:hover b {
-  color: var(--color-primary-text-soft);
+  color: var(--color-accent-text-soft);
 }
 .rc-row[data-done] .rc-main b {
   color: var(--color-text-muted);
@@ -89,9 +89,9 @@
   place-items: center;
   padding: 0;
   border-radius: var(--radius-sm);
-  border: var(--bw-check) solid var(--color-accent-neutral);
+  border: var(--bw-check) solid var(--color-entity-neutral);
   background: transparent;
-  color: var(--color-primary-on);
+  color: var(--color-accent-on);
   transition:
     background var(--dur-fade),
     border-color var(--dur-fade);
@@ -101,8 +101,8 @@
   transition: opacity var(--dur-fade);
 }
 .rc-chk[aria-checked="true"] {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 .rc-chk[aria-checked="true"] svg {
   opacity: 1;
@@ -137,7 +137,7 @@
   display: block;
   height: 100%;
   border-radius: var(--radius-pill);
-  background: var(--color-primary);
+  background: var(--color-accent);
 }
 .rc-miss {
   padding: var(--spacing-4) var(--spacing-5);
@@ -171,14 +171,14 @@
   font-family: var(--font-sans);
   font-size: var(--text-base-sm);
   line-height: var(--leading-relaxed);
-  color: var(--color-text-body);
+  color: var(--color-text-primary);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
 }
 .rc-tpl-body mark {
-  background: var(--color-primary-soft-bg);
-  color: var(--color-primary-text-soft);
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent-text-soft);
   border-radius: var(--radius-sm);
   padding: 0 var(--spacing-0_5);
 }
@@ -200,13 +200,13 @@
   flex: 1;
 }
 .rc-act.pri {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-on);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-on);
 }
 .rc-act.pri:hover {
   filter: brightness(1.08);
-  background: var(--color-primary);
+  background: var(--color-accent);
 }
 
 /* thumbs up on the user message: an acknowledgement instead of a reply */
@@ -258,8 +258,8 @@
   font-size: var(--text-sm);
 }
 .sugrow button:first-child {
-  border-color: var(--color-primary-soft-border);
-  color: var(--color-primary-text-soft);
+  border-color: var(--color-accent-soft-border);
+  color: var(--color-accent-text-soft);
 }
 .sugrow button:hover {
   background: var(--color-surface-hover);
@@ -267,7 +267,7 @@
 }
 .sugdone {
   font-size: var(--text-xs);
-  color: var(--color-status-text-success);
+  color: var(--color-success);
 }
 .msg.short .md {
   color: var(--color-text-secondary);

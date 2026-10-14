@@ -22,7 +22,7 @@ export function NextStep({ tasks, type, id, personId, followUp }: { tasks: Task[
   return (
     <section className="card rise flex flex-col gap-3 p-8">
       <h2 className="m-0 text-base font-semibold">Sıradaki adım</h2>
-      {note ? <p className={`m-0 text-base-sm ${note.late ? "text-status-text-attention" : "text-text-secondary"}`}>{note.text}</p> : null}
+      {note ? <p className={`m-0 text-base-sm ${note.late ? "text-warning" : "text-text-secondary"}`}>{note.text}</p> : null}
       {t ? (
         <>
           <p className="m-0 text-base leading-normal">{t.title}</p>

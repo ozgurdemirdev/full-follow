@@ -67,12 +67,12 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
           } else if (e.key === "Escape") setOpen(false);
         }}
       />
-      {value.id ? <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-primary-text">seçili</span> : null}
+      {value.id ? <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-accent-text">seçili</span> : null}
       {!value.id && allowNew && value.text.trim() && !exact ? (
         <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-text-muted">yeni</span>
       ) : null}
       {open && hits.length > 0 && !value.id ? (
-        <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-sheet mt-1 flex flex-col rounded-xl border border-border-menu bg-surface-menu p-1 shadow-menu">
+        <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-sheet mt-1 flex flex-col rounded-inner border border-border-menu bg-surface-menu p-1 shadow-menu">
           {hits.map((h, i) => (
             <li key={h.id} role="option" aria-selected={i === active}>
               <button

@@ -12,6 +12,7 @@ const out = resolve(here, "../src/styles/tokens.css");
 const t = JSON.parse(readFileSync(src, "utf8"));
 
 const theme = [];
+const colors = [];
 const root = [];
 const utils = [];
 const v = (name, value) => theme.push(`  --${name}: ${value};`);
@@ -31,7 +32,17 @@ for (const ns of ["color", "font", "text", "font-weight", "leading", "tracking",
   theme.push(`  --${ns}-*: initial;`);
 }
 
-flat(t.color, "color", v);
+// Two level colours: the palette holds raw values (private CSS variables only, no Tailwind
+// utilities); semantic entries reference them as "{palette.<key>}". Mascot colours stay raw.
+const PALETTE_REF = /^\{palette\.([^}]+)\}$/;
+const resolvePalette = (name, val) => {
+  const m = PALETTE_REF.exec(val);
+  if (!m) return val;
+  if (!(m[1] in t.palette)) throw new Error(`tokens.json: unknown palette key "${m[1]}" at ${name}`);
+  return `var(--palette-${m[1]})`;
+};
+for (const [k, val] of Object.entries(t.palette)) root.push(`  --palette-${k}: ${val};`);
+flat(t.color, "color", (name, val) => colors.push(`  --${name}: ${resolvePalette(name, val)};`));
 
 // yazı tipleri fontsource ile yerelden gelir ("Geist Variable"); token'daki aile yedek olarak kalır
 v("font-sans", `"Geist Variable", ${t.font.family.sans}`);
@@ -87,6 +98,10 @@ const css = `/* OTOMATİK ÜRETİLDİ: src/styles/tokens.json → npm run tokens
 ${theme.join("\n")}
 }
 
+@theme inline {
+${colors.join("\n")}
+}
+
 :root {
 ${root.join("\n")}
 }
@@ -94,12 +109,13 @@ ${root.join("\n")}
 ${utils.join("\n\n")}
 `;
 writeFileSync(out, css);
-console.log(`tokens.css: ${theme.length} tema değişkeni, ${utils.length} yardımcı`);
+console.log(`tokens.css: ${theme.length + colors.length} tema değişkeni, ${utils.length} yardımcı`);
 
-// favicon de token renklerinden üretilir
+// favicon de token renklerinden üretilir (çözülmüş değerlerle, var() ile değil)
+const literal = (ref) => t.palette[PALETTE_REF.exec(ref)[1]];
 const pub = resolve(here, "../public");
 mkdirSync(pub, { recursive: true });
 writeFileSync(
   resolve(pub, "favicon.svg"),
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="${t.color.primary.default}"/><text x="16" y="21" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="${t.color.primary.on}">FF</text></svg>\n`,
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="${literal(t.color.accent.default)}"/><text x="16" y="21" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="${literal(t.color.accent.on)}">FF</text></svg>\n`,
 );

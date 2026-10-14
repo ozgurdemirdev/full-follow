@@ -33,19 +33,19 @@ export default function Report() {
               <div className="flex flex-wrap items-baseline gap-5">
                 <h2 className="m-0 flex-grow text-md font-semibold">Aylık tahsilat ve fiyat tabanı</h2>
                 <span className="inline-flex items-center gap-2 text-sm text-text-secondary">
-                  <span className="w-6 border-t-2 border-dashed border-accent-warning" />Taban {tl(floor)}
+                  <span className="w-6 border-t-2 border-dashed border-danger" />Taban {tl(floor)}
                 </span>
               </div>
               <div className="flex flex-col gap-3">
                 <div className="relative grid h-chart-height-mobile grid-cols-6 gap-3 border-b border-border-default desk:h-chart-height desk:gap-6">
-                  {floor ? <div className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-accent-warning" style={{ bottom: `${(floor / max) * 100}%` }} /> : null}
+                  {floor ? <div className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-danger" style={{ bottom: `${(floor / max) * 100}%` }} /> : null}
                   {list.map((x, k) => {
                     const above = x.collected >= x.floor;
                     return (
                       <button key={x.month} type="button" aria-pressed={k === i} aria-label={`${fmtMonth(x.month)} ${tl(x.collected)}`} onClick={() => setSel(k)}
                         className="group flex h-full flex-col items-stretch justify-end border-0 bg-transparent p-0">
                         <div
-                          className={`grow-y rounded-t-md rounded-b-xs outline-2 outline-offset-2 transition-[filter,outline-color] dur-fade group-hover:brightness-110 ${above ? "bg-primary" : "bg-accent-payment"} ${k === i ? "outline-text-primary" : "outline-transparent"}`}
+                          className={`grow-y rounded-t-md rounded-b-xs outline-2 outline-offset-2 transition-[filter,outline-color] dur-fade group-hover:brightness-110 ${above ? "bg-accent" : "bg-entity-payment"} ${k === i ? "outline-text-primary" : "outline-transparent"}`}
                           style={{ height: `${Math.max(1, (x.collected / max) * 100)}%`, ...order(k) }}
                         />
                       </button>
@@ -71,13 +71,13 @@ export default function Report() {
                   <span className="kpi">{tl(m.collected)}</span>
                   <span className="text-base-sm text-text-secondary">/ {tl(m.floor)} taban</span>
                 </div>
-                <span className={`text-base-sm ${m.gap >= 0 ? "text-status-text-success" : "text-status-text-attention"}`}>
+                <span className={`text-base-sm ${m.gap >= 0 ? "text-success" : "text-warning"}`}>
                   {m.gap >= 0 ? `Tabanın ${tl(m.gap)} üstünde` : `Tabana ${tl(-m.gap)} kaldı`}
                   {m.outstanding_due ? ` · bu ay beklenen ${tl(m.outstanding_due)}` : ""}
                 </span>
               </div>
               <div className="h-meter overflow-hidden rounded-pill bg-surface-track">
-                <div className={`h-full rounded-pill transition-[width] dur-rise ease-out ${m.gap >= 0 ? "bg-primary" : "bg-accent-payment"}`} style={{ width: `${m.floor ? Math.min(100, (m.collected / m.floor) * 100) : 100}%` }} />
+                <div className={`h-full rounded-pill transition-[width] dur-rise ease-out ${m.gap >= 0 ? "bg-accent" : "bg-entity-payment"}`} style={{ width: `${m.floor ? Math.min(100, (m.collected / m.floor) * 100) : 100}%` }} />
               </div>
               {f ? (
                 <div className="flex flex-col border-t border-border-default pt-2">
@@ -128,7 +128,7 @@ export default function Report() {
                       <td className="border-b border-border-subtle px-5 py-5">
                         <div className="flex items-center gap-4">
                           <div className="track flex-grow">
-                            <i className={`grow-x ${r === best ? "bg-primary" : "bg-accent-opportunity"}`} style={{ width: `${(r.conversion ?? 0) * 100}%` }} />
+                            <i className={`grow-x ${r === best ? "bg-accent" : "bg-entity-opportunity"}`} style={{ width: `${(r.conversion ?? 0) * 100}%` }} />
                           </div>
                           <span className="w-control-height-md text-right font-mono text-sm">{pct(r.conversion)}</span>
                         </div>

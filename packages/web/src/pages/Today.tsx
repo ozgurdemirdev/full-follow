@@ -69,8 +69,8 @@ function PersonLine({ p, note, late }: { p: Person; note: string; late: boolean 
         <span className="truncate text-base font-medium">
           {p.name} {p.company_name || p.sector_path ? <span className="font-normal text-text-secondary">· {p.company_name ?? p.sector_path}</span> : null}
         </span>
-        <span className={`flex items-center gap-2 text-base-sm ${late ? "text-status-text-attention" : "text-text-secondary"}`}>
-          {ch ? <span className={`dot ${CHANNEL_DOT[ch] ?? "bg-accent-neutral"}`} /> : null}
+        <span className={`flex items-center gap-2 text-base-sm ${late ? "text-warning" : "text-text-secondary"}`}>
+          {ch ? <span className={`dot ${CHANNEL_DOT[ch] ?? "bg-entity-neutral"}`} /> : null}
           {note}
         </span>
       </div>
@@ -171,8 +171,8 @@ function Followups({ list }: { list: List<FollowupDue> }) {
           <Avatar name={f.name} />
           <div className="flex min-w-0 flex-grow flex-col gap-0.5">
             <span className="truncate text-base font-medium">{f.name} {f.company_name ? <span className="font-normal text-text-secondary">· {f.company_name}</span> : null}</span>
-            <span className="flex items-center gap-2 text-base-sm text-status-text-attention">
-              <span className={`dot ${CHANNEL_DOT[f.channel] ?? "bg-accent-neutral"}`} />
+            <span className="flex items-center gap-2 text-base-sm text-warning">
+              <span className={`dot ${CHANNEL_DOT[f.channel] ?? "bg-entity-neutral"}`} />
               {f.days} gündür cevap yok · {channelName(f.channel)}
             </span>
           </div>
@@ -193,10 +193,10 @@ function PostsDue({ list }: { list: List<Post> }) {
       </CardHead>
       {list.rows.slice(0, 5).map((p) => (
         <div key={p.id} className="row flex items-center gap-5 px-9 py-5">
-          <span className={`dot ${PLATFORM_DOT[p.platform] ?? "bg-accent-neutral"}`} />
+          <span className={`dot ${PLATFORM_DOT[p.platform] ?? "bg-entity-neutral"}`} />
           <div className="flex min-w-0 flex-grow flex-col gap-0.5">
             {p.url ? <a href={p.url} target="_blank" rel="noreferrer" className="truncate text-base font-medium text-text-primary">{p.title}</a> : <span className="truncate text-base font-medium">{p.title}</span>}
-            <span className="text-base-sm text-status-text-attention">{PLATFORM[p.platform]} · {refreshNote(p)?.text}</span>
+            <span className="text-base-sm text-warning">{PLATFORM[p.platform]} · {refreshNote(p)?.text}</span>
           </div>
           <Who actor={p.created_by} />
           <button type="button" className="btn btn-sec btn-sm" onClick={() => refresh(p)}>Güncelledim</button>
@@ -246,10 +246,10 @@ function Drafts({ list }: { list: List<Draft> }) {
               <Who actor={d.created_by} />
               <Chip>{CHANNEL[d.channel] ?? d.channel}</Chip>
             </div>
-            <p className="m-0 whitespace-pre-line text-base leading-relaxed text-text-body">{d.body}</p>
-            {d.reason ? <p className="m-0 text-sm text-text-secondary"><span className="text-author-claude-fg">Neden: </span>{d.reason}</p> : null}
+            <p className="m-0 whitespace-pre-line text-base leading-relaxed text-text-primary">{d.body}</p>
+            {d.reason ? <p className="m-0 text-sm text-text-secondary"><span className="text-claude-soft">Neden: </span>{d.reason}</p> : null}
             {isSent ? (
-              <div className="flex items-center gap-2 text-base-sm text-status-text-success">
+              <div className="flex items-center gap-2 text-base-sm text-success">
                 <Icon name="check" className="size-icon-md" stroke={2} />
                 Temas olarak kaydedildi
               </div>
@@ -298,7 +298,7 @@ function FollowUps({ data }: { data: TodayData }) {
             <span className="truncate text-base font-medium">
               {it.name} {it.org ? <span className="font-normal text-text-secondary">· {it.org}</span> : null}
             </span>
-            {it.note ? <span className={`text-base-sm ${it.note.late ? "text-status-text-attention" : "text-text-secondary"}`}>{it.note.text}</span> : null}
+            {it.note ? <span className={`text-base-sm ${it.note.late ? "text-warning" : "text-text-secondary"}`}>{it.note.text}</span> : null}
           </div>
           {it.stage ? <Chip tone="opportunity">{it.stage}</Chip> : null}
         </Link>

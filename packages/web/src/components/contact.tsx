@@ -25,7 +25,7 @@ export function EditDelete({ onEdit, onDelete, label = "" }: { onEdit?: () => vo
   return (
     <span className="flex flex-none gap-1">
       {onEdit ? <button type="button" className="btn btn-ghost btn-sm" aria-label={`${label} düzenle`.trim()} onClick={onEdit}>Düzenle</button> : null}
-      {onDelete ? <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" aria-label={`${label} sil`.trim()} onClick={onDelete}>Sil</button> : null}
+      {onDelete ? <button type="button" className="btn btn-ghost btn-sm text-danger" aria-label={`${label} sil`.trim()} onClick={onDelete}>Sil</button> : null}
     </span>
   );
 }
@@ -66,7 +66,7 @@ export function ContactList({ c }: { c: ContactFields }) {
       {items.map((it) => (
         <div key={it.label} className="flex min-w-0 gap-3">
           <dt className="flex-none text-text-muted">{it.label}</dt>
-          <dd className="m-0 min-w-0 truncate text-text-body">{it.node}</dd>
+          <dd className="m-0 min-w-0 truncate text-text-primary">{it.node}</dd>
         </div>
       ))}
     </dl>
@@ -82,17 +82,17 @@ export function TouchList({ list, showTo }: { list: Touch[]; showTo?: boolean })
     <ol className="m-0 flex list-none flex-col gap-0 p-0">
       {shown.map((t) => (
         <li key={t.id} className="row flex gap-4 py-4">
-          <span className={`dot mt-2 ${CHANNEL_DOT[t.channel] ?? "bg-accent-neutral"}`} />
+          <span className={`dot mt-2 ${CHANNEL_DOT[t.channel] ?? "bg-entity-neutral"}`} />
           <div className="flex min-w-0 flex-grow flex-col gap-1">
             <div className="flex flex-wrap items-baseline gap-2 text-sm text-text-secondary">
-              <span className={t.direction === "gelen" ? "text-status-text-success" : "text-text-body"}>{t.direction === "gelen" ? "Gelen" : "Giden"}</span>
+              <span className={t.direction === "gelen" ? "text-success" : "text-text-primary"}>{t.direction === "gelen" ? "Gelen" : "Giden"}</span>
               <span>{channelName(t.channel)}{t.kind !== "mesaj" ? ` · ${t.kind === "arama" ? "arama" : "görüşme"}` : ""}</span>
-              {showTo ? <span className="text-text-body">· {t.person_id ? t.to_name : "firmaya"}</span> : null}
+              {showTo ? <span className="text-text-primary">· {t.person_id ? t.to_name : "firmaya"}</span> : null}
               <span className="text-text-muted">{ago(t.happened_at)}</span>
               {t.opportunity_title ? <span className="truncate text-text-muted">· {t.opportunity_title}</span> : null}
               <Who actor={t.created_by} />
             </div>
-            <p className="m-0 whitespace-pre-line text-base-sm leading-normal text-text-body">{t.summary}</p>
+            <p className="m-0 whitespace-pre-line text-base-sm leading-normal text-text-primary">{t.summary}</p>
             {t.outcome ? <span className="text-sm text-text-secondary">→ {t.outcome}</span> : null}
             <div className="flex flex-wrap items-center gap-1">
               {t.expects_reply ? <button type="button" className="btn btn-ghost btn-sm px-0" onClick={() => stopWaiting(t)}>Cevap beklemiyorum</button> : null}

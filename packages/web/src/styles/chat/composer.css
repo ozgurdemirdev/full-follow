@@ -69,8 +69,8 @@
   padding: 0;
   border: 0;
   border-radius: var(--radius-md);
-  background: var(--color-primary);
-  color: var(--color-primary-on);
+  background: var(--color-accent);
+  color: var(--color-accent-on);
   font-size: var(--text-sm);
   font-weight: 500;
   transition:
@@ -108,7 +108,7 @@
   color: var(--color-text-disabled);
 }
 .cfoot .warn {
-  color: var(--color-status-text-attention);
+  color: var(--color-warning);
 }
 .cfoot .count {
   margin-left: auto;
@@ -117,8 +117,8 @@
 /* attachments: previews above the input, drag and drop state */
 .composer[data-drag] {
   border-style: dashed;
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft-bg);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft-bg);
 }
 .drophint {
   position: absolute;
@@ -127,7 +127,7 @@
   place-items: center;
   border-radius: inherit;
   font-size: var(--text-base-sm);
-  color: var(--color-primary-text-soft);
+  color: var(--color-accent-text-soft);
   pointer-events: none;
 }
 .atts {
@@ -167,8 +167,8 @@
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
-  background: var(--color-primary-soft-bg);
-  color: var(--color-primary-text-soft);
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent-text-soft);
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   font-weight: 500;
@@ -227,7 +227,7 @@
   width: var(--spacing-chat-thumb-width);
   height: var(--spacing-chat-thumb-height);
   object-fit: cover;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-inner);
   border: var(--bw-default) solid var(--color-border);
   display: block;
 }
@@ -247,8 +247,8 @@
   color: var(--color-text-primary);
 }
 .mic[aria-pressed="true"] {
-  color: var(--color-primary-on);
-  background: var(--color-accent-warning);
+  color: var(--color-accent-on);
+  background: var(--color-danger);
 }
 .voice {
   display: flex;
@@ -276,7 +276,7 @@
   font-size: var(--text-xs);
 }
 .composer[data-listening] {
-  border-color: var(--color-accent-warning);
+  border-color: var(--color-danger);
 }
 .wave {
   display: flex;
@@ -287,7 +287,7 @@
 .wave i {
   width: var(--spacing-0_75);
   border-radius: var(--radius-pill);
-  background: var(--color-accent-warning);
+  background: var(--color-danger);
   animation: chat-wave var(--dur-wave) ease-in-out infinite;
 }
 .wave i:nth-child(2) {
@@ -349,7 +349,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-inner);
   box-shadow: var(--shadow-menu);
   cursor: default;
 }
@@ -375,7 +375,7 @@
   padding: var(--spacing-2) var(--spacing-5);
   border-radius: var(--radius-pill);
   background: var(--color-surface-menu-hover);
-  color: var(--color-text-body);
+  color: var(--color-text-primary);
   font-size: var(--text-sm);
   overflow: hidden;
   text-overflow: ellipsis;

@@ -119,10 +119,10 @@ function IdeaCard({ id }: { id: number }) {
           <span className="flex-grow" />
           {!i.parent_id ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => void toProject()}>Projeye dönüştür</button> : null}
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("idea", { idea_id: i.id })}>Düzenle</button>
-          <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
+          <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={remove}>Sil</button>
         </div>
         {i.parent_id ? <Link href={`${PATHS.ideas}/${i.parent_id}`} className="text-base-sm">Üst fikir: {i.parent_title}</Link> : null}
-        {i.problem ? <p className="m-0 text-base leading-normal text-text-body">{i.problem}</p> : <span className="text-base-sm text-text-muted">Çözdüğü sorun yazılmadı</span>}
+        {i.problem ? <p className="m-0 text-base leading-normal text-text-primary">{i.problem}</p> : <span className="text-base-sm text-text-muted">Çözdüğü sorun yazılmadı</span>}
         {i.sectors.length ? <div className="mt-1 flex flex-wrap gap-2">{i.sectors.map((s) => <Chip key={s.id} tone="source">{s.path}</Chip>)}</div> : null}
       </div>
 
@@ -144,7 +144,7 @@ function IdeaCard({ id }: { id: number }) {
           </div>
         ))}
         {i.told ? (
-          <div className="track col-span-3"><i className="grow-x bg-primary" style={{ width: `${Math.round((i.interest_rate ?? 0) * 100)}%` }} /></div>
+          <div className="track col-span-3"><i className="grow-x bg-accent" style={{ width: `${Math.round((i.interest_rate ?? 0) * 100)}%` }} /></div>
         ) : null}
       </section>
 
@@ -167,7 +167,7 @@ function IdeaCard({ id }: { id: number }) {
           {touches.map((t) => (
             <div key={t.id} className="flex flex-col gap-0.5 text-base-sm">
               <span className="text-text-secondary">{t.person_name} · {t.direction === "gelen" ? "gelen" : "giden"} {channelName(t.channel)} · {ago(t.happened_at)}</span>
-              <span className="whitespace-pre-line text-text-body">{t.summary}</span>
+              <span className="whitespace-pre-line text-text-primary">{t.summary}</span>
             </div>
           ))}
         </section>
@@ -182,7 +182,7 @@ function IdeaCard({ id }: { id: number }) {
         </section>
       ) : null}
 
-      {i.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-body">{i.notes}</p> : null}
+      {i.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{i.notes}</p> : null}
     </aside>
   );
 }

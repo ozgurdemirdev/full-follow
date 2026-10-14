@@ -3,15 +3,15 @@ import { Icon } from "../components/icons";
 import { openSheet, type SheetKind } from "./ui";
 
 const ITEMS: { kind: SheetKind; label: string; dot: string }[] = [
-  { kind: "opportunity", label: "Fırsat", dot: "bg-accent-opportunity" },
-  { kind: "person", label: "Kişi", dot: "bg-accent-person" },
-  { kind: "company", label: "Firma", dot: "bg-accent-company" },
-  { kind: "touch", label: "Temas", dot: "bg-accent-source" },
-  { kind: "draft", label: "Taslak", dot: "bg-accent-claude" },
-  { kind: "post", label: "Paylaşım", dot: "bg-accent-warning" },
-  { kind: "idea", label: "Fikir", dot: "bg-accent-payment" },
-  { kind: "task", label: "Görev", dot: "bg-accent-task" },
-  { kind: "comment", label: "Yorum", dot: "bg-accent-comment" },
+  { kind: "opportunity", label: "Fırsat", dot: "bg-entity-opportunity" },
+  { kind: "person", label: "Kişi", dot: "bg-entity-person" },
+  { kind: "company", label: "Firma", dot: "bg-entity-company" },
+  { kind: "touch", label: "Temas", dot: "bg-entity-source" },
+  { kind: "draft", label: "Taslak", dot: "bg-claude" },
+  { kind: "post", label: "Paylaşım", dot: "bg-danger" },
+  { kind: "idea", label: "Fikir", dot: "bg-entity-payment" },
+  { kind: "task", label: "Görev", dot: "bg-entity-task" },
+  { kind: "comment", label: "Yorum", dot: "bg-entity-comment" },
 ];
 
 /** Sağ alttaki hızlı ekle düğmesi ve menüsü (CSS geçişleri, JS animasyon yok) */
@@ -64,7 +64,7 @@ export function Fab() {
         aria-label="Hızlı ekle"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-fab-offset-mobile right-fab-offset-mobile z-fab inline-flex size-fab-size items-center justify-center rounded-fab border-0 bg-primary text-primary-on shadow-fab transition-[transform,filter] dur-fade ease-out hover:-translate-y-0.5 hover:brightness-110 desk:bottom-fab-offset desk:right-fab-offset"
+        className="fixed bottom-fab-offset-mobile right-fab-offset-mobile z-fab inline-flex size-fab-size items-center justify-center rounded-fab border-0 bg-accent text-accent-on shadow-fab transition-[transform,filter] dur-fade ease-out hover:-translate-y-0.5 hover:brightness-110 desk:bottom-fab-offset desk:right-fab-offset"
       >
         <span className={`transition-transform dur-sidebar ease-out ${open ? "rotate-45" : ""}`}>
           <Icon name="plus" className="size-icon-2xl" stroke={2.2} />

@@ -92,7 +92,7 @@ function OpportunityPage({ id }: { id: number }) {
             ))}
           </div>
         </div>
-        {o.lost_reason ? <p className="m-0 text-base-sm text-status-text-danger">Neden: {o.lost_reason}</p> : null}
+        {o.lost_reason ? <p className="m-0 text-base-sm text-danger">Neden: {o.lost_reason}</p> : null}
         <div className="flex flex-wrap gap-3">
           {o.project_id ? <Link href={`${PATHS.projects}/${o.project_id}`} className="btn btn-pri">Projeye git</Link> : null}
           <button type="button" className="btn btn-sec" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>Temas ekle</button>

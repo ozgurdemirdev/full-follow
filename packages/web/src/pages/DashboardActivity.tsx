@@ -68,10 +68,10 @@ export function DashboardActivity({ d }: { d: TodayData }) {
   };
   const cards = cur ? [
     period.key === "week" && target
-      ? { label: "Giden mesaj", value: `${cur.sent}/${target}`, note: cur.sent >= target ? "hedef tamam" : `hedefe ${target - cur.sent} kaldı`, tone: cur.sent >= target ? "text-status-text-success" : "text-status-text-attention" }
-      : { label: "Giden mesaj", value: cur.sent, note: delta("sent"), tone: diff("sent") > 0 ? "text-status-text-success" : "text-text-secondary" },
+      ? { label: "Giden mesaj", value: `${cur.sent}/${target}`, note: cur.sent >= target ? "hedef tamam" : `hedefe ${target - cur.sent} kaldı`, tone: cur.sent >= target ? "text-success" : "text-warning" }
+      : { label: "Giden mesaj", value: cur.sent, note: delta("sent"), tone: diff("sent") > 0 ? "text-success" : "text-text-secondary" },
     { label: "Dönüş alınan", value: cur.replies, note: cur.sent ? `${pct(cur.replies / cur.sent)} dönüş` : delta("replies"), tone: "text-text-secondary" },
-    { label: "Cevap bekleyen", value: d.network.awaiting.total, note: late ? `${late} kişi ${d.network.settings.reply_wait_days}+ gündür` : "şu an", tone: "text-status-text-attention" },
+    { label: "Cevap bekleyen", value: d.network.awaiting.total, note: late ? `${late} kişi ${d.network.settings.reply_wait_days}+ gündür` : "şu an", tone: "text-warning" },
     { label: "Yeni kayıt", value: cur.new_people + cur.new_companies, note: `${cur.new_people} kişi · ${cur.new_companies} firma${cur.meetings ? ` · ${cur.meetings} görüşme` : ""}`, tone: "text-text-secondary" },
   ] : [];
 
@@ -114,15 +114,15 @@ function TouchChart({ a }: { a: Activity }) {
     <section className="card rise flex flex-col gap-6 p-8" style={order(5)} aria-label="Temas grafiği">
       <div className="flex flex-wrap items-baseline gap-5">
         <h2 className="m-0 flex-grow text-md font-semibold">Temaslar</h2>
-        <span className="inline-flex items-center gap-2 text-sm text-text-secondary"><span className="dot bg-accent-opportunity" />Giden</span>
-        <span className="inline-flex items-center gap-2 text-sm text-text-secondary"><span className="dot bg-primary" />Dönüş</span>
+        <span className="inline-flex items-center gap-2 text-sm text-text-secondary"><span className="dot bg-entity-opportunity" />Giden</span>
+        <span className="inline-flex items-center gap-2 text-sm text-text-secondary"><span className="dot bg-accent" />Dönüş</span>
       </div>
       <div className={`grid h-chart-height-mobile items-end gap-2 border-b border-border-default desk:h-chart-height desk:gap-3 ${cols}`}>
         {a.buckets.map((b, k) => (
           <div key={b.start} className="flex h-full items-end justify-center gap-0.5" title={`${bucketLabel(b, a.period)}: ${b.sent} giden, ${b.replies} dönüş`}
             aria-label={`${bucketLabel(b, a.period)}: ${b.sent} giden, ${b.replies} dönüş`}>
-            <div className="grow-y w-full rounded-t-sm bg-accent-opportunity" style={{ height: `${(b.sent / max) * 100}%`, ...order(k) }} />
-            <div className="grow-y w-full rounded-t-sm bg-primary" style={{ height: `${(b.replies / max) * 100}%`, ...order(k) }} />
+            <div className="grow-y w-full rounded-t-sm bg-entity-opportunity" style={{ height: `${(b.sent / max) * 100}%`, ...order(k) }} />
+            <div className="grow-y w-full rounded-t-sm bg-accent" style={{ height: `${(b.replies / max) * 100}%`, ...order(k) }} />
           </div>
         ))}
       </div>
@@ -133,7 +133,7 @@ function TouchChart({ a }: { a: Activity }) {
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
           {a.channels.map((c) => (
             <span key={c.channel} className="inline-flex items-center gap-2">
-              <span className={`dot ${CHANNEL_DOT[c.channel] ?? "bg-accent-neutral"}`} />
+              <span className={`dot ${CHANNEL_DOT[c.channel] ?? "bg-entity-neutral"}`} />
               {channelName(c.channel)} {c.sent} giden{c.replies ? `, ${c.replies} dönüş` : ""}
             </span>
           ))}

@@ -452,7 +452,7 @@ function Done({ title, text, again, href, hrefLabel }: { title: string; text: st
         initial={{ scale: 0.4, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: dur.rise, ease: ease.pop }}
-        className="flex size-tick items-center justify-center rounded-pill bg-primary-soft-bg text-primary-text"
+        className="flex size-tick items-center justify-center rounded-pill bg-accent-soft-bg text-accent-text"
       >
         <Icon name="check" className="size-icon-2xl" stroke={2.4} />
       </m.div>

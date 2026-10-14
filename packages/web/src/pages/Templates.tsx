@@ -65,7 +65,7 @@ function TemplateCard({ t, i }: { t: Template; i: number }) {
         <span className="flex-grow" />
         <button type="button" className="btn btn-sec btn-sm" onClick={() => openSheet("draft", { template_id: t.id, channel: t.channel ?? undefined })}>Kullan</button>
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("template", { template_id: t.id })}>Düzenle</button>
-        <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
+        <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={remove}>Sil</button>
       </div>
     </article>
   );

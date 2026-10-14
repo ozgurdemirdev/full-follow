@@ -11,7 +11,7 @@
   gap: var(--spacing-5);
   background: var(--color-surface-menu);
   border: var(--bw-default) solid var(--color-border-menu);
-  border-radius: var(--radius-card-sm);
+  border-radius: var(--radius-inner);
   box-shadow: var(--shadow-menu);
 }
 .pop label {
@@ -27,7 +27,7 @@
   gap: var(--spacing-0_5);
   background: var(--color-bg-sidebar);
   border: var(--bw-default) solid var(--color-border-sidebar);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-inner);
 }
 .cseg button {
   flex: 1;
@@ -49,7 +49,7 @@
 }
 .pop .hint {
   font-size: var(--text-xs);
-  color: var(--color-primary-text-soft);
+  color: var(--color-accent-text-soft);
 }
 .pop .group {
   display: flex;

@@ -30,7 +30,7 @@ function Numbers({ r }: { r: WeeklyReview }) {
       <Stat title="Giden mesaj" value={r.target ? `${w.sent} / ${r.target}` : w.sent} prev={l.sent}>
         {r.target ? (
           <span className="track">
-            <i className={`grow-x ${w.sent >= r.target ? "bg-status-text-success" : "bg-accent-payment"}`} style={{ width: `${Math.min(100, (w.sent / r.target) * 100)}%` }} />
+            <i className={`grow-x ${w.sent >= r.target ? "bg-success" : "bg-entity-payment"}`} style={{ width: `${Math.min(100, (w.sent / r.target) * 100)}%` }} />
           </span>
         ) : null}
       </Stat>

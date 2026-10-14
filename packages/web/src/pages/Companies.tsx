@@ -138,7 +138,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
               <Avatar name={p.name} size="sm" />
               <span className="flex min-w-0 flex-grow flex-col">
                 <span className="truncate text-base">{p.name}</span>
-                {st ? <span className={`truncate text-sm ${st.late ? "text-status-text-attention" : "text-text-muted"}`}>{st.text}</span> : null}
+                {st ? <span className={`truncate text-sm ${st.late ? "text-warning" : "text-text-muted"}`}>{st.text}</span> : null}
               </span>
               <StatusChip status={p.contact_status} />
             </Link>
@@ -151,7 +151,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
           <div className="flex flex-wrap gap-3">
             {c.channels.map((ch) => (
               <span key={ch.channel} className="fchip inline-flex items-center gap-2" title={`son ${fmtDay(ch.last_at)}`}>
-                <span className={`dot ${CHANNEL_DOT[ch.channel] ?? "bg-accent-neutral"}`} />
+                <span className={`dot ${CHANNEL_DOT[ch.channel] ?? "bg-entity-neutral"}`} />
                 {channelName(ch.channel)} {ch.out_count}↗ {ch.in_count}↙
               </span>
             ))}
@@ -175,7 +175,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
 
       <Comments target={{ type: "company", id: co.id, label: co.name }} threads={c.threads} />
 
-      {co.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-body">{co.notes}</p> : null}
+      {co.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{co.notes}</p> : null}
     </aside>
   );
 }

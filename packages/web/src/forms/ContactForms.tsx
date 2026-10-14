@@ -413,7 +413,7 @@ function TouchFields({ channel, setChannel, kind, setKind }: { channel: string; 
 
 function WaitBox({ wait, setWait }: { wait: boolean; setWait: (w: boolean) => void }) {
   return (
-    <label className="flex items-center gap-3 text-base-sm text-text-body">
+    <label className="flex items-center gap-3 text-base-sm text-text-primary">
       <input type="checkbox" checked={wait} onChange={(e) => setWait(e.target.checked)} />
       Cevap bekliyorum (gelmezse Dashboard’da “Cevap bekleyenler”e düşer)
     </label>

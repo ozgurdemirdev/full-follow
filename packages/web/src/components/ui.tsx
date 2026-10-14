@@ -101,7 +101,7 @@ export function PageSkeleton() {
 export function ErrorBox({ error, retry }: { error?: ApiError | Error; retry?: () => void }) {
   if (!error) return null;
   return (
-    <div className="card flex flex-wrap items-center gap-5 p-9 text-base text-status-text-danger" role="alert">
+    <div className="card flex flex-wrap items-center gap-5 p-9 text-base text-danger" role="alert">
       <span className="flex-grow">{error.message || "Yüklenemedi"}</span>
       {retry ? <button type="button" className="btn btn-sec" onClick={retry}>Tekrar dene</button> : null}
     </div>

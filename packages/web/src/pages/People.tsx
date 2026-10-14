@@ -96,15 +96,15 @@ function PersonRow({ p, active, onPick }: { p: Person; active: boolean; onPick: 
         <span className="truncate text-base font-medium">{p.name}</span>
         <span className="truncate text-base-sm text-text-secondary">{[p.role, p.company_name, p.sector_path].filter(Boolean).join(" · ") || p.handle || p.email || ""}</span>
         {st ? (
-          <span className={`flex items-center gap-2 truncate text-sm ${st.late ? "text-status-text-attention" : "text-text-muted"}`}>
-            {p.last_channel ? <span className={`dot ${CHANNEL_DOT[p.awaiting?.channel ?? p.last_channel] ?? "bg-accent-neutral"}`} /> : null}
+          <span className={`flex items-center gap-2 truncate text-sm ${st.late ? "text-warning" : "text-text-muted"}`}>
+            {p.last_channel ? <span className={`dot ${CHANNEL_DOT[p.awaiting?.channel ?? p.last_channel] ?? "bg-entity-neutral"}`} /> : null}
             {st.text}
           </span>
         ) : null}
       </span>
       <span className="flex flex-col items-end gap-2">
         <span className="flex flex-wrap justify-end gap-1"><Tags ids={p.tag_ids} /><Who actor={p.created_by} /></span>
-        {follow ? <span className={`text-sm ${follow.late ? "text-status-text-attention" : "text-text-secondary"}`}>{follow.text}</span> : null}
+        {follow ? <span className={`text-sm ${follow.late ? "text-warning" : "text-text-secondary"}`}>{follow.text}</span> : null}
       </span>
     </button>
   );
@@ -164,9 +164,9 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
             {c.channels.map((ch) => (
               <button key={ch.channel} type="button" className="fchip inline-flex items-center gap-2" aria-pressed={channel === ch.channel} onClick={() => setChannel(channel === ch.channel ? "" : ch.channel)}
                 title={`${ch.out_count} giden, ${ch.in_count} gelen · son ${fmtDay(ch.last_at)}`}>
-                <span className={`dot ${CHANNEL_DOT[ch.channel] ?? "bg-accent-neutral"}`} />
+                <span className={`dot ${CHANNEL_DOT[ch.channel] ?? "bg-entity-neutral"}`} />
                 {channelName(ch.channel)} {ch.out_count}↗ {ch.in_count}↙
-                {ch.awaiting ? <span className="text-status-text-attention">· bekliyor</span> : null}
+                {ch.awaiting ? <span className="text-warning">· bekliyor</span> : null}
               </button>
             ))}
           </div>
@@ -233,7 +233,7 @@ function Card({ id, ref }: { id: number; ref: Ref<HTMLElement> }) {
         </Section>
       ) : null}
 
-      {p.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-body">{p.notes}</p> : null}
+      {p.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{p.notes}</p> : null}
       <Link href={timelinePath("person", p.id)} className="text-base-sm">Tüm zaman çizelgesi</Link>
     </aside>
   );
@@ -302,5 +302,5 @@ export function ReferralValueLine({ v }: { v: NonNullable<PersonCard["referral_v
     v.open_value ? `açıkta ${tl(v.open_value)}` : "",
     v.collected ? `tahsil edilen ${tl(v.collected)}` : "",
   ].filter(Boolean);
-  return <p className="m-0 text-base-sm text-text-body"><span className="text-text-secondary">Referans değeri: </span>{parts.join(" · ")}</p>;
+  return <p className="m-0 text-base-sm text-text-primary"><span className="text-text-secondary">Referans değeri: </span>{parts.join(" · ")}</p>;
 }

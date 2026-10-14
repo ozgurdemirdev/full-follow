@@ -15,7 +15,7 @@ function RateBar({ rate, early, leader }: { rate: number | null; early: boolean;
   return (
     <div className="flex min-w-0 flex-grow items-center gap-4">
       <div className="track flex-grow">
-        <i className={`grow-x ${early ? "bg-accent-neutral" : leader ? "bg-primary" : "bg-accent-opportunity"}`} style={{ width: `${(rate ?? 0) * 100}%` }} />
+        <i className={`grow-x ${early ? "bg-entity-neutral" : leader ? "bg-accent" : "bg-entity-opportunity"}`} style={{ width: `${(rate ?? 0) * 100}%` }} />
       </div>
       <span className="w-control-height-md flex-none text-right font-mono text-sm">{pct(rate)}</span>
     </div>

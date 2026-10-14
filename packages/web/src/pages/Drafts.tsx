@@ -101,9 +101,9 @@ function DraftCard({ d, i }: { d: Draft; i: number }) {
         <Who actor={d.created_by} />
         <span className="text-base-sm text-text-secondary">{ago(d.created_at)} hazırladı</span>
       </div>
-      {d.reason ? <p className="m-0 text-base-sm text-text-secondary"><span className="font-medium text-author-claude-fg">Neden şimdi: </span>{d.reason}</p> : null}
+      {d.reason ? <p className="m-0 text-base-sm text-text-secondary"><span className="font-medium text-claude-soft">Neden şimdi: </span>{d.reason}</p> : null}
       {editing ? (
-        <textarea className="inp min-h-textarea-lg border-primary text-base leading-relaxed" aria-label="Taslak metni" value={text} onChange={(e) => setText(e.target.value)} autoFocus />
+        <textarea className="inp min-h-textarea-lg border-accent text-base leading-relaxed" aria-label="Taslak metni" value={text} onChange={(e) => setText(e.target.value)} autoFocus />
       ) : (
         <p className="inset m-0 whitespace-pre-line px-7 py-6 text-base leading-relaxed">{d.body}</p>
       )}
@@ -124,7 +124,7 @@ function DraftCard({ d, i }: { d: Draft; i: number }) {
           <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setRejecting(true)}>Reddet</button>
         </div>
       ) : (
-        <span className={`text-base-sm ${d.status === "gonderildi" ? "text-status-text-success" : "text-status-text-danger"}`}>
+        <span className={`text-base-sm ${d.status === "gonderildi" ? "text-success" : "text-danger"}`}>
           {d.status === "gonderildi" ? "Gönderildi · temas olarak kaydedildi" : `Reddedildi${d.reject_note ? `: ${d.reject_note}` : ""} · Claude yeni bir taslak önerebilir`}
         </span>
       )}

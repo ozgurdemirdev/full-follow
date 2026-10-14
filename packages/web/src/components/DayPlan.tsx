@@ -40,7 +40,7 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
           <span className="truncate text-base font-medium">{g.title}</span>
           {sub ? <span className="truncate text-sm text-text-muted">{sub}</span> : null}
         </span>
-        <span className={`font-mono text-base ${g.complete ? "text-status-text-success" : "text-text-secondary"}`}>{g.done} / {g.target}</span>
+        <span className={`font-mono text-base ${g.complete ? "text-success" : "text-text-secondary"}`}>{g.done} / {g.target}</span>
         <span className="flex basis-full items-center justify-end gap-3 desk:basis-auto">
           <button type="button" className="btn btn-sec btn-sm" aria-label={`${g.title} -1`} disabled={g.manual < 1} onClick={() => void step(-1)}>−1</button>
           {STEPS.map((n) => (
@@ -50,7 +50,7 @@ function GoalRow({ g, date }: { g: GoalDay; date: string }) {
         </span>
       </div>
       <div className="track">
-        <i className={`grow-x ${g.complete ? "bg-status-text-success" : "bg-accent-payment"}`} style={{ width: `${share}%` }} />
+        <i className={`grow-x ${g.complete ? "bg-success" : "bg-entity-payment"}`} style={{ width: `${share}%` }} />
       </div>
       {more ? (
         <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ function TaskRow({ t, date }: { t: PlanTask; date: string }) {
       </button>
       <span className="flex min-w-0 flex-grow flex-col">
         <span className={`text-base transition-colors dur-fade ${t.done_at ? "text-text-disabled line-through" : ""}`}>{t.title}</span>
-        {late && !t.done_at ? <span className="text-sm text-status-text-attention">{fmtDay(t.due_date)} tarihliydi</span> : null}
+        {late && !t.done_at ? <span className="text-sm text-warning">{fmtDay(t.due_date)} tarihliydi</span> : null}
       </span>
       {more ? <EditDelete label="Görev" onEdit={() => openSheet("task", { edit: t.id })} onDelete={() => void remove(`/tasks/${t.id}`, "Görev").catch(() => {})} /> : null}
       <More open={more} onToggle={() => setMore(!more)} label={t.title} />

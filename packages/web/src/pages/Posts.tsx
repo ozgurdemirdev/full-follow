@@ -78,7 +78,7 @@ function PostRow({ p, open, toggle }: { p: Post; open: boolean; toggle: () => vo
   return (
     <article data-record={`post-${p.id}`} className="row cv-auto flex flex-col gap-4 px-9 py-7">
       <div className="flex items-start gap-4">
-        <span className={`dot mt-3 ${PLATFORM_DOT[p.platform] ?? "bg-accent-neutral"}`} />
+        <span className={`dot mt-3 ${PLATFORM_DOT[p.platform] ?? "bg-entity-neutral"}`} />
         <div className="flex min-w-0 flex-grow flex-col gap-1">
           <span className="text-base font-medium">
             {p.url ? <a href={p.url} target="_blank" rel="noreferrer" className="text-text-primary">{p.title}</a> : p.title}
@@ -86,7 +86,7 @@ function PostRow({ p, open, toggle }: { p: Post; open: boolean; toggle: () => vo
           </span>
           <span className="flex flex-wrap gap-x-3 text-base-sm text-text-secondary">
             <span>{PLATFORM[p.platform]} · {fmtDay(p.posted_at)}</span>
-            {note ? <span className={note.late ? "text-status-text-attention" : ""}>· {note.text}</span> : <span className="text-text-muted">· hatırlatma yok</span>}
+            {note ? <span className={note.late ? "text-warning" : ""}>· {note.text}</span> : <span className="text-text-muted">· hatırlatma yok</span>}
           </span>
         </div>
         {p.refresh_due ? <Chip tone="warning">Güncelle</Chip> : null}
@@ -108,7 +108,7 @@ function PostRow({ p, open, toggle }: { p: Post; open: boolean; toggle: () => vo
           </button>
         ) : null}
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("post", { post_id: p.id })}>Düzenle</button>
-        <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
+        <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={remove}>Sil</button>
       </div>
     </article>
   );

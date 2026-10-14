@@ -30,14 +30,14 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         active ? "bg-surface-2 text-text-primary" : "text-text-secondary hover:bg-surface-nav-hover hover:text-text-primary"
       }`}
     >
-      <span className={`flex-none ${active ? "text-primary-text" : ""}`}>
+      <span className={`flex-none ${active ? "text-accent-text" : ""}`}>
         <Icon name={item.icon} />
       </span>
       <span className="lbl">{item.label}</span>
       {item.count ? (
         <span
           className={`lbl ml-auto rounded-pill px-2 text-xs font-medium ${
-            item.tone === "opportunity" ? "bg-chip-opportunity-bg text-chip-opportunity-fg" : "bg-author-claude-bg text-author-claude-fg"
+            item.tone === "opportunity" ? "bg-chip-opportunity-bg text-chip-opportunity-fg" : "bg-claude-bg text-claude-soft"
           }`}
         >
           {item.count}
@@ -106,7 +106,7 @@ export function Sidebar() {
           ${drawer ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "desk:w-sidebar-collapsed" : "desk:w-sidebar-width"}`}
       >
         <div className="mb-4 flex h-control-height-lg items-center gap-4 pl-2 pr-2">
-          <div className="flex size-logo flex-none items-center justify-center rounded-lg bg-primary text-base-sm font-semibold tracking-title text-primary-on">FF</div>
+          <div className="flex size-logo flex-none items-center justify-center rounded-lg bg-accent text-base-sm font-semibold tracking-title text-accent-on">FF</div>
           <span className="lbl text-md font-semibold tracking-subtitle">Full Follow</span>
         </div>
 

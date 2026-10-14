@@ -361,7 +361,7 @@ export function TemplateForm(p: FormProps) {
       {body.includes("{") ? (
         <div className="flex flex-col gap-2">
           <Chip className="self-start">Önizleme</Chip>
-          <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-body">{preview}</p>
+          <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{preview}</p>
         </div>
       ) : null}
     </form>

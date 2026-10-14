@@ -10,9 +10,9 @@ import { useOpenRecord } from "../../lib/openRecord";
 import { Icon } from "../icons";
 
 const DOT: Record<string, string> = {
-  task: "var(--color-accent-task)", goal: "var(--color-accent-payment)", person: "var(--color-accent-person)", company: "var(--color-accent-company)",
-  opportunity: "var(--color-accent-opportunity)", draft: "var(--color-primary)", template: "var(--color-accent-source)", idea: "var(--color-accent-payment)",
-  payment: "var(--color-accent-payment)", post: "var(--color-accent-warning)", comment: "var(--color-accent-comment)",
+  task: "var(--color-entity-task)", goal: "var(--color-entity-payment)", person: "var(--color-entity-person)", company: "var(--color-entity-company)",
+  opportunity: "var(--color-entity-opportunity)", draft: "var(--color-accent)", template: "var(--color-entity-source)", idea: "var(--color-entity-payment)",
+  payment: "var(--color-entity-payment)", post: "var(--color-danger)", comment: "var(--color-entity-comment)",
 };
 
 /** One request per block, kept per message so scrolling and re-renders do not fetch again; reopening a session fetches fresh rows */

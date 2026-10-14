@@ -182,7 +182,7 @@
   width: var(--spacing-dot);
   height: var(--spacing-dot);
   border-radius: var(--radius-pill);
-  background: var(--color-primary);
+  background: var(--color-accent);
   flex: none;
   animation: chat-blink var(--dur-blink) ease-in-out infinite;
 }
@@ -248,7 +248,7 @@
 }
 .ttl:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-surface-inset);
   box-shadow: var(--shadow-focus-ring);
 }
@@ -313,10 +313,10 @@
     background var(--dur-fade);
 }
 .meters[data-ctx-warn] .ctx .ctrack > i {
-  background: var(--color-accent-payment);
+  background: var(--color-entity-payment);
 }
 .meters[data-ctx-warn] .ctx b {
-  color: var(--color-status-text-attention);
+  color: var(--color-warning);
 }
 .ctx b,
 .lim b {
@@ -342,16 +342,16 @@
   mask: radial-gradient(farthest-side, transparent calc(100% - var(--spacing-0_75)), black calc(100% - var(--spacing-0_75)));
 }
 .lim[data-warn] {
-  --c: var(--color-accent-payment);
+  --c: var(--color-entity-payment);
 }
 .lim[data-warn] b {
-  color: var(--color-status-text-attention);
+  color: var(--color-warning);
 }
 .lim[data-danger] {
-  --c: var(--color-accent-warning);
+  --c: var(--color-danger);
 }
 .lim[data-danger] b {
-  color: var(--color-status-text-danger);
+  color: var(--color-danger);
 }
 .chat [data-tip] {
   position: relative;
@@ -368,7 +368,7 @@
   border-radius: var(--radius-md);
   background: var(--color-surface-menu-hover);
   border: var(--bw-default) solid var(--color-border-menu);
-  color: var(--color-text-body);
+  color: var(--color-text-primary);
   font-size: var(--text-xs);
   line-height: var(--leading-normal);
   box-shadow: var(--shadow-menu);
@@ -381,7 +381,7 @@
 .ctx-note {
   padding: var(--spacing-2) var(--spacing-6);
   font-size: var(--text-xs);
-  color: var(--color-status-text-attention);
+  color: var(--color-warning);
   background: var(--color-chip-payment-bg);
 }
 

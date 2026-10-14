@@ -29,8 +29,8 @@ export const CHANNEL: Record<string, string> = {
 };
 /** Kanal noktası rengi */
 export const CHANNEL_DOT: Record<string, string> = {
-  email: "bg-accent-opportunity", instagram: "bg-accent-source", linkedin: "bg-chip-opportunity-fg", telefon: "bg-accent-payment",
-  yuz_yuze: "bg-primary", whatsapp: "bg-status-text-success", r10: "bg-accent-warning", diger: "bg-accent-neutral",
+  email: "bg-entity-opportunity", instagram: "bg-entity-source", linkedin: "bg-chip-opportunity-fg", telefon: "bg-entity-payment",
+  yuz_yuze: "bg-accent", whatsapp: "bg-success", r10: "bg-danger", diger: "bg-entity-neutral",
 };
 export const CHANNELS = Object.keys(CHANNEL);
 /** Channels that get a daily outgoing message limit in Settings */
@@ -45,7 +45,7 @@ export const CONTACT_STATUSES = Object.keys(CONTACT_STATUS);
 export const isKnown = (status: string) => status === "tanidik" || status === "arkadas";
 export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi: "opportunity", cevap_geldi: "payment", gorusuldu: "success", olumsuz: "warning", es_gecildi: "neutral", tanidik: "source", arkadas: "success" };
 export const STATUS_DOT: Record<string, string> = {
-  yazilmadi: "bg-accent-neutral", yazildi: "bg-accent-opportunity", cevap_geldi: "bg-accent-payment", gorusuldu: "bg-primary", olumsuz: "bg-accent-warning", es_gecildi: "bg-text-disabled", tanidik: "bg-accent-source", arkadas: "bg-accent-comment",
+  yazilmadi: "bg-entity-neutral", yazildi: "bg-entity-opportunity", cevap_geldi: "bg-entity-payment", gorusuldu: "bg-accent", olumsuz: "bg-danger", es_gecildi: "bg-text-disabled", tanidik: "bg-entity-source", arkadas: "bg-entity-comment",
 };
 
 export const TARGET: Record<string, string> = {
@@ -58,7 +58,7 @@ export const ACTOR: Record<Actor, string> = { ozgur: "Özgür", claude: "Claude"
 // ---- Paket 2: pazarlama ----
 export const PLATFORM: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 export const PLATFORMS = Object.keys(PLATFORM);
-export const PLATFORM_DOT: Record<string, string> = { r10: "bg-accent-warning", linkedin: "bg-chip-opportunity-fg", instagram: "bg-accent-source", diger: "bg-accent-neutral" };
+export const PLATFORM_DOT: Record<string, string> = { r10: "bg-danger", linkedin: "bg-chip-opportunity-fg", instagram: "bg-entity-source", diger: "bg-entity-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
 export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
 /** What a goal can count by itself besides a channel */
@@ -85,7 +85,7 @@ export const INTEREST_TONE: Record<string, Tone> = { anlatildi: "neutral", ilgil
 /** Yazar çipi */
 export const WHO_CLS: Record<Actor, string> = {
   ozgur: "bg-author-ozgur-bg text-author-ozgur-fg",
-  claude: "bg-author-claude-bg text-author-claude-fg",
+  claude: "bg-claude-bg text-claude-soft",
 };
 
 /** Hap çip tonları */
@@ -96,7 +96,7 @@ export const TONE_CLS: Record<Tone, string> = {
   warning: "bg-chip-warning-bg text-chip-warning-fg",
   neutral: "bg-chip-neutral-bg text-chip-neutral-fg",
   success: "bg-chip-success-bg text-chip-success-fg",
-  claude: "bg-author-claude-bg text-author-claude-fg",
+  claude: "bg-claude-bg text-claude-soft",
 };
 
 /** Etiket renkleri (veritabanındaki etiketin color alanı → token sınıfı) */

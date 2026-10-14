@@ -148,7 +148,7 @@ function PersonCard({ p, touches, detail }: { p: Person; touches: Touch[]; detai
         </div>
         <div className="grid grid-cols-3 gap-3 text-center">
           {stats.map((s) => (
-            <div key={s.l} className="rounded-xl bg-surface-inset px-1 py-4">
+            <div key={s.l} className="rounded-inner bg-surface-inset px-1 py-4">
               <div className="text-xl font-semibold">{s.n}</div>
               <div className="text-xs text-text-secondary">{s.l}</div>
             </div>
@@ -185,7 +185,7 @@ function Referrals({ by, name, referrals }: { by: { id: number; name: string } |
       <div className="flex flex-col">
         {by ? (
           <Link href={timelinePath("person", by.id)} className="flex items-center gap-4 text-base-sm">
-            <span className="dot bg-accent-source" />{by.name} tanıttı
+            <span className="dot bg-entity-source" />{by.name} tanıttı
           </Link>
         ) : null}
         <div className="ml-1 flex flex-col gap-3 border-l-2 border-border-subtle py-3 pl-6">
@@ -237,7 +237,7 @@ function OppCard({ o }: { o: Opportunity }) {
           {o.source_url ? <a href={o.source_url} target="_blank" rel="noreferrer" className="min-w-0 truncate">{o.source_url}</a> : null}
         </p>
       ) : null}
-      {o.lost_reason ? <p className="m-0 text-base-sm text-status-text-danger">Neden: {o.lost_reason}</p> : null}
+      {o.lost_reason ? <p className="m-0 text-base-sm text-danger">Neden: {o.lost_reason}</p> : null}
       <div className="flex flex-col gap-3">
         <span className="lab">Aşamayı değiştir</span>
         <div className="flex flex-wrap gap-2">
@@ -278,14 +278,14 @@ function ProjectCard({ p, payments }: { p: Project; payments: Payment[] }) {
         </div>
         <div className="flex items-baseline gap-3">
           <span className="text-base-sm text-text-secondary">Aşama</span>
-          <span className="text-base font-medium text-primary-text-soft">{PROJECT_STAGE[p.stage]}</span>
+          <span className="text-base font-medium text-accent-text-soft">{PROJECT_STAGE[p.stage]}</span>
           <span className="flex-grow" />
           <span className="font-mono text-base-sm">{tl(p.price)}</span>
         </div>
         <div className="grid grid-cols-6 gap-1">
           {PROJECT_STEPS.map((s, k) => (
             <button key={s} type="button" title={PROJECT_STAGE[s]} aria-label={PROJECT_STAGE[s]} disabled={busy || k === idx} onClick={() => move(s)}
-              className={`h-bar rounded-pill border-0 p-0 ${k < idx ? "bg-primary" : k === idx ? "step-now" : "bg-surface-track"}`} />
+              className={`h-bar rounded-pill border-0 p-0 ${k < idx ? "bg-accent" : k === idx ? "step-now" : "bg-surface-track"}`} />
           ))}
         </div>
         <div className="flex flex-wrap gap-3">

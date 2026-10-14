@@ -46,7 +46,7 @@ export function OffersCard({ opportunityId, offers, files }: { opportunityId: nu
                 ? <button type="button" className="btn btn-sec btn-sm" onClick={() => accept(o, false)}>Kabulü geri al</button>
                 : <button type="button" className="btn btn-pri btn-sm" onClick={() => accept(o, true)}>Kabul et</button>}
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(o.id)}>Düzenle</button>
-              <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={() => void remove(`/offers/${o.id}`, `v${o.version} teklifi`).catch(() => {})}>Sil</button>
+              <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => void remove(`/offers/${o.id}`, `v${o.version} teklifi`).catch(() => {})}>Sil</button>
             </div>
           </div>
         );

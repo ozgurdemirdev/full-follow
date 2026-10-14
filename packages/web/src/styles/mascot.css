@@ -158,7 +158,7 @@
   max-width: var(--spacing-chat-pill-max);
   padding: var(--spacing-3) var(--spacing-6);
   border-radius: var(--radius-pill);
-  border: var(--bw-default) solid var(--color-primary-soft-border);
+  border: var(--bw-default) solid var(--color-accent-soft-border);
   background: var(--color-surface-menu);
   box-shadow: var(--shadow-fab);
   font-size: var(--text-base-sm);

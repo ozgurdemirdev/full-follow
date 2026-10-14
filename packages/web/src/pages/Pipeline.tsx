@@ -221,7 +221,7 @@ function Column({ stage, ids, byId, companyOf, onOpen }: {
         ))}
       </SortableContext>
       {stage !== "kazanildi" && stage !== "kaybedildi" ? (
-        <button type="button" className="fchip h-control-height-md rounded-xl border-dashed" onClick={() => openSheet("opportunity", { stage })}>
+        <button type="button" className="fchip h-control-height-md rounded-inner border-dashed" onClick={() => openSheet("opportunity", { stage })}>
           + Fırsat ekle
         </button>
       ) : null}
@@ -256,7 +256,7 @@ function CardActions({ o, children }: { o: Opportunity; children?: ReactNode }) 
     <span className="flex flex-wrap items-center gap-1" onClick={stop} onPointerDown={stop} onKeyDown={stop}>
       {children}
       <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("opportunity", { edit: o.id })}>Düzenle</button>
-      {o.project_id ? null : <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={() => void remove(`/opportunities/${o.id}`, o.title).catch(() => {})}>Sil</button>}
+      {o.project_id ? null : <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => void remove(`/opportunities/${o.id}`, o.title).catch(() => {})}>Sil</button>}
     </span>
   );
 }
@@ -291,7 +291,7 @@ function StackColumn({ stage, items, companyOf, onOpen, onMove }: {
         </div>
       ))}
       {stage !== "kazanildi" && stage !== "kaybedildi" ? (
-        <button type="button" className="fchip h-control-height-md rounded-xl border-dashed" onClick={() => openSheet("opportunity", { stage })}>+ Fırsat ekle</button>
+        <button type="button" className="fchip h-control-height-md rounded-inner border-dashed" onClick={() => openSheet("opportunity", { stage })}>+ Fırsat ekle</button>
       ) : null}
     </section>
   );
@@ -302,7 +302,7 @@ const Card = memo(function Card({ o, company, overlay, actions }: { o: Opportuni
     : o.stage === "kaybedildi" ? { text: o.lost_reason ?? "Kaybedildi", late: false }
     : followNote(o.next_follow_up_at);
   return (
-    <article data-record={`opportunity-${o.id}`} className={`card rise-item lift flex cursor-grab touch-manipulation select-none flex-col gap-4 rounded-card-sm p-6 ${overlay ? "cursor-grabbing shadow-card-hover" : ""}`}>
+    <article data-record={`opportunity-${o.id}`} className={`card rise-item lift flex cursor-grab touch-manipulation select-none flex-col gap-4 rounded-inner p-6 ${overlay ? "cursor-grabbing shadow-card-hover" : ""}`}>
       <div className="flex flex-col gap-0.5">
         <span className="text-base font-semibold">{company ?? o.title}</span>
         <span className="text-base-sm text-text-secondary">{company ? `${o.title} · ` : ""}{o.person_name}</span>
@@ -319,7 +319,7 @@ const Card = memo(function Card({ o, company, overlay, actions }: { o: Opportuni
       </div>
       <div className="flex items-center gap-3 border-t border-border-subtle pt-4">
         <Who actor={o.created_by} />
-        {note ? <span className={`truncate text-sm ${note.late ? "text-status-text-attention" : "text-text-secondary"}`}>{note.text}</span> : null}
+        {note ? <span className={`truncate text-sm ${note.late ? "text-warning" : "text-text-secondary"}`}>{note.text}</span> : null}
       </div>
       {actions && !overlay ? <div className="-mb-2 flex justify-end">{actions}</div> : null}
     </article>

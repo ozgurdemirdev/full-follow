@@ -19,15 +19,15 @@ export default function Toasts() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: riseY / 2 }}
             transition={{ duration: dur.sidebar, ease: ease.out }}
-            className={`pointer-events-auto flex max-w-content-narrow items-center gap-5 rounded-xl border bg-surface-menu px-7 py-4 text-base-sm shadow-menu ${
-              t.kind === "error" ? "border-chip-warning-bg text-status-text-danger" : "border-border-menu text-text-primary"
+            className={`pointer-events-auto flex max-w-content-narrow items-center gap-5 rounded-inner border bg-surface-menu px-7 py-4 text-base-sm shadow-menu ${
+              t.kind === "error" ? "border-chip-warning-bg text-danger" : "border-border-menu text-text-primary"
             }`}
           >
             <span className="min-w-0 flex-grow">{t.text}</span>
             {t.action?.href ? (
-              <Link href={t.action.href} onClick={() => dismiss(t.id)} className="flex-none font-medium text-primary-text">{t.action.label}</Link>
+              <Link href={t.action.href} onClick={() => dismiss(t.id)} className="flex-none font-medium text-accent-text">{t.action.label}</Link>
             ) : t.action ? (
-              <button type="button" className="flex-none border-0 bg-transparent p-0 font-medium text-primary-text" onClick={() => (dismiss(t.id), t.action?.run?.())}>
+              <button type="button" className="flex-none border-0 bg-transparent p-0 font-medium text-accent-text" onClick={() => (dismiss(t.id), t.action?.run?.())}>
                 {t.action.label}
               </button>
             ) : null}

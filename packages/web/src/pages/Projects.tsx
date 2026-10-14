@@ -72,17 +72,17 @@ function ProjectCard({ p, i, unanswered }: { p: Project; i: number; unanswered: 
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline gap-3">
           <span className="text-base-sm text-text-secondary">Aşama</span>
-          <span className="text-base font-medium text-primary-text-soft">{PROJECT_STAGE[p.stage]}</span>
+          <span className="text-base font-medium text-accent-text-soft">{PROJECT_STAGE[p.stage]}</span>
           {idx >= 0 ? <span className="text-sm text-text-muted">{idx + 1} / {PROJECT_STEPS.length}</span> : null}
         </div>
         <div className="grid grid-cols-6 gap-1">
           {PROJECT_STEPS.map((s, k) => (
-            <div key={s} title={PROJECT_STAGE[s]} className={`h-bar-thin rounded-pill ${k < idx ? "bg-primary" : k === idx ? "step-now" : "bg-surface-track"}`} />
+            <div key={s} title={PROJECT_STAGE[s]} className={`h-bar-thin rounded-pill ${k < idx ? "bg-accent" : k === idx ? "step-now" : "bg-surface-track"}`} />
           ))}
         </div>
         <div className="hidden grid-cols-6 gap-1 text-xs text-text-muted desk:grid">
           {PROJECT_STEPS.map((s, k) => (
-            <span key={s} className={k === idx ? "font-medium text-primary-text-soft" : ""}>{PROJECT_STAGE[s]}</span>
+            <span key={s} className={k === idx ? "font-medium text-accent-text-soft" : ""}>{PROJECT_STAGE[s]}</span>
           ))}
         </div>
       </div>
@@ -98,7 +98,7 @@ function ProjectCard({ p, i, unanswered }: { p: Project; i: number; unanswered: 
           <span className="text-base-sm leading-tight">
             {p.next_payment ? `${MILESTONE[p.next_payment.milestone]}${p.next_payment.due_date ? ` · ${fmtDay(p.next_payment.due_date)}` : ""}` : "Ödeme tamam"}
           </span>
-          {p.next_payment ? <span className="font-mono text-base-sm text-status-text-attention">{tl(p.next_payment.remaining)}</span> : null}
+          {p.next_payment ? <span className="font-mono text-base-sm text-warning">{tl(p.next_payment.remaining)}</span> : null}
         </div>
       </div>
 
@@ -108,7 +108,7 @@ function ProjectCard({ p, i, unanswered }: { p: Project; i: number; unanswered: 
           <span className="font-mono">{tl(p.paid_total)} / {tl(total)}</span>
         </div>
         <div className="track">
-          <i className="grow-x bg-accent-payment" style={{ width: `${paidPct}%` }} />
+          <i className="grow-x bg-entity-payment" style={{ width: `${paidPct}%` }} />
         </div>
       </div>
     </Link>

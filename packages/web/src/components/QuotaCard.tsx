@@ -5,9 +5,9 @@ import { CardHead, order } from "./ui";
 
 /** Bar and count colour per state: muted while fine, warning when close, danger when the limit is reached or passed */
 const TONE: Record<QuotaState, { bar: string; text: string }> = {
-  ok: { bar: "bg-accent-neutral", text: "text-text-secondary" },
-  near: { bar: "bg-status-text-attention", text: "text-status-text-attention" },
-  over: { bar: "bg-status-text-danger", text: "text-status-text-danger" },
+  ok: { bar: "bg-entity-neutral", text: "text-text-secondary" },
+  near: { bar: "bg-warning", text: "text-warning" },
+  over: { bar: "bg-danger", text: "text-danger" },
 };
 const NOTE: Partial<Record<QuotaState, string>> = { near: "limite yakın", over: "limit doldu" };
 
@@ -38,7 +38,7 @@ export function QuotaCard({ quota }: { quota: Quota }) {
         );
       })}
       {warmup.active && warmup.until ? (
-        <p className="m-0 px-9 py-5 text-base-sm text-status-text-attention">Soğuk e-posta kapalı: ısınma dönemi {fmtDay(warmup.until)} tarihine kadar sürüyor.</p>
+        <p className="m-0 px-9 py-5 text-base-sm text-warning">Soğuk e-posta kapalı: ısınma dönemi {fmtDay(warmup.until)} tarihine kadar sürüyor.</p>
       ) : null}
     </section>
   );

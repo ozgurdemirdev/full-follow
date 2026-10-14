@@ -105,15 +105,15 @@ function OwnProjectCard({ id }: { id: number }) {
             <Who actor={p.created_by} />
             <span className="flex-grow" />
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("own_project", { own_project_id: id })}>Düzenle</button>
-            <button type="button" className="btn btn-ghost btn-sm text-status-text-danger" onClick={remove}>Sil</button>
+            <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={remove}>Sil</button>
           </div>
-          {p.description ? <p className="m-0 whitespace-pre-line text-base leading-normal text-text-body">{p.description}</p> : <span className="text-base-sm text-text-muted">Ne yaptığı yazılmadı</span>}
+          {p.description ? <p className="m-0 whitespace-pre-line text-base leading-normal text-text-primary">{p.description}</p> : <span className="text-base-sm text-text-muted">Ne yaptığı yazılmadı</span>}
         </div>
 
         <div className="inset flex flex-col gap-3 px-6 py-5">
           <div className="flex flex-wrap items-center gap-3">
             <Chip tone={SELLABLE_TONE[p.sellable]}>{SELLABLE[p.sellable]}</Chip>
-            {p.sellable_note ? <span className="text-base-sm text-text-body">{p.sellable_note}</span> : null}
+            {p.sellable_note ? <span className="text-base-sm text-text-primary">{p.sellable_note}</span> : null}
           </div>
           {p.sectors.length ? <div className="flex flex-wrap gap-2">{p.sectors.map((s) => <Chip key={s.id} tone="source">{s.path}</Chip>)}</div> : <span className="text-base-sm text-text-muted">Uygun sektör seçilmedi</span>}
         </div>
@@ -126,7 +126,7 @@ function OwnProjectCard({ id }: { id: number }) {
 
         <ProjectIdeas projectId={id} ideas={d.data!.related.ideas ?? []} detailKey={key} />
 
-        {p.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-body">{p.notes}</p> : null}
+        {p.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{p.notes}</p> : null}
       </aside>
       <LinksCard type="own_project" id={id} />
       <Comments target={{ type: "own_project", id, label: p.name }} threads={d.data!.related.comments ?? []} />

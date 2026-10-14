@@ -22,7 +22,7 @@ function SourceRow({ s }: { s: SourceFunnelRow }) {
             <span className="truncate text-xs text-text-muted">{FUNNEL_STEP[x.key] ?? x.key}</span>
             <span className="font-mono text-base">{x.count}</span>
             <span className="track">
-              <i className={`grow-x ${s.weak ? "bg-status-text-attention" : s.early ? "bg-accent-neutral" : "bg-accent-opportunity"}`} style={{ width: `${found ? (x.count / found) * 100 : 0}%` }} />
+              <i className={`grow-x ${s.weak ? "bg-warning" : s.early ? "bg-entity-neutral" : "bg-entity-opportunity"}`} style={{ width: `${found ? (x.count / found) * 100 : 0}%` }} />
             </span>
             <span className="font-mono text-xs text-text-secondary">{pct(x.rate)}</span>
           </div>

@@ -32,14 +32,14 @@ function Cell({ c, selected, dim, onPick }: { c: CalendarDay; selected: boolean;
       aria-pressed={selected}
       aria-label={`${fmtDayLong(c.date)}, hedef ${pct(c.ratio)}, ${c.tasks.length} görev`}
       onClick={onPick}
-      className={`flex min-h-cell-min flex-col gap-2 rounded-xl border p-4 text-left transition-colors dur-hover ${
-        selected ? "border-primary-soft-border bg-primary-soft-bg" : "border-border-subtle bg-surface-1 hover:border-border-strong"
+      className={`flex min-h-cell-min flex-col gap-2 rounded-inner border p-4 text-left transition-colors dur-hover ${
+        selected ? "border-accent-soft-border bg-accent-soft-bg" : "border-border-subtle bg-surface-1 hover:border-border-strong"
       } ${dim ? "opacity-50" : ""}`}
     >
-      <span className={`text-base-sm font-medium ${c.date === todayIso() ? "text-primary-text" : ""}`}>{Number(c.date.slice(8))}</span>
+      <span className={`text-base-sm font-medium ${c.date === todayIso() ? "text-accent-text" : ""}`}>{Number(c.date.slice(8))}</span>
       {c.ratio !== null ? (
         <span className="flex flex-col gap-1">
-          <span className="track"><i className={`grow-x ${c.ratio >= 1 ? "bg-status-text-success" : "bg-accent-payment"}`} style={{ width: `${Math.min(100, c.ratio * 100)}%` }} /></span>
+          <span className="track"><i className={`grow-x ${c.ratio >= 1 ? "bg-success" : "bg-entity-payment"}`} style={{ width: `${Math.min(100, c.ratio * 100)}%` }} /></span>
           <span className="text-xs text-text-secondary">{pct(c.ratio)}</span>
         </span>
       ) : null}
