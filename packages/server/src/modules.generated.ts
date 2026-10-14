@@ -7,6 +7,7 @@ import { controllers as controllers3 } from "@fullfollow/mod-people/server";
 import { controllers as controllers4 } from "@fullfollow/mod-pipeline/server";
 import { controllers as controllers5 } from "@fullfollow/mod-posts/server";
 import { controllers as controllers6 } from "@fullfollow/mod-projects/server";
+import { controllers as controllers7 } from "@fullfollow/mod-referrals/server";
 
 /** NestJS controllers of the installed modules; app.module spreads them */
-export const moduleControllers: Type<unknown>[] = [...controllers0, ...controllers1, ...controllers2, ...controllers3, ...controllers4, ...controllers5, ...controllers6];
+export const moduleControllers: Type<unknown>[] = [...controllers0, ...controllers1, ...controllers2, ...controllers3, ...controllers4, ...controllers5, ...controllers6, ...controllers7];

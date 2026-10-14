@@ -1,12 +1,11 @@
-import { rows, type Ctx, type PersonPipelineStats, type PersonProjectStats, type ReferralValue } from "@fullfollow/core";
+import type { Ctx, PersonPipelineStats, PersonProjectStats, ReferralValue } from "@fullfollow/core";
 
 /**
  * Referans değeri: her tanıtan için alt ağaçtaki kişilerden gelen fırsat ve iş.
- * The opportunity and project numbers come from the pipeline and projects modules (zero without them).
+ * The tree comes from the people module (nobody is introduced without it); the opportunity and project numbers come from the pipeline and projects modules (zero without them).
  */
 export function referralValues(ctx: Ctx): ReferralValue[] {
-  const people = rows<{ id: number; name: string; referred_by_id: number | null; company_name: string | null }>(ctx,
-    "SELECT p.id, p.name, p.referred_by_id, c.name AS company_name FROM people p LEFT JOIN companies c ON c.id = p.company_id");
+  const people = ctx.mod("people")?.referralTree() ?? [];
   const opp: Map<number, PersonPipelineStats> = ctx.mod("pipeline")?.personStats() ?? new Map();
   const work: Map<number, PersonProjectStats> = ctx.mod("projects")?.personStats() ?? new Map();
   const kids = new Map<number, number[]>();

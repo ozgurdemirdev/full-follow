@@ -41,12 +41,6 @@ export class MiscController {
     return this.core.today(limit ? Number(limit) : 50);
   }
 
-  /** Referans değeri: kimin tanıttıklarından ne kadar fırsat ve iş geldi */
-  @Get("report/referrals")
-  referrals() {
-    return this.core.reports.referrals();
-  }
-
   /** Rapor: kaynak dönüşümü + ay tahsilatı vs fiyat tabanı */
   @Get("report")
   report(@Query("month") month?: string) {

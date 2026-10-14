@@ -11,7 +11,9 @@ describe("people as a module", () => {
     expect(app.get("person", ada.id).row).toMatchObject({ name: "Ada Lovelace", created_by: "claude", referral_value: null, tags: ["Sıcak"], sector_path: "Sağlık > Diş hekimi" });
     const bob = app.save("people", { name: "Bob", referred_by: "Ada Lovelace" }).row;
     expect(bob.referred_by_id).toBe(ada.id);
-    expect(app.get("person", ada.id).row.referral_value).toMatchObject({ direct: 1, network: 1 });
+    // the referral value is the referrals module's: without it the field is there and empty; the tree is this module's
+    expect(app.get("person", ada.id).row.referral_value).toBeNull();
+    expect(app.people.referralTree()).toEqual([{ id: ada.id, name: "Ada Lovelace", referred_by_id: null, company_name: null }, { id: bob.id, name: "Bob", referred_by_id: ada.id, company_name: null }]);
     expect(app.get("person", ada.id, ["referrals"]).related.referrals.map((p: any) => p.id)).toEqual([bob.id]);
     expect(app.find("person", { q: "ada" }).total).toBe(1);
     expect(app.remove("person", bob.id).trash).toEqual({ type: "person", id: bob.id });

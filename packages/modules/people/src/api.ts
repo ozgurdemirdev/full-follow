@@ -2,8 +2,8 @@ import type { Ctx, PeopleApi } from "@fullfollow/core";
 import { peopleServices } from "./service";
 import { personCard } from "./service/card";
 import { peopleList } from "./service/list";
-import { referralValues } from "./service/referrals";
 import { bumpPersonStatus } from "./service/status";
+import { referralTree } from "./service/tree";
 
 /** The people module's implementation of its contract (`PeopleApi` in core's contracts) */
 export function peopleApi(ctx: Ctx): PeopleApi {
@@ -17,6 +17,6 @@ export function peopleApi(ctx: Ctx): PeopleApi {
     get: (id) => peopleList(ctx, { limit: 100000 }).rows.find((p) => p.id === id),
     card: (id) => personCard(ctx, id),
     bumpStatus: (id, next) => bumpPersonStatus(ctx, id, next),
-    referralValues: () => referralValues(ctx),
+    referralTree: () => referralTree(ctx),
   };
 }

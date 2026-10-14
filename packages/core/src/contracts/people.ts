@@ -1,6 +1,7 @@
 import type { ContactStatus } from "../constants";
 import type { ListOpts } from "../context";
 import type { TouchDirection } from "./network";
+import type { ReferralValue } from "./referrals";
 
 /** A person row as stored (the duplicate keys are left out; they never leave the module) */
 export interface PersonRecord {
@@ -50,19 +51,12 @@ export interface PersonRow extends PersonRecord {
   rhythm: number[];
 }
 
-/** What the people a person introduced brought: opportunities, wins, projects and money, over the whole referral tree below */
-export interface ReferralValue {
-  person_id: number;
+/** A person in the referral tree */
+export interface ReferralNode {
+  id: number;
   name: string;
+  referred_by_id: number | null;
   company_name: string | null;
-  direct: number;
-  network: number;
-  opps: number;
-  won: number;
-  won_value: number;
-  open_value: number;
-  projects: number;
-  collected: number;
 }
 
 /** Everything the person page shows, in one object */
@@ -98,6 +92,6 @@ export interface PeopleApi {
   card(id: number): PersonCard;
   /** moves the person's contact status (and its company's) forward, never back; returns what changed */
   bumpStatus(id: number, next: ContactStatus): string[];
-  /** per introducer: what the people below brought (the referral report reads it) */
-  referralValues(): ReferralValue[];
+  /** every person with the introducer id: the tree the referrals module walks */
+  referralTree(): ReferralNode[];
 }

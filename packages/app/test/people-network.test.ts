@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { FFError, openDb, type Clock, type DbHandle } from "@fullfollow/core";
-import { appFor, appWithout, suite, type TestApp } from "./helpers";
+import { appFor, appWithout, everyKey, suite, type TestApp } from "./helpers";
 
 const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
 
@@ -139,7 +139,7 @@ suite("people, companies and network together", () => {
       const today = bare.today(50);
       expect(today.follow_ups.people.total).toBe(off.includes("people") ? 0 : 1);
       expect(today).toHaveProperty("drafts");
-      for (const call of [() => bare.marketing(), () => bare.review(), () => bare.reports.report(), () => bare.reports.referrals(), () => bare.find("trash"),
+      for (const call of [() => bare.marketing(), () => bare.review(), () => bare.reports.report(), () => bare.find("trash"),
         () => bare.find("draft"), () => bare.find("comment"), () => bare.find("note"), () => bare.ctx.mod("posts")?.stats(), () => bare.reports.month("2026-10"), () => bare.ctx.mod("calendar")?.calendar("2026-10-01", "2026-10-31"),
         ...(off.includes("pipeline") ? [] : [() => bare.find("opportunity"), () => bare.get("opportunity", o.id, ["comments", "drafts"]), () => bare.timeline("opportunity", o.id)]),
         ...(off.includes("projects") ? [] : [() => bare.find("project"), () => bare.find("payment")])]) {
@@ -186,7 +186,7 @@ suite("people, companies and network together", () => {
 
     it("everything switched off at once still deletes what has no dependants and says why the rest cannot go", () => {
       const { p } = seed();
-      const bare = appWithout(["people", "companies", "network", "calendar", "posts", "pipeline", "projects"], h, "ozgur", clock);
+      const bare = appWithout(everyKey, h, "ozgur", clock);
       expect(bare.modules.list()).toEqual([]);
       expect(bare.today(5)).toMatchObject({ comments: { total: 2 }, follow_ups: { people: { total: 0 } } });
       // a draft is core's: it still works with a contact address

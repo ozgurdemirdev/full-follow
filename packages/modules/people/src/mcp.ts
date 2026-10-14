@@ -33,6 +33,5 @@ export const mcp: McpDef = {
         text: "person: role (CEO, tasarım; sektör değil). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. ",
       },
     ],
-    report: [{ at: 110, text: "referans değeri, " }],
   },
 };

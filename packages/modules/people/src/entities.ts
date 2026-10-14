@@ -16,7 +16,8 @@ export const entities: Record<string, EntityHandler> = {
     get: (ctx, id) => {
       const people = ctx.mod("people")!;
       const row = people.get(id);
-      return row && { ...row, referral_value: people.referralValues().find((r) => r.person_id === id) ?? null };
+      // the referral value comes from the referrals module (null without it)
+      return row && { ...row, referral_value: ctx.mod("referrals")?.of(id) ?? null };
     },
     find: (ctx, o) => ctx.mod("people")!.list(o),
     delete: (ctx, id) => ctx.mod("people")!.remove(id),

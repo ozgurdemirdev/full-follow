@@ -29,6 +29,7 @@ import type { PeopleApi } from "./people";
 import type { OpportunityWon, PipelineApi } from "./pipeline";
 import type { PostsApi } from "./posts";
 import type { ProjectsApi } from "./projects";
+import type { ReferralsApi } from "./referrals";
 import type { RecordRestored, RecordTrashed } from "./records";
 
 export type * from "./calendar";
@@ -39,6 +40,7 @@ export type * from "./pipeline";
 export type * from "./posts";
 export type * from "./projects";
 export type * from "./records";
+export type * from "./referrals";
 
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
 export interface ModuleApis {
@@ -49,6 +51,7 @@ export interface ModuleApis {
   pipeline: PipelineApi;
   posts: PostsApi;
   projects: ProjectsApi;
+  referrals: ReferralsApi;
 }
 
 /** Event name to its payload type. Names not listed here are accepted with an `unknown` payload. */

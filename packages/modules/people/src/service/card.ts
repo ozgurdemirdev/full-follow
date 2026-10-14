@@ -1,6 +1,5 @@
 import { FFError, ideaPeople, listThreads, queriesFor, type Ctx, type PersonCard } from "@fullfollow/core";
 import { peopleList } from "./list";
-import { referralValues } from "./referrals";
 
 /**
  * Kişi kartı tek istekte: kişi + sektör + kanal özeti + temaslar + notlar + yorum konuları (mesajlarıyla)
@@ -14,7 +13,8 @@ export function personCard(ctx: Ctx, id: number): PersonCard {
   const network = ctx.mod("network");
   const person = peopleList(ctx, { limit: 100000 }).rows.find((p) => p.id === id);
   if (!person) throw new FFError("not_found", `kişi #${id} bulunamadı`);
-  const refs = referralValues(ctx);
+  // the referral numbers come from the referrals module (none without it)
+  const refs = ctx.mod("referrals")?.report() ?? [];
   const pipeline = ctx.mod("pipeline");
   const opps = pipeline?.personStats();
   return {

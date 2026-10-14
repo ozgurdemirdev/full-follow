@@ -35,6 +35,5 @@ export function reportsService(ctx: Ctx) {
     return { sources: bySource(), month: month(m) };
   }
 
-  // TODO(modules): the referral report becomes the referrals module; until then it reads the people module's referral tree
-  return { bySource, sourceFunnel: (period?: unknown) => ctx.mod("pipeline")?.funnel(period), month, months, report, referrals: () => ctx.mod("people")?.referralValues() ?? [] };
+  return { bySource, sourceFunnel: (period?: unknown) => ctx.mod("pipeline")?.funnel(period), month, months, report };
 }
