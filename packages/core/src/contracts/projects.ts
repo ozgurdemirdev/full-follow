@@ -29,13 +29,21 @@ export interface NextPayment {
   due_date: string | null;
 }
 
-/** A project as listed: the row plus the person's name, the money so far, the next payment and the next task (null without the calendar module) */
+/** Who a project waits on: Özgür (sende), the client (musteride) or nobody because something is past due (gecikti) */
+export type ProjectWaiting = "sende" | "musteride" | "gecikti";
+
+/**
+ * A project as listed: the row plus the person's name, the money so far, the next payment, the next task (null without the calendar module)
+ * and who the project waits on (`waiting`, null when nobody) with the TL that wait holds.
+ */
 export interface ProjectRow extends ProjectRecord {
   person_name: string;
   paid_total: number;
   expected_total: number;
   next_payment: NextPayment | null;
   next_task: NextTask | null;
+  waiting: ProjectWaiting | null;
+  waiting_amount: number;
 }
 
 /** What other modules need to know about a project without loading the list */
@@ -133,4 +141,13 @@ export interface ProjectsApi {
   outstandingDue(ym: string): number;
   /** per person: projects and money received */
   personStats(): Map<number, PersonProjectStats>;
+  /** per company (through the people of its projects): the projects it has, the money received and the money still due on them */
+  moneyByCompany(): Map<number, CompanyProjectMoney>;
+}
+
+/** What a company's projects add up to */
+export interface CompanyProjectMoney {
+  projects: number;
+  paid: number;
+  due: number;
 }

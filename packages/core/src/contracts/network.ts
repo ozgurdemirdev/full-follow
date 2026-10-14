@@ -30,13 +30,22 @@ export interface TouchRecord {
   created_by: "ozgur" | "claude";
 }
 
-/** A touch as listed: the row plus the names of what it hangs on */
+/** The person or company a loose touch's address belongs to, found among the records that exist */
+export interface TouchMatch {
+  type: "person" | "company";
+  id: number;
+  name: string;
+}
+
+/** A touch as listed: the row plus the names of what it hangs on and, for a loose touch, the record its address points at */
 export interface TouchListRow extends Omit<TouchRecord, "contact_key"> {
   person_name: string | null;
   company_name: string | null;
   to_name: string | null;
   opportunity_title: string | null;
   idea_title: string | null;
+  /** only loose touches (no person, no company) can have one; null when nothing matches */
+  suggested_match: TouchMatch | null;
 }
 
 /** Who a touch is about, after resolving the input: a person, else a company, else a bare address */
@@ -166,8 +175,16 @@ export interface NetworkApi {
     create(input: unknown): { row: TouchRecord; effects: string[] };
     /** `q` is the transaction the caller is in (a draft marked as sent writes its touch inside its own transaction) */
     insert(q: Q, input: TouchInput): { row: TouchRecord; effects: string[] };
-    /** summary, outcome, channel, kind, date, the answer flag and the idea link; emits `touch.updated` */
+    /**
+     * summary, outcome, channel, kind, date, the answer flag and the idea link; emits `touch.updated`.
+     * `person_id` or `company_id` moves a loose touch (one saved with only an address) to that record; any other touch keeps its subject.
+     */
     update(id: number, input: unknown): { row: TouchRecord; effects: string[] };
+    /**
+     * Moves the loose touches that have a suggested match to it (the person or company their address points at), in one transaction.
+     * `contact` limits it to one address as written on the touch; without it every loose touch with a suggestion moves. Writes an event per touch.
+     */
+    adoptSuggested(input?: unknown): { adopted: number; effects: string[] };
     remove(id: number): { effects: string[]; trash: { type: string; id: number } };
     /** filters: person_id, company_id, company_scope (the company and its people), opportunity_id, project_id, idea_id, channel, loose */
     list(opts: ListOpts): { rows: TouchListRow[]; total: number };

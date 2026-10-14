@@ -10,6 +10,9 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 /** Firma ve kişinin temas durumu: temaslarla ileri gider, geri gitmez; "olumsuz", "tanidik" ve "arkadas" sadece elle */
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
+/** Role of a person in a buying decision (decision maker, influencer, user) */
+export const INFLUENCE = ["karar_verici", "etkileyici", "kullanici"] as const;
+export type Influence = (typeof INFLUENCE)[number];
 /** Set by hand; touches never move these */
 export const STICKY_CONTACT_STATUSES: readonly ContactStatus[] = ["olumsuz", "tanidik", "arkadas"];
 /** How far a status has come: a touch only moves a status forward (a negative rank is a hand set one) */
@@ -34,7 +37,6 @@ export const PROJECT_STAGES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
-export const ASSIGNEES = ACTORS;
 /** A comment target type: a record type core owns (`TARGET_TABLE` in services/shared.ts) or one a module adds (`commentTargets` contribution) */
 export type CommentTarget = string;
 /** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */

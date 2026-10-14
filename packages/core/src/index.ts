@@ -44,7 +44,7 @@ export { ensureSector, sectorInput, sectorMatch, setSectorLinks } from "./servic
 export { marketingSettings, networkSettings, readSetting, readTemplate } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
-export { companyKeys, contactKey, personKeys } from "./keys";
+export { companyKeys, contactKey, domainKey, personKeys } from "./keys";
 export * as schema from "./db/schema";
 export * as zodKit from "./schemas/kit";
 export type { Q } from "./db/client";

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, LINK_TARGETS,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, LINK_TARGETS,
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES, FILE_TARGETS,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
@@ -36,6 +36,8 @@ export const companies = sqliteTable("companies", {
   source_id: integer("source_id").references((): AnySQLiteColumn => sources.id),
   contact_status: text("contact_status", { enum: CONTACT_STATUSES }).notNull().default("yazilmadi"),
   notes: text("notes"),
+  /** City of the company (free text) */
+  city: text("city"),
   name_key: text("name_key"),
   domain_key: text("domain_key"),
   email_key: text("email_key"),
@@ -65,6 +67,8 @@ export const people = sqliteTable("people", {
   contact_status: text("contact_status", { enum: CONTACT_STATUSES }).notNull().default("yazilmadi"),
   next_follow_up_at: text("next_follow_up_at"),
   notes: text("notes"),
+  /** Role in a buying decision: karar_verici | etkileyici | kullanici (the people module validates it) */
+  influence: text("influence"),
   email_key: text("email_key"),
   instagram_key: text("instagram_key"),
   linkedin_key: text("linkedin_key"),
@@ -159,6 +163,8 @@ export const opportunities = sqliteTable("opportunities", {
   next_follow_up_at: text("next_follow_up_at"),
   closed_at: text("closed_at"),
   position: integer("position").notNull().default(0),
+  /** When the opportunity entered its current stage (ISO); set on create and on every stage change */
+  stage_since: text("stage_since"),
   /** Paket 3: ilanın ya da konunun linki ve tarihi (R10 ilanı gibi) */
   source_url: text("source_url"),
   source_date: text("source_date"),
@@ -236,7 +242,8 @@ export const payments = sqliteTable("payments", {
 export const tasks = sqliteTable("tasks", {
   ...common(),
   title: text("title").notNull(),
-  assignee: text("assignee", { enum: ASSIGNEES }).notNull().default("ozgur"),
+  /** ozgur | claude | musteri: the calendar module validates it */
+  assignee: text("assignee").notNull().default("ozgur"),
   due_date: text("due_date"),
   /** "HH:MM" on the due date; null = sometime that day */
   due_time: text("due_time"),
@@ -424,7 +431,10 @@ export const events = sqliteTable("events", {
   data: text("data"),
   created_by: text("created_by", { enum: ACTORS }).notNull(),
   created_at: text("created_at").notNull(),
-}, (t) => [index("events_person").on(t.person_id), index("events_opp").on(t.opportunity_id), index("events_project").on(t.project_id)]);
+}, (t) => [
+  index("events_person").on(t.person_id), index("events_opp").on(t.opportunity_id), index("events_project").on(t.project_id),
+  index("events_type_created").on(t.type, t.created_at),
+]);
 
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),

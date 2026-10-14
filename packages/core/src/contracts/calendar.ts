@@ -3,11 +3,14 @@ import type { ListOpts } from "../context";
 /** Kind of a task: a meeting, a follow-up or a plain task */
 export type TaskKind = "gorusme" | "takip" | "gorev";
 
+/** Who does a task: Özgür, Claude or the client (musteri) */
+export type TaskAssignee = "ozgur" | "claude" | "musteri";
+
 /** A task row as stored */
 export interface TaskRecord {
   id: number;
   title: string;
-  assignee: "ozgur" | "claude";
+  assignee: TaskAssignee;
   due_date: string | null;
   /** "HH:MM" or null */
   due_time: string | null;
@@ -37,6 +40,13 @@ export interface NextTask {
   due_date: string | null;
   assignee: string;
   created_by: string;
+}
+
+/** An open task of a project, as the project's waiting state reads it */
+export interface OpenProjectTask {
+  id: number;
+  assignee: TaskAssignee;
+  due_date: string | null;
 }
 
 /** A goal row as stored */
@@ -133,6 +143,8 @@ export interface CalendarApi {
     list(opts: ListOpts): { rows: TaskListRow[]; total: number };
     /** the open task of a project that is due first */
     next(projectId: number): NextTask | null;
+    /** the open tasks of these projects (one statement), each project's list in due order, undated last */
+    openOfProjects(projectIds: number[]): Map<number, OpenProjectTask[]>;
   };
   goals: {
     create(input: unknown): Saved<GoalRecord>;
