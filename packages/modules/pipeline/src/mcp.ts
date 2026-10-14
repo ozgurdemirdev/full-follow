@@ -2,6 +2,8 @@ import type { McpDef } from "@fullfollow/core";
 
 /** How opportunities, offers and the team read in MCP output, and the pipeline's lines of the Today view; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["estimated_value", "lost_reason", "source_url", "source_date", "offered_at", "accepted_at"],
   entities: {
     opportunity: {
       kind: "fırsat",

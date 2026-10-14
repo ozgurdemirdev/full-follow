@@ -193,6 +193,8 @@ export interface McpToolDef {
 
 /** What a module adds to the MCP server: its record types' output, its own tools, and its parts of the shared texts */
 export interface McpDef {
+  /** row fields of this module's records that `get` leaves out of its extra lines (the record's own line already shows them) */
+  skip?: string[];
   entities?: Record<string, McpEntityDoc>;
   tools?: McpToolDef[];
   /** tool name to the fragments added to its description */

@@ -30,6 +30,8 @@ function calendarText(days: Row[], f: McpFormat): string {
 
 /** How the calendar's records and tool read in MCP output; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["due_time", "assignee"],
   entities: {
     task: {
       kind: "görev",

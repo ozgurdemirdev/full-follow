@@ -4,6 +4,8 @@ type Row = Record<string, any>;
 
 /** How own projects read in MCP output and the fragments that continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["sellable", "sellable_note", "open_ideas", "done_ideas"],
   entities: {
     own_project: {
       kind: "kendi projesi",

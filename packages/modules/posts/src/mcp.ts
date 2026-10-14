@@ -5,6 +5,8 @@ type Row = Record<string, any>;
 
 /** How posts read in MCP output; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["platform", "posted_at", "refresh_days", "refreshed_at", "next_refresh_at"],
   entities: {
     post: {
       kind: "paylaşım",

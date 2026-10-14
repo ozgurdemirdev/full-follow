@@ -5,6 +5,8 @@ const fmt = (n: number) => `${n.toLocaleString("tr-TR")}`;
 
 /** How projects and payments read in MCP output, the `pay` tool, and the payment lines of the Today view; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["paid_total", "expected_total", "next_payment", "next_task", "expected_amount", "paid_amount"],
   entities: {
     project: {
       kind: "proje",

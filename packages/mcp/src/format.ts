@@ -41,6 +41,7 @@ export function useMcpDefs(defs: McpDef[]) {
   relationTypes = Object.assign({}, ...defs.map((d) => d.relations ?? {}));
   todaySections = defs.flatMap((d) => d.today ?? []);
   marketingParts = defs.flatMap((d) => d.marketing ?? []);
+  skip = new Set([...CORE_SKIP, ...defs.flatMap((d) => d.skip ?? [])]);
 }
 
 export function line(type: string, r: Row): string {
@@ -60,13 +61,9 @@ export function list(type: string, res: { rows: Row[]; total: number }, offset =
   return head + res.rows.map((r) => line(type, r)).join("\n");
 }
 
-const SKIP = new Set(["updated_at", "position", "tag_list", "created_at", "person_name", "source_name", "company_name", "referred_by_name", "project_name", "opportunity_title", "tags", "target_label", "comments", "last_id", "last_body", "last_by", "last_at", "count", "paid_total", "expected_total", "people_count", "opp_count", "next_payment", "next_task", "id", "status_label", "title", "name", "stage", "estimated_value", "price", "status", "channel", "handle", "email", "phone", "next_follow_up_at", "due_date", "due_time", "milestone", "expected_amount", "paid_amount", "kind", "assignee", "done_at", "lost_reason", "website", "body", "notes", "reject_note", "direction", "summary", "happened_at", "outcome", "project_id_x",
-  "post_title", "post_id", "idea_title", "idea_id", "template_id", "followup_step", "platform", "url", "posted_at", "refresh_days", "refreshed_at", "next_refresh_at", "refresh_due",
-  "opp_count", "won", "won_value", "used", "sent", "replied", "reply_rate", "problem", "told", "interested", "not_interested", "interest_rate", "touch_count", "post_count", "post_people", "sectors", "interest", "note", "person_id", "idea_stage", "score",
-  "tag_ids", "source_id", "source_name", "contact_status", "deleted_at", "slug", "color", "company_count", "open_opps", "touch_count", "to_name", "contact",
-  "company_id", "source_url", "source_date", "version", "offered_at", "amount", "accepted_at", "file_id", "opportunity_id",
-  "description", "sellable", "sellable_note", "open_ideas", "done_ideas", "own_project_title", "own_project_id", "priority",
-  "sector_name", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "last_summary", "days_since", "awaiting", "cooling", "referral_count", "referral_value", "rhythm", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"]);
+/** Row fields `get` does not repeat as extra lines (the line of the record, the module lists and shared ids and names carry them); the modules add theirs with `skip` */
+const CORE_SKIP = ["updated_at", "position", "tag_list", "created_at", "person_name", "source_name", "company_name", "project_name", "opportunity_title", "tags", "target_label", "comments", "last_id", "last_body", "last_by", "last_at", "count", "people_count", "opp_count", "id", "status_label", "title", "name", "stage", "price", "status", "channel", "email", "phone", "next_follow_up_at", "due_date", "milestone", "kind", "done_at", "website", "body", "notes", "direction", "summary", "happened_at", "outcome", "post_id", "idea_title", "idea_id", "template_id", "url", "refresh_due", "won", "won_value", "sent", "replied", "reply_rate", "problem", "told", "touch_count", "sectors", "interest", "note", "person_id", "tag_ids", "source_id", "contact_status", "deleted_at", "slug", "color", "company_count", "to_name", "contact", "company_id", "version", "amount", "file_id", "opportunity_id", "description", "own_project_id", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "last_summary", "days_since", "awaiting", "cooling", "rhythm", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"];
+let skip = new Set<string>(CORE_SKIP);
 
 /** Tek kaydın tam hali + istenen ilişkili kayıtlar */
 export function block(res: { type: string; id: number; row: Row; related: Record<string, any[]>; comments_open?: number }): string {
@@ -80,15 +77,10 @@ export function block(res: { type: string; id: number; row: Row; related: Record
   out.push(LINE[type] || entityDocs[type] ? line(type, row) : `#${id} ${type}`);
   // satırda olmayan alanları ek satır olarak yaz
   const extra = Object.entries(row)
-    .filter(([k, v]) => !SKIP.has(k) && v !== null && v !== "" && v !== undefined && typeof v !== "object")
+    .filter(([k, v]) => !skip.has(k) && v !== null && v !== "" && v !== undefined && typeof v !== "object")
     .map(([k, v]) => `${k}: ${typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? d(v) : v}`);
   if (extra.length) out.push(extra.join(" · "));
   if (row.instagram || row.linkedin) out.push(join(row.instagram && `instagram: ${row.instagram}`, row.linkedin && `linkedin: ${row.linkedin}`));
-  if (row.referral_value) {
-    const v = row.referral_value;
-    out.push(`referans değeri: ${v.direct} tanıttı (ağ ${v.network}) · ${v.opps} fırsat · ${v.won} kazanıldı ${tl(v.won_value)}${v.open_value ? ` · açık ${tl(v.open_value)}` : ""}${v.collected ? ` · tahsil ${tl(v.collected)}` : ""}`);
-  }
-  if (row.post_title) out.push(`kaynak paylaşım: #${row.post_id} ${row.post_title}`);
   out.push(...(entityDocs[type]?.details?.(row, mcpFormat) ?? []));
   if (row.notes) out.push(`not: ${row.notes}`);
   if (row.body) out.push(`metin: ${row.body}`);
@@ -123,12 +115,9 @@ export function todayText(t: any): string {
     .sort((a, b) => a.at - b.at)
     .map((p) => p.text)
     .filter(Boolean);
-  const w = t.week;
-  const target = t.network?.settings?.weekly_target;
-  const week = w ? `Hafta: ${w.sent}${target ? `/${target} hedef` : ""} giden (geçen ${w.sent_prev}) · ${w.replies} dönüş · ${w.meetings} görüşme${w.by_channel?.length ? ` · ${w.by_channel.map((c: Row) => `${label(c.channel)} ${c.sent}/${c.replies}`).join(", ")}` : ""}` : "";
-  // lines a module puts before the sections (the daily quota), after the week line
+  // lines a module puts before the sections (the week numbers, the daily quota)
   const head = todaySections.filter((s) => s.head).sort((a, b) => a.at - b.at).map((s) => s.render(t, mcpFormat));
-  return [`BUGÜN ${t.date}`, week, ...head, ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
+  return [`BUGÜN ${t.date}`, ...head, ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
 }
 
 /** Pazarlama özeti (report aracının ikinci bölümü) */

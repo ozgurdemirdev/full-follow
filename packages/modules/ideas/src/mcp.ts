@@ -4,6 +4,8 @@ type Row = Record<string, any>;
 
 /** How ideas and interest rows read in MCP output, the idea line of the marketing report, and the fragments that continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["interested", "not_interested", "interest_rate", "post_count", "post_people", "idea_stage", "own_project_title", "priority"],
   entities: {
     idea: {
       kind: "fikir",

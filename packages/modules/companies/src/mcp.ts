@@ -2,6 +2,8 @@ import type { McpDef } from "@fullfollow/core";
 
 /** How companies read in MCP output; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["open_opps"],
   entities: {
     company: {
       kind: "firma",

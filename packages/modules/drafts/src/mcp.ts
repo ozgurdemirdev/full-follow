@@ -18,6 +18,8 @@ function quotaText(q: any, f: McpFormat): string {
 
 /** How drafts and due follow-ups read in MCP output, the quota and draft lines of the Today view, the `draft` tool, and the fragments that continue the generic tools' descriptions */
 export const mcp: McpDef = {
+  /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
+  skip: ["reject_note", "followup_step"],
   entities: {
     draft: {
       kind: "taslak",

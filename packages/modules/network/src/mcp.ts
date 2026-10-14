@@ -2,6 +2,7 @@ import { z } from "zod";
 import { resolveRef, type McpDef } from "@fullfollow/core";
 
 const idOrName = z.union([z.number(), z.string()]);
+type Row = Record<string, any>;
 /** Muhatap: kişi, firma ya da sadece adres (biri) */
 type Subject = { person?: string | number; company?: string | number; contact?: string };
 
@@ -18,6 +19,16 @@ export const mcp: McpDef = {
   },
   relations: { touches: "touch" },
   today: [
+    // the week line comes first (before the daily quota of the drafts module)
+    {
+      at: 0,
+      head: true,
+      render: (t, f) => {
+        const w = t.week;
+        const target = t.network?.settings?.weekly_target;
+        return w ? `Hafta: ${w.sent}${target ? `/${target} hedef` : ""} giden (geçen ${w.sent_prev}) · ${w.replies} dönüş · ${w.meetings} görüşme${w.by_channel?.length ? ` · ${w.by_channel.map((c: Row) => `${f.label(c.channel)} ${c.sent}/${c.replies}`).join(", ")}` : ""}` : "";
+      },
+    },
     { at: 200, render: (t, f) => (t.network ? f.section("Cevap bekleyen", "person", t.network.awaiting) : "") },
     { at: 800, render: (t, f) => (t.network ? f.section("Soğuyan bağlantı", "person", t.network.cooling) : "") },
   ],
