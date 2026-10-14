@@ -49,7 +49,7 @@ export function ExpandLink({ href, children }: { href: string; children: ReactNo
  * Esc and a click on the backdrop close it; focus stays inside and returns to where it was.
  * With reduced motion it only fades.
  */
-export function ExpandOverlay({ open, from, title, sub, toolbar, footer, header, bodyClassName, onClose, children }: {
+export function ExpandOverlay({ open, from, title, sub, toolbar, footer, header, headerClassName, bodyClassName, onClose, children }: {
   open: boolean;
   /** rect of the card it grows from */
   from: DOMRect | null;
@@ -62,26 +62,29 @@ export function ExpandOverlay({ open, from, title, sub, toolbar, footer, header,
   header?: ReactNode;
   /** class of the scrolling body (replaces the list padding) */
   bodyClassName?: string;
+  /** class of the own header's wrapper (replaces the record header layout) */
+  headerClassName?: string;
   onClose: () => void;
   children: ReactNode;
 }) {
   return createPortal(
     <MotionScope>
       <AnimatePresence>
-        {open && from ? <Panel key="panel" from={fromRect(from)} title={title} sub={sub} toolbar={toolbar} footer={footer} header={header} bodyClassName={bodyClassName} onClose={onClose}>{children}</Panel> : null}
+        {open && from ? <Panel key="panel" from={fromRect(from)} title={title} sub={sub} toolbar={toolbar} footer={footer} header={header} headerClassName={headerClassName} bodyClassName={bodyClassName} onClose={onClose}>{children}</Panel> : null}
       </AnimatePresence>
     </MotionScope>,
     document.body,
   );
 }
 
-function Panel({ from, title, sub, toolbar, footer, header, bodyClassName, onClose, children }: {
+function Panel({ from, title, sub, toolbar, footer, header, headerClassName, bodyClassName, onClose, children }: {
   from: Box;
   title: string;
   sub?: ReactNode;
   toolbar?: ReactNode;
   footer?: ReactNode;
   header?: ReactNode;
+  headerClassName?: string;
   bodyClassName?: string;
   onClose: () => void;
   children: ReactNode;
@@ -153,7 +156,7 @@ function Panel({ from, title, sub, toolbar, footer, header, bodyClassName, onClo
         transition={reduce ? { duration: dur.fade } : grow}
       >
         {header ? (
-          <div className="ff-ex-rec">{header}</div>
+          <div className={headerClassName ?? "ff-ex-rec"}>{header}</div>
         ) : (
           <div className="ff-ex-top">
             <div className="ff-ex-title">

@@ -4,8 +4,10 @@ import { useQuery } from "../api/store";
 import type { LinkRow, List } from "../api/types";
 import { Empty } from "./ui";
 
-/** Labelled links on an opportunity, project or own project (roadmap, proposal deck, Figma, repo) */
-export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own_project"; id: number }) {
+export type LinkTarget = "opportunity" | "project" | "own_project";
+
+/** Links of a record plus the add form state: shared by the old card and the own projects overlay panel */
+export function useLinks(type: LinkTarget, id: number) {
   const links = useQuery<List<LinkRow>>(`/links?${type}_id=${id}&limit=200`);
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
@@ -25,16 +27,22 @@ export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own
       setBusy(false);
     }
   };
-  const rows = links.data?.rows ?? [];
+  const del = (l: LinkRow) => void remove(`/links/${l.id}`, `“${l.label}” linki`).catch(() => {});
+  return { loaded: !!links.data, rows: links.data?.rows ?? [], label, setLabel, url, setUrl, busy, ready, add, del };
+}
+
+/** Labelled links on an opportunity, project or own project (roadmap, proposal deck, Figma, repo) */
+export function LinksCard({ type, id }: { type: LinkTarget; id: number }) {
+  const { loaded, rows, label, setLabel, url, setUrl, busy, ready, add, del } = useLinks(type, id);
   return (
     <section className="card rise flex flex-col gap-5 p-8">
       <span className="text-md font-semibold">Linkler</span>
-      {links.data && !rows.length ? <Empty>Roadmap, teklif sunumu, Figma, repo gibi linkleri buraya ekle.</Empty> : null}
+      {loaded && !rows.length ? <Empty>Roadmap, teklif sunumu, Figma, repo gibi linkleri buraya ekle.</Empty> : null}
       {rows.map((l) => (
         <div key={l.id} className="flex items-center gap-3">
           <a href={l.url} target="_blank" rel="noreferrer" className="min-w-0 flex-grow truncate text-base-sm" title={l.url}>{l.label}</a>
           {l.from ? <span className="text-sm text-text-muted">{l.from}</span> : (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => void remove(`/links/${l.id}`, `“${l.label}” linki`).catch(() => {})}>Sil</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => del(l)}>Sil</button>
           )}
         </div>
       ))}

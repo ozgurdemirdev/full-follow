@@ -38,6 +38,9 @@
   --text-currency: 22px;
   --text-section: 22px;
   --text-cal-num: 26px;
+  --text-own-title-lg: 36px;
+  --text-own-title-md: 32px;
+  --text-own-h3: 20px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
@@ -211,6 +214,17 @@
   --spacing-spark-lg-h-0: 6px;
   --spacing-spark-lg-h-1: 22px;
   --spacing-control-height-2xs: 30px;
+  --spacing-own-oneline-max: 560px;
+  --spacing-own-journey-basis: 240px;
+  --spacing-own-journey-max: 420px;
+  --spacing-own-add-basis: 260px;
+  --spacing-own-shelf-note-basis: 200px;
+  --spacing-own-col-min: 120px;
+  --spacing-own-next-check: 32px;
+  --spacing-own-idea-check: 22px;
+  --spacing-own-chip-height: 26px;
+  --spacing-own-done-tick: 10px;
+  --spacing-own-card-pad: 22px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -243,6 +257,8 @@
   --shadow-overlay: 0 40px 120px rgba(0,0,0,.6);
   --shadow-knob: 0 4px 14px rgba(0,0,0,.45);
   --shadow-row-hover: inset 0 0 0 999px rgba(255,255,255,.025);
+  --shadow-own-glow-off: 0 0 0 0 rgba(212,242,90,0);
+  --shadow-own-glow-on: 0 0 0 6px rgba(212,242,90,.16);
   --ease-out: cubic-bezier(.2,.8,.2,1);
   --ease-pop: cubic-bezier(.2,1.4,.4,1);
   --ease-standard: ease;
@@ -475,6 +491,7 @@
   --dur-mic: 800ms;
   --dur-mic-step: 150ms;
   --dur-icon-pop: 250ms;
+  --dur-own-glow: 2200ms;
   --stagger: 50ms;
   --rise-distance: 14px;
   --press-scale: 0.97;
@@ -617,6 +634,10 @@
 
 @utility dur-icon-pop {
   transition-duration: var(--dur-icon-pop);
+}
+
+@utility dur-own-glow {
+  transition-duration: var(--dur-own-glow);
 }
 
 @utility z-sidebar {

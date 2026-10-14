@@ -9,6 +9,8 @@
 @import "./calendar.css";
 @import "./people.css";
 @import "./people-overlay.css";
+@import "./own-projects.css";
+@import "./own-projects-overlay.css";
 @import "./settings.css";
 
 @layer base {
