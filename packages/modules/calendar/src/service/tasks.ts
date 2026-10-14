@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import {
   Bin, bool, eventLink as link, FFError, has, page, parse, requireRow, row, rows, schema, stamp, truncate, writeEvent as emit,
-  type Ctx, type ListOpts, type NextTask, type TaskListRow,
+  type Ctx, type ListOpts, type NextTask, type OpenProjectTask, type TaskListRow,
 } from "@fullfollow/core";
 import { parseQuickTask } from "./quickAdd";
 import { taskCreate, taskQuick, taskUpdate } from "./schemas";
@@ -97,5 +97,15 @@ export function tasksService(ctx: Ctx) {
     return row<NextTask>(ctx, "SELECT id, title, due_date, assignee, created_by FROM tasks WHERE project_id = ? AND done_at IS NULL ORDER BY (due_date IS NULL), due_date, id LIMIT 1", projectId) ?? null;
   }
 
-  return { create, quick, update, remove, list, next };
+  /** The open tasks of these projects in one statement (the ids travel as JSON), due first, undated last */
+  function openOfProjects(projectIds: number[]): Map<number, OpenProjectTask[]> {
+    const out = new Map<number, OpenProjectTask[]>();
+    if (!projectIds.length) return out;
+    const list = rows<OpenProjectTask & { project_id: number }>(ctx, `SELECT id, project_id, assignee, due_date FROM tasks
+      WHERE done_at IS NULL AND project_id IN (SELECT value FROM json_each(?)) ORDER BY (due_date IS NULL), due_date, id`, JSON.stringify(projectIds));
+    for (const { project_id, ...t } of list) out.set(project_id, [...(out.get(project_id) ?? []), t]);
+    return out;
+  }
+
+  return { create, quick, update, remove, list, next, openOfProjects };
 }

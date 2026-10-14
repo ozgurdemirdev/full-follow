@@ -65,7 +65,7 @@ export const mcp: McpDef = {
     ],
     save: [{
       at: 250,
-      text: "task: {title,assignee,due_date,due_time:'14:30',kind:gorusme|takip|gorev (varsayılan gorev)}. goal: {title,target,days,channel?|metric?:'new_records',note?} (günlük tekrarlı hedef); goal_log: {goal,add|count,date?,note?}.",
+      text: "task: {title,assignee:ozgur|claude|musteri (musteri: müşterinin yapacağı iş, projede Müşteride bekliyor sayılır),due_date,due_time:'14:30',kind:gorusme|takip|gorev (varsayılan gorev)}. goal: {title,target,days,channel?|metric?:'new_records',note?} (günlük tekrarlı hedef); goal_log: {goal,add|count,date?,note?}.",
     }],
   },
   tools: [{
