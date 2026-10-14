@@ -51,7 +51,76 @@ packages/modules/<key>/
 
 ## Wiring
 
-`scripts/gen-modules.mjs` scans this folder and writes `packages/app/src/modules.generated.ts` and `packages/server/src/modules.generated.ts`.
+`scripts/gen-modules.mjs` scans this folder and writes `packages/app/src/modules.generated.ts`, `packages/server/src/modules.generated.ts` and, for the web part (below), `packages/web/src/modules.generated.ts` and `packages/web/src/styles/modules.generated.css`.
 `scripts/build.mjs` builds core, every module, app, server and MCP in that order; `scripts/test.mjs` runs core, app and every module's tests.
-Both run from `npm run build` / `npm test` / `npm start`. `npm run check:modules` is the removal check: for each module and for all off, it regenerates the lists, compiles every package, runs the remaining tests, starts the server and the MCP host against a seeded copy of the demo database and requests the core and `smoke` endpoints (the web is built once, all on; a per module web check comes with the web manifests); run it at the end of a phase and before a merge (take the build lock once around it if others build). `GET /api/modules` lists the installed modules.
+Both run from `npm run build` / `npm test` / `npm start`. `npm run check:modules` is the removal check: for each module and for all off, it regenerates the lists, compiles every package, runs the remaining tests, starts the server and the MCP host against a seeded copy of the demo database and requests the core and `smoke` endpoints (the web is typechecked once, all on, and built again for every case with the generated web list of that case; the build must hold the `fullfollow.webMarkers` of exactly the installed modules); run it at the end of a phase and before a merge (take the build lock once around it if others build). `GET /api/modules` lists the installed modules.
 The server gives a module's controller two apps through string tokens: `APP_TOKEN` (actor `ozgur`) and `CLAUDE_APP_TOKEN` (the same app as `claude`, for what Claude writes when the panel asks for it: the follow-up drafts).
+
+## Web part
+
+A module's screens live in `packages/modules/<key>/web/`; `packages/web` keeps the shell and the kit. Every module has a `web/index.ts` that exports `default defineWebModule({ ... })`, the manifest; the shell builds routes, nav, dashboard cards, quick add rows, settings rows, links and search from the manifests of the installed, visible modules and never names a module. `calendar` (everything moved) and `mascot` (a module with no data) are the references; the other modules have a manifest whose pages, cards and forms are still loaded from the kit (`import("@kit/pages/People")`), moving them in is the work below.
+
+```
+packages/modules/<key>/web/
+  index.ts       the manifest (static imports stay light: pages, forms and cards are `import()` loaders)
+  styles.css     optional; imported by the generated packages/web/src/styles/modules.generated.css (one Tailwind run with the app's CSS)
+  paths.ts       the module's path constants, pages/, components/, cards/, forms/, types.ts, labels.ts, helpers
+```
+
+### The kit and the boundary
+
+- A module's web code imports React, the npm packages `packages/web` has, `@kit/*` (an alias for `packages/web/src/*`) and its own files. Never another module's `web/`, `@fullfollow/*`, server or node code (`npm run check:boundaries` fails the build). `packages/web/src` never imports a module except `src/modules.generated.ts`.
+- The kit is: the shell (`app/`), the UI kit (`components/ui.tsx`, `layout.tsx`, `ExpandOverlay`, `NumberField`, `MicButton`, `boardIcons`, `icons`, `components/forms/*`, `forms/shared`, `forms/helpers`, `forms/pickers`), the api client and store, tokens and the shared styles, `lib/format`, `lib/media`, the Dashboard and Settings hosts, the Comments page. Anything else that a screen uses moves with the screen; a helper two modules need stays in the kit only when it is generic (formatting, layout), domain helpers move and the other module reads the data through the API or a slot.
+- Import order inside a manifest matters in one way: `defineWebModule` comes from `@kit/app/modules/define`, `linkTo` and `byRecord` from `@kit/app/modules/links`. Never import `app/modules/registry`, `api/actions` or `forms/meta` (they import the registry, which imports every manifest) statically from a manifest; inside a page, card or form that is loaded lazily they are fine.
+- Types the module owns move to `web/types.ts`; the Today sections the shell itself reads (`Plan`, `Task`, `Draft` ...) stay in `packages/web/src/api/types*.ts`.
+
+### The manifest
+
+```ts
+defineWebModule({
+  key, label,                                   // the server's key; Turkish name (the Settings "Modüller" switches)
+  routes:   [{ page, path, params?, load }],    // load: () => import("./pages/Calendar") (default export); params "/:id?"
+  nav:      [{ group, order, label, icon, path, useBadge? }],  // useBadge is a hook returning a count
+  dashboard:[{ id, column?: 0|1|2, order, show?(today), load }], // load gives a component taking { today }
+  settings: [{ id, category, order, rows(ctx) }],               // rows: SettingRow[]; ctx { floor, hasRules, withSession }
+  settingsCategories: [{ slug, name, icon, sub?, order }],
+  quickAdd: [{ kind, name, key, dest, icon, tone, group, order, form: FormMeta, load }], // load gives the form (FormProps)
+  links:    { person: (id) => `/kisiler/${id}` },  // linkTo(type, id); null return = no page of its own
+  search:   [{ id, order, dataKey, match(row, q, ctx) }],        // dataKey: the list the screens share (api/keys K.*)
+  slots:    { "dashboard.tools": Component },      // or { order, Component }; may be a lazy() component
+  invalidates: { tasks: ["/tasks", "/plan"], people: ["/plan"] }, // a write to a resource also refreshes these prefixes
+})
+```
+
+Package.json of the module carries the two things build tools need without running the manifest: `"fullfollow": { "module": "<key>", "endpoints": ["/tasks", ...], "webMarkers": ["/takvim"] }`. `endpoints` are the API prefixes the module owns: the web never sends a read for a module that is not installed (the generated list includes switched off modules, as data only). `webMarkers` are strings that are in the web build exactly when the module is installed (a route path, a storage key): `npm run check:modules` searches every case's build for them. Add them when the module's path is no longer in `packages/web/src/app/routes.ts` (`PATHS`).
+
+Slots that exist: `app.overlay` (props `{ onActivate }`, the mascot), `dashboard.strip` (props `{ today }`, above the cards: the goal strip), `dashboard.tools` (the buttons next to "Yeni kayıt"). A screen that shows another module's data renders `<Slot name="person.overlay.side" props={{ id }} />` (from `@kit/app/modules/Slot`) and the owner registers a component under that name; the host knows nothing of the owner. Name a slot `<screen>.<place>`, list it here when you add one.
+
+### Order numbers (one scale across modules; pick the number that keeps today's layout)
+
+| Place | Numbers |
+|---|---|
+| Sidebar, group Network | today 10, calendar 20, people 30, companies 40, referrals 50, drafts 60, comments 70 |
+| Sidebar, group Pazarlama | posts 10, ideas 20, templates 30 |
+| Sidebar, group Satış ve projeler | pipeline 10, projects 20, own-projects 30, timeline 40, report 50, review 60 |
+| Dashboard cards (global order, column) | review 10, plan 20 (col 0), drafts 30 (0), awaiting 40 (1), followups-due 50, follow-ups 60, payments 70 (1), activity 80 (1), quota 90, projects 100 (2), funnel 110 (2), cooling 120 (2), posts-due 130, comments 140 (2), status 150 |
+| Quick add groups | Kişiler ve iletişim (person 10, company 20, touch 30, draft 40, comment 50), Satış (opportunity 10, offer 20, project 30), Plan (task 10, goal 20), Pazarlama (post 10, idea 20, template 30), Kendi işlerin (own_project 10) |
+| Settings categories | hesap 10, isletme 20, takip 30, claude 40, maskot 50, liste 60, moduller 70, cop 80 |
+| Settings rows of isletme | money and floor 10, weekly target 20, daily goals 30 (calendar), payment template 40 |
+
+Two modules may register the same dashboard `id` (projects and own-projects both show the projects card): the first one wins.
+
+### Hide without removing
+
+Settings has a "Modüller" section: one switch per installed module (core setting `modules_hidden`, `GET/PUT /api/settings`). `useModules()` gives `has(key)` (installed: use it before sending a request) and `visible(key)` (installed and not hidden: use it for everything that is only on screen). Routes, nav, cards, quick add, links, search, slots, settings rows and the chat widget follow `visible`; a hidden module's URL redirects to the dashboard, its data and API stay, turning it back on restores everything. MCP does not change.
+
+### Moving a module into its web folder (what to do, in order)
+
+1. `node scripts/web-move.mjs <key> <from>:<to> ...` moves files from `packages/web/src` with `git mv` and rewrites their imports (other moved files stay relative, everything left in the kit becomes `@kit/...`). Example: `node scripts/web-move.mjs calendar pages/Calendar.tsx:pages/Calendar.tsx components/calendar/:components/ lib/calendar.ts:calendar.ts styles/calendar.css:styles.css`. Move the page, its components, its dashboard cards, its forms (split a shared forms file by hand), its lib helpers and labels, its stylesheet (`styles.css`, delete its `@import` from `app.css`), its types.
+2. Fix what the tool cannot: types that left `api/types.ts` (move them to `web/types.ts`), labels that left `lib/labels.ts` (`web/labels.ts`), `PATHS.<key>` (a constant in `web/paths.ts`), `recordPath` (use `linkTo`), `recordHref`-style helpers, a card that took props (give it `{ today }` or keep a small wrapper in `web/cards.tsx`).
+3. Fill the manifest: the route, the nav item (`order` from the table), the dashboard cards, the forms with their `FormMeta` (`page`: `byRecord("<type>")`), `links`, `search`, `settings` rows (remove them from the kit's settings files), `slots`, `invalidates` (remove the module's rows from `AFFECTS` in `api/actions.ts` and from the `PLAN` style lists).
+4. Everything that another screen showed of this module becomes a slot: the screen renders `<Slot>`, the module registers the component. A screen never calls `useModules().has("<key>")` to decide what to draw; it renders the slot.
+5. Remove the module's entry from `PATHS` once nothing in the kit reads it, and the old table rows (`api/modules.ts` has none left: endpoints come from package.json). Add `webMarkers` to the module's package.json.
+6. `styles.css` rules of a module are namespaced (`cal-*`); variables it uses stay in the CSS output because the file is compiled with the app's one Tailwind run. A token only read from JS (`getComputedStyle`) must also be used by some CSS rule or utility.
+7. React compiler: a hook or component whose answer depends on module state (hidden, installed) must receive it as an argument or read it through a hook (`useRegistry()`, `useModules()`); a bare call such as `currentRegistry()` in render is cached for good. A function that reads a module level cache while rendering starts with `"use no memo"`.
+8. Run `npm run build`, `npm test`, `npm run check:boundaries`, then `FF_MODULES_OFF=<key>` builds (`node scripts/build.mjs`, then `npx vite build` inside `packages/web`) and open every page: no console errors, nothing of the module left on screen, and `npm run check:modules --only=<key>`.

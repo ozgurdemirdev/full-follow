@@ -4,15 +4,15 @@
 //   2. runs the tests of every remaining package (any non zero exit fails the case),
 //   3. starts the server on a free port (3021..3029) against a seeded copy of the demo database, requests the core endpoints and
 //      the `smoke` paths of every installed module (a 5xx, a 404 or no answer fails), checks /api/modules lists exactly the installed keys,
-//      fetches the web page and its main bundle (the web is built once, all on, at the start: it compiles every module until the web
-//      has module manifests, so a per case web build proves nothing yet; P4 adds the web check),
+//      fetches the web page and its main bundle; the web is built for every case too (vite build only: the generated web list changes per case),
+//      and the build must contain the `fullfollow.webMarkers` strings (a route path, a storage key) of exactly the installed modules that declare any,
 //   4. starts the MCP host over stdio: initialize, tools/list (the tools of switched off modules are gone), today, find for every installed type.
 // One line per case: `pass <case>` or `FAIL <case>: <first error>`; exit 1 when any case failed. The cases are the module keys,
 // `all-off` and finally `all-on` (the baseline, so the build left behind is the normal one). Logs: $FF_CHECK_LOGS/<case>/ (default: the OS temp folder).
 // `--only=<case>,<case>` runs just those. The generated module lists are always put back to all on at the end, also after a failure. Run it through the build lock when others build too:
 // it builds many times, so take the lock once around the whole run.
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, openSync, closeSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -29,6 +29,8 @@ const CORE_TOOLS = ["today", "find", "get", "save", "delete", "open"];
 const node = process.execPath;
 const script = (name) => join(root, "scripts", name);
 const requireFrom = (pkg) => createRequire(join(root, "packages", pkg, "package.json"));
+const webDir = join(root, "packages", "web");
+const viteBin = requireFrom("web").resolve("vite/bin/vite.js");
 const baseEnv = () => {
   const env = { ...process.env, FF_OPEN: "0", FF_BACKUP: "0" };
   delete env.FF_MODULES_OFF;
@@ -38,10 +40,10 @@ const baseEnv = () => {
 class CheckError extends Error {}
 
 /** Runs a command with its output in the case log; throws CheckError(first error line) on a non zero exit */
-function step(caseDir, name, cmd, args, env) {
+function step(caseDir, name, cmd, args, env, cwd = root) {
   const file = join(caseDir, `${name}.log`);
   const fd = openSync(file, "w");
-  const r = spawnSync(cmd, args, { cwd: root, env, stdio: ["ignore", fd, fd], timeout: STEP_TIMEOUT, shell: cmd !== node });
+  const r = spawnSync(cmd, args, { cwd, env, stdio: ["ignore", fd, fd], timeout: STEP_TIMEOUT, shell: cmd !== node });
   closeSync(fd);
   if (r.status === 0) return;
   throw new CheckError(`${name}: ${firstError(file) ?? `exit ${r.status ?? r.signal}`} (${file})`);
@@ -156,6 +158,28 @@ async function checkMcp(caseDir, env, installed, allTools) {
   }
 }
 
+/** All the JavaScript of the web build (the entry bundle and the lazy chunks) */
+function bundleText() {
+  const dir = join(webDir, "dist", "assets");
+  return readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(dir, f), "utf8")).join("\n");
+}
+
+/**
+ * The web build holds the `fullfollow.webMarkers` of a module (a route path, a storage key: strings only that module's web part has) exactly when
+ * the module is installed: an off module's pages, cards and forms must not be in the build, and an installed one's must (so the check cannot go blind).
+ */
+function checkBundle(modules, installed) {
+  const text = bundleText();
+  const on = new Set(installed.map((m) => m.key));
+  for (const m of modules) {
+    for (const marker of m.webMarkers) {
+      const found = text.includes(marker);
+      if (found && !on.has(m.key)) throw new CheckError(`web: "${marker}" of the switched off module ${m.key} is in the build`);
+      if (!found && on.has(m.key)) throw new CheckError(`web: "${marker}" of the installed module ${m.key} is not in the build (fix fullfollow.webMarkers in its package.json)`);
+    }
+  }
+}
+
 /** One case: the given module keys are off */
 async function runCase(name, off, ctx) {
   const dir = join(logRoot, name);
@@ -167,7 +191,12 @@ async function runCase(name, off, ctx) {
   ctx.distIsAllOn = false;
   step(dir, "build", node, [script("build.mjs")], env);
   ctx.distIsAllOn = !off.length;
+  // the web build of this case: the generated web list follows FF_MODULES_OFF (vite only: the typecheck ran once, with the all on build)
+  ctx.webIsAllOn = false;
+  step(dir, "web", node, [viteBin, "build"], env, webDir);
+  ctx.webIsAllOn = !off.length;
   const installed = dumpModules(env);
+  checkBundle(ctx.modules, installed);
   step(dir, "test", node, [script("test.mjs")], env);
   await checkServer(dir, env, installed);
   await checkMcp(dir, env, installed, ctx.allTools);
@@ -179,6 +208,7 @@ function restore(ctx) {
   if (!ctx.demoExisted) for (const f of [demo, `${demo}-wal`, `${demo}-shm`]) rmSync(f, { force: true });
   spawnSync(node, [script("gen-modules.mjs")], { cwd: root, env: baseEnv(), stdio: "ignore" });
   if (!ctx.distIsAllOn) spawnSync(node, [script("build.mjs")], { cwd: root, env: baseEnv(), stdio: "ignore" });
+  if (!ctx.webIsAllOn) spawnSync(node, [viteBin, "build"], { cwd: webDir, env: baseEnv(), stdio: "ignore" });
 }
 
 async function main() {
@@ -186,7 +216,7 @@ async function main() {
   mkdirSync(logRoot, { recursive: true });
   const keys = discoverModules().map((m) => m.key);
   const demo = join(root, "data", "demo.db");
-  const ctx = { seedDb: join(logRoot, "seed.db"), allTools: [], distIsAllOn: false, demoExisted: existsSync(demo) };
+  const ctx = { seedDb: join(logRoot, "seed.db"), allTools: [], modules: discoverModules(), distIsAllOn: false, webIsAllOn: false, demoExisted: existsSync(demo) };
   for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => { restore(ctx); process.exit(130); });
   const results = [];
   try {
@@ -197,6 +227,8 @@ async function main() {
     ctx.distIsAllOn = true;
     ctx.allTools = dumpModules(baseEnv()).flatMap((m) => m.tools);
     npm(seedDir, "web", ["run", "build", "-w", "@fullfollow/web"], baseEnv());
+    ctx.webIsAllOn = true;
+    checkBundle(ctx.modules, ctx.modules);
     step(seedDir, "seed", node, [script("demo-seed.cjs")], baseEnv());
     copyFileSync(demo, ctx.seedDb);
     // `--only=a,b` runs just those cases (while fixing one)
