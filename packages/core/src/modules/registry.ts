@@ -63,6 +63,13 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
   const installed = defs.filter((d) => !offSet.has(d.key));
   const byKey = new Map(installed.map((d) => [d.key, d]));
   const types = buildTypes(installed);
+  // the installed set never changes, so each kind of contribution is collected once
+  const contributions = new Map<string, any[]>();
+  const contrib: ModuleRuntime["contrib"] = (key) => {
+    let list = contributions.get(key);
+    if (!list) contributions.set(key, (list = installed.flatMap((def) => (def.contribute?.[key] === undefined ? [] : [def.contribute[key]]))));
+    return list;
+  };
 
   return {
     has: (key) => byKey.has(key),
@@ -89,7 +96,6 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
         }
         return effects;
       };
-      const contrib: ModuleRuntime["contrib"] = (key) => installed.flatMap((def) => (def.contribute?.[key] === undefined ? [] : [def.contribute[key] as any]));
       return { mod, emit, types, contrib };
     },
   };
