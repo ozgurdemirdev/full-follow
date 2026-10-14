@@ -4,7 +4,7 @@ import type { FileRow, Offer } from "../api/types";
 import { fmtDay, tl } from "../lib/format";
 import { fileHref } from "./FilesCard";
 import { OfferForm } from "./OfferForm";
-import { Chip, Empty } from "./ui";
+import { Card, Chip, Empty } from "./ui";
 
 /** Offer versions of an opportunity: newest first, one can be accepted (its amount becomes the opportunity value) */
 export function OffersCard({ opportunityId, offers, files }: { opportunityId: number; offers: Offer[]; files: FileRow[] }) {
@@ -13,11 +13,7 @@ export function OffersCard({ opportunityId, offers, files }: { opportunityId: nu
   const accept = (o: Offer, accepted: boolean) =>
     void run("patch", `/offers/${o.id}`, { accepted }, { ok: accepted ? `v${o.version} kabul edildi` : "Kabul geri alındı" }).catch(() => {});
   return (
-    <section className="card rise flex flex-col gap-5 p-8">
-      <div className="flex items-center gap-3">
-        <span className="flex-grow text-md font-semibold">Teklifler</span>
-        {adding ? null : <button type="button" className="btn btn-sec btn-sm" onClick={() => setAdding(true)}>Yeni teklif</button>}
-      </div>
+    <Card title="Teklifler" className="opp-side rise" actions={adding ? null : <button type="button" className="btn btn-sec btn-sm" onClick={() => setAdding(true)}>Yeni teklif</button>}>
       {adding ? <OfferForm opportunityId={opportunityId} files={files} onDone={() => setAdding(false)} /> : null}
       {!offers.length && !adding ? <Empty>Henüz teklif yok. Her revizyon yeni bir sürüm olarak kaydedilir.</Empty> : null}
       {offers.map((o) => {
@@ -51,6 +47,6 @@ export function OffersCard({ opportunityId, offers, files }: { opportunityId: nu
           </div>
         );
       })}
-    </section>
+    </Card>
   );
 }

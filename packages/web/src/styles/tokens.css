@@ -39,6 +39,7 @@
   --text-section: 22px;
   --text-cal-num: 26px;
   --text-co-money: 34px;
+  --text-pipeline-count: 20px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
@@ -125,6 +126,22 @@
   --spacing-fab-menu-offset: 96px;
   --spacing-fab-menu-offset-mobile: 84px;
   --spacing-kanban-column-mobile: 84vw;
+  --spacing-pipeline-funnel-h: 110px;
+  --spacing-pipeline-bar-min: 28px;
+  --spacing-pipeline-rate-col: 52px;
+  --spacing-pipeline-rate-pad: 58px;
+  --spacing-pipeline-col-w: 306px;
+  --spacing-pipeline-col-min-h: 220px;
+  --spacing-pipeline-edge-w: 96px;
+  --spacing-pipeline-edge-btn: 36px;
+  --spacing-pipeline-search-width: 240px;
+  --spacing-pipeline-source-col: 110px;
+  --spacing-pipeline-source-rate: 70px;
+  --spacing-pipeline-dialog-width: 460px;
+  --spacing-pipeline-dialog-gutter: 32px;
+  --spacing-pipeline-dialog-btn: 42px;
+  --spacing-pipeline-funnel-pad-y: 22px;
+  --spacing-pipeline-stage-label: 120px;
   --spacing-chat-fab-size: 48px;
   --spacing-chat-panel-width: 400px;
   --spacing-chat-panel-height: 640px;
@@ -249,6 +266,7 @@
   --radius-nav: 12px;
   --radius-logo: 10px;
   --radius-overlay: 28px;
+  --radius-pipeline-col: 22px;
   --radius-bar: 2px;
   --radius-chart-bar: 14px;
   --radius-row: 20px;
@@ -275,6 +293,8 @@
   --color-bg-sidebar: var(--palette-ink-900);
   --color-bg-overlay-backdrop: var(--palette-ink-950);
   --color-bg-scrim: var(--palette-ink-950-a60);
+  --color-bg-edge-fade: var(--palette-ink-950-a95);
+  --color-bg-edge-clear: var(--palette-ink-950-a0);
   --color-surface-1: var(--palette-ink-850);
   --color-surface-2: var(--palette-ink-800);
   --color-surface-inset: var(--palette-ink-900);
@@ -313,6 +333,8 @@
   --color-claude-outline: var(--palette-orange-800);
   --color-claude-hint-bg: var(--palette-orange-990);
   --color-claude-hint-fg: var(--palette-peach-100);
+  --color-claude-wash: var(--palette-orange-975);
+  --color-claude-wash-fg: var(--palette-peach-200);
   --color-warning: var(--palette-amber-300);
   --color-danger: var(--palette-coral-300);
   --color-info: var(--palette-sky-300);
@@ -478,6 +500,8 @@
   --palette-orange-990: #1F1712;
   --palette-peach-100: #F2C3AE;
   --palette-orange-975: #1F1712;
+  --palette-ink-950-a95: rgba(11,11,12,.95);
+  --palette-ink-950-a0: rgba(11,11,12,0);
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;

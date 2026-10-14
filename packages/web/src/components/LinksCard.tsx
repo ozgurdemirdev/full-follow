@@ -2,7 +2,7 @@ import { useState } from "react";
 import { remove, run } from "../api/actions";
 import { useQuery } from "../api/store";
 import type { LinkRow, List } from "../api/types";
-import { Empty } from "./ui";
+import { Card, Empty } from "./ui";
 
 /** Labelled links on an opportunity, project or own project (roadmap, proposal deck, Figma, repo) */
 export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own_project"; id: number }) {
@@ -27,8 +27,7 @@ export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own
   };
   const rows = links.data?.rows ?? [];
   return (
-    <section className="card rise flex flex-col gap-5 p-8">
-      <span className="text-md font-semibold">Linkler</span>
+    <Card title="Linkler" className="opp-side rise">
       {links.data && !rows.length ? <Empty>Roadmap, teklif sunumu, Figma, repo gibi linkleri buraya ekle.</Empty> : null}
       {rows.map((l) => (
         <div key={l.id} className="flex items-center gap-3">
@@ -46,6 +45,6 @@ export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own
           <button type="button" className="btn btn-sec" disabled={busy || !ready} onClick={add}>Ekle</button>
         </div>
       </div>
-    </section>
+    </Card>
   );
 }

@@ -5,7 +5,7 @@ import { fmtDay, followNote } from "../lib/format";
 import { ACTOR } from "../lib/labels";
 import { EditDelete } from "./contact";
 import type { FeedKind } from "./Feed";
-import { Who } from "./ui";
+import { Card, Who } from "./ui";
 
 /** Sort key of a task without a due date: after every real date */
 const NO_DUE = "9999-12-31";
@@ -20,8 +20,7 @@ export function NextStep({ tasks, type, id, personId, followUp }: { tasks: Task[
   const note = followNote(followUp);
   const preset = type === "person" ? { person_id: id } : type === "opportunity" ? { opportunity_id: id, person_id: personId } : { project_id: id, person_id: personId };
   return (
-    <section className="card rise flex flex-col gap-3 p-8">
-      <h2 className="m-0 text-base font-semibold">Sıradaki adım</h2>
+    <Card title="Sıradaki adım" className="opp-side rise">
       {note ? <p className={`m-0 text-base-sm ${note.late ? "text-warning" : "text-text-secondary"}`}>{note.text}</p> : null}
       {t ? (
         <>
@@ -36,6 +35,6 @@ export function NextStep({ tasks, type, id, personId, followUp }: { tasks: Task[
         <p className="m-0 text-base-sm text-text-secondary">Açık görev yok.</p>
       )}
       <button type="button" className="btn btn-sec self-start" onClick={() => openSheet("task", preset)}>Görev ekle</button>
-    </section>
+    </Card>
   );
 }

@@ -366,6 +366,8 @@ export interface Opportunity extends Base {
   closed_at: string | null;
   position: number;
   project_id: number | null;
+  /** when the opportunity entered its current stage (gap G9, not sent yet; the pipeline falls back to updated_at) */
+  stage_since?: string | null;
 }
 export interface Project extends Base {
   name: string;
