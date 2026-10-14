@@ -17,7 +17,6 @@ import { PeopleController } from "./controllers/people.controller";
 import { ProjectsController } from "./controllers/projects.controller";
 import { SourcesController } from "./controllers/sources.controller";
 import { TouchesController } from "./controllers/touches.controller";
-import { PostsController } from "./controllers/posts.controller";
 import { TemplatesController } from "./controllers/templates.controller";
 import { IdeasController } from "./controllers/ideas.controller";
 import { OwnProjectsController } from "./controllers/own-projects.controller";
@@ -35,7 +34,7 @@ import { moduleControllers } from "./modules.generated";
     AuthController, MiscController, PeopleController, CompaniesController, SourcesController,
     OpportunitiesController, ProjectsController, PaymentsController, DraftsController,
     TouchesController, CommentsController, SectorsController, NotesController, LinksController, FilesController, OffersController, OpportunityPeopleController,
-    PostsController, TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
+    TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,
   ],

@@ -64,7 +64,7 @@ export function Sidebar() {
     {
       label: "Pazarlama",
       items: [
-        { key: "posts", label: "Paylaşımlar", icon: "megaphone", count: today.data?.posts_due.total },
+        { key: "posts", label: "Paylaşımlar", icon: "megaphone", count: today.data?.posts_due?.total },
         { key: "ideas", label: "Gelir fikirleri", icon: "bulb" },
         { key: "templates", label: "Şablonlar", icon: "template" },
       ],

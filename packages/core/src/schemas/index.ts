@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  COMMENT_TARGETS, LINK_TARGETS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CONTACT_STATUSES, TAG_COLORS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
 } from "../constants";
 import * as zodKit from "./kit";
@@ -207,31 +207,6 @@ export const draftCreate = z.strictObject({
 export const draftUpdate = patch({ channel: z.enum(CHANNELS), body: text, reason: optText, template_id: id.nullable() });
 
 // ---- Paket 2: pazarlama ----
-const days = z.coerce.number().int().min(1).max(365);
-
-export const postCreate = z.strictObject({
-  platform: z.enum(POST_PLATFORMS),
-  title: text,
-  url: optText,
-  body: optText,
-  posted_at: date.optional(),
-  refresh_days: days.nullish(),
-  idea_id: id.nullish(),
-  notes: optText,
-});
-export const postUpdate = patch({
-  platform: z.enum(POST_PLATFORMS),
-  title: text,
-  url: optText,
-  body: optText,
-  posted_at: date,
-  refresh_days: days.nullable(),
-  idea_id: id.nullable(),
-  notes: optText,
-  /** true: "güncelledim" (yenileme tarihi bugün olur) */
-  refreshed: z.boolean(),
-});
-
 export const templateCreate = z.strictObject({
   name: text,
   kind: z.enum(TEMPLATE_KINDS).default("ilk"),

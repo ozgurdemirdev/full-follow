@@ -52,7 +52,7 @@ export default function Today() {
             <ProjectsCard key="projects" />
             <FunnelCard key="funnel" />
             {d.network.cooling.rows.length ? <CoolingCard key="cooling" list={d.network.cooling} coolingDays={d.network.settings.cooling_days} /> : null}
-            {d.posts_due.total ? <PostsDueCard key="posts-due" list={d.posts_due} /> : null}
+            {d.posts_due?.total ? <PostsDueCard key="posts-due" list={d.posts_due} /> : null}
             <CommentsCard key="comments" />
             <StatusCard key="status" />
           </Masonry>

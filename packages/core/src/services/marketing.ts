@@ -3,7 +3,6 @@ import { addDays } from "../dates";
 import { rows, type Ctx } from "../context";
 import { followupsDue } from "./followups";
 import { ideaStats } from "./ideas";
-import { postStats } from "./posts";
 import { templateComparison } from "./templates";
 
 /**
@@ -26,7 +25,8 @@ export function channelPerformance(ctx: Ctx, days = 30) {
 
 /** Pazarlama özeti: paylaşımlar (getirdikleri), fikirler (ilgi), şablonlar (tür ve kanal gruplarında kıyas), kanal performansı, takip dizisi */
 export function marketingReport(ctx: Ctx) {
-  const posts = postStats(ctx);
+  // posts come from the posts module; without it the lists are empty
+  const posts = ctx.mod("posts")?.stats() ?? [];
   return {
     posts: posts.slice().sort((a, b) => b.won_value - a.won_value || b.people_count - a.people_count || b.opp_count - a.opp_count),
     posts_due: posts.filter((p) => p.refresh_due),

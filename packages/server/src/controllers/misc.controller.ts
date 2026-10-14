@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, Param, Put, Query } from "@nestjs/common
 import {
   CHANNELS, COMMENT_TARGETS, DIRECTIONS, DRAFT_STATUSES, MILESTONES, OPP_STAGES, OPEN_OPP_STAGES,
   PROJECT_STAGES, SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
-  POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, MARKETING_DEFAULTS, CONTACT_STATUSES, TAG_COLORS,
+  TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, MARKETING_DEFAULTS, CONTACT_STATUSES, TAG_COLORS,
 } from "@fullfollow/core";
 import { CORE, type Core } from "../core.provider";
 import { intId } from "../http";
@@ -30,7 +30,7 @@ export class MiscController {
       tags: TAGS, source_kinds: SOURCE_KINDS, opp_stages: OPP_STAGES, open_opp_stages: OPEN_OPP_STAGES,
       project_stages: PROJECT_STAGES, milestones: MILESTONES, channels: CHANNELS, directions: DIRECTIONS,
       touch_kinds: TOUCH_KINDS, connection_tags: CONNECTION_TAGS, network_defaults: NETWORK_DEFAULTS, draft_statuses: DRAFT_STATUSES, comment_targets: COMMENT_TARGETS, labels: LABELS,
-      post_platforms: POST_PLATFORMS, template_kinds: TEMPLATE_KINDS, idea_stages: IDEA_STAGES, interest_levels: INTEREST_LEVELS, marketing_defaults: MARKETING_DEFAULTS,
+      template_kinds: TEMPLATE_KINDS, idea_stages: IDEA_STAGES, interest_levels: INTEREST_LEVELS, marketing_defaults: MARKETING_DEFAULTS,
       contact_statuses: CONTACT_STATUSES, tag_colors: TAG_COLORS,
       ...this.core.moduleMeta(),
     };

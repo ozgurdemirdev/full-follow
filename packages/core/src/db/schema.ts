@@ -3,7 +3,7 @@ import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQL
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
   DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
-  POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
+  TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES, FILE_TARGETS,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
@@ -334,7 +334,8 @@ export const offers = sqliteTable("offers", {
 /** Paylaşımlar: R10 konusu, LinkedIn/Instagram gönderisi. Yenileme aralığı dolunca Bugün'de "güncelle" hatırlatması. */
 export const posts = sqliteTable("posts", {
   ...common(),
-  platform: text("platform", { enum: POST_PLATFORMS }).notNull(),
+  /** r10 | linkedin | instagram | diger: the posts module validates it */
+  platform: text("platform").notNull(),
   title: text("title").notNull(),
   url: text("url"),
   body: text("body"),

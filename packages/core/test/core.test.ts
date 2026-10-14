@@ -369,32 +369,6 @@ describe("Paket 2: pazarlama kuralları", () => {
     expect(claude.followups.due()).toHaveLength(0);
   });
 
-  it("14. paylaşım: yenileme hatırlatması, güncelledim düşürür, getirdiği kişi ve iş sayılır", () => {
-    const post = ozgur.posts.create({ platform: "r10", title: "Web sitesi yapıyorum", url: "https://r10.net/x", posted_at: "2026-10-01", refresh_days: 7 }).row;
-    ozgur.posts.create({ platform: "linkedin", title: "Tanıtım", posted_at: "2026-09-01" });
-    expect(ozgur.today().posts_due.rows.map((p: any) => p.id)).toEqual([post.id]);
-    const r = ozgur.save("post", { refreshed: true }, post.id);
-    expect(r.effects.join(" ")).toContain("2026-10-16");
-    expect(ozgur.today().posts_due.total).toBe(0);
-    day = "2026-10-16";
-    expect(ozgur.today().posts_due.total).toBe(1);
-
-    // paylaşımdan gelen kişi ve kazanılan iş
-    const src = ozgur.get("source", "R10").row;
-    const p = claude.save("person", { name: "Forumdan Ali", post: "Web sitesi" }).row;
-    expect(p.post_id).toBe(post.id);
-    const o = ozgur.opportunities.create({ title: "Ali sitesi", person_id: p.id, source_id: src.id, estimated_value: 30000 }).row;
-    ozgur.opportunities.create({ title: "Ali ikinci", person_id: p.id, source_id: src.id });
-    ozgur.opportunities.move(o.id, { stage: "kazanildi" });
-    const st = ozgur.find("post", { filter: { platform: "r10" } }).rows[0];
-    expect(st).toMatchObject({ people_count: 1, opp_count: 2, won: 1, won_value: 30000 });
-    expect(ozgur.personCard(p.id).post?.id).toBe(post.id);
-
-    // paylaşım silinince kişi kalır, bağ kopar
-    ozgur.remove("post", post.id);
-    expect(sql("SELECT post_id FROM people WHERE id = ?", p.id)[0].post_id).toBeNull();
-  });
-
   it("15. fikir ilgi ölçümü ve sektör/kanala göre şablon seçimi", () => {
     const idea = claude.save("idea", { title: "Klinik randevu botu", problem: "telefonla randevu kaçıyor", sectors: ["Sağlık > Diş hekimi"] }).row;
     const ayse = ozgur.people.create({ name: "Ayşe Demir", sector: "Sağlık > Diş hekimi" } as any).row;

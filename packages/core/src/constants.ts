@@ -11,7 +11,7 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
-export const CORE_TRASH_TYPES = ["person", "company", "opportunity", "project", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "own_project", "opportunity_person", "offer", "file"] as const;
+export const CORE_TRASH_TYPES = ["person", "company", "opportunity", "project", "touch", "note", "template", "idea", "draft", "payment", "comment", "interest", "link", "own_project", "opportunity_person", "offer", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -42,13 +42,13 @@ export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 /** Record types that belong to a feature module, and the module key that owns each: names the missing module in the error when it is not installed */
-export const MODULE_TYPE_OWNER = { task: "calendar", goal: "calendar", goal_log: "calendar" } as const;
+export const MODULE_TYPE_OWNER = { task: "calendar", goal: "calendar", goal_log: "calendar", post: "posts" } as const;
 
 export const RECORD_TYPES = [
   "person", "company", "opportunity", "project", "draft", "payment", "source", "comment", "touch", "setting",
   "sector", "note", "tag", "trash", "link", "offer",
   // Paket 2: pazarlama
-  "post", "template", "idea", "interest",
+  "template", "idea", "interest",
   // kendi projelerim
   "own_project",
 ] as const;
@@ -61,16 +61,13 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
   yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
   sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
-  paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
+  sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   own: "own_project", own_projects: "own_project", kendi_proje: "own_project", "kendi projem": "own_project", projelerim: "own_project", urunum: "own_project",
   etiket: "tag", tags: "tag", companies: "company", firmalar: "company", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
 };
 
 // ---- Paket 2: pazarlama ----
-/** Paylaşım platformları (forum konusu, gönderi) */
-export const POST_PLATFORMS = ["r10", "linkedin", "instagram", "diger"] as const;
-export const PLATFORM_LABEL: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 /** Mesaj şablonu türü: ilk mesaj, takip, teklif sonrası, diğer */
 export const TEMPLATE_KINDS = ["ilk", "takip", "teklif", "diger"] as const;
 /** A reply rate over fewer messages than this is "early": too noisy to rank on (templates, lead sources) */

@@ -12,7 +12,6 @@ import { trashList } from "./trash";
 import type { RelationDef } from "../modules/types";
 import { entityHandler, isCoreType } from "./records";
 import { requireRow, resolveRef } from "./shared";
-import { postStats } from "./posts";
 import { templateStats } from "./templates";
 
 /** Sektör id ya da adı → o sektörün ve alt sektörlerinin id'leri (bilinmeyen sektör: boş) */
@@ -172,16 +171,6 @@ export function queriesService(ctx: Ctx) {
   }
 
   // ---------- Paket 2: pazarlama ----------
-  function posts(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = postStats(ctx);
-    if (f.platform) list = list.filter((p) => p.platform === f.platform);
-    if (bool(f.refresh_due)) list = list.filter((p) => p.refresh_due);
-    if (f.idea_id) list = list.filter((p) => p.idea_id === Number(f.idea_id));
-    list = list.filter((p) => has(o.q, p.title, p.url, p.body, p.notes));
-    return page(list, o.limit, o.offset);
-  }
-
   function templates(o: ListOpts): Rows {
     const f = o.filter ?? {};
     let list = templateStats(ctx);
@@ -243,7 +232,7 @@ export function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
     draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, offer: offerList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags,
+    sector: sectors, note: notes, link: linkList, offer: offerList, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
@@ -290,7 +279,7 @@ export function queriesService(ctx: Ctx) {
     project: ["payments", "touches", "comments", "drafts", "links"],
     payment: ["comments"], draft: ["comments"],
     own_project: ["ideas", "links", "comments"],
-    post: ["people", "comments"], idea: ["people", "touches", "posts", "comments"], template: ["drafts"],
+    idea: ["people", "touches", "comments"], template: ["drafts"],
   };
 
   /** Tek kayıt + isteğe bağlı ilişkili kayıtlar (with). Her ilişkili liste en fazla relLimit (varsayılan 10) satır. */
@@ -313,7 +302,6 @@ export function queriesService(ctx: Ctx) {
       case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "offer": rowData = own(offerList({ filter: {}, limit: 100000 }).rows.find((r) => r.id === id)); break;
-      case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
       case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;
       case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;
       case "own_project": rowData = own(ownProjectStats(ctx).find((p) => p.id === id)); break;
@@ -350,7 +338,7 @@ export function queriesService(ctx: Ctx) {
         case "files": related.files = filesOf(ctx, "opportunity", id).slice(0, n); break;
         case "people":
           related.people = type === "opportunity" ? teamOf(ctx, id).slice(0, n) : type === "idea" ? ideaPeople(ctx, id).slice(0, n)
-            : type === "post" ? cap(people({ filter: { post_id: id }, limit: n }))
+            : ctx.types.entity(type) ? cap(people({ filter: by, limit: n }))
             : cap(people({ filter: { company_id: id }, limit: n }));
           break;
         case "ideas": {
@@ -360,7 +348,6 @@ export function queriesService(ctx: Ctx) {
             .slice(0, n);
           break;
         }
-        case "posts": related.posts = cap(posts({ filter: { idea_id: id }, limit: n })); break;
         case "referrals": related.referrals = cap(people({ filter: { referred_by_id: id }, limit: n })); break;
         case "links": related.links = cap(linkList({ filter: by, limit: n })); break;
         case "notes": related.notes = cap(notes({ filter: { person_id: id }, limit: n })); break;
@@ -404,7 +391,7 @@ export function queriesService(ctx: Ctx) {
       projects: projects({ filter: { person_id: id }, limit: 100 }).rows,
       drafts: drafts({ filter: { person_id: id, status: "bekliyor" }, limit: 20 }).rows,
       // Paket 2: kişiyi getiren paylaşım ve anlatılan fikirler
-      post: person.post_id ? postStats(ctx).find((x) => x.id === person.post_id) ?? null : null,
+      post: person.post_id ? ctx.mod("posts")?.get(person.post_id) ?? null : null,
       ideas: ideaPeople(ctx, undefined, id),
     };
   }
@@ -425,5 +412,5 @@ export function queriesService(ctx: Ctx) {
     return list.map((e) => ({ ...e, data: e.data ? JSON.parse(e.data) : null }));
   }
 
-  return { find, get, timeline, personCard, companyCard, sectors, tags, notes, posts, templates, ideas, interests, people, opportunities, projects, drafts, payments, touches, comments, companies, sources };
+  return { find, get, timeline, personCard, companyCard, sectors, tags, notes, templates, ideas, interests, people, opportunities, projects, drafts, payments, touches, comments, companies, sources };
 }

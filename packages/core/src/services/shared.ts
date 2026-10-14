@@ -102,7 +102,6 @@ const CORE_REFS = {
   project: { table: "projects", col: "name", label: "proje" },
   source: { table: "sources", col: "name", label: "kaynak" },
   sector: { table: "sectors", col: "name", label: "sektör" },
-  post: { table: "posts", col: "title", label: "paylaşım" },
   idea: { table: "ideas", col: "title", label: "fikir" },
   own_project: { table: "own_projects", col: "name", label: "kendi projesi" },
   template: { table: "templates", col: "name", label: "şablon" },
@@ -139,7 +138,7 @@ const CORE_INPUT_REFS: Record<string, [string, string]> = {
   person: ["person_id", "person"], company: ["company_id", "company"], source: ["source_id", "source"],
   opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
   project: ["project_id", "project"], referred_by: ["referred_by_id", "person"],
-  post: ["post_id", "post"], idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
+  idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
 };
 
 /** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template ve kurulu modüllerin türleri) *_id'ye çevirir */

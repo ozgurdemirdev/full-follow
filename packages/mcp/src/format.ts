@@ -1,5 +1,5 @@
 /** Kısa düz metin çıktılar: boş alan yazılmaz, tek satır = tek kayıt */
-import { label, PLATFORM_LABEL, type McpDef, type McpEntityDoc, type McpFormat } from "@fullfollow/core";
+import { label, type McpDef, type McpEntityDoc, type McpFormat } from "@fullfollow/core";
 
 const thisYear = () => new Date().getFullYear();
 
@@ -47,12 +47,6 @@ const LINE: Record<string, (r: Row) => string> = {
   touch: (r) => join(`#${r.id} ${d(r.happened_at)} ${r.direction} ${label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && "firma", cut(r.summary, 60), r.outcome && `→ ${cut(r.outcome, 30)}`, r.expects_reply && "cevap bekler"),
   comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, 60)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, 60)}"`, r.count > 1 && `${r.count} yorum`, r.last_by === "ozgur" && !r.resolved_at && "CEVAPSIZ", r.resolved_at && "kapalı"),
   setting: (r) => `${r.key}=${r.value}`,
-  post: (r) => join(
-    `#${r.id} ${PLATFORM_LABEL[r.platform] ?? r.platform} ${cut(r.title, 50)}`, d(r.posted_at),
-    r.refresh_due ? "GÜNCELLE" : r.next_refresh_at && `güncelle ${d(r.next_refresh_at)}`,
-    !!r.people_count && `${r.people_count} kişi`, !!r.opp_count && `${r.opp_count} fırsat`, !!r.won && `${r.won} kazanıldı ${tl(r.won_value)}`,
-    r.idea_title && `fikir: ${cut(r.idea_title, 30)}`, r.url,
-  ),
   template: (r) => join(`#${r.id} ${r.name}`, label(r.kind), r.channel ? label(r.channel) : "tüm kanallar", r.sector_path ?? "tüm sektörler",
     !!r.used && `${r.used} kullanım`, !!r.sent && `${r.replied}/${r.sent} dönüş`, `"${cut(r.body, 50)}"`),
   idea: (r) => r.own_project_id
@@ -70,11 +64,13 @@ LINE.followup = (r) => join(r.person_id ? `kişi #${r.person_id} ${r.name}` : r.
 let entityDocs: Record<string, McpEntityDoc> = {};
 let relationTypes: Record<string, string> = {};
 let todaySections: { at: number; render(t: any, f: McpFormat): string }[] = [];
+let marketingParts: { at: number; render(m: any, f: McpFormat): string[] }[] = [];
 
 export function useMcpDefs(defs: McpDef[]) {
   entityDocs = Object.assign({}, ...defs.map((d) => d.entities ?? {}));
   relationTypes = Object.assign({}, ...defs.map((d) => d.relations ?? {}));
   todaySections = defs.flatMap((d) => d.today ?? []);
+  marketingParts = defs.flatMap((d) => d.marketing ?? []);
 }
 
 export function line(type: string, r: Row): string {
@@ -127,7 +123,6 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     if (row.sellable_note) out.push(`satış: ${row.sellable_note}`);
   }
   if (type === "idea" && row.problem) out.push(`sorun: ${row.problem}`);
-  if (type === "post" && row.refresh_days) out.push(`yenileme: ${row.refresh_days} günde bir${row.refreshed_at ? ` · son ${d(row.refreshed_at)}` : ""}`);
   out.push(...(entityDocs[type]?.details?.(row, mcpFormat) ?? []));
   if (type === "interest" && row.note) out.push(`not: ${row.note}`);
   if (row.notes) out.push(`not: ${row.notes}`);
@@ -141,7 +136,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     }
     const t = name === "people" && type === "idea" ? "interest"
       : name === "people" && type === "opportunity" ? "opp_person"
-      : ({ ...relationTypes, links: "link", notes: "note", touches: "touch", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
+      : ({ ...relationTypes, links: "link", notes: "note", touches: "touch", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -175,7 +170,6 @@ export function todayText(t: any): string {
     { at: 300, text: t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "" },
     { at: 400, text: sec("Onay bekleyen taslak", "draft", t.drafts) },
     { at: 500, text: sec("Takip zamanı (taslak yok)", "followup", t.followups ?? { rows: [], total: 0 }) },
-    { at: 550, text: sec("Güncellenecek paylaşım", "post", t.posts_due ?? { rows: [], total: 0 }) },
     { at: 600, text: sec("Takip: kişi", "person", t.follow_ups.people) },
     { at: 700, text: sec("Takip: fırsat", "opportunity", t.follow_ups.opportunities) },
     { at: 800, text: sec("Soğuyan bağlantı", "person", t.network.cooling) },
@@ -198,15 +192,17 @@ const templateGroupText = (g: Row) =>
 
 /** Pazarlama özeti (report aracının ikinci bölümü) */
 export function marketingText(m: any): string {
-  const out: string[] = [];
-  const posts = m.posts.filter((p: Row) => p.people_count || p.opp_count).slice(0, 5);
-  if (posts.length) out.push(`Paylaşım getirisi: ${posts.map((p: Row) => `${cut(p.title, 30)} ${p.people_count} kişi, ${p.opp_count} fırsat${p.won ? `, ${tl(p.won_value)}` : ""}`).join(" · ")}`);
-  if (m.posts_due.length) out.push(`Güncellenecek paylaşım: ${m.posts_due.length}`);
-  if (m.ideas.length) out.push(`Fikirler: ${m.ideas.slice(0, 5).map((i: Row) => `${cut(i.title, 30)} (${label(i.stage)}) ${i.interested}/${i.told} ilgi`).join(" · ")}`);
-  if (m.template_groups.length) out.push(`Şablon: ${m.template_groups.map(templateGroupText).join(" | ")}`);
-  if (m.channels.length) out.push(`Kanal (30 gün, kişi): ${m.channels.map((c: Row) => `${label(c.channel)} ${c.replied}/${c.people}`).join(" · ")}`);
-  if (m.followups.length) out.push(`Takip zamanı gelen: ${m.followups.length}`);
-  return out.join("\n");
+  // core's lines are numbered 100, 200, ...; a module's lines have their own number and land between them
+  const core: { at: number; lines: string[] }[] = [
+    { at: 200, lines: m.ideas.length ? [`Fikirler: ${m.ideas.slice(0, 5).map((i: Row) => `${cut(i.title, 30)} (${label(i.stage)}) ${i.interested}/${i.told} ilgi`).join(" · ")}`] : [] },
+    { at: 300, lines: m.template_groups.length ? [`Şablon: ${m.template_groups.map(templateGroupText).join(" | ")}`] : [] },
+    { at: 400, lines: m.channels.length ? [`Kanal (30 gün, kişi): ${m.channels.map((c: Row) => `${label(c.channel)} ${c.replied}/${c.people}`).join(" · ")}`] : [] },
+    { at: 500, lines: m.followups.length ? [`Takip zamanı gelen: ${m.followups.length}`] : [] },
+  ];
+  return [...core, ...marketingParts.map((p) => ({ at: p.at, lines: p.render(m, mcpFormat) }))]
+    .sort((a, b) => a.at - b.at)
+    .flatMap((p) => p.lines)
+    .join("\n");
 }
 
 /** One line: `Kaynak (90g): R10 40→22→6→2→1→0 zayıf · Ajans 12→9→3→1→0→0 erken` (found → written → replied → meeting → offer → won) */

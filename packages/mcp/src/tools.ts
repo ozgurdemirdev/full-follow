@@ -39,7 +39,8 @@ export function registerTools(server: McpServer, core: Core) {
 
   server.registerTool("today", {
     description: describe("today", [
-      [100, "Bugünün işleri: cevapsız yorumlar, cevap bekleyenler, takip dizisi (zamanı gelen takip taslakları otomatik hazırlanır), taslaklar, güncellenecek paylaşımlar, soğuyanlar, "],
+      [100, "Bugünün işleri: cevapsız yorumlar, cevap bekleyenler, takip dizisi (zamanı gelen takip taslakları otomatik hazırlanır), taslaklar, "],
+      [200, "soğuyanlar, "],
       [300, "ödemeler, haftalık sayılar."],
     ]),
     inputSchema: { limit: z.number().optional() },
@@ -52,7 +53,8 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("open", {
     description: describe("open", [
       [100, "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası olarak çağırma. type: person|company|opportunity|project"],
-      [200, "|draft|template|idea|own_project|post|comment; id sayı ya da isim."],
+      [200, "|draft|template|idea|own_project"],
+      [300, "|comment; id sayı ya da isim."],
     ]),
     inputSchema: { type: z.string(), id: idOrName },
   }, ({ type, id }) => run(() => {
@@ -68,9 +70,11 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("find", {
     description: describe("find", [
       [100, "Ara/listele. type: person|company|opportunity|project"],
-      [200, "|draft|payment|source|comment|touch|sector|note|setting|post|template|idea|own_project|interest|tag"],
+      [200, "|draft|payment|source|comment|touch|sector|note|setting"],
+      [300, "|template|idea|own_project|interest|tag"],
       [400, "|offer|trash. offer: {opportunity_id:3} teklif sürümleri, yeniden eskiye. person/company filter: {tag:'sıcak'} {sector:'Sağlık'} {source:'LinkedIn'} {status:'yazilmadi|yazildi|cevap_geldi|gorusuldu|olumsuz|es_gecildi|tanidik|arkadas'} (virgülle çoklu); person {awaiting:true} {cooling:true} {channel:'linkedin'} {company_id:2} {post_id:2}; {stage:'teklif'} {overdue:true} {status:'bekliyor'}(draft) {unanswered:true}(comment) {person_id|company_id:3}(touch,note) {loose:true}(touch: kişisiz adres) {all:true}("],
-      [500, "tag/sector/source: silinenler dahil); post {refresh_due:true} {platform:'r10'}; template {channel,sector,kind:'takip'}; idea {stage,sector,own_project:'Full Follow',general:true}; own_project {status,sellable,sector}; interest {idea_id|person_id}; trash {type:'person'}."],
+      [500, "tag/sector/source: silinenler dahil); "],
+      [600, "template {channel,sector,kind:'takip'}; idea {stage,sector,own_project:'Full Follow',general:true}; own_project {status,sellable,sector}; interest {idea_id|person_id}; trash {type:'person'}."],
     ]),
     inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().optional(), offset: z.number().optional() },
   }, ({ type, q, filter, limit, offset }) => run(() => list(core.normalizeType(type), core.find(type, { q, filter, limit, offset }), offset ?? 0)));
@@ -78,15 +82,19 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("get", {
     description: describe("get", [
       [100, "Tek kaydın tam hali. id sayı ya da isim. with: touches"],
-      [200, "|opportunities|projects|payments|drafts|comments|referrals|people|notes|channels|posts|links|offers|files (opportunity: touches"],
-      [400, ",comments,drafts,links,people (ekip, ana muhatap hariç),offers (teklif sürümleri),files; project: links; company: people,touches,opportunities,drafts,comments,channels; idea: people,touches,posts; post: people; own_project: ideas,links,comments)."],
+      [200, "|opportunities|projects|payments|drafts|comments|referrals|people|notes|channels"],
+      [300, "|links|offers|files (opportunity: touches"],
+      [400, ",comments,drafts,links,people (ekip, ana muhatap hariç),offers (teklif sürümleri),files; project: links; company: people,touches,opportunities,drafts,comments,channels; idea: people,touches"],
+      [500, "; "],
+      [600, "own_project: ideas,links,comments)."],
     ]),
     inputSchema: { type: z.string(), id: idOrName, with: z.array(z.string()).optional() },
   }, ({ type, id, with: w }) => run(() => block(core.get(type, id, w ?? []))));
 
   server.registerTool("save", {
     description: describe("save", [
-      [100, "Oluştur/güncelle (id varsa güncelle). data dizi ise toplu ekler (liste verildiğinde tek çağrı): mükerrerler (e-posta, alan adı, firma adı, LinkedIn, Instagram) atlanır ve raporlanır. data DB alan adlarıyla; person/company/source/opp/project isimle verilebilir (person {company:'ABC'} yoksa firmayı açar); tarih ISO ya da bugün/yarın/+3g. Aşama için move. person: role (CEO, tasarım; sektör değil). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. company: {name,website,email,phone,instagram,linkedin,notes}. tag: {name,color}. opportunity: source_url, source_date (ilan linki/tarihi); ekip: {add_people:[{person:'Deniz',role:'karar_verici|teknik|ortak|diger',note?}],remove_people:['Ahmet']} (id ile birlikte; ekipteki kişinin rolünü de değiştirir; ana muhatap person_id'dir, ekipte yer almaz). note: {person,body}. offer: {opportunity:'Pizza Z'|id,amount,offered_at?,items:[{label,amount}]?,note?} yeni sürüm açar (v1, v2...), id ile güncellenir; {accepted:true|false} + id teklifi kabul eder ya da kabulü geri alır (fırsatta tek kabul edilmiş teklif olur, kabul fırsat değerini teklif tutarına çeker; kazanınca proje fiyatı kabul edilen tekliften). link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). touch id + {expects_reply:false} cevap beklemeyi kapatır. comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). post: {platform:r10|linkedin|instagram|diger,title,url,posted_at,refresh_days}; id + {refreshed:true} = güncellendi; kişinin kaynağı: person {post:'başlık'}. template: {name,kind:ilk|takip|teklif|diger,channel?,sector?,body} yer tutucu {ad} {firma} {sektor}. idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. own_project: {name,description,status,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. "],
+      [100, "Oluştur/güncelle (id varsa güncelle). data dizi ise toplu ekler (liste verildiğinde tek çağrı): mükerrerler (e-posta, alan adı, firma adı, LinkedIn, Instagram) atlanır ve raporlanır. data DB alan adlarıyla; person/company/source/opp/project isimle verilebilir (person {company:'ABC'} yoksa firmayı açar); tarih ISO ya da bugün/yarın/+3g. Aşama için move. person: role (CEO, tasarım; sektör değil). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. company: {name,website,email,phone,instagram,linkedin,notes}. tag: {name,color}. opportunity: source_url, source_date (ilan linki/tarihi); ekip: {add_people:[{person:'Deniz',role:'karar_verici|teknik|ortak|diger',note?}],remove_people:['Ahmet']} (id ile birlikte; ekipteki kişinin rolünü de değiştirir; ana muhatap person_id'dir, ekipte yer almaz). note: {person,body}. offer: {opportunity:'Pizza Z'|id,amount,offered_at?,items:[{label,amount}]?,note?} yeni sürüm açar (v1, v2...), id ile güncellenir; {accepted:true|false} + id teklifi kabul eder ya da kabulü geri alır (fırsatta tek kabul edilmiş teklif olur, kabul fırsat değerini teklif tutarına çeker; kazanınca proje fiyatı kabul edilen tekliften). link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). touch id + {expects_reply:false} cevap beklemeyi kapatır. comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
+      [200, "template: {name,kind:ilk|takip|teklif|diger,channel?,sector?,body} yer tutucu {ad} {firma} {sektor}. idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. own_project: {name,description,status,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. "],
     ]),
     inputSchema: { type: z.string(), data: z.union([obj, z.array(obj)]), id: idOrName.optional() },
   }, ({ type, data, id }) => run(() => {
@@ -152,7 +160,10 @@ export function registerTools(server: McpServer, core: Core) {
   }, ({ type, id, limit }) => run(() => timelineText(core.timeline(type, id, limit ?? 20))));
 
   server.registerTool("report", {
-    description: "Haftalık temas sayıları, referans değeri, pazarlama (paylaşım getirisi, fikir ilgisi, şablon dönüşü, kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM. week: YYYY-Www, haftadan bir tarih ya da \"bu\" verilirse rapor yerine o haftanın incelemesi (Cuma özeti): giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için 2-4 öneri.",
+    description: describe("report", [
+      [100, "Haftalık temas sayıları, referans değeri, pazarlama ("],
+      [200, "fikir ilgisi, şablon dönüşü, kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM. week: YYYY-Www, haftadan bir tarih ya da \"bu\" verilirse rapor yerine o haftanın incelemesi (Cuma özeti): giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için 2-4 öneri."],
+    ]),
     inputSchema: { month: z.string().optional(), week: z.string().optional() },
   }, ({ month, week }) => run(() => (week ? reviewText(core.review(week === "bu" ? undefined : week)) : reportText({ ...core.reports.report(month), week: core.reports.week(), referrals: core.reports.referrals(), marketing: core.marketing(), source_funnel: core.reports.sourceFunnel() }))));
 

@@ -46,7 +46,6 @@ export function todayService(ctx: Ctx) {
       // network: cevap bekleyenler (kanal, gün, deneme) ve soğuyan bağlantılar
       network: networkLists(ctx, limit),
       // Paket 2: güncellenecek paylaşımlar ve zamanı gelen takipler (taslak bekleyen)
-      posts_due: q.posts({ limit, filter: { refresh_due: true } }),
       followups: (() => { const l = followupsDue(ctx); return { rows: l.slice(0, limit), total: l.length }; })(),
       // the weekly review of the current week; ready on Fridays (the dashboard links to it)
       review: { week: isoWeekOf(date), ready: isoWeekday(date) === REVIEW_WEEKDAY },

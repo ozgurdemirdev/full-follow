@@ -23,12 +23,15 @@
  */
 
 import type { CalendarApi } from "./calendar";
+import type { PostsApi } from "./posts";
 
 export type * from "./calendar";
+export type * from "./posts";
 
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
 export interface ModuleApis {
   calendar: CalendarApi;
+  posts: PostsApi;
 }
 
 /** Event name to its payload type. Names not listed here are accepted with an `unknown` payload. */

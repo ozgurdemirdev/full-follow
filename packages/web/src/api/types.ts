@@ -490,7 +490,8 @@ export interface Today {
     new_people: number; by_channel: { channel: string; sent: number; replies: number }[];
   };
   network: NetworkLists;
-  posts_due: List<Post>;
+  /** posts whose refresh day has come; absent when the posts module is not installed */
+  posts_due?: List<Post>;
   followups: List<FollowupDue>;
   quota: Quota;
   /** weekly review of the current week; ready on Fridays */

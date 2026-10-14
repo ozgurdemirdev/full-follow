@@ -24,7 +24,6 @@ import { settingsService } from "./services/settings";
 import { resolveInput, resolveRef } from "./services/shared";
 import { todayService } from "./services/today";
 import { touchesService } from "./services/touches";
-import { postsService } from "./services/posts";
 import { templatesService } from "./services/templates";
 import { ideasService } from "./services/ideas";
 import { ownProjectsService } from "./services/ownProjects";
@@ -98,7 +97,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const queries = queriesService(ctx);
   const reports = reportsService(ctx);
   const todayFn = todayService(ctx);
-  const posts = postsService(ctx);
   const templates = templatesService(ctx);
   const ideas = ideasService(ctx);
   const ownProjects = ownProjectsService(ctx);
@@ -141,7 +139,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "offer": return nid ? offers.update(nid, d) : offers.create(d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
-      case "post": return nid ? posts.update(nid, d) : posts.create(d);
       case "template": return nid ? templates.update(nid, d) : templates.create(d);
       case "idea": return nid ? ideas.update(nid, d) : ideas.create(d);
       case "own_project":
@@ -205,7 +202,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
       case "offer": return offers.remove(nid);
-      case "post": return posts.remove(nid);
       case "template": return templates.remove(nid);
       case "idea": return ideas.remove(nid);
       case "own_project": return ownProjects.remove(nid);
@@ -266,7 +262,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     // yazma servisleri (REST controller'ları ve testler kullanır)
     companies, people, sources, tags, opportunities, touches, drafts, projects, payments, comments, settings, sectors, notes, links,
     oppPeople, offers, files,
-    posts, templates, ideas, ownProjects, chat,
+    templates, ideas, ownProjects, chat,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },
     quota: (date = ctx.clock.today()) => quotaFor(ctx, date),
