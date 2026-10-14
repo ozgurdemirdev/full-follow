@@ -17,11 +17,16 @@ export function Sheet({ open, title, onClose, children, footer }: {
   const desk = useIsDesktop();
   const panel = useRef<HTMLElement>(null);
   const opener = useRef<Element | null>(null);
+  // an inline onClose must not re-run the open effect (it would re-focus the first field and lose the opener)
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
     opener.current = document.activeElement;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close.current();
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     // ilk alana odaklan
@@ -32,7 +37,7 @@ export function Sheet({ open, title, onClose, children, footer }: {
       document.body.style.overflow = "";
       (opener.current as HTMLElement | null)?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const hidden = desk ? { x: "110%" } : { y: "100%" };
   return (

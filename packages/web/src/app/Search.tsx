@@ -21,6 +21,8 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
   const [active, setActive] = useState(0);
   const [armed, setArmed] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  /** closes the list shortly after blur so a click on a hit still lands */
+  const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [, navigate] = useLocation();
   const dq = useDeferredValue(q);
 
@@ -36,7 +38,10 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      clearTimeout(blurTimer.current);
+    };
   }, []);
 
   const hits = useMemo<Hit[]>(() => {
@@ -79,10 +84,13 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
           aria-controls="search-results"
           value={q}
           onFocus={() => {
+            clearTimeout(blurTimer.current);
             setArmed(true);
             setOpen(true);
           }}
-          onBlur={() => setTimeout(() => setOpen(false), 120)}
+          onBlur={() => {
+            blurTimer.current = setTimeout(() => setOpen(false), 120);
+          }}
           onChange={(e) => {
             setQ(e.target.value);
             setActive(0);

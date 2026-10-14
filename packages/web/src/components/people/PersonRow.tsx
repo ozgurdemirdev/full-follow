@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { Person, Task } from "../../api/types";
 import { agoText, nextStep, STATUS_LABEL, statusOf, warmth, type PStatus } from "../../lib/people";
 import { BoardIcon } from "../boardIcons";
@@ -7,7 +8,7 @@ import { Rhythm } from "./Rhythm";
 const NEXT_TONE = { late: "text-danger", today: "text-accent", later: "text-text-muted" } as const;
 
 /** One row of the list: person, last message, 12 week rhythm, next step */
-export function PersonRow({ p, tasks, today, onOpen }: { p: Person; tasks: Task[]; today: string; onOpen: (id: number, from: HTMLElement) => void }) {
+export const PersonRow = memo(function PersonRow({ p, tasks, today, onOpen }: { p: Person; tasks: Task[]; today: string; onOpen: (id: number, from: HTMLElement) => void }) {
   const s: PStatus = statusOf(p, today);
   const next = nextStep(p, tasks, today);
   const msg = p.last_summary ?? "Henüz temas yok";
@@ -58,4 +59,4 @@ export function PersonRow({ p, tasks, today, onOpen }: { p: Person; tasks: Task[
       </span>
     </button>
   );
-}
+});

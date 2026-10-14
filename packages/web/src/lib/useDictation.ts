@@ -12,6 +12,7 @@ interface Recognition {
   onspeechstart: (() => void) | null;
   start(): void;
   stop(): void;
+  abort(): void;
 }
 type Ctor = new () => Recognition;
 
@@ -116,6 +117,14 @@ export function useDictation(onFinal: (text: string) => void): Dictation {
     }
   }, []);
 
-  useEffect(() => () => rec.current?.stop(), []);
+  // unmount (also a route change): drop the handlers so a late event cannot set state, release the microphone, stop the stall timer
+  useEffect(() => () => {
+    clearTimeout(stallTimer.current);
+    const r = rec.current;
+    if (!r) return;
+    r.onresult = r.onerror = r.onend = r.onaudiostart = r.onspeechstart = null;
+    r.abort();
+    rec.current = null;
+  }, []);
   return { supported: !!ctor(), listening, interim, error, heard, stalled, toggle, stop };
 }
