@@ -16,6 +16,8 @@ interface Entry {
   subs: Set<() => void>;
   fetchedAt: number;
   inflight?: Promise<void>;
+  /** invalidate() came while a request was in flight: its answer may predate the change, so ask again once it lands */
+  stale?: boolean;
   lastUsed: number;
 }
 
@@ -53,7 +55,9 @@ function load(key: string): Promise<void> {
     )
     .finally(() => {
       e.inflight = undefined;
-      e.fetchedAt = Date.now();
+      if (!e.stale) return void (e.fetchedAt = Date.now());
+      e.stale = false;
+      if (e.subs.size) void load(key);
     });
   return e.inflight;
 }
@@ -110,7 +114,8 @@ export function invalidate(...prefixes: string[]) {
   for (const [k, e] of cache) {
     if (!prefixes.some((p) => k.startsWith(p))) continue;
     e.fetchedAt = 0;
-    if (e.subs.size) void load(k);
+    if (e.inflight) e.stale = true;
+    else if (e.subs.size) void load(k);
   }
 }
 

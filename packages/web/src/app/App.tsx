@@ -30,8 +30,9 @@ export function App() {
   useEffect(() => {
     if (auth !== "in") return;
     // boşta kalınca sık kullanılan sayfaları önceden indir
-    const id = requestIdleCallback?.(() => (["pipeline", "drafts", "people"] as const).forEach(preload));
-    return () => (id ? cancelIdleCallback(id) : undefined);
+    // Safari has no requestIdleCallback: a bare `requestIdleCallback?.()` throws a ReferenceError there
+    const id = window.requestIdleCallback?.(() => (["pipeline", "drafts", "people"] as const).forEach(preload));
+    return () => (id ? window.cancelIdleCallback(id) : undefined);
   }, [auth]);
 
   if (auth === "checking") return null;

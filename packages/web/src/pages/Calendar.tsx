@@ -51,8 +51,9 @@ export default function Calendar() {
   const [hidden, setHidden] = useState<ReadonlySet<Kind>>(new Set());
   const { from, to } = rangeOf(view, anchor);
   const cal = useQuery<CalendarDay[]>(`/calendar?from=${from}&to=${to}`);
-  const day = useDay(picked);
-  const now = useDay(today);
+  const feed = { from, to, days: cal.data };
+  const day = useDay(picked, feed);
+  const now = useDay(today, feed);
 
   const byDate = useMemo(() => itemsByDate(cal.data ?? [], today), [cal.data, today]);
   const weekStart = mondayOf(picked);

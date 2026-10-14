@@ -113,10 +113,28 @@ const cap = (s: string) => s.charAt(0).toLocaleUpperCase("tr-TR") + s.slice(1);
 type Kind = "gone" | "drafted";
 const cache = new Map<string, ReadonlySet<number>>();
 const listeners = new Set<() => void>();
-const storageKey = (kind: Kind, day: string) => `ff.people.${kind}.${day}`;
+const KEY_PREFIX = "ff.people.";
+const storageKey = (kind: Kind, day: string) => `${KEY_PREFIX}${kind}.${day}`;
+
+let prunedFor = "";
+
+/** Marks only count for their own day: once per day, the keys and cache entries of other days are dropped so storage does not gain a key per day for ever */
+function pruneOtherDays(day: string) {
+  prunedFor = day;
+  for (const k of cache.keys()) if (!k.endsWith(`.${day}`)) cache.delete(k);
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(KEY_PREFIX) && !k.endsWith(`.${day}`)) localStorage.removeItem(k);
+    }
+  } catch {
+    /* private window */
+  }
+}
 
 function read(kind: Kind): ReadonlySet<number> {
   const day = todayIso();
+  if (prunedFor !== day) pruneOtherDays(day);
   const key = storageKey(kind, day);
   let set = cache.get(key);
   if (!set) {

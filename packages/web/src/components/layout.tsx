@@ -64,8 +64,10 @@ export function Masonry({ columns, pinned, children }: { columns: number; pinned
     for (const [k, host] of hosts) {
       if (!keys.includes(k)) (host.remove(), hosts.delete(k));
     }
+    // a host that is not attached yet has no height: the second pass is only for those, every other render needs one forced layout
+    const fresh = keys.some((k) => !hosts.get(k)?.isConnected);
     place();
-    place();
+    if (fresh) place();
   });
 
   useEffect(() => {

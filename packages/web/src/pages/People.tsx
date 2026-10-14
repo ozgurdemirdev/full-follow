@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { K, useOpenTasks, usePeople, useSectors } from "../api/keys";
 import { useQuery } from "../api/store";
@@ -41,19 +41,23 @@ export default function People() {
     return people.rows.filter((p) => matchLabels(p, labels, sectors.rows) && (!chan || channelsOf(p).some((c) => c.key === chan)) &&
       (!n || [p.name, p.company_name, p.role, p.sector_path, p.email, p.instagram, p.linkedin, p.tags.join(" ")].some((x) => norm(x).includes(n))));
   }, [people.rows, sectors.rows, labels, chan, q]);
+  // one status per person per data change: the filters, the counts and the sort read it instead of recomputing it
+  const statuses = useMemo(() => new Map(people.rows.map((p) => [p.id, statusOf(p, day)])), [people.rows, day]);
   const counts = useMemo(() => {
     const c: Record<StatusFilter, number> = { all: base.length, due: 0, wait: 0, cold: 0, fresh: 0 };
-    for (const p of base) { const s = statusOf(p, day); if (s !== "ok") c[s]++; }
+    for (const p of base) { const s = statuses.get(p.id)!; if (s !== "ok") c[s]++; }
     return c;
-  }, [base, day]);
+  }, [base, statuses]);
   const rows = useMemo(
-    () => base.filter((p) => status === "all" || statusOf(p, day) === status).sort((a, b) => STATUS_RANK[statusOf(a, day)] - STATUS_RANK[statusOf(b, day)]),
-    [base, status, day],
+    () => base.filter((p) => status === "all" || statuses.get(p.id) === status).sort((a, b) => STATUS_RANK[statuses.get(a.id)!] - STATUS_RANK[statuses.get(b.id)!]),
+    [base, status, statuses],
   );
-  const open = (id: number, el: HTMLElement) => {
+  const ownTasks = useMemo(() => tasks.rows.filter((t) => t.assignee !== "claude"), [tasks.rows]);
+  // stable, so the memoized rows do not re-render when the overlay opens
+  const open = useCallback((id: number, el: HTMLElement) => {
     setFrom(el.getBoundingClientRect());
     navigate(`${PATHS.people}/${id}`, { replace: true });
-  };
+  }, [navigate]);
   const week = today.data ? today.data.week.sent + today.data.week.replies : null;
   const cold = people.rows.filter((p) => p.cooling).length;
   const sub = people.data ? `${people.rows.length} kişi${week === null ? "" : ` · bu hafta ${week} temas`} · ${cold} ilişki soğuyor` : "";
@@ -83,7 +87,7 @@ export default function People() {
       ) : (
         <>
           <TouchCards people={people.rows} today={day} onOpen={open} />
-          <PeopleList rows={rows} tasks={tasks.rows.filter((t) => t.assignee !== "claude")} today={day} counts={counts} status={status} onStatus={setStatus}
+          <PeopleList rows={rows} tasks={ownTasks} today={day} counts={counts} status={status} onStatus={setStatus}
             chan={chan} onChan={setChan} labels={labels} onLabels={setLabels} onOpen={open} />
           <PersonOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} p={openId ? people.byId.get(openId) : undefined}
             onClose={() => navigate(PATHS.people, { replace: true })} />

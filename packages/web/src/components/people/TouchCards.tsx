@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Person } from "../../api/types";
 import { askDraft, compareTouch, draftKind, statusOf, STATUS_LABEL, TOUCH_CARDS, useDayMarks, whyText, type PStatus } from "../../lib/people";
 import { BoardIcon } from "../boardIcons";
@@ -11,10 +12,13 @@ const CARD_STATUSES: PStatus[] = ["due", "wait", "cold"];
 export function TouchCards({ people, today, onOpen }: { people: Person[]; today: string; onOpen: (id: number, from: HTMLElement) => void }) {
   const [gone, markGone] = useDayMarks("gone");
   const [drafted, markDrafted] = useDayMarks("drafted");
-  const cards = people
-    .filter((p) => CARD_STATUSES.includes(statusOf(p, today)) && !gone.has(p.id))
-    .sort((a, b) => compareTouch(a, b, today))
-    .slice(0, TOUCH_CARDS);
+  const cards = useMemo(
+    () => people
+      .filter((p) => CARD_STATUSES.includes(statusOf(p, today)) && !gone.has(p.id))
+      .sort((a, b) => compareTouch(a, b, today))
+      .slice(0, TOUCH_CARDS),
+    [people, today, gone],
+  );
 
   return (
     <section aria-label="Bugün dokun" className="flex flex-col gap-6">
