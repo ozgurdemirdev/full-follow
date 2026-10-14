@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "../api/store";
-import type { List, MarketingReport, MonthReport, Opportunity, Payment, Report as ReportData } from "../api/types";
+import type { List, MarketingReport, MonthReport, Payment, Report as ReportData } from "../api/types";
 import { PATHS } from "../app/routes";
 import { Page } from "../app/Page";
 import { FloorCard } from "../components/report/FloorCard";
@@ -13,7 +13,7 @@ import { TemplateCompare } from "../components/TemplateCompare";
 import { ErrorBox, PageSkeleton } from "../components/ui";
 import { Icon } from "../components/icons";
 import { todayIso } from "../lib/format";
-import { expectedOf, floorHint, heroOf, incomingOf, insightOf, lostIn, monthsAbove, REPORT_MONTHS, scaleTop } from "../lib/report";
+import { expectedOf, floorHint, heroOf, incomingOf, monthsAbove, REPORT_MONTHS, scaleTop } from "../lib/report";
 import { useFloorCosts } from "../lib/useFloorCosts";
 
 export default function Report() {
@@ -30,13 +30,8 @@ export default function Report() {
 
   const i = sel ?? (list ? list.length - 1 : 0);
   const m = list?.[i];
-  const isNow = m?.month === now;
   const incoming = useMemo(() => incomingOf(payments.data?.rows ?? [], today), [payments.data, today]);
   const expected = useMemo(() => expectedOf(incoming), [incoming]);
-
-  // lost opportunities are only read for the sentence of an earlier month that stayed under the floor
-  const needsLost = !!m && !isNow && m.collected < floor;
-  const lost = useQuery<List<Opportunity>>(needsLost ? "/opportunities?stage=kaybedildi&limit=1000" : null);
 
   if (!list || !m || !costs) {
     return (
@@ -48,7 +43,6 @@ export default function Report() {
 
   const top = scaleTop(list, floor, expected.total, now);
   const hero = heroOf(m, floor, expected.total, top, today);
-  const insight = insightOf(hero, m.month, !!isNow, expected, needsLost && lost.data ? lostIn(lost.data.rows, m.month) : null);
 
   return (
     <Page
@@ -56,7 +50,7 @@ export default function Report() {
       sub="Bu ay ayakta kalmak için ne kadar lazım, ne kadarı geldi"
       right={<Link href={PATHS.review} className="rep-link">Haftalık inceleme<Icon name="arrow" className="size-icon-md" /></Link>}
     >
-      <Hero hero={hero} insight={insight} />
+      <Hero hero={hero} insight={m.insight} />
       <div className="rep-grid">
         <MonthsCard months={list} floor={floor} top={top} now={now} picked={i} onPick={setSel} above={monthsAbove(list, floor, now)} incoming={incoming} />
         <FloorCard costs={costs} floor={floor} hint={floorHint(floor, report.data?.sources ?? [])} onChange={set} />

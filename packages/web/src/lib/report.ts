@@ -1,6 +1,6 @@
-// Report screen: floor maths, chart scale, expected payments and the insight sentence under the hero
-import type { MonthReport, Opportunity, Payment, PriceFloor, SourceReport } from "../api/types";
-import { daysFrom, fmtDay, fmtMonth, lira, norm, toDate } from "./format";
+// Report screen: floor maths, chart scale, expected payments
+import type { MonthReport, Payment, PriceFloor, SourceReport } from "../api/types";
+import { daysFrom, fmtDay, fmtMonth, lira, toDate } from "./format";
 import { MILESTONE } from "./labels";
 import { PAYMENT_SOON_DAYS, paymentGroup, remaining, type PaymentGroup } from "./dashboard";
 
@@ -12,8 +12,6 @@ export const SCALE_HEADROOM = 1.12;
 export const SAVE_DELAY_MS = 700;
 /** Highest tax rate the report accepts (percent) */
 export const TAX_MAX_PERCENT = 60;
-/** A lost opportunity whose reason contains this (after norm) counts as lost on budget */
-const BUDGET_REASON = "butce";
 
 export const COST_FIELDS = [
   { key: "bagkur_monthly", label: "Bağkur", prefix: "₺", dot: "bg-info" },
@@ -143,37 +141,6 @@ export function heroOf(m: MonthReport, floor: number, pendingNow: number, top: n
     floorX: (floor / top) * 100,
     pendingAmount,
   };
-}
-
-/** Lost opportunities closed in a month and how many of them were lost on budget (reason text) */
-export function lostIn(opps: Opportunity[], ym: string) {
-  const list = opps.filter((o) => o.closed_at?.slice(0, 7) === ym);
-  return { count: list.length, budget: list.filter((o) => norm(o.lost_reason).includes(BUDGET_REASON)).length };
-}
-
-const budgetNote = (l: { count: number; budget: number }) =>
-  !l.budget ? "" : l.budget === l.count ? (l.count > 1 ? ", hepsi bütçe yüzünden" : ", bütçe yüzünden") : `, ${l.budget} tanesi bütçe yüzünden`;
-
-/**
- * Insight sentence under the hero (gap G20). Derived from the expected payments and the floor gap only; the lost clause is
- * written only when lost opportunities with a reason exist for that month.
- * The server sends the figures and the web writes the sentence.
- */
-export function insightOf(h: Hero, ym: string, now: boolean, expected: Expected, lost: { count: number; budget: number } | null): string {
-  const under = h.gap > 0;
-  if (!now) {
-    if (!under) return `${monthName(ym)} tabanın üstünde kapandı.`;
-    if (!lost?.count) return `${monthName(ym)} tabanın altında kaldı.`;
-    return `${monthName(ym)} tabanın altında kaldı. O ay ${lost.count} fırsat kaybedilmişti${budgetNote(lost)}.`;
-  }
-  if (!under) return "Bu ay taban kapandı. Gelen fazlayı vergi ve boş ay yedeği için ayırmak iyi olur.";
-  if (!expected.count) return `Bu ay beklenen ödeme yok, tabana ${lira(h.gap)} kaldı.`;
-  const late = expected.lateCount ? `, ${expected.lateCount} tanesi gecikmede (${lira(expected.lateTotal)})` : "";
-  const head = `Bu ay beklenen ${expected.count} ödeme toplam ${lira(expected.total)}${late}.`;
-  const left = h.gap - expected.total;
-  return left <= 0
-    ? `${head} Hepsi gelirse taban kapanır ve ${lira(-left)} artı kalır.`
-    : `${head} Hepsi gelse bile tabana ${lira(left)} eksik kalır.`;
 }
 
 /** Hint line under the floor: what the floor means in average won projects (only when won opportunities have a value and the floor is at least one such project) */

@@ -8,6 +8,10 @@ export interface MonthReport {
   floor: number;
   floor_detail: PriceFloor;
   gap: number;
+  /** one sentence about the month from the server; null for a coming month and while no floor is set */
+  insight: string | null;
+  /** opportunities lost in the month; null when the pipeline module is not installed */
+  lost: { count: number; budget: number } | null;
 }
 export interface SourceReport {
   source_id: number;

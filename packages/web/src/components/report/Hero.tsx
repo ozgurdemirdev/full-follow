@@ -3,7 +3,7 @@ import type { Hero as HeroData } from "../../lib/report";
 import { order } from "../ui";
 
 /** This month's (or the picked month's) collections against the floor: gap or surplus, hatched meter with the expected rest and the floor marker, insight sentence */
-export function Hero({ hero: h, insight }: { hero: HeroData; insight: string }) {
+export function Hero({ hero: h, insight }: { hero: HeroData; insight: string | null }) {
   const over = h.gap <= 0;
   return (
     <section aria-label="Bu ay" className="rep-hero rise" style={order(1)}>
