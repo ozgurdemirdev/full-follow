@@ -15,10 +15,13 @@ import { AwaitingCard, CoolingCard } from "../components/dash/PeopleCards";
 import { PaymentsCard } from "../components/dash/PaymentsCard";
 import { PlanCard } from "../components/dash/PlanCard";
 import { ProjectsCard } from "../components/dash/ProjectsCard";
+import { StatusCard } from "../components/dash/StatusCard";
 import { ErrorBox, PageSkeleton } from "../components/ui";
 import { fmtToday } from "../lib/format";
 
 const DASH_COLUMNS = 3;
+/** Column of each card the board has (the three .ff-col blocks of Main.dc.html); the other cards fill the shortest column after them */
+const BOARD_COLUMNS: Record<string, number> = { plan: 0, drafts: 0, awaiting: 1, payments: 1, activity: 1, projects: 2, funnel: 2, cooling: 2, comments: 2 };
 
 /** Dashboard: goal strip, questions waiting for Özgür, then the cards in independent masonry columns (order of the board on a phone) */
 export default function Today() {
@@ -36,7 +39,7 @@ export default function Today() {
         <>
           <GoalMeters plan={d.plan} sent={d.week.sent} target={d.network.settings.weekly_target} />
           <Asks />
-          <Masonry columns={DASH_COLUMNS}>
+          <Masonry columns={DASH_COLUMNS} pinned={BOARD_COLUMNS}>
             {d.review.ready ? <ReviewCard key="review" /> : null}
             <PlanCard key="plan" plan={d.plan} />
             <DraftsCard key="drafts" list={d.drafts} />
@@ -51,6 +54,7 @@ export default function Today() {
             {d.network.cooling.rows.length ? <CoolingCard key="cooling" list={d.network.cooling} coolingDays={d.network.settings.cooling_days} /> : null}
             {d.posts_due.total ? <PostsDueCard key="posts-due" list={d.posts_due} /> : null}
             <CommentsCard key="comments" />
+            <StatusCard key="status" />
           </Masonry>
         </>
       )}

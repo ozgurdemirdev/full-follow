@@ -663,4 +663,6 @@ export interface ActivityBucket {
 export interface Activity {
   period: "day" | "week" | "month";
   buckets: ActivityBucket[];
+  /** firms and people per contact status */
+  status: Record<"people" | "companies", { status: string; count: number }[]>;
 }

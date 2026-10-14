@@ -453,3 +453,13 @@
 .ff-card.dash-wrap-head .ff-card-head {
   flex-wrap: wrap;
 }
+/* title stays on one line; when the buttons do not fit beside it they wrap below, right aligned */
+.ff-card.dash-nowrap-title .ff-card-head {
+  flex-wrap: wrap;
+}
+.ff-card.dash-nowrap-title .ff-card-title {
+  white-space: nowrap;
+}
+.ff-card.dash-nowrap-title .ff-card-head > div:last-child {
+  margin-left: auto;
+}

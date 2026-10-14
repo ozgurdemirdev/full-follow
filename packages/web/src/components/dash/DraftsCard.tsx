@@ -76,7 +76,7 @@ export function DraftsCard({ list }: { list: List<Draft> }) {
 
   return (
     <>
-      <Card title="Onay bekleyen taslaklar" count={`${list.total} taslak`} onExpand={(r) => ex.show("drafts", r)} className="dash-gap-7 rise"
+      <Card title="Onay bekleyen taslaklar" count={`${list.total} taslak`} onExpand={(r) => ex.show("drafts", r)} className="dash-gap-7 dash-nowrap-title rise"
         actions={<button type="button" className="dash-btn is-ghost" onClick={() => openSheet("draft")}>Taslak yaz</button>}>
         {list.rows.length === 0 ? <p className="m-0 text-base-sm text-text-muted">Onay bekleyen taslak yok.</p> : null}
         <div className="flex flex-col gap-6">

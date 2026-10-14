@@ -21,8 +21,10 @@ function useColumns(wanted: number) {
  * n independent columns: each child goes, in order, to the column that is shortest at that moment
  * (measured heights, re-balanced when a card changes size or the width changes). The children stay mounted
  * while they move between columns (each lives in its own host element that is moved, not re-created).
+ * `pinned` fixes children (by key) to a column index while all `columns` are shown; the rest then fill the
+ * shortest column after them. With fewer columns (tablet, phone) everything flows in child order.
  */
-export function Masonry({ columns, children }: { columns: number; children: ReactNode }) {
+export function Masonry({ columns, pinned, children }: { columns: number; pinned?: Record<string, number>; children: ReactNode }) {
   const n = useColumns(columns);
   const cols = useRef<(HTMLDivElement | null)[]>([]);
   const [hosts] = useState(() => new Map<string, HTMLDivElement>());
@@ -33,13 +35,22 @@ export function Masonry({ columns, children }: { columns: number; children: Reac
   const place = () => {
     const targets = cols.current.slice(0, n);
     if (targets.some((t) => !t)) return;
-    const ordered = keys.map((k) => hosts.get(k)).filter((h): h is HTMLDivElement => !!h);
     const totals = targets.map(() => 0);
     const groups: HTMLDivElement[][] = targets.map(() => []);
-    for (const host of ordered) {
-      const k = totals.indexOf(Math.min(...totals));
+    // Children.toArray prefixes keys with ".$"
+    const fixed = (key: string) => (n === columns ? pinned?.[key.replace(/^\.\$/, "")] : undefined);
+    const put = (host: HTMLDivElement, k: number) => {
       groups[k].push(host);
       totals[k] += host.offsetHeight + COLUMN_GAP;
+    };
+    for (const key of keys) {
+      const host = hosts.get(key);
+      const col = fixed(key);
+      if (host && col !== undefined) put(host, col);
+    }
+    for (const key of keys) {
+      const host = hosts.get(key);
+      if (host && fixed(key) === undefined) put(host, totals.indexOf(Math.min(...totals)));
     }
     groups.forEach((group, k) => {
       group.forEach((host, i) => {
