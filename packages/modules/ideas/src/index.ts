@@ -12,6 +12,7 @@ import { upsertInterest } from "./service/ideas";
 export default defineModule({
   key: "ideas",
   label: "Fikirler",
+  smoke: ["/api/ideas", "/api/ideas/people"],
   uses: ["people", "network", "own-projects", "posts"],
   api: ideasApi,
   entities,

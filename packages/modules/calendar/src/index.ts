@@ -13,6 +13,7 @@ export { parseQuickTask, taskKindOf, type QuickTask } from "./service/quickAdd";
 export default defineModule({
   key: "calendar",
   label: "Takvim",
+  smoke: ["/api/tasks", "/api/goals", "/api/plan", "/api/calendar"],
   uses: ["projects", "drafts"],
   api: calendarApi,
   entities,

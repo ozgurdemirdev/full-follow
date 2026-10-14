@@ -10,6 +10,7 @@ import { mcp } from "./mcp";
 export default defineModule({
   key: "timeline",
   label: "Zaman çizelgesi",
+  smoke: ["/api/timeline", "/api/timeline/week"],
   uses: ["network", "projects", "pipeline", "drafts", "calendar"],
   api: timelineApi,
   mcp,

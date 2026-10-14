@@ -12,6 +12,7 @@ import { companiesList } from "./service/list";
 export default defineModule({
   key: "companies",
   label: "Firmalar",
+  smoke: ["/api/companies"],
   uses: ["people", "network"],
   api: companiesApi,
   entities,

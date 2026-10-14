@@ -13,6 +13,7 @@ import { networkLists, weekToday } from "./service/network";
 export default defineModule({
   key: "network",
   label: "Temaslar",
+  smoke: ["/api/network", "/api/stats/week", "/api/stats/activity", "/api/touches"],
   uses: ["people", "companies", "drafts", "ideas"],
   api: networkApi,
   entities,

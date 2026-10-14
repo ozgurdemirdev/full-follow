@@ -11,6 +11,7 @@ import { POST_PLATFORMS } from "./service/constants";
 export default defineModule({
   key: "posts",
   label: "Paylaşımlar",
+  smoke: ["/api/posts"],
   uses: ["ideas", "network"],
   api: postsApi,
   entities,

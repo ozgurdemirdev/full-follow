@@ -12,6 +12,7 @@ import { peopleList } from "./service/list";
 export default defineModule({
   key: "people",
   label: "Kişiler",
+  smoke: ["/api/people"],
   uses: ["companies", "network", "referrals", "drafts", "ideas"],
   api: peopleApi,
   entities,

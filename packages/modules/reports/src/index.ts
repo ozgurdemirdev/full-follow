@@ -12,6 +12,7 @@ import { floorOf } from "./service/floor";
 export default defineModule({
   key: "reports",
   label: "Raporlar",
+  smoke: ["/api/report", "/api/report/months", "/api/report/marketing", "/api/review"],
   uses: ["projects", "pipeline", "network", "drafts", "templates", "posts", "ideas", "referrals", "calendar"],
   api: reportsApi,
   contribute: {

@@ -12,6 +12,7 @@ import { mcp } from "./mcp";
 export default defineModule({
   key: "templates",
   label: "Şablonlar",
+  smoke: ["/api/templates", "/api/templates/suggest"],
   uses: ["drafts"],
   api: templatesApi,
   entities,

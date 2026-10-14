@@ -84,7 +84,7 @@ A table belongs to exactly one module. "Uses" is never a hard import: it is `cor
 
 ## 3. Removal check
 
-`npm run check:modules`: for each module, set `FF_MODULES_OFF=<m>`, regenerate the registry, typecheck every package, run every remaining test, build the web, start the server on a free port and request `/api/health` and `/api/today`. One line per module: pass or the first error. Run at the end of every phase from P3 on, and before every merge.
+`npm run check:modules` (`scripts/check-modules.mjs`): for each module, then all off, then all on, set `FF_MODULES_OFF`, regenerate the registry, typecheck and build every package, run every remaining test (any failing package fails the case), build the web, start the server on a free port in 3021..3029 against a seeded copy of the demo database, request the core endpoints plus the `smoke` paths each module declares, check `/api/modules` lists exactly the installed keys, fetch the page and its main bundle, then start the MCP host over stdio (`tools/list` without the tools of the off modules, `today`, `find` of every installed type). One line per case: `pass <case>` or `FAIL <case>: <first error>`; logs per case in `$FF_CHECK_LOGS` (default: the OS temp folder). The generated lists and the build are put back to all on at the end, also after a failure. Run at the end of every phase from P3 on, and before every merge. Rendering checks are P4's job.
 
 ## 4. Phases (each one a Sonnet agent with a brief written from this plan; one at a time, in the worktree, on `claude/yeni-arayuz`)
 

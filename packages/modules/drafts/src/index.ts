@@ -18,6 +18,7 @@ const FOLLOWUP_EVERY_MS = 60 * 60 * 1000;
 export default defineModule({
   key: "drafts",
   label: "Taslaklar",
+  smoke: ["/api/drafts", "/api/followups"],
   uses: ["templates", "people", "network", "pipeline", "projects"],
   api: draftsApi,
   entities,

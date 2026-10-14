@@ -9,6 +9,7 @@ import { mcp } from "./mcp";
 export default defineModule({
   key: "referrals",
   label: "Referanslar",
+  smoke: ["/api/report/referrals"],
   uses: ["people", "pipeline", "projects"],
   api: referralsApi,
   mcp,

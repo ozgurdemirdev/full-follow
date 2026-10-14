@@ -11,6 +11,7 @@ import { mcp } from "./mcp";
 export default defineModule({
   key: "own-projects",
   label: "Kendi projelerim",
+  smoke: ["/api/own-projects"],
   uses: ["ideas"],
   api: ownProjectsApi,
   entities,
