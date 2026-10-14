@@ -42,6 +42,21 @@ describe("drafts as a module", () => {
     expect(() => app.get("draft", 999)).toThrow(/draft #999 bulunamadı/);
   });
 
+  it("the drafts of an opportunity or a project are listed by that link only", () => {
+    const h = openDb(":memory:");
+    const app = appFor(h, "claude", clock);
+    const ada = person(h);
+    const [a, b, c] = [1, 2, 3].map((n) => app.save("draft", { person_id: ada, channel: "email", body: `d${n}` }).row.id);
+    // the opportunity and project rows are not needed for what the list reads
+    h.sqlite.pragma("foreign_keys = OFF");
+    h.sqlite.prepare("UPDATE drafts SET opportunity_id = 7 WHERE id = ?").run(a);
+    h.sqlite.prepare("UPDATE drafts SET project_id = 9 WHERE id = ?").run(b);
+    expect(app.find("draft", { filter: { opportunity_id: 7 } }).rows.map((d) => d.id)).toEqual([a]);
+    expect(app.find("draft", { filter: { project_id: "9" } }).rows.map((d) => d.id)).toEqual([b]);
+    expect(app.find("draft", { filter: { opportunity_id: 8 } }).total).toBe(0);
+    expect(app.find("draft", {}).rows.map((d) => d.id)).toEqual([c, b, a]);
+  });
+
   it("approving, rejecting and marking sent are Özgür's; a rejection needs its note", () => {
     const h = openDb(":memory:");
     const claude = appFor(h, "claude", clock);

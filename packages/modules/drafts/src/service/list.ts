@@ -3,7 +3,7 @@ import { bool, has, keptRow, keptRows, page, rows, type Ctx, type DraftRow, type
 const SELECT = `SELECT d.*, p.name AS person_name, c.name AS company_name, COALESCE(p.name, c.name, d.contact) AS to_name
   FROM drafts d LEFT JOIN people p ON p.id = d.person_id LEFT JOIN companies c ON c.id = d.company_id`;
 
-/** Filters: status, person_id, company_id, company_scope (the company and its people), template_id, followup; q searches the text and the recipient; newest first */
+/** Filters: status, person_id, company_id, opportunity_id, project_id, company_scope (the company and its people), template_id, followup; q searches the text and the recipient; newest first */
 export function draftsList(ctx: Ctx, o: ListOpts): { rows: DraftRow[]; total: number } {
   const f = o.filter ?? {};
   let list = keptRows<DraftRow>(ctx, `${SELECT} ORDER BY d.id DESC`);
@@ -11,6 +11,8 @@ export function draftsList(ctx: Ctx, o: ListOpts): { rows: DraftRow[]; total: nu
   if (f.person_id) list = list.filter((d) => d.person_id === Number(f.person_id));
   if (f.template_id) list = list.filter((d) => d.template_id === Number(f.template_id));
   if (f.company_id) list = list.filter((d) => d.company_id === Number(f.company_id));
+  if (f.opportunity_id) list = list.filter((d) => d.opportunity_id === Number(f.opportunity_id));
+  if (f.project_id) list = list.filter((d) => d.project_id === Number(f.project_id));
   if (f.company_scope) {
     const ids = new Set(rows<{ id: number }>(ctx, "SELECT id FROM people WHERE company_id = ?", f.company_scope).map((r) => r.id));
     list = list.filter((d) => d.company_id === Number(f.company_scope) || ids.has(d.person_id!));
