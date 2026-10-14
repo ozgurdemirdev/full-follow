@@ -26,7 +26,7 @@ export function OffersCard({ opportunityId, offers, files }: { opportunityId: nu
             {o.items.length ? (
               <ul className="m-0 flex list-none flex-col gap-1 p-0 text-base-sm text-text-secondary">
                 {o.items.map((i, k) => (
-                  <li key={k} className="flex gap-3"><span className="min-w-0 flex-grow truncate">{i.label}</span><span className="font-mono">{tl(i.amount)}</span></li>
+                  <li key={k} className="flex gap-3"><span className="min-w-0 flex-grow truncate">{i.qty > 1 ? `${i.qty} × ` : ""}{i.label}</span><span className="font-mono">{tl(i.line)}</span></li>
                 ))}
               </ul>
             ) : null}
