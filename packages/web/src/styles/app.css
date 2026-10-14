@@ -12,6 +12,7 @@
 @import "./drafts.css";
 @import "./companies.css";
 @import "./settings.css";
+@import "./comments.css";
 
 @layer base {
   html {

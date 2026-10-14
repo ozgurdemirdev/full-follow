@@ -228,6 +228,9 @@
   --spacing-co-aside: 340px;
   --spacing-co-org-min: 230px;
   --spacing-co-pad: 22px;
+  --spacing-comments-compose-height: 50px;
+  --spacing-comments-close: 42px;
+  --spacing-comments-state-height: 26px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -412,6 +415,7 @@
   --color-kind-follow: var(--palette-blue-400);
   --color-kind-pay: var(--palette-gold-400);
   --color-kind-task: var(--palette-green-400);
+  --color-comments-claude-bubble: var(--palette-orange-975);
 }
 
 :root {
@@ -473,6 +477,7 @@
   --palette-wine-900: #3A2226;
   --palette-orange-990: #1F1712;
   --palette-peach-100: #F2C3AE;
+  --palette-orange-975: #1F1712;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
