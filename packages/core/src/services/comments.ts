@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
+import { assertOzgur, emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { comments } from "../db/schema";
 import type { Actor, CommentTarget } from "../constants";
 import { commentCreate, commentUpdate } from "../schemas";
@@ -22,11 +22,15 @@ export interface Thread {
   comments?: CommentRow[];
 }
 
-type CommentRow = typeof comments.$inferSelect;
+type StoredComment = typeof comments.$inferSelect;
+type CommentRow = Omit<StoredComment, "options"> & { options: string[] | null };
+
+/** The stored JSON list of quick answers as an array */
+const withOptions = (c: StoredComment): CommentRow => ({ ...c, options: c.options ? JSON.parse(c.options) : null });
 
 /** Konular: kök yorum + cevaplar. Son yorumu Özgür yazdıysa konu "cevapsız" (Claude'dan cevap bekliyor). */
-export function threadOf(ctx: Ctx, root: CommentRow, withComments = false): Thread {
-  const all = rows<CommentRow>(ctx, "SELECT * FROM comments WHERE id = ? OR parent_id = ? ORDER BY id", root.id, root.id);
+export function threadOf(ctx: Ctx, root: StoredComment, withComments = false): Thread {
+  const all = rows<StoredComment>(ctx, "SELECT * FROM comments WHERE id = ? OR parent_id = ? ORDER BY id", root.id, root.id).map(withOptions);
   const last = all[all.length - 1];
   return {
     id: root.id, target_type: root.target_type, target_id: root.target_id,
@@ -96,26 +100,39 @@ export function commentsService(ctx: Ctx) {
         if (!table) throw new FFError("validation", `target_type: "${type}" için yorum yazılamaz (geçerli: ${ctx.types.commentTargets().join(", ")})`);
         requireRow(ctx, table, targetId);
       }
-      const r = tx.insert(comments).values({ target_type: type, target_id: targetId, body: d.body, parent_id: parentId, ...stamp(ctx) }).returning().get();
+      if (d.options && ctx.actor !== "claude") throw new FFError("forbidden", "Hızlı cevap seçeneklerini sadece Claude ekler");
+      const r = tx.insert(comments).values({
+        target_type: type, target_id: targetId, body: d.body, parent_id: parentId,
+        options: d.options ? JSON.stringify(d.options) : null, ...stamp(ctx),
+      }).returning().get();
       emit(tx, ctx, {
         type: "comment.created", ...targetLink(ctx, type, targetId),
         summary: `${ctx.actor === "claude" ? "Claude" : "Özgür"} yorum yazdı (${targetLabel(ctx, type, targetId)}): ${truncate(d.body, 60)}`,
         data: { comment_id: r.id, thread: parentId ?? r.id },
       });
-      return { row: r, effects };
+      return { row: withOptions(r), effects };
     });
+  }
+
+  /** Özgür opened the thread: Claude's comments in it are read now (no event: reading is not a change worth a timeline row) */
+  function markRead(id: number) {
+    assertOzgur(ctx, "Konuyu okundu işaretlemek");
+    const root = rootOf(id);
+    ctx.sqlite.prepare("UPDATE comments SET read_at = ? WHERE (id = ? OR parent_id = ?) AND created_by = 'claude' AND read_at IS NULL")
+      .run(ctx.clock.now(), root.id, root.id);
+    return { row: threadOf(ctx, root, true), effects: [] as string[] };
   }
 
   function resolve(id: number, resolved = true) {
     return ctx.db.transaction((tx) => {
       const root = rootOf(id);
-      if (!!root.resolved_at === resolved) return { row: root, effects: [] as string[] };
+      if (!!root.resolved_at === resolved) return { row: withOptions(root), effects: [] as string[] };
       tx.update(comments).set({ resolved_at: resolved ? ctx.clock.now() : null, updated_at: ctx.clock.now() }).where(eq(comments.id, root.id)).run();
       emit(tx, ctx, {
         type: resolved ? "comment.resolved" : "comment.reopened", ...targetLink(ctx, root.target_type, root.target_id),
         summary: `Yorum konusu ${resolved ? "kapatıldı" : "yeniden açıldı"} (${targetLabel(ctx, root.target_type, root.target_id)})`,
       });
-      return { row: requireRow(ctx, "comments", root.id), effects: [] as string[] };
+      return { row: withOptions(requireRow(ctx, "comments", root.id)), effects: [] as string[] };
     });
   }
 
@@ -128,7 +145,7 @@ export function commentsService(ctx: Ctx) {
       ctx.db.update(comments).set({ body, updated_at: ctx.clock.now() }).where(eq(comments.id, id)).run();
     }
     if (resolved !== undefined) resolve(id, resolved);
-    return { row: requireRow(ctx, "comments", id), effects: [] as string[] };
+    return { row: withOptions(requireRow(ctx, "comments", id)), effects: [] as string[] };
   }
 
   /**
@@ -156,5 +173,5 @@ export function commentsService(ctx: Ctx) {
     });
   }
 
-  return { add, create: add, resolve, update, remove };
+  return { add, create: add, markRead, resolve, update, remove };
 }

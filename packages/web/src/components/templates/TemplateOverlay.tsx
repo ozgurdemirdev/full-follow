@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { remove, run } from "../../api/actions";
-import type { Person, Template, TemplateGroup } from "../../api/types";
+import type { Person, Template } from "../../api/types";
 import { openSheet } from "../../app/ui";
 import { pct } from "../../lib/format";
 import { TEMPLATE_KIND } from "../../lib/labels";
 import { defaultChannel } from "../../lib/people";
-import { filledSegments, meta, openSegments, rateTone, recipients, templateTip, TONE_TEXT, useRendered } from "../../lib/templates";
+import { filledSegments, meta, openSegments, rateTone, recipients, TONE_TEXT, useRendered } from "../../lib/templates";
 import { usePopover } from "../../lib/usePopover";
 import { BoardIcon } from "../boardIcons";
 import { ExpandOverlay } from "../ExpandOverlay";
@@ -30,14 +30,13 @@ function HeaderMenu({ t, onClose }: { t: Template; onClose: () => void }) {
 }
 
 /** Both columns: recipient pills and the text on the left, the numbers and the tip on the right */
-function Body({ t, people, groups }: { t: Template; people: Person[]; groups: TemplateGroup[] }) {
+function Body({ t, people }: { t: Template; people: Person[] }) {
   const [who, setWho] = useState<Person | null>(null);
   const picks = useMemo(() => recipients(people), [people]);
   const rendered = useRendered(t.id, who?.id ?? null);
   const parts = useMemo(() => (rendered === null ? openSegments(t.body) : filledSegments(t.body, rendered)), [t.body, rendered]);
   const text = rendered ?? t.body;
   const tone = rateTone(t.reply_rate);
-  const tip = useMemo(() => templateTip(t, groups), [t, groups]);
 
   const copy = () => {
     navigator.clipboard.writeText(text).then(() => toast("Metin kopyalandı"), () => toast("Kopyalanamadı", "error"));
@@ -75,14 +74,14 @@ function Body({ t, people, groups }: { t: Template; people: Person[]; groups: Te
           <div><span>Cevap</span><span>{t.replied}</span></div>
           <div><span>Oran</span><span className={TONE_TEXT[tone]}>{t.reply_rate === null ? "–" : pct(t.reply_rate)}</span></div>
         </div>
-        {tip ? <p className="tpl-tip"><i /><span>{tip}</span></p> : null}
+        {t.tip ? <p className="tpl-tip"><i /><span>{t.tip}</span></p> : null}
       </div>
     </>
   );
 }
 
 /** A template as the board's dialog: grows from its tile; recipient pills fill the placeholders live */
-export function TemplateOverlay({ t, from, people, groups, onClose }: { t: Template | undefined; from: DOMRect | null; people: Person[]; groups: TemplateGroup[]; onClose: () => void }) {
+export function TemplateOverlay({ t, from, people, onClose }: { t: Template | undefined; from: DOMRect | null; people: Person[]; onClose: () => void }) {
   return (
     <ExpandOverlay
       open={!!t}
@@ -105,7 +104,7 @@ export function TemplateOverlay({ t, from, people, groups, onClose }: { t: Templ
         </>
       ) : null}
     >
-      {t ? <Body key={t.id} t={t} people={people} groups={groups} /> : null}
+      {t ? <Body key={t.id} t={t} people={people} /> : null}
     </ExpandOverlay>
   );
 }

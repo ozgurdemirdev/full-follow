@@ -5,9 +5,10 @@ import { APP_TOKEN, type Core } from "@fullfollow/core";
 export class ReferralsController {
   constructor(@Inject(APP_TOKEN) private app: Core) {}
 
-  /** Referans değeri: kimin tanıttıklarından ne kadar fırsat ve iş geldi */
+  /** Referans değeri (kimin tanıttıklarından ne kadar fırsat ve iş geldi), teşekkür edilecekler ve referans istenecekler */
   @Get()
   referrals() {
-    return this.app.mod("referrals")!.report();
+    const referrals = this.app.mod("referrals")!;
+    return { leaders: referrals.report(), ...referrals.suggestions() };
   }
 }

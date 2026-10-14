@@ -9,7 +9,7 @@ const { people } = schema;
 
 const FIELD_NAMES: Record<string, string> = {
   name: "ad", company_id: "firma", role: "rol", email: "e-posta", phone: "telefon", handle: "kullanıcı adı", instagram: "Instagram", linkedin: "LinkedIn",
-  referred_by_id: "referans", post_id: "kaynak paylaşım", source_id: "nereden", contact_status: "durum", next_follow_up_at: "takip tarihi",
+  referred_by_id: "referans", post_id: "kaynak paylaşım", source_id: "nereden", contact_status: "durum", influence: "karar rolü", next_follow_up_at: "takip tarihi",
   notes: "not", tags: "etiket", sectors: "sektör",
 };
 

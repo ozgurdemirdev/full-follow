@@ -6,6 +6,33 @@ const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:0
 const events = (h: ReturnType<typeof openDb>) => h.sqlite.prepare("SELECT type FROM events ORDER BY id").all().map((e: any) => e.type);
 
 describe("ideas as a module", () => {
+  it("the money note is saved and edited; the verdict reads the share of answers that were interested, with its own sentence per case", () => {
+    const h = openDb(":memory:");
+    const app = appFor(h, "ozgur", clock);
+    const idea = app.ideas.create({ title: "Klinik botu", money_note: "₺2.500 × 10 klinik" }).row;
+    expect(app.get("idea", idea.id).row).toMatchObject({ money_note: "₺2.500 × 10 klinik", told: 0, answered: 0, interest_share: null, rate_tone: null });
+    expect(app.get("idea", idea.id).row.verdict).toBe("Karar için az. En az 3 kişiden cevap al; 0 kişi henüz dönmedi.");
+    expect(app.ideas.update(idea.id, { money_note: null }).row.money_note).toBeNull();
+    // 2 told and not answered, 1 interested: too few answers to say, 3 are pending in the sentence
+    const tell = (n: number, interest: string) => { for (let i = 0; i < n; i++) app.ideas.saveInterest({ idea_id: idea.id, person_id: person(h), interest }); };
+    tell(2, "anlatildi");
+    tell(1, "ilgilendi");
+    expect(app.get("idea", idea.id).row).toMatchObject({ told: 3, answered: 1, interest_share: 1, rate_tone: "strong", verdict: "Karar için az. En az 3 kişiden cevap al; 2 kişi henüz dönmedi." });
+    // 3 answers, 2 interested = 0.67 strong; the idea is early so the next step is a demo, the unanswered two do not dilute the share
+    tell(1, "ilgilendi");
+    tell(1, "ilgilenmedi");
+    expect(app.get("idea", idea.id).row).toMatchObject({ answered: 3, interest_share: 2 / 3, rate_tone: "strong", verdict: "İlgi güçlü. Demo aşamasına geçip küçük bir örnek göster." });
+    app.ideas.move(idea.id, "demo");
+    expect(app.get("idea", idea.id).row.verdict).toBe("İlgi güçlü. Projeye dönüştürmek için yeterli sinyal var.");
+    // mixed from 0.4, weak below
+    tell(1, "ilgilenmedi");
+    expect(app.get("idea", idea.id).row).toMatchObject({ answered: 4, interest_share: 0.5, rate_tone: "mixed", verdict: "Karışık. İlgilenmeyenlerin nedenine bak, fiyat mı ihtiyaç mı?" });
+    tell(2, "ilgilenmedi");
+    expect(app.get("idea", idea.id).row).toMatchObject({ answered: 6, interest_share: 2 / 6, rate_tone: "weak", verdict: "İlgi zayıf. Bırakmayı ya da kime anlattığını değiştirmeyi düşün." });
+    // the older rate that counts the unanswered too is still served
+    expect(app.get("idea", idea.id).row.interest_rate).toBe(2 / 8);
+  });
+
   it("ideas go through the generic save, find, get, move and delete by their Turkish alias; sectors are given by path and the parent by name", () => {
     const h = openDb(":memory:");
     const app = appFor(h, "claude", clock);

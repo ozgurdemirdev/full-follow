@@ -21,7 +21,9 @@ export function StageFunnel({ rows, rates, onPick }: { rows: Opportunity[]; rate
   }, [rows]);
   const max = Math.max(1, ...stages.map((s) => s.n));
   const rated = stages.filter((s) => rates[s.stage] !== undefined && s.stage !== LAST_STAGE);
-  const worst = rated.length > 1 ? rated.reduce((a, b) => (rates[b.stage]! < rates[a.stage]! ? b : a)).stage : null;
+  const lowest = rated.length > 1 ? rated.reduce((a, b) => (rates[b.stage]! < rates[a.stage]! ? b : a)).stage : null;
+  // a stage every opportunity moved on from loses nothing: no callout
+  const worst = lowest && rates[lowest]! < 1 ? lowest : null;
 
   return (
     <Card label="Huni" className="pipe-panel is-funnel rise">

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES,
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
@@ -36,6 +36,8 @@ export const companies = sqliteTable("companies", {
   source_id: integer("source_id").references((): AnySQLiteColumn => sources.id),
   contact_status: text("contact_status", { enum: CONTACT_STATUSES }).notNull().default("yazilmadi"),
   notes: text("notes"),
+  /** City of the company (free text) */
+  city: text("city"),
   name_key: text("name_key"),
   domain_key: text("domain_key"),
   email_key: text("email_key"),
@@ -65,6 +67,8 @@ export const people = sqliteTable("people", {
   contact_status: text("contact_status", { enum: CONTACT_STATUSES }).notNull().default("yazilmadi"),
   next_follow_up_at: text("next_follow_up_at"),
   notes: text("notes"),
+  /** Role in a buying decision: karar_verici | etkileyici | kullanici (the people module validates it) */
+  influence: text("influence"),
   email_key: text("email_key"),
   instagram_key: text("instagram_key"),
   linkedin_key: text("linkedin_key"),
@@ -159,6 +163,8 @@ export const opportunities = sqliteTable("opportunities", {
   next_follow_up_at: text("next_follow_up_at"),
   closed_at: text("closed_at"),
   position: integer("position").notNull().default(0),
+  /** When the opportunity entered its current stage (ISO); set on create and on every stage change */
+  stage_since: text("stage_since"),
   /** Paket 3: ilanın ya da konunun linki ve tarihi (R10 ilanı gibi) */
   source_url: text("source_url"),
   source_date: text("source_date"),
@@ -236,7 +242,8 @@ export const payments = sqliteTable("payments", {
 export const tasks = sqliteTable("tasks", {
   ...common(),
   title: text("title").notNull(),
-  assignee: text("assignee", { enum: ASSIGNEES }).notNull().default("ozgur"),
+  /** ozgur | claude | musteri: the calendar module validates it */
+  assignee: text("assignee").notNull().default("ozgur"),
   due_date: text("due_date"),
   /** "HH:MM" on the due date; null = sometime that day */
   due_time: text("due_time"),
@@ -247,6 +254,8 @@ export const tasks = sqliteTable("tasks", {
   company_id: integer("company_id").references(() => companies.id),
   opportunity_id: integer("opportunity_id").references(() => opportunities.id),
   project_id: integer("project_id").references(() => projects.id),
+  /** the idea a pitch task is about (the pitch draft request) */
+  idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
 });
 
 /** Kayıtlara yorum: kök yorum + cevaplar (parent_id = kök). Özgür ve Claude yazar. */
@@ -259,6 +268,10 @@ export const comments = sqliteTable("comments", {
   parent_id: integer("parent_id").references((): AnySQLiteColumn => comments.id),
   /** Sadece kök yorumda dolar: konu kapatıldı */
   resolved_at: text("resolved_at"),
+  /** JSON list of short answers Claude offers with a question (quick answer chips) */
+  options: text("options"),
+  /** When Özgür opened the thread; set on Claude's comments only, null while unread */
+  read_at: text("read_at"),
 }, (t) => [index("comments_target").on(t.target_type, t.target_id), index("comments_parent").on(t.parent_id)]);
 
 /** Günlük iş planı: tekrarlı hedef (örn. günde 20 cold mail). channel doluysa o kanaldaki giden mesajlar kendiliğinden sayılır. */
@@ -344,6 +357,8 @@ export const posts = sqliteTable("posts", {
   /** gün; boşsa hatırlatma yok */
   refresh_days: integer("refresh_days"),
   refreshed_at: text("refreshed_at"),
+  /** metin | gorsel | video | karusel: the posts module validates it */
+  format: text("format"),
   idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
   notes: text("notes"),
 }, (t) => [index("posts_posted").on(t.posted_at)]);
@@ -373,6 +388,8 @@ export const ideas = sqliteTable("ideas", {
   priority: text("priority", { enum: IDEA_PRIORITIES }).notNull().default("orta"),
   position: integer("position").notNull().default(0),
   done_at: text("done_at"),
+  /** how the idea earns money, in a sentence */
+  money_note: text("money_note"),
 }, (t) => [index("ideas_own_project").on(t.own_project_id, t.priority, t.position)]);
 
 export const idea_sectors = sqliteTable("idea_sectors", {
@@ -394,6 +411,8 @@ export const own_projects = sqliteTable("own_projects", {
   /** who could buy it and how */
   sellable_note: text("sellable_note"),
   notes: text("notes"),
+  /** fikir | dogrulama | demo | urun, null = not placed yet: the own-projects module validates it */
+  stage: text("stage"),
 }, (t) => [index("own_projects_status").on(t.status)]);
 
 export const own_project_sectors = sqliteTable("own_project_sectors", {
@@ -424,7 +443,10 @@ export const events = sqliteTable("events", {
   data: text("data"),
   created_by: text("created_by", { enum: ACTORS }).notNull(),
   created_at: text("created_at").notNull(),
-}, (t) => [index("events_person").on(t.person_id), index("events_opp").on(t.opportunity_id), index("events_project").on(t.project_id), index("events_feed").on(t.created_at, t.id)]);
+}, (t) => [
+  index("events_person").on(t.person_id), index("events_opp").on(t.opportunity_id), index("events_project").on(t.project_id),
+  index("events_feed").on(t.created_at, t.id), index("events_type_created").on(t.type, t.created_at),
+]);
 
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),

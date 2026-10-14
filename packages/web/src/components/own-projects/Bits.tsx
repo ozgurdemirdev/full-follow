@@ -1,4 +1,4 @@
-import type { OwnRow, OwnStage } from "../../api/types";
+import type { OwnProject, OwnStage } from "../../api/types";
 import { SELLABLE } from "../../lib/labels";
 import { JOURNEY, journeyState, SELLABLE_CLS, stageLabel } from "../../lib/ownProjects";
 import { BOARD_ICON } from "../boardIcons";
@@ -13,26 +13,30 @@ export function StarIcon({ className }: { className: string }) {
 }
 
 /** "Satılabilir" / "Belki satılır" / "Satılmaz" */
-export function SellChip({ p, size, className = "" }: { p: OwnRow; size?: "sm" | "md"; className?: string }) {
+export function SellChip({ p, size, className = "" }: { p: OwnProject; size?: "sm" | "md"; className?: string }) {
   return <span className={`opr-chip ${SELLABLE_CLS[p.sellable]} ${className}`} data-size={size}>{SELLABLE[p.sellable]}</span>;
 }
 
 /**
- * Journey bars Fikir, Doğrulama, Demo, Ürün: done, current (glowing), hatched next.
- * Renders nothing until the project has a stage (gap G15).
+ * Journey bars Fikir, Doğrulama, Demo, Ürün: done, current (glowing), hatched next. A project without a stage shows every step ahead;
+ * with `onPick` a click on a step sets the stage (the card variant has no labels and is read only).
  */
-export function Journey({ stage, variant }: { stage?: OwnStage | null; variant: "hero" | "card" | "ex" }) {
-  if (!stage) return null;
+export function Journey({ stage, variant, onPick }: { stage: OwnStage | null; variant: "hero" | "card" | "ex"; onPick?: (step: OwnStage) => void }) {
   const bars = variant === "card";
   return (
-    <div className="opr-journey" data-v={variant} role="group" aria-label={`Aşama: ${stageLabel(stage)}`}>
+    <div className="opr-journey" data-v={variant} role="group" aria-label={stage ? `Aşama: ${stageLabel(stage)}` : "Aşama seçilmedi"}>
       {JOURNEY.map((j) => {
         const state = journeyState(stage, j.key);
-        return (
-          <div key={j.key} className="opr-jstep">
+        const inner = (
+          <>
             <span className="opr-jbar" data-j={state} />
             {bars ? null : <span className="opr-jlabel" data-j={state}>{j.label}</span>}
-          </div>
+          </>
+        );
+        return onPick && !bars ? (
+          <button key={j.key} type="button" className="opr-jstep" aria-pressed={state === "now"} aria-label={`Aşama: ${j.label}`} onClick={() => onPick(j.key)}>{inner}</button>
+        ) : (
+          <div key={j.key} className="opr-jstep">{inner}</div>
         );
       })}
     </div>

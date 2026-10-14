@@ -1,8 +1,10 @@
 import { Link } from "wouter";
 import { run } from "../../api/actions";
+import { useQuery } from "../../api/store";
+import type { Detail, FileRow } from "../../api/types";
 import { PATHS, timelinePath } from "../../app/routes";
 import { lira } from "../../lib/format";
-import { MILESTONE } from "../../lib/labels";
+import { ASSIGNEE, MILESTONE } from "../../lib/labels";
 import { askClaude, type ProjectView } from "../../lib/projects";
 import { remaining } from "../../lib/dashboard";
 import { BoardIcon } from "../boardIcons";
@@ -10,11 +12,10 @@ import { FilesCard } from "../FilesCard";
 import { LinksCard } from "../LinksCard";
 import { ProjectAdmin } from "./ProjectAdmin";
 
-const BY = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" } as const;
-
 /** Expanded project: tasks with owner, payments (Alındı), Claude's note with the reminder request, then links, files and admin */
 export function ProjectDetail({ v }: { v: ProjectView }) {
   const { p } = v;
+  const files = useQuery<Detail<unknown, { files?: FileRow[] }>>(`/projects/${p.id}?with=files`);
   const toggle = (id: number, done: boolean) => void run("patch", `/tasks/${id}`, { done: !done }, { silent: true }).catch(() => {});
   return (
     <div className="prj-detail" id={`prj-detail-${p.id}`}>
@@ -29,7 +30,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
                 {done ? <BoardIcon name="check" className="size-icon-sm" stroke={2.6} /> : null}
               </button>
               <span className="prj-task-text" data-done={done}>{t.title}</span>
-              <span className="prj-by" data-by={t.assignee}>{BY[t.assignee]}</span>
+              <span className="prj-by" data-by={t.assignee}>{ASSIGNEE[t.assignee]}</span>
             </div>
           );
         })}
@@ -67,7 +68,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
       </div>
 
       <LinksCard type="project" id={p.id} plain />
-      {p.files ? <FilesCard type="project" id={p.id} files={p.files} plain /> : null}
+      <FilesCard type="project" id={p.id} files={files.data?.related.files ?? []} plain />
       <ProjectAdmin p={p} />
     </div>
   );

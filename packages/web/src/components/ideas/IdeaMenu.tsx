@@ -1,13 +1,13 @@
 import { Link } from "wouter";
 import { remove } from "../../api/actions";
-import type { IdeaRow } from "../../api/types";
+import type { Idea } from "../../api/types";
 import { PATHS } from "../../app/routes";
 import { openSheet } from "../../app/ui";
 import { usePopover } from "../../lib/usePopover";
 import { BoardIcon } from "../boardIcons";
 
 /** Menu of the detail header: what the board leaves out (sectors, parent idea, edit, touch and post forms, delete) */
-export function IdeaMenu({ idea }: { idea: IdeaRow }) {
+export function IdeaMenu({ idea }: { idea: Idea }) {
   const { open, setOpen, root } = usePopover();
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (

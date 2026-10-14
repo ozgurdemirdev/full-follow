@@ -9,10 +9,11 @@ export function countsBySource(ctx: Ctx): Map<number, number> {
   return new Map(keptRows<{ source_id: number; n: number }>(ctx, "SELECT source_id, COUNT(*) n FROM opportunities GROUP BY source_id").map((r) => [r.source_id, r.n]));
 }
 
-/** Open opportunities per company, through the company's people */
-export function openCountsByCompany(ctx: Ctx): Map<number, number> {
-  return new Map(keptRows<{ company_id: number; n: number }>(ctx, `SELECT p.company_id, COUNT(*) n FROM opportunities x JOIN people p ON p.id = x.person_id
-    WHERE p.company_id IS NOT NULL AND x.stage IN (${OPEN_SQL}) GROUP BY p.company_id`).map((r) => [r.company_id, r.n]));
+/** Open opportunities per company, through the company's people: how many and their estimated value */
+export function openByCompany(ctx: Ctx): Map<number, { count: number; value: number }> {
+  return new Map(keptRows<{ company_id: number; count: number; value: number }>(ctx, `SELECT p.company_id, COUNT(*) AS count, COALESCE(SUM(x.estimated_value), 0) AS value
+    FROM opportunities x JOIN people p ON p.id = x.person_id
+    WHERE p.company_id IS NOT NULL AND x.stage IN (${OPEN_SQL}) GROUP BY p.company_id`).map((r) => [r.company_id, { count: r.count, value: r.value }]));
 }
 
 /** Per person: opportunities, won ones, the won value and the value still open */

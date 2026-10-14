@@ -6,7 +6,7 @@ const fmt = (n: number) => `${n.toLocaleString("tr-TR")}`;
 /** How projects and payments read in MCP output, the `pay` tool, and the payment lines of the Today view; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
   /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
-  skip: ["paid_total", "expected_total", "next_payment", "next_task", "expected_amount", "paid_amount"],
+  skip: ["paid_total", "expected_total", "next_payment", "next_task", "expected_amount", "paid_amount", "waiting", "waiting_amount"],
   entities: {
     project: {
       kind: "proje",
@@ -14,7 +14,7 @@ export const mcp: McpDef = {
       line: (r, f) => f.join(
         `#${r.id} ${r.name}`, r.person_name, f.label(r.stage), `${f.tl(r.paid_total)}/${f.tl(r.price)}`,
         r.next_payment && `sıradaki: ${f.label(r.next_payment.milestone)} ${f.tl(r.next_payment.remaining)}${r.next_payment.due_date ? ` ${f.d(r.next_payment.due_date)}` : ""}`,
-        r.next_task && `görev: ${f.cut(r.next_task.title, 40)}`,
+        r.next_task && `görev: ${f.cut(r.next_task.title, 40)}`, r.waiting && `bekleyen: ${r.waiting}${r.waiting_amount ? ` ${f.tl(r.waiting_amount)}` : ""}`,
       ),
     },
     payment: {
@@ -37,7 +37,7 @@ export const mcp: McpDef = {
     ],
     get: [
       { at: 201, text: "projects|payments|" },
-      { at: 403, text: "project: links; " },
+      { at: 403, text: "project: links,files; " },
     ],
     save: [{ at: 132, text: "/project" }],
     move: [{ at: 120, text: "Proje: pesinat|tasarim_onayi|test_surumu|yayin|teslim|bakim|iptal. " }],

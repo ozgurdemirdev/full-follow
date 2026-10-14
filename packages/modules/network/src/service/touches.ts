@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
 import {
-  announceTrashed, Bin, bool, COMPANY_TOUCHES, eventLink as link, FFError, has, isColdEmail, page, parse, requireRow, resolveSubject, rows, sameSide, schema, stamp, truncate,
+  announceTrashed, Bin, bool, COMPANY_TOUCHES, contactKey, eventLink as link, FFError, has, isColdEmail, page, parse, requireRow, resolveSubject, rows, sameSide, schema, stamp, truncate,
   writeEvent as emit, type Ctx, type ListOpts, type Q, type TouchInput, type TouchListRow, type TouchRecord,
 } from "@fullfollow/core";
-import { touchCreate, touchUpdate } from "./schemas";
+import { suggestMatches } from "./match";
+import { adoptInput, touchCreate, touchUpdate } from "./schemas";
 import { bumpContactStatus, statusOfTouch } from "./status";
 
 const { touches } = schema;
@@ -67,15 +68,40 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
   return { row: r as TouchRecord, effects };
 }
 
-/** Touch rows with the names they hang on; `where` narrows to one touch (`t.id = ?`) or to a company's scope */
-function selectTouches(ctx: Ctx, where = "", ...params: unknown[]): TouchListRow[] {
+type Selected = Omit<TouchListRow, "suggested_match"> & { contact_key: string | null };
+
+/** Touch rows with the names they hang on (and their address key); `where` narrows to one touch (`t.id = ?`) or to a company's scope */
+function selectTouches(ctx: Ctx, where = "", ...params: unknown[]): Selected[] {
   const list = rows(ctx, `SELECT t.*, p.name AS person_name, COALESCE(c.name, pc.name) AS company_name, COALESCE(p.name, c.name, t.contact) AS to_name,
       i.title AS idea_title
     FROM touches t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies c ON c.id = t.company_id LEFT JOIN companies pc ON pc.id = p.company_id
     LEFT JOIN ideas i ON i.id = t.idea_id ${where} ORDER BY t.happened_at DESC, t.id DESC`, ...params);
   // the opportunity titles come from the pipeline module (null without it)
   const titles = ctx.mod("pipeline")?.opportunities.titles(list.flatMap((t) => (t.opportunity_id ? [t.opportunity_id as number] : [])));
-  return list.map(({ contact_key: _k, ...t }) => ({ ...t, opportunity_title: titles?.get(t.opportunity_id) ?? null, expects_reply: !!t.expects_reply }));
+  return list.map((t) => ({ ...t, opportunity_title: titles?.get(t.opportunity_id) ?? null, expects_reply: !!t.expects_reply }));
+}
+
+const isLoose = (t: { person_id: number | null; company_id: number | null }) => !t.person_id && !t.company_id;
+
+/** The rows as listed: the address key leaves, and a loose touch gets the record its address points at (one lookup for the whole list) */
+function present(ctx: Ctx, list: Selected[]): TouchListRow[] {
+  const matches = suggestMatches(ctx, list.flatMap((t) => (isLoose(t) && t.contact_key ? [t.contact_key] : [])));
+  return list.map(({ contact_key, ...t }) => ({ ...t, suggested_match: isLoose(t) && contact_key ? matches.get(contact_key) ?? null : null }));
+}
+
+/** A loose touch joins the person or company its address belongs to: the status of the record moves like a new touch's, an event is written, the drafts of that address follow */
+function moveLoose(q: Q, ctx: Ctx, cur: TouchRecord, owner: { person_id?: number; company_id?: number }): string[] {
+  if (!isLoose(cur)) throw new FFError("rule", `temas #${cur.id} zaten bir kişiye ya da firmaya bağlı`);
+  const personal = owner.person_id !== undefined;
+  const target = personal ? requireRow(ctx, "people", owner.person_id!) : requireRow(ctx, "companies", owner.company_id!);
+  q.update(touches).set({ ...owner, updated_at: ctx.clock.now() }).where(eq(touches.id, cur.id)).run();
+  emit(q, ctx, {
+    type: "touch.adopted", ...link(ctx, { person_id: owner.person_id }),
+    summary: `Temas ${personal ? "kişiye" : "firmaya"} bağlandı: ${target.name} (${cur.contact}): ${truncate(cur.summary, 50)}`,
+    data: { touch_id: cur.id, contact: cur.contact, ...owner },
+  });
+  if (cur.contact_key) ctx.mod("drafts")?.adoptLoose(owner, [cur.contact_key]);
+  return bumpContactStatus(ctx, owner, statusOfTouch(cur));
 }
 
 export function touchesService(ctx: Ctx) {
@@ -84,13 +110,19 @@ export function touchesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => insertTouch(tx, ctx, d));
   }
 
-  /** Özet, sonuç, kanal, tür, tarih ve cevap bekleme bayrağı düzeltilir; muhatap/fırsat/yön değişmez (aşama kuralı tekrar çalışmasın) */
+  /**
+   * Özet, sonuç, kanal, tür, tarih ve cevap bekleme bayrağı düzeltilir; yön ve fırsat değişmez (aşama kuralı tekrar çalışmasın).
+   * Muhatap sadece kişisiz adres temasında değişir: `person_id` ya da `company_id` onu o kayda bağlar.
+   */
   function update(id: number, input: unknown) {
-    const d = parse(touchUpdate, input);
+    const { person_id, company_id, ...d } = parse(touchUpdate, input);
+    const owner = person_id ? { person_id } : company_id ? { company_id } : null;
     return ctx.db.transaction((tx) => {
-      const cur = requireRow<TouchRecord>(ctx, "touches", id);
+      let cur = requireRow<TouchRecord>(ctx, "touches", id);
       if (d.expects_reply && cur.direction !== "giden") throw new FFError("validation", "sadece giden temas cevap bekleyebilir");
-      if (!Object.keys(d).length) return { row: cur, effects: [] as string[] };
+      const moved = owner ? moveLoose(tx, ctx, cur, owner) : [];
+      if (owner) cur = requireRow<TouchRecord>(ctx, "touches", id);
+      if (!Object.keys(d).length) return { row: cur, effects: moved };
       if (d.idea_id) {
         if (!cur.person_id) throw new FFError("validation", "fikir bağlantısı sadece kişiye yazılan temasta olur");
         requireIdea(ctx, d.idea_id);
@@ -99,9 +131,31 @@ export function touchesService(ctx: Ctx) {
       const what = d.expects_reply === false ? "cevap beklenmiyor" : d.expects_reply ? "cevap bekleniyor" : "düzenlendi";
       emit(tx, ctx, { type: "touch.updated", ...link(ctx, cur), summary: `Temas ${what}: ${truncate(d.summary ?? cur.summary, 50)}`, data: { touch_id: id } });
       const row = requireRow<TouchRecord>(ctx, "touches", id);
-      const effects = ctx.emit("touch.updated", { touch: row, changes: d });
+      const effects = [...moved, ...ctx.emit("touch.updated", { touch: row, changes: d })];
       if (d.kind) effects.push(...bumpContactStatus(ctx, cur, statusOfTouch({ direction: cur.direction, kind: d.kind })));
       return { row, effects };
+    });
+  }
+
+  /**
+   * Moves every loose touch that has a suggested match to it, in one transaction (the effects are the count and the status moves).
+   * `{ contact }` limits it to the touches written with that address.
+   */
+  function adoptSuggested(input: unknown = {}) {
+    const { contact } = parse(adoptInput, input ?? {});
+    return ctx.db.transaction((tx) => {
+      const key = contact ? contactKey(contact) : null;
+      const loose = rows<TouchRecord>(ctx, `SELECT * FROM touches WHERE person_id IS NULL AND company_id IS NULL AND contact_key IS NOT NULL${key ? " AND contact_key = ?" : ""}`, ...(key ? [key] : []));
+      const matches = suggestMatches(ctx, loose.map((t) => t.contact_key!));
+      const effects: string[] = [];
+      let adopted = 0;
+      for (const t of loose) {
+        const m = matches.get(t.contact_key!);
+        if (!m) continue;
+        effects.push(...moveLoose(tx, ctx, t, m.type === "person" ? { person_id: m.id } : { company_id: m.id }));
+        adopted++;
+      }
+      return { adopted, effects: adopted ? [`${adopted} temas bağlandı`, ...effects] : effects };
     });
   }
 
@@ -122,14 +176,15 @@ export function touchesService(ctx: Ctx) {
   function list(o: ListOpts) {
     const f = o.filter ?? {};
     let list = f.company_scope ? selectTouches(ctx, `WHERE ${COMPANY_TOUCHES}`, Number(f.company_scope), Number(f.company_scope)) : selectTouches(ctx);
-    if (bool(f.loose)) list = list.filter((t) => !t.person_id && !t.company_id);
+    if (bool(f.loose)) list = list.filter(isLoose);
     if (f.channel) list = list.filter((t) => t.channel === f.channel);
     for (const k of ["person_id", "company_id", "opportunity_id", "project_id", "idea_id"] as const) if (f[k]) list = list.filter((t) => t[k] === Number(f[k]));
     list = list.filter((t) => has(o.q, t.summary, t.to_name, t.contact));
-    return page(list, o.limit, o.offset);
+    const shown = page(list, o.limit, o.offset);
+    return { rows: present(ctx, shown.rows), total: shown.total };
   }
 
-  const get = (id: number): TouchListRow | undefined => selectTouches(ctx, "WHERE t.id = ?", id)[0];
+  const get = (id: number): TouchListRow | undefined => present(ctx, selectTouches(ctx, "WHERE t.id = ?", id))[0];
 
-  return { create, insert: (q: Q, d: TouchInput) => insertTouch(q, ctx, d), update, remove, list, get };
+  return { create, insert: (q: Q, d: TouchInput) => insertTouch(q, ctx, d), update, adoptSuggested, remove, list, get };
 }

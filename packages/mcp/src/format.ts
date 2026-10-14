@@ -13,7 +13,7 @@ export function cut(s: string | null | undefined, n = 60): string {
   const t = (s ?? "").replace(/\s+/g, " ").trim();
   return t.length > n ? t.slice(0, n - 1) + "…" : t;
 }
-export const who = (a?: string) => (a === "claude" ? "Claude" : a === "ozgur" ? "Özgür" : a ?? "");
+export const who = (a?: string) => (a === "claude" ? "Claude" : a === "ozgur" ? "Özgür" : a === "musteri" ? "Müşteri" : a ?? "");
 export const join = (...p: (string | number | null | undefined | false)[]) => p.filter((x) => x !== null && x !== undefined && x !== "" && x !== false).join(" · ");
 
 type Row = Record<string, any>;

@@ -17,6 +17,8 @@ export interface IdeaRecord {
   priority: IdeaPriority;
   position: number;
   done_at: string | null;
+  /** how the idea earns money, in a sentence */
+  money_note: string | null;
   created_at: string;
   updated_at: string;
   created_by: "ozgur" | "claude";
@@ -36,6 +38,14 @@ export interface IdeaStats extends IdeaRecord {
   sectors: { id: number; path: string }[];
   /** interested / told; null while nobody was told */
   interest_rate: number | null;
+  /** people who answered: interested or not */
+  answered: number;
+  /** interested / answered, 0 to 1; null while nobody has answered (the share the verdict reads, unlike `interest_rate`) */
+  interest_share: number | null;
+  /** how strong the share is: strong, mixed or weak; null while nobody has answered */
+  rate_tone: "strong" | "mixed" | "weak" | null;
+  /** the sentence under the interest ring: what the numbers say and what to do next */
+  verdict: string;
 }
 
 /** A person told about an idea (one row per idea and person) and how interested they were */

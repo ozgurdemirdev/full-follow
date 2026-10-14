@@ -1,8 +1,8 @@
-import type { OwnRow } from "../../api/types";
+import type { OwnProject } from "../../api/types";
 import { OWN_STATUS } from "../../lib/labels";
 
 /** "Rafta": left and finished projects, each can be taken off the shelf */
-export function Shelf({ rows, onRevive }: { rows: OwnRow[]; onRevive: (p: OwnRow) => void }) {
+export function Shelf({ rows, onRevive }: { rows: OwnProject[]; onRevive: (p: OwnProject) => void }) {
   if (!rows.length) return null;
   return (
     <section aria-label="Rafta" className="opr-shelf">

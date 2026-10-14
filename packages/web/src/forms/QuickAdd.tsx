@@ -13,7 +13,7 @@ import { NumberField } from "../components/NumberField";
 import { ChipRadio, Field, Sheet } from "../components/Sheet";
 import { addDaysIso, todayIso } from "../lib/format";
 import { dur, ease, riseY } from "../lib/motion";
-import { OPEN_STAGES, STAGE, TASK_KIND_ITEMS, type OppStage } from "../lib/labels";
+import { ASSIGNEE_ITEMS, OPEN_STAGES, STAGE, TASK_KIND_ITEMS, type OppStage, type TaskAssignee } from "../lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "./helpers";
 
 const TITLES: Record<SheetState["kind"], string> = {
@@ -363,6 +363,7 @@ function TaskForm(p: FormProps) {
   const [due, setDue] = useState(pre?.date ?? todayIso());
   const [time, setTime] = useState("");
   const [kind, setKind] = useState<TaskKind>("gorev");
+  const [assignee, setAssignee] = useState<TaskAssignee>("ozgur");
   const [target, setTarget] = useState<Ref>(emptyRef);
   const row = existing.data?.row;
   /** The record the task is already tied to (edit) or was opened from (preset) */
@@ -375,6 +376,7 @@ function TaskForm(p: FormProps) {
       setDue(row.due_date ?? "");
       setTime(row.due_time ?? "");
       setKind(row.kind);
+      setAssignee(row.assignee);
     }
     const hit = options.find((o) => linked[o.type] === o.tid);
     if (hit) setTarget({ id: hit.id, text: hit.label });
@@ -385,8 +387,8 @@ function TaskForm(p: FormProps) {
   const submit = useSubmit(p, async () => {
     const t = options.find((o) => o.id === target.id);
     const link = { person_id: null, company_id: null, opportunity_id: null, project_id: null, ...(t ? { [`${t.type}_id`]: t.tid } : {}) };
-    if (editId) await run<Task>("patch", `/tasks/${editId}`, { title: title.trim(), due_date: due || null, due_time: time || null, kind, ...link }, { ok: "Görev güncellendi" });
-    else await run<Task>("post", "/tasks", { title: title.trim(), assignee: "ozgur", due_date: due || undefined, due_time: time || undefined, kind, ...link }, { ok: "Görev eklendi" });
+    if (editId) await run<Task>("patch", `/tasks/${editId}`, { title: title.trim(), assignee, due_date: due || null, due_time: time || null, kind, ...link }, { ok: "Görev güncellendi" });
+    else await run<Task>("post", "/tasks", { title: title.trim(), assignee, due_date: due || undefined, due_time: time || undefined, kind, ...link }, { ok: "Görev eklendi" });
   });
 
   return (
@@ -402,6 +404,9 @@ function TaskForm(p: FormProps) {
       </Field>
       <Field label="Tür">
         <ChipRadio label="Tür" items={TASK_KIND_ITEMS} value={kind} onChange={setKind} />
+      </Field>
+      <Field label="Kimin işi">
+        <ChipRadio label="Kimin işi" items={ASSIGNEE_ITEMS} value={assignee} onChange={setAssignee} />
       </Field>
       <Field label="Neyle ilgili (isteğe bağlı)" htmlFor="k-target">
         <Combo id="k-target" value={target} onChange={setTarget} options={options} placeholder="Kişi, firma, fırsat ya da proje ara" allowNew={false} />

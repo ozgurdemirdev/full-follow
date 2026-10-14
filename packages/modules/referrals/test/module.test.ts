@@ -35,6 +35,7 @@ describe("referrals as a module", () => {
     const bare = appFor(openDb(":memory:"), "ozgur", clock);
     expect(bare.referrals.report()).toEqual([]);
     expect(bare.referrals.of(1)).toBeNull();
+    expect(bare.referrals.suggestions()).toEqual({ thanks: [], asks: [] });
   });
 
   it("the money numbers are zero when only the tree is there", () => {

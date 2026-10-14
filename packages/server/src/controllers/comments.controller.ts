@@ -32,6 +32,12 @@ export class CommentsController {
     return this.core.comments.resolve(intId(id), b?.resolved ?? true);
   }
 
+  /** Özgür opened the thread: Claude's comments in it count as read */
+  @Post(":id/read")
+  read(@Param("id") id: string) {
+    return this.core.comments.markRead(intId(id));
+  }
+
   @Delete(":id")
   remove(@Param("id") id: string) {
     return this.core.remove("comment", intId(id));

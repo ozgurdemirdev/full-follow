@@ -30,7 +30,6 @@ export function useSettingCategories(): SettingCategory[] {
   const trash = useTrash();
   const floor = settings.data?.floor;
   const hasRules = Array.isArray(settings.data?.draft_rules);
-  const hasPostRefresh = typeof settings.data?.post_refresh_days === "number";
   const withSession = !!me.data?.auth;
 
   return useMemo(
@@ -48,7 +47,7 @@ export function useSettingCategories(): SettingCategory[] {
         name: "Takip kuralları",
         icon: ICON.follow,
         sub: "Claude bu sürelere göre “Bugün dokun” listesini kurar",
-        rows: followRows(hasPostRefresh),
+        rows: followRows(),
       },
       { slug: "claude", name: "Claude", icon: ICON.claude, sub: "Claude MCP üzerinden aynı veritabanını kullanır", rows: claudeRows(hasRules) },
       { slug: "maskot", name: "Maskot", icon: ICON.mascot, rows: mascotRows() },
@@ -68,6 +67,6 @@ export function useSettingCategories(): SettingCategory[] {
         })),
       },
     ],
-    [floor, hasRules, hasPostRefresh, withSession, trash.rows, trash.data, trash.error],
+    [floor, hasRules, withSession, trash.rows, trash.data, trash.error],
   );
 }

@@ -26,6 +26,21 @@ describe("Paylaşımlar", () => {
     expect(ozgur.moduleMeta().post_platforms).toEqual(["r10", "linkedin", "instagram", "diger"]);
   });
 
+  it("a post without an interval of its own refreshes by the setting (default 30 days); its own interval wins; the format is one of four or empty", () => {
+    const own = api().create({ platform: "r10", title: "Kendi aralığı", refresh_days: 7 }).row;
+    const plain = api().create({ platform: "linkedin", title: "Aralıksız", format: "video" }).row;
+    expect(plain.format).toBe("video");
+    expect(api().get(own.id)).toMatchObject({ refresh_every: 7, next_refresh_at: "2026-10-16", refresh_due: false, format: null });
+    expect(api().get(plain.id)).toMatchObject({ refresh_every: 30, next_refresh_at: "2026-11-08", refresh_due: false });
+    ozgur.settings.set("post_refresh_days", 5);
+    expect(api().get(plain.id)).toMatchObject({ refresh_every: 5, next_refresh_at: "2026-10-14" });
+    expect(api().get(own.id)!.refresh_every).toBe(7);
+    expect(api().update(plain.id, { refreshed: true }).effects).toEqual(["sonraki güncelleme 2026-10-14"]);
+    expect(() => ozgur.settings.set("post_refresh_days", 0)).toThrow();
+    expect(() => api().update(plain.id, { format: "podcast" })).toThrow(/format/);
+    expect(api().update(plain.id, { format: null }).row.format).toBeNull();
+  });
+
   it("modül yokken: Bugün'de posts_due yok, tür kurulu değil hatası verir", () => {
     const bare = createCore(openDb(":memory:"), "ozgur", clock);
     expect(bare.today()).not.toHaveProperty("posts_due");

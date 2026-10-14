@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SOURCE_KINDS, TAG_COLORS, FILE_NAME_MAX } from "../constants";
+import { COMMENT_OPTION_CHARS, COMMENT_OPTIONS_MAX, SOURCE_KINDS, TAG_COLORS, FILE_NAME_MAX } from "../constants";
 import * as zodKit from "./kit";
 
 const { id, text, optText, tl, date, dateTime, patch } = zodKit;
@@ -37,6 +37,8 @@ export const commentCreate = z.strictObject({
   target_id: id.optional(),
   reply_to: id.optional(),
   body: text,
+  /** short answers offered with a question; only Claude sets them (checked in the service) */
+  options: z.array(text.max(COMMENT_OPTION_CHARS)).min(1).max(COMMENT_OPTIONS_MAX).optional(),
 });
 export const commentUpdate = patch({ body: text, resolved: z.boolean() });
 

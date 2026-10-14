@@ -10,11 +10,17 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 /** Firma ve kişinin temas durumu: temaslarla ileri gider, geri gitmez; "olumsuz", "tanidik" ve "arkadas" sadece elle */
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
+/** Role of a person in a buying decision (decision maker, influencer, user) */
+export const INFLUENCE = ["karar_verici", "etkileyici", "kullanici"] as const;
+export type Influence = (typeof INFLUENCE)[number];
 /** Set by hand; touches never move these */
 export const STICKY_CONTACT_STATUSES: readonly ContactStatus[] = ["olumsuz", "tanidik", "arkadas"];
 /** How far a status has come: a touch only moves a status forward (a negative rank is a hand set one) */
 export const CONTACT_STATUS_RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1, es_gecildi: -1, tanidik: -1, arkadas: -1 };
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
+/** Quick answers Claude can attach to a question: how many, and how long each may be */
+export const COMMENT_OPTIONS_MAX = 4;
+export const COMMENT_OPTION_CHARS = 40;
 export const CORE_TRASH_TYPES = ["note", "comment", "link", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
@@ -34,7 +40,6 @@ export const PROJECT_STAGES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
-export const ASSIGNEES = ACTORS;
 /** A comment target type: a record type core owns (`TARGET_TABLE` in services/shared.ts) or one a module adds (`commentTargets` contribution) */
 export type CommentTarget = string;
 /** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */
@@ -106,8 +111,12 @@ export const QUOTA_NEAR_RATIO = 0.8;
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes",
+  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days",
 ] as const;
+
+/** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
+export const POST_REFRESH_DEFAULT_DAYS = 30;
+export const POST_REFRESH_MAX_DAYS = 365;
 
 /** Network ayarlarının varsayılanları (gün) */
 export const NETWORK_DEFAULTS = { reply_wait_days: 3, cooling_days: 30 } as const;

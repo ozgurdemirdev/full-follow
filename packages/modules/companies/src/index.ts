@@ -13,7 +13,7 @@ export default defineModule({
   key: "companies",
   label: "Firmalar",
   smoke: ["/api/companies"],
-  uses: ["people", "network"],
+  uses: ["people", "network", "pipeline", "projects"],
   api: companiesApi,
   entities,
   contribute: {

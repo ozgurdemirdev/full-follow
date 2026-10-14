@@ -45,6 +45,17 @@ describe("companies as a module", () => {
     expect(app.companies.bumpStatus(999, "yazildi")).toEqual([]);
   });
 
+  it("the city is saved and cleared; only the partner tag makes a partner (Ajans does not), and money reads zero without the projects and pipeline modules", () => {
+    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const abc = app.companies.create({ name: "ABC", city: "İzmir" }).row;
+    expect(app.companies.get(abc.id)).toMatchObject({ city: "İzmir", segment: "lead", money: { won: 0, due: 0, open: 0 } });
+    expect(app.companies.update(abc.id, { city: null }).row.city).toBeNull();
+    const ortak = app.companies.create({ name: "Ortak", tags: ["İş ortağı"] }).row;
+    const ajans = app.companies.create({ name: "Ajans X", tags: ["Ajans"] }).row;
+    expect(app.companies.get(ortak.id)!.segment).toBe("partner");
+    expect(app.companies.get(ajans.id)!.segment).toBe("lead");
+  });
+
   it("comments hang on a company and read its name", () => {
     const app = appFor(openDb(":memory:"), "ozgur", clock);
     const c = app.companies.create({ name: "ABC" }).row;

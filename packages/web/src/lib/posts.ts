@@ -1,6 +1,5 @@
 // Posts screen: sorting, platform totals, the "per post" figure and the age texts, all derived from the one posts list
-import type { Opportunity, Person } from "../api/types";
-import type { PostRow } from "../api/types-posts";
+import type { Opportunity, Person, Post } from "../api/types";
 import { daysFrom } from "./format";
 import { PLATFORM } from "./labels";
 
@@ -24,16 +23,16 @@ export const PLATFORM_BAR: Record<string, string> = {
 };
 
 /** Most value first, then most people (the board's order) */
-export const byValue = (a: PostRow, b: PostRow) => b.won_value - a.won_value || b.people_count - a.people_count;
+export const byValue = (a: Post, b: Post) => b.won_value - a.won_value || b.people_count - a.people_count;
 
 /** Whole days since the post went up or was last refreshed */
 const daysSince = (iso: string) => Math.max(0, -daysFrom(iso));
 
 /** Days since the last refresh (the post day when it was never refreshed) */
-export const staleDays = (p: PostRow) => daysSince(p.refreshed_at ?? p.posted_at);
+export const staleDays = (p: Post) => daysSince(p.refreshed_at ?? p.posted_at);
 
 /** "bugün", "8 gün önce", "3 hafta önce", "1 ay önce" */
-export function ageText(p: PostRow): string {
+export function ageText(p: Post): string {
   const refreshed = p.refreshed_at ? daysSince(p.refreshed_at) : null;
   if (refreshed === 0) return "bugün güncellendi";
   const d = daysSince(p.posted_at);
@@ -55,7 +54,7 @@ export interface PlatformStat {
 }
 
 /** One entry per platform of the strip (R10, LinkedIn, Instagram, and Diğer when used) */
-export function platformStats(rows: PostRow[]): PlatformStat[] {
+export function platformStats(rows: Post[]): PlatformStat[] {
   const keys = MAIN_PLATFORMS.concat(rows.some((p) => p.platform === "diger") ? ["diger"] : []);
   const stats = keys.map((key) => {
     const list = rows.filter((p) => p.platform === key);
@@ -74,7 +73,7 @@ export interface PerPost {
 }
 
 /** The "Paylaşım başına" column: people per post overall, the best platform, and the bar against that platform */
-export function perPost(rows: PostRow[], stats: PlatformStat[]): PerPost {
+export function perPost(rows: Post[], stats: PlatformStat[]): PerPost {
   const avg = rows.length ? rows.reduce((a, p) => a + p.people_count, 0) / rows.length : 0;
   const rates = stats.filter((s) => s.count).map((s) => ({ key: s.key, name: s.name, rate: s.people / s.count }));
   const top = rates.reduce<(typeof rates)[number] | null>((m, r) => (!m || r.rate > m.rate ? r : m), null);

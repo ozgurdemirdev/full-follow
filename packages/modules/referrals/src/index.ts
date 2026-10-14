@@ -10,7 +10,7 @@ export default defineModule({
   key: "referrals",
   label: "Referanslar",
   smoke: ["/api/report/referrals"],
-  uses: ["people", "pipeline", "projects"],
+  uses: ["people", "pipeline", "projects", "calendar", "drafts"],
   api: referralsApi,
   mcp,
 });

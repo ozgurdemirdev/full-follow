@@ -11,9 +11,16 @@ export type TestApp = ReturnType<typeof appFor>;
 const AT = "2026-10-14T10:00:00Z";
 
 /** An idea row written by hand (the ideas module is not installed here) */
-export function idea(handle: DbHandle, title: string, extra: { own_project_id?: number; parent_id?: number; done?: boolean; problem?: string } = {}): number {
-  return Number(handle.sqlite.prepare("INSERT INTO ideas (title, problem, parent_id, own_project_id, done_at, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, 'ozgur')")
-    .run(title, extra.problem ?? null, extra.parent_id ?? null, extra.own_project_id ?? null, extra.done ? AT : null, AT, AT).lastInsertRowid);
+export function idea(handle: DbHandle, title: string, extra: { own_project_id?: number; parent_id?: number; done?: boolean; problem?: string; priority?: string; position?: number } = {}): number {
+  return Number(handle.sqlite.prepare("INSERT INTO ideas (title, problem, parent_id, own_project_id, done_at, priority, position, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ozgur')")
+    .run(title, extra.problem ?? null, extra.parent_id ?? null, extra.own_project_id ?? null, extra.done ? AT : null, extra.priority ?? "orta", extra.position ?? 0, AT, AT).lastInsertRowid);
+}
+
+/** A person told about an idea, by hand (the people and ideas modules are not installed here): returns the person id */
+export function told(handle: DbHandle, ideaId: number, interest: string, person?: number): number {
+  const who = person ?? Number(handle.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES ('Kişi', ?, ?, 'ozgur')").run(AT, AT).lastInsertRowid);
+  handle.sqlite.prepare("INSERT INTO idea_people (idea_id, person_id, interest, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, 'ozgur')").run(ideaId, who, interest, AT, AT);
+  return who;
 }
 
 /**

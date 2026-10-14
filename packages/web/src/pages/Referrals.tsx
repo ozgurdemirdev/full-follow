@@ -1,30 +1,25 @@
 import { useMemo, useState } from "react";
-import { K, useOpenTasks, useOpps, usePeople, useProjects } from "../api/keys";
+import { K, useOpps, usePeople } from "../api/keys";
 import { useQuery } from "../api/store";
-import type { Draft, List, Payment, ReferralValue } from "../api/types";
+import type { ReferralReport } from "../api/types";
 import { Page } from "../app/Page";
 import { Kpis } from "../components/referrals/Kpis";
 import { Leaders } from "../components/referrals/Leaders";
 import { Suggestions } from "../components/referrals/Suggestions";
 import { TreeCard } from "../components/referrals/TreeCard";
 import { Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
-import { asksList, buildTree, layoutTree, ownValues, referralKpis, thanksList } from "../lib/referrals";
+import { buildTree, layoutTree, ownValues, referralKpis } from "../lib/referrals";
 
-/** Unpaid payments, shared with the dashboard's collection card; the late ones decide who is not asked yet */
-const UNPAID = "/payments?unpaid=true&limit=1000";
+const NO_LEADERS: ReferralReport["leaders"] = [];
 
 /** Referrals: who introduced whom, what their network brought, whom to thank and whom to ask next */
 export default function Referrals() {
-  const report = useQuery<ReferralValue[]>(K.referrals);
+  const report = useQuery<ReferralReport>(K.referrals);
   const people = usePeople();
   const opps = useOpps();
-  const projects = useProjects();
-  const tasks = useOpenTasks();
-  const drafts = useQuery<List<Draft>>(K.drafts);
-  const unpaid = useQuery<List<Payment>>(UNPAID);
   const [picked, setPicked] = useState<number | null>(null);
 
-  const leaders = report.data ?? [];
+  const leaders = report.data?.leaders ?? NO_LEADERS;
   const selected = leaders.find((r) => r.person_id === picked) ?? leaders[0];
   const own = useMemo(() => ownValues(opps.rows), [opps.rows]);
   const kpis = useMemo(() => referralKpis(people.rows, opps.rows, leaders), [people.rows, opps.rows, leaders]);
@@ -32,11 +27,6 @@ export default function Referrals() {
     const root = selected ? buildTree(selected.person_id, people.rows, own) : null;
     return root ? layoutTree(root) : null;
   }, [selected, people.rows, own]);
-  const lists = useMemo(() => {
-    if (!people.data || !opps.data || !projects.data || !tasks.data || !drafts.data || !unpaid.data) return null;
-    const d = { people: people.rows, opps: opps.rows, projects: projects.rows, payments: unpaid.data.rows, tasks: tasks.rows, drafts: drafts.data.rows };
-    return { thanks: thanksList(d), asks: asksList(d) };
-  }, [people.data, people.rows, opps.data, opps.rows, projects.data, projects.rows, tasks.data, tasks.rows, drafts.data, unpaid.data]);
 
   const ready = !!(report.data && people.data && opps.data);
   const error = report.error ?? people.error ?? opps.error;
@@ -57,7 +47,7 @@ export default function Referrals() {
               <TreeCard title={`${selected.name} ağı`} tree={tree} />
             </div>
           )}
-          {lists ? <Suggestions thanks={lists.thanks} asks={lists.asks} /> : null}
+          {report.data ? <Suggestions thanks={report.data.thanks} asks={report.data.asks} /> : null}
         </>
       )}
     </Page>

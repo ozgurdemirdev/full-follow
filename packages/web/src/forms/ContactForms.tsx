@@ -231,6 +231,7 @@ export function CompanyForm(p: FormProps) {
   const [instagram, setInstagram] = useState(conv.instagram ?? "");
   const [linkedin, setLinkedin] = useState(conv.linkedin ?? "");
   const [notes, setNotes] = useState("");
+  const [city, setCity] = useState("");
   const labels = useLabels(row);
   useEffect(() => {
     if (!row) return;
@@ -241,10 +242,11 @@ export function CompanyForm(p: FormProps) {
     setInstagram(row.instagram ?? "");
     setLinkedin(row.linkedin ?? "");
     setNotes(row.notes ?? "");
+    setCity(row.city ?? "");
   }, [row]);
 
   const submit = useSubmit(p, async () => {
-    const body = { name: name.trim(), website, email, phone, instagram, linkedin, notes, ...labels.body };
+    const body = { name: name.trim(), website, email, phone, instagram, linkedin, notes, city, ...labels.body };
     if (editId) await run("patch", `/companies/${editId}`, body, { ok: "Firma güncellendi" });
     else await run("post", "/companies", body, { ok: "Firma eklendi" });
   });
@@ -273,6 +275,11 @@ export function CompanyForm(p: FormProps) {
         </Field>
         <Field label="LinkedIn" htmlFor="c-li">
           <input id="c-li" className="inp" placeholder="linkedin.com/company/firma" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
+        </Field>
+      </div>
+      <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
+        <Field label="Şehir" htmlFor="c-city">
+          <input id="c-city" className="inp" placeholder="İzmir" value={city} onChange={(e) => setCity(e.target.value)} />
         </Field>
       </div>
       {labels.fields("c")}
