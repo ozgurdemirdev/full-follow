@@ -157,8 +157,10 @@ export function CardHead({ title, children }: { title: string; children?: ReactN
 }
 
 /** Board card: header row with the title, optional actions and a count pill that grows the card into the expand overlay */
-export function Card({ title, count, onExpand, actions, children, className = "" }: {
+export function Card({ title, label, count, onExpand, actions, children, className = "", style }: {
   title?: string;
+  /** accessible name when the card draws its own header instead of `title` */
+  label?: string;
   /** text of the count pill (for example "6 iş"); shown when onExpand is given */
   count?: ReactNode;
   /** gets the rect of the card to grow the overlay from */
@@ -166,10 +168,11 @@ export function Card({ title, count, onExpand, actions, children, className = ""
   actions?: ReactNode;
   children?: ReactNode;
   className?: string;
+  style?: CSSProperties;
 }) {
   const root = useRef<HTMLElement>(null);
   return (
-    <section ref={root} aria-label={title} className={`ff-card ${className}`}>
+    <section ref={root} aria-label={title ?? label} className={`ff-card ${className}`} style={style}>
       {title ? (
         <div className="ff-card-head">
           <h2 className="ff-card-title">{title}</h2>
@@ -207,7 +210,7 @@ export function Meter({ value, size = "md", color = "bg-accent", knob, marker, l
   return (
     <div className={`ff-meter ${className}`} data-size={size} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v)}>
       <div className={`ff-meter-fill grow-x ${color}`} style={{ width: `${v}%` }} />
-      {knob ? <div className="ff-meter-knob" style={{ left: `calc(${v}% - var(--spacing-meter-knob-offset))` }}>{knob}</div> : null}
+      {knob ? <div className="ff-meter-knob" style={{ left: `max(0%, calc(${v}% - var(--spacing-meter-knob-offset)))` }}>{knob}</div> : null}
       {marker !== undefined ? <div className="ff-meter-marker" style={{ left: `${marker}%` }} /> : null}
     </div>
   );

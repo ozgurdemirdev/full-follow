@@ -5,6 +5,7 @@
 @import "./mascot.css";
 @import "./shell.css";
 @import "./parts.css";
+@import "./dash.css";
 @import "./settings.css";
 
 @layer base {

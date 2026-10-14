@@ -35,11 +35,13 @@
   --text-kpi: 30px;
   --text-brand: 17px;
   --text-display: 40px;
+  --text-currency: 22px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
   --leading-display: 1.1;
   --leading-heading: 1.15;
+  --leading-snug: 1.45;
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
@@ -174,10 +176,25 @@
   --spacing-avatar-tile: 40px;
   --spacing-avatar-hero: 56px;
   --spacing-main-basis: 560px;
+  --spacing-dash-search-min: 220px;
+  --spacing-dash-goal-min: 240px;
+  --spacing-dash-time-col: 44px;
+  --spacing-dash-check: 26px;
+  --spacing-dash-chip-height: 22px;
+  --spacing-dash-chip-height-lg: 24px;
+  --spacing-dash-pill-height: 28px;
+  --spacing-dash-axis-height: 190px;
+  --spacing-dash-axis-pad: 26px;
+  --spacing-dash-bar-height: 164px;
+  --spacing-dash-funnel-label: 92px;
+  --spacing-dash-funnel-count: 32px;
+  --spacing-dash-pct-col: 36px;
+  --spacing-dash-ask-pulse: 7px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
   --breakpoint-wide: 1181px;
+  --breakpoint-waits: 1001px;
   --radius-xs: 5px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -192,6 +209,7 @@
   --radius-logo: 10px;
   --radius-overlay: 28px;
   --radius-bar: 2px;
+  --radius-chart-bar: 14px;
   --shadow-card-hover: 0 22px 48px rgba(0,0,0,.38);
   --shadow-fab: 0 10px 28px rgba(4,4,5,.55);
   --shadow-menu: 0 16px 40px rgba(4,4,5,.6);
@@ -199,6 +217,7 @@
   --shadow-toast: 0 16px 48px rgba(0,0,0,.5);
   --shadow-overlay: 0 40px 120px rgba(0,0,0,.6);
   --shadow-knob: 0 4px 14px rgba(0,0,0,.45);
+  --shadow-row-hover: inset 0 0 0 999px rgba(255,255,255,.025);
   --ease-out: cubic-bezier(.2,.8,.2,1);
   --ease-pop: cubic-bezier(.2,1.4,.4,1);
   --ease-standard: ease;
@@ -223,11 +242,13 @@
   --color-border-sidebar: var(--palette-ink-750);
   --color-border-strong: var(--palette-ink-600);
   --color-border-menu: var(--palette-ink-650);
+  --color-border-ask: var(--palette-amber-900);
   --color-text-primary: var(--palette-bone-50);
   --color-text-secondary: var(--palette-stone-400);
   --color-text-muted: var(--palette-stone-500);
   --color-text-disabled: var(--palette-stone-600);
   --color-text-neutral-chip: var(--palette-bone-300);
+  --color-text-body: var(--palette-bone-100);
   --color-accent: var(--palette-lime-400);
   --color-accent-on: var(--palette-ink-900);
   --color-accent-text: var(--palette-lime-400);
@@ -235,10 +256,12 @@
   --color-accent-soft-bg: var(--palette-lime-950);
   --color-accent-soft-border: var(--palette-lime-800);
   --color-accent-shimmer: var(--palette-lime-200);
+  --color-accent-on-soft: var(--palette-lime-900);
   --color-claude: var(--palette-orange-400);
   --color-claude-soft: var(--palette-orange-300);
   --color-claude-bg: var(--palette-orange-950);
   --color-claude-border: var(--palette-orange-900);
+  --color-claude-outline: var(--palette-orange-800);
   --color-warning: var(--palette-amber-300);
   --color-danger: var(--palette-coral-300);
   --color-info: var(--palette-sky-300);
@@ -251,6 +274,7 @@
   --color-entity-task: var(--palette-green-300);
   --color-entity-comment: var(--palette-pink-300);
   --color-entity-company: var(--palette-violet-200);
+  --color-entity-later: var(--palette-ink-500);
   --color-chip-opportunity-bg: var(--palette-sky-950);
   --color-chip-opportunity-fg: var(--palette-sky-300);
   --color-chip-source-bg: var(--palette-purple-950);
@@ -263,6 +287,8 @@
   --color-chip-neutral-fg: var(--palette-bone-300);
   --color-chip-success-bg: var(--palette-green-950);
   --color-chip-success-fg: var(--palette-green-300);
+  --color-chip-ask-bg: var(--palette-amber-800);
+  --color-chip-ask-fg: var(--palette-amber-300);
   --color-author-ozgur-bg: var(--palette-ink-700);
   --color-author-ozgur-fg: var(--palette-bone-50);
   --color-tag-aday-bg: var(--palette-ink-700);
@@ -330,6 +356,7 @@
   --color-listening-bg: var(--palette-rec-950);
   --color-listening-fg: var(--palette-coral-200);
   --color-listening-border: var(--palette-rec-800);
+  --color-danger-soft: var(--palette-coral-200);
 }
 
 :root {
@@ -377,6 +404,12 @@
   --palette-coral-200: #FF9A8C;
   --palette-rec-950: #2A1512;
   --palette-rec-800: #5A2A24;
+  --palette-amber-900: #3A3418;
+  --palette-amber-800: #3A2C10;
+  --palette-ink-500: #5A5A60;
+  --palette-orange-800: #5A3424;
+  --palette-lime-900: #2B2F1A;
+  --palette-bone-100: #E4E4DF;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;

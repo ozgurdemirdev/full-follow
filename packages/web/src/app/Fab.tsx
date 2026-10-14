@@ -14,6 +14,23 @@ const ITEMS: { kind: SheetKind; label: string; dot: string }[] = [
   { kind: "comment", label: "Yorum", dot: "bg-entity-comment" },
 ];
 
+/** Menu rows of the quick add menu (shared by the floating button and the dashboard header) */
+export function QuickMenuItems({ open, onPick }: { open: boolean; onPick: (kind: SheetKind) => void }) {
+  return ITEMS.map((it) => (
+    <button
+      key={it.kind}
+      type="button"
+      role="menuitem"
+      tabIndex={open ? 0 : -1}
+      className="flex h-nav-item-height items-center gap-4 rounded-lg border-0 bg-transparent px-4 text-left text-base text-text-primary transition-colors dur-hover hover:bg-surface-menu-hover"
+      onClick={() => onPick(it.kind)}
+    >
+      <span className={`dot ${it.dot}`} />
+      {it.label}
+    </button>
+  ));
+}
+
 /** Sağ alttaki hızlı ekle düğmesi ve menüsü (CSS geçişleri, JS animasyon yok) */
 export function Fab() {
   const [open, setOpen] = useState(false);
@@ -42,22 +59,13 @@ export function Fab() {
           open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-95 opacity-0"
         }`}
       >
-        {ITEMS.map((it) => (
-          <button
-            key={it.kind}
-            type="button"
-            role="menuitem"
-            tabIndex={open ? 0 : -1}
-            className="flex h-nav-item-height items-center gap-4 rounded-lg border-0 bg-transparent px-4 text-left text-base text-text-primary transition-colors dur-hover hover:bg-surface-menu-hover"
-            onClick={() => {
-              setOpen(false);
-              openSheet(it.kind);
-            }}
-          >
-            <span className={`dot ${it.dot}`} />
-            {it.label}
-          </button>
-        ))}
+        <QuickMenuItems
+          open={open}
+          onPick={(kind) => {
+            setOpen(false);
+            openSheet(kind);
+          }}
+        />
       </div>
       <button
         type="button"

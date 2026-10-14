@@ -8,6 +8,8 @@ const monthShort = new Intl.DateTimeFormat("tr-TR", { month: "short" });
 const rel = new Intl.RelativeTimeFormat("tr-TR", { numeric: "auto" });
 
 export const tl = (n: number | null | undefined) => (n == null ? "—" : `${num.format(n)} ₺`);
+/** Amount with the lira sign in front, as the boards write it: ₺84.500 */
+export const lira = (n: number) => `₺${num.format(n)}`;
 export const fmtNum = (n: number) => num.format(n);
 export const pct = (r: number | null | undefined) => (r == null ? "—" : `%${Math.round(r * 100)}`);
 

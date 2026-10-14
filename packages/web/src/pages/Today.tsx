@@ -1,353 +1,59 @@
-import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { run } from "../api/actions";
-import { K, useBoard, usePeople, useThreads } from "../api/keys";
+import { K } from "../api/keys";
 import { useQuery } from "../api/store";
-import type { Draft, FollowupDue, List, Person, Post, Today as TodayData } from "../api/types";
+import type { Today as TodayData } from "../api/types";
 import { Page } from "../app/Page";
-import { opportunityPath, PATHS, timelinePath } from "../app/routes";
-import { GlobalSearch } from "../app/Search";
-import { Icon } from "../components/icons";
-import { Avatar, CardHead, Chip, ErrorBox, order, PageSkeleton, Who } from "../components/ui";
-import { ago, fmtDay, fmtToday, followNote, tl } from "../lib/format";
-import { BOARD_STAGES, CHANNEL, CHANNEL_DOT, MILESTONE, STAGE, STAGE_BG, TARGET } from "../lib/labels";
-import { channelName, netStatus } from "../lib/network";
-import { PLATFORM, PLATFORM_DOT } from "../lib/labels";
-import { refreshNote } from "../lib/marketing";
-import { openSheet } from "../app/ui";
-import { DashboardActivity } from "./DashboardActivity";
-import { GoalStrip } from "../components/GoalStrip";
-import { QuotaCard } from "../components/QuotaCard";
-import { ReviewCard } from "../components/ReviewCard";
+import { Masonry } from "../components/layout";
+import { Asks } from "../components/dash/Asks";
+import { CommentsCard } from "../components/dash/CommentsCard";
+import { DashTools } from "../components/dash/DashTools";
+import { DraftsCard } from "../components/dash/DraftsCard";
+import { ActivityCard } from "../components/dash/ActivityCard";
+import { FollowUpsCard, FollowupsDueCard, PostsDueCard, QuotaCard, ReviewCard } from "../components/dash/ExtraCards";
+import { FunnelCard } from "../components/dash/FunnelCard";
+import { GoalMeters } from "../components/dash/GoalMeters";
+import { AwaitingCard, CoolingCard } from "../components/dash/PeopleCards";
+import { PaymentsCard } from "../components/dash/PaymentsCard";
+import { PlanCard } from "../components/dash/PlanCard";
+import { ProjectsCard } from "../components/dash/ProjectsCard";
+import { ErrorBox, PageSkeleton } from "../components/ui";
+import { fmtToday } from "../lib/format";
 
+const DASH_COLUMNS = 3;
+
+/** Dashboard: goal strip, questions waiting for Özgür, then the cards in independent masonry columns (order of the board on a phone) */
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
   const d = today.data;
-  const sub = d
-    ? `${fmtToday(d.date)} · ${d.network.awaiting.total} kişiden cevap bekleniyor, ${d.follow_ups.people.total + d.follow_ups.opportunities.total} takip ve ${d.drafts.total} taslak seni bekliyor`
-    : "";
+  const followUps = d ? d.follow_ups.people.total + d.follow_ups.opportunities.total : 0;
+  const sub = d ? `${fmtToday(d.date)} · ${d.network.awaiting.total} kişiden cevap bekleniyor, ${followUps} takip ve ${d.drafts.total} taslak seni bekliyor` : "";
 
   return (
-    <Page title="Dashboard" sub={sub} right={<GlobalSearch />} className="flex flex-col gap-7 desk:gap-9">
+    <Page title="Merhaba, Özgür" sub={sub} right={<DashTools />} gap="tight" className="flex flex-col gap-9">
       {today.error && !d ? <ErrorBox error={today.error} retry={today.reload} /> : null}
       {!d ? (
         !today.error && <PageSkeleton />
       ) : (
         <>
-          {d.review.ready ? <ReviewCard /> : null}
-          <GoalStrip plan={d.plan} />
-          <DashboardActivity d={d} />
-          <div className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] desk:gap-9">
-            <div className="flex flex-col gap-7 desk:gap-9">
-              <Awaiting list={d.network.awaiting} wait={d.network.settings.reply_wait_days} />
-              <Followups list={d.followups} />
-              <Drafts list={d.drafts} />
-              <FollowUps data={d} />
-            </div>
-            <div className="flex flex-col gap-7 desk:gap-9">
-              <QuotaCard quota={d.quota} />
-              <PostsDue list={d.posts_due} />
-              <Cooling list={d.network.cooling} days={d.network.settings.cooling_days} />
-              <Comments />
-              <Payments data={d} />
-            </div>
-          </div>
-          <Funnel />
+          <GoalMeters plan={d.plan} sent={d.week.sent} target={d.network.settings.weekly_target} />
+          <Asks />
+          <Masonry columns={DASH_COLUMNS}>
+            {d.review.ready ? <ReviewCard key="review" /> : null}
+            <PlanCard key="plan" plan={d.plan} />
+            <DraftsCard key="drafts" list={d.drafts} />
+            <AwaitingCard key="awaiting" list={d.network.awaiting} waitDays={d.network.settings.reply_wait_days} />
+            {d.followups.total ? <FollowupsDueCard key="followups-due" list={d.followups} /> : null}
+            {followUps ? <FollowUpsCard key="follow-ups" data={d} /> : null}
+            <PaymentsCard key="payments" />
+            <ActivityCard key="activity" />
+            {d.quota.channels.length || d.quota.email_warmup.active ? <QuotaCard key="quota" quota={d.quota} /> : null}
+            <ProjectsCard key="projects" />
+            <FunnelCard key="funnel" />
+            {d.network.cooling.rows.length ? <CoolingCard key="cooling" list={d.network.cooling} coolingDays={d.network.settings.cooling_days} /> : null}
+            {d.posts_due.total ? <PostsDueCard key="posts-due" list={d.posts_due} /> : null}
+            <CommentsCard key="comments" />
+          </Masonry>
         </>
       )}
     </Page>
-  );
-}
-
-// ------------------------------------------------------------ network: cevap bekleyen ve soğuyan
-function PersonLine({ p, note, late }: { p: Person; note: string; late: boolean }) {
-  const ch = p.awaiting?.channel ?? p.last_channel;
-  return (
-    <Link href={`${PATHS.people}/${p.id}`} className="row flex items-center gap-5 px-9 py-5 text-text-primary hover:text-text-primary">
-      <Avatar name={p.name} />
-      <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-        <span className="truncate text-base font-medium">
-          {p.name} {p.company_name || p.sector_path ? <span className="font-normal text-text-secondary">· {p.company_name ?? p.sector_path}</span> : null}
-        </span>
-        <span className={`flex items-center gap-2 text-base-sm ${late ? "text-warning" : "text-text-secondary"}`}>
-          {ch ? <span className={`dot ${CHANNEL_DOT[ch] ?? "bg-entity-neutral"}`} /> : null}
-          {note}
-        </span>
-      </div>
-      <Who actor={p.created_by} />
-    </Link>
-  );
-}
-
-function Awaiting({ list, wait }: { list: List<Person>; wait: number }) {
-  return (
-    <section className="card rise overflow-hidden" style={order(2)} aria-label="Cevap bekleyenler">
-      <CardHead title="Cevap bekleyenler">
-        <span className="text-sm text-text-secondary">{wait} gün geçen öne çıkar</span>
-      </CardHead>
-      {list.rows.length === 0 ? <p className="empty">Cevap beklenen mesaj yok. Yeni kişilere yazma zamanı.</p> : null}
-      {list.rows.slice(0, 8).map((p) => {
-        const st = netStatus(p);
-        return <PersonLine key={p.id} p={p} note={st?.text.replace("Cevap bekliyor · ", "") ?? ""} late={!!p.awaiting?.late} />;
-      })}
-      {list.total > 8 ? <Link href={PATHS.people} className="block px-9 py-5 text-base-sm">Tümü ({list.total})</Link> : null}
-    </section>
-  );
-}
-
-function Cooling({ list, days }: { list: List<Person>; days: number }) {
-  if (!list.rows.length) return null;
-  return (
-    <section className="card rise overflow-hidden" style={order(2)} aria-label="Soğuyan bağlantılar">
-      <CardHead title="Soğuyan bağlantılar">
-        <span className="text-sm text-text-secondary">{days}+ gün sessiz</span>
-      </CardHead>
-      {list.rows.slice(0, 5).map((p) => (
-        <PersonLine key={p.id} p={p} note={`${p.days_since} gündür temas yok${p.last_channel ? ` · son ${channelName(p.last_channel)}` : ""}`} late={false} />
-      ))}
-      {list.total > 5 ? <Link href={PATHS.people} className="block px-9 py-5 text-base-sm">Tümü ({list.total})</Link> : null}
-    </section>
-  );
-}
-
-function Funnel() {
-  const board = useBoard();
-  const { cols, sources } = useMemo(() => {
-    const count = new Map<string, number>();
-    const src = new Map<string, number>();
-    for (const o of board.rows) {
-      count.set(o.stage, (count.get(o.stage) ?? 0) + 1);
-      if (o.stage !== "kazanildi") src.set(o.source_name, (src.get(o.source_name) ?? 0) + 1);
-    }
-    const max = Math.max(1, ...count.values());
-    return {
-      cols: BOARD_STAGES.map((s) => ({ s, n: count.get(s) ?? 0, w: ((count.get(s) ?? 0) / max) * 100 })),
-      sources: [...src.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4),
-    };
-  }, [board.rows]);
-
-  return (
-    <section className="card rise flex flex-col gap-6 px-9 py-8" style={order(6)} aria-label="Satış hunisi">
-      <div className="flex flex-wrap items-baseline justify-between gap-5">
-        <h2 className="m-0 text-md font-semibold">Satış hunisi</h2>
-        {sources.length ? <span className="text-sm text-text-secondary">Kaynak: {sources.map(([n, c]) => `${n} ${c}`).join(" · ")}</span> : null}
-      </div>
-      <Link href={PATHS.pipeline} className="grid grid-cols-3 gap-5 text-text-primary hover:text-text-primary desk:grid-cols-6">
-        {cols.map((c) => (
-          <div key={c.s} className="flex min-w-0 flex-col gap-2">
-            <span className="truncate text-sm text-text-secondary">{STAGE[c.s]}</span>
-            <span className="text-xl font-semibold tracking-title">{c.n}</span>
-            <div className="h-bar rounded-pill bg-surface-track-alt">
-              <div className={`grow-x h-bar rounded-pill ${STAGE_BG[c.s]}`} style={{ width: `${c.w}%` }} />
-            </div>
-          </div>
-        ))}
-      </Link>
-    </section>
-  );
-}
-
-// ------------------------------------------------------------ pazarlama: takip dizisi ve paylaşımlar
-function Followups({ list }: { list: List<FollowupDue> }) {
-  const [busy, setBusy] = useState(false);
-  if (!list.total) return null;
-  const make = async () => {
-    setBusy(true);
-    try {
-      await run("post", "/followups/run", undefined, { ok: "Takip taslakları onaya düştü" });
-    } catch {
-      /* bildirim run() içinde */
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <section className="card rise overflow-hidden" style={order(2)} aria-label="Takip zamanı gelenler">
-      <CardHead title="Takip zamanı">
-        <button type="button" className="btn btn-sec btn-sm" disabled={busy} onClick={make}>Taslakları hazırla</button>
-      </CardHead>
-      {list.rows.slice(0, 6).map((f) => (
-        <Link key={f.person_id} href={`${PATHS.people}/${f.person_id}`} className="row flex items-center gap-5 px-9 py-5 text-text-primary hover:text-text-primary">
-          <Avatar name={f.name} />
-          <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-            <span className="truncate text-base font-medium">{f.name} {f.company_name ? <span className="font-normal text-text-secondary">· {f.company_name}</span> : null}</span>
-            <span className="flex items-center gap-2 text-base-sm text-warning">
-              <span className={`dot ${CHANNEL_DOT[f.channel] ?? "bg-entity-neutral"}`} />
-              {f.days} gündür cevap yok · {channelName(f.channel)}
-            </span>
-          </div>
-          <Chip tone="claude">{f.step}. takip</Chip>
-        </Link>
-      ))}
-    </section>
-  );
-}
-
-function PostsDue({ list }: { list: List<Post> }) {
-  if (!list.total) return null;
-  const refresh = (p: Post) => run("post", `/posts/${p.id}/refresh`, undefined, { ok: "Güncellendi olarak işaretlendi" }).catch(() => {});
-  return (
-    <section className="card rise overflow-hidden" style={order(2)} aria-label="Güncellenecek paylaşımlar">
-      <CardHead title="Güncellenecek paylaşımlar">
-        <Link href={PATHS.posts} className="text-base-sm">Hepsi</Link>
-      </CardHead>
-      {list.rows.slice(0, 5).map((p) => (
-        <div key={p.id} className="row flex items-center gap-5 px-9 py-5">
-          <span className={`dot ${PLATFORM_DOT[p.platform] ?? "bg-entity-neutral"}`} />
-          <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-            {p.url ? <a href={p.url} target="_blank" rel="noreferrer" className="truncate text-base font-medium text-text-primary">{p.title}</a> : <span className="truncate text-base font-medium">{p.title}</span>}
-            <span className="text-base-sm text-warning">{PLATFORM[p.platform]} · {refreshNote(p)?.text}</span>
-          </div>
-          <Who actor={p.created_by} />
-          <button type="button" className="btn btn-sec btn-sm" onClick={() => refresh(p)}>Güncelledim</button>
-        </div>
-      ))}
-    </section>
-  );
-}
-
-// ------------------------------------------------------------ taslaklar
-function Drafts({ list }: { list: List<Draft> }) {
-  const people = usePeople();
-  const board = useBoard();
-  const [sent, setSent] = useState<Set<number>>(new Set());
-
-  const send = async (d: Draft) => {
-    setSent((s) => new Set(s).add(d.id));
-    try {
-      await run("post", `/drafts/${d.id}/send`, undefined, { ok: "Temas olarak kaydedildi" });
-    } catch {
-      setSent((s) => {
-        const n = new Set(s);
-        n.delete(d.id);
-        return n;
-      });
-    }
-  };
-
-  return (
-    <section className="card rise overflow-hidden" style={order(3)} aria-label="Onay bekleyen taslaklar">
-      <CardHead title="Onay bekleyen taslaklar">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("draft")}>Taslak yaz</button>
-      </CardHead>
-      {list.rows.length === 0 ? <p className="empty">Onay bekleyen taslak yok.</p> : null}
-      {list.rows.slice(0, 4).map((d) => {
-        const person = d.person_id ? people.byId.get(d.person_id) : undefined;
-        const opp = d.opportunity_id ? board.byId.get(d.opportunity_id) : undefined;
-        const isSent = sent.has(d.id);
-        return (
-          <article key={d.id} className={`row flex flex-col gap-4 px-9 py-7 transition-opacity dur-segment ${isSent ? "opacity-muted" : ""}`}>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-base font-semibold">{d.to_name}</span>
-              {person?.company_name ? <span className="text-base-sm text-text-secondary">{person.company_name}</span> : null}
-              <span className="flex-grow" />
-              {opp ? <Chip tone="source">{opp.source_name}</Chip> : null}
-              {d.followup_step ? <Chip tone="claude">{d.followup_step}. takip</Chip> : null}
-              <Who actor={d.created_by} />
-              <Chip>{CHANNEL[d.channel] ?? d.channel}</Chip>
-            </div>
-            <p className="m-0 whitespace-pre-line text-base leading-relaxed text-text-primary">{d.body}</p>
-            {d.reason ? <p className="m-0 text-sm text-text-secondary"><span className="text-claude-soft">Neden: </span>{d.reason}</p> : null}
-            {isSent ? (
-              <div className="flex items-center gap-2 text-base-sm text-success">
-                <Icon name="check" className="size-icon-md" stroke={2} />
-                Temas olarak kaydedildi
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-3">
-                <button type="button" className="btn btn-pri" onClick={() => send(d)}>Onayla, gönderdim</button>
-                <Link href={PATHS.drafts} className="btn btn-sec">Düzenle</Link>
-              </div>
-            )}
-          </article>
-        );
-      })}
-      {list.total > 4 ? (
-        <Link href={PATHS.drafts} className="block px-9 py-5 text-base-sm">Tüm taslaklar ({list.total})</Link>
-      ) : null}
-    </section>
-  );
-}
-
-// ------------------------------------------------------------ takip
-function FollowUps({ data }: { data: TodayData }) {
-  const items = useMemo(() => {
-    const seen = new Set<number>();
-    const out: { key: string; name: string; org: string | null; note: ReturnType<typeof followNote>; stage?: string; href: string }[] = [];
-    for (const o of data.follow_ups.opportunities.rows) {
-      seen.add(o.person_id);
-      out.push({ key: `o${o.id}`, name: o.person_name, org: o.title, note: followNote(o.next_follow_up_at), stage: STAGE[o.stage], href: opportunityPath(o.id) });
-    }
-    for (const p of data.follow_ups.people.rows) {
-      if (seen.has(p.id)) continue;
-      out.push({ key: `p${p.id}`, name: p.name, org: p.company_name, note: followNote(p.next_follow_up_at), href: timelinePath("person", p.id) });
-    }
-    return out;
-  }, [data]);
-
-  return (
-    <section className="card rise overflow-hidden" style={order(4)} aria-label="Takibi gelenler">
-      <CardHead title="Takibi gelenler">
-        <Link href={PATHS.people} className="text-base-sm">Hepsi</Link>
-      </CardHead>
-      {items.length === 0 ? <p className="empty">Bugün takibi gelen kimse yok.</p> : null}
-      {items.map((it) => (
-        <Link key={it.key} href={it.href} className="row flex items-center gap-5 px-9 py-5 text-text-primary hover:text-text-primary">
-          <Avatar name={it.name} />
-          <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-            <span className="truncate text-base font-medium">
-              {it.name} {it.org ? <span className="font-normal text-text-secondary">· {it.org}</span> : null}
-            </span>
-            {it.note ? <span className={`text-base-sm ${it.note.late ? "text-warning" : "text-text-secondary"}`}>{it.note.text}</span> : null}
-          </div>
-          {it.stage ? <Chip tone="opportunity">{it.stage}</Chip> : null}
-        </Link>
-      ))}
-    </section>
-  );
-}
-
-// ------------------------------------------------------------ yorumlar
-function Comments() {
-  const threads = useThreads();
-  const list = threads.rows.slice(0, 3);
-  return (
-    <section className="card rise overflow-hidden" style={order(4)} aria-label="Cevap bekleyen yorumlar">
-      <CardHead title="Cevap bekleyen yorumlar">
-        <Link href={PATHS.comments} className="text-base-sm">Hepsi</Link>
-      </CardHead>
-      {list.length === 0 ? <p className="empty">Açık yorum yok.</p> : null}
-      {list.map((c) => (
-        <Link key={c.id} href={PATHS.comments} className="row flex flex-col gap-3 px-9 py-6 text-text-primary hover:text-text-primary">
-          <div className="flex flex-wrap items-center gap-3">
-            <Who actor={c.last_by} />
-            <span className="text-base-sm text-text-secondary">{TARGET[c.target_type]}: {c.target_label} · {ago(c.last_at)}</span>
-          </div>
-          <p className="m-0 line-clamp-3 text-base leading-normal">{c.last_body}</p>
-          <Chip tone={c.last_by === "ozgur" ? "claude" : "warning"} className="self-start">
-            {c.last_by === "ozgur" ? "Claude’un cevabı bekleniyor" : "Senin cevabın bekleniyor"}
-          </Chip>
-        </Link>
-      ))}
-    </section>
-  );
-}
-
-// ------------------------------------------------------------ ödemeler
-function Payments({ data }: { data: TodayData }) {
-  if (!data.payments.rows.length) return null;
-  return (
-    <section className="card rise overflow-hidden" style={order(5)} aria-label="Beklenen ödemeler">
-      {data.payments.rows.slice(0, 3).map((p) => (
-        <Link key={p.id} href={timelinePath("project", p.project_id)} className="row flex items-center gap-5 px-9 py-7 text-text-primary hover:text-text-primary">
-          <Chip tone={p.status === "gecikmis" ? "warning" : "payment"}>{p.status === "gecikmis" ? "Gecikti" : "Ödeme"}</Chip>
-          <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-            <span className="truncate text-base font-medium">{p.project_name} · {MILESTONE[p.milestone]?.toLocaleLowerCase("tr-TR")}</span>
-            <span className="text-base-sm text-text-secondary">{p.due_date ? `${fmtDay(p.due_date)} bekleniyor` : "tarih yok"}</span>
-          </div>
-          <span className="flex-none whitespace-nowrap font-mono text-base">{tl(p.expected_amount - p.paid_amount)}</span>
-        </Link>
-      ))}
-    </section>
   );
 }

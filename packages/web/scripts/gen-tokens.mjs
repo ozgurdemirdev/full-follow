@@ -57,7 +57,7 @@ for (const [k, val] of Object.entries(t.space)) v(`spacing-${key(k)}`, val);
 // yerleşim ölçüleri spacing ad alanına girer: w-sidebar-width, h-control-height-md, size-icon-lg ...
 const L = t.layout;
 for (const [k, val] of Object.entries(L)) {
-  if (k === "breakpoint-mobile" || k === "breakpoint-medium") continue;
+  if (k.startsWith("breakpoint-")) continue;
   if (val && typeof val === "object") flat(val, `spacing-${k}`, v);
   else v(`spacing-${k}`, val);
 }
@@ -66,6 +66,7 @@ v("container-content-narrow", L["content-max-narrow"]);
 // mobil öncelikli: taban stil mobil, "desk:" masaüstü (tasarımdaki 860px sınırının bir üstü)
 v("breakpoint-desk", `${parseInt(L["breakpoint-mobile"], 10) + 1}px`);
 v("breakpoint-wide", `${parseInt(L["breakpoint-medium"], 10) + 1}px`);
+v("breakpoint-waits", `${parseInt(L["breakpoint-waits"], 10) + 1}px`);
 
 for (const [k, val] of Object.entries(t.radius)) v(`radius-${k}`, val);
 for (const [k, val] of Object.entries(t.shadow)) v(`shadow-${k}`, val);

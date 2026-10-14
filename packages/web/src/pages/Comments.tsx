@@ -22,7 +22,8 @@ const LINKABLE = new Set(["person", "opportunity", "project"]);
 
 export default function Comments() {
   const threads = useQuery<List<Thread>>(K.allThreads);
-  const [f, setF] = useState<F>("open");
+  // the dashboard links here with ?f=mine (threads waiting for Özgür)
+  const [f, setF] = useState<F>(() => FILTERS.find((x) => x.value === new URLSearchParams(location.search).get("f"))?.value ?? "open");
   const shown = (threads.data?.rows ?? []).filter(FILTERS.find((x) => x.value === f)!.test);
 
   return (

@@ -647,3 +647,20 @@ export interface Goal extends Base {
   metric: string | null;
   note: string | null;
 }
+
+/** GET /stats/activity: buckets oldest first; drafts and offers are the ones created in the bucket */
+export interface ActivityBucket {
+  start: string;
+  end: string;
+  sent: number;
+  replies: number;
+  meetings: number;
+  new_people: number;
+  new_companies: number;
+  drafts: number;
+  offers: number;
+}
+export interface Activity {
+  period: "day" | "week" | "month";
+  buckets: ActivityBucket[];
+}

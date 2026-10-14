@@ -285,6 +285,13 @@
 .ff-wrap[data-width="wide"] {
   max-width: none;
 }
+.ff-wrap[data-gap="tight"] {
+  gap: var(--spacing-9);
+}
+.ff-wrap[data-gap="tight"] .ff-head {
+  gap: var(--spacing-9);
+  padding-bottom: var(--spacing-3);
+}
 .ff-head {
   display: flex;
   flex-wrap: wrap;

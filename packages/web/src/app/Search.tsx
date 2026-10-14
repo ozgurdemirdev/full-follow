@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useOpps, usePeople, useProjects } from "../api/keys";
+import { BoardIcon } from "../components/boardIcons";
 import { Icon } from "../components/icons";
 import { norm } from "../lib/format";
 import { STAGE, PROJECT_STAGE } from "../lib/labels";
@@ -14,7 +15,7 @@ interface Hit {
 }
 
 /** Üst çubuktaki arama: kişi, firma, fırsat, proje. ⌘K / Ctrl+K ile odaklanır. Listeler ilk odakta yüklenir. */
-export function GlobalSearch() {
+export function GlobalSearch({ board = false }: { board?: boolean }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -65,13 +66,13 @@ export function GlobalSearch() {
   };
 
   return (
-    <div className="relative hidden flex-none desk:block">
-      <label className="flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary">
-        <Icon name="search" className="size-icon-md" />
+    <div className={board ? "relative flex-none" : "relative hidden flex-none desk:block"}>
+      <label className={board ? "dash-search" : "flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
+        {board ? <BoardIcon name="search" className="size-icon-btn" stroke={1.8} /> : <Icon name="search" className="size-icon-md" />}
         <input
           ref={input}
           type="search"
-          placeholder="Kişi, firma, fırsat ara"
+          placeholder={board ? "Kişi, şirket, proje ara" : "Kişi, firma, fırsat ara"}
           aria-label="Ara"
           role="combobox"
           aria-expanded={open && hits.length > 0}
@@ -93,8 +94,9 @@ export function GlobalSearch() {
             else if (e.key === "Enter" && hits[active]) go(hits[active]);
             else if (e.key === "Escape") input.current?.blur();
           }}
-          className="min-w-0 flex-grow border-0 bg-transparent text-base-sm text-text-primary outline-0 placeholder:text-text-muted [&::-webkit-search-cancel-button]:hidden"
+          className={`min-w-0 flex-grow border-0 bg-transparent text-text-primary outline-0 placeholder:text-text-muted [&::-webkit-search-cancel-button]:hidden ${board ? "text-base" : "text-base-sm"}`}
         />
+        {board ? <kbd className="dash-kbd">⌘K</kbd> : null}
       </label>
       {open && hits.length > 0 ? (
         <ul id="search-results" role="listbox" className="absolute right-0 top-full z-sheet mt-2 flex w-full flex-col rounded-card border border-border-menu bg-surface-menu p-2 shadow-menu">
