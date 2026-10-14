@@ -1,0 +1,22 @@
+{
+  "name": "@fullfollow/mod-mascot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Full Follow mascot module: the jellyfish that floats over the panel (web part only, it has no data and no endpoints)",
+  "fullfollow": { "module": "mascot", "webMarkers": ["ff.mascot."] },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@fullfollow/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^5.0.3"
+  }
+}
