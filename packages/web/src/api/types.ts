@@ -621,3 +621,5 @@ export interface Activity {
 export type * from "./types-projects";
 export * from "./types-own";
 export type { PostRow } from "./types-posts";
+export type * from "./types-referrals";
+
