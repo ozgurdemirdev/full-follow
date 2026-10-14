@@ -54,6 +54,8 @@ export interface Person extends Base, Labeled {
   cooling: boolean;
   /** touches per ISO week, the last 12 weeks, oldest first */
   rhythm: number[];
+  /** not provided yet (plan gap G6): the role of the person inside the company */
+  influence?: "karar_verici" | "etkileyici" | "kullanici" | null;
 }
 /** Cevap bekleme: son gelen temastan sonra cevapsız giden temas */
 export interface Awaiting {
@@ -295,6 +297,8 @@ export interface Company extends Base, Labeled {
   last_touch_at: string | null;
   touch_count: number;
   open_opps: number;
+  /** not provided yet (plan gap G5): the city of the company */
+  city?: string | null;
 }
 export interface CompanyCard {
   row: Company;
@@ -443,6 +447,8 @@ export interface Touch extends Base {
   draft_id: number | null;
   idea_id: number | null;
   idea_title: string | null;
+  /** not provided yet (plan gap G8): the person or company an address-only touch most likely belongs to */
+  suggested_match?: { type: "person" | "company"; id: number; name: string } | null;
 }
 export interface Comment extends Base {
   target_type: string;

@@ -18,6 +18,9 @@ export function netStatus(p: Pick<Person, "awaiting" | "cooling" | "last_touch_a
   return null;
 }
 
+/** Website as typed (with or without the scheme) → link */
+export const webUrl = (v: string): string => (/^https?:\/\//i.test(v) ? v : `https://${v}`);
+
 /** Instagram / LinkedIn kullanıcı adı ya da adresi → bağlantı */
 export function profileUrl(kind: "instagram" | "linkedin", v: string): string {
   if (/^https?:\/\//i.test(v)) return v;

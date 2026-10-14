@@ -23,6 +23,7 @@ export const BOARD_ICON = {
   expand: "M7 17 17 7M8 7h9v9",
   shrink: "M17 7 7 17M16 17H7V8",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
+  arrowUpRight: "M7 17 17 7M9 7h8v8",
   search: "M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM20 20l-3.5-3.5",
   sparkle: "M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z",
   plus: "M12 5v14M5 12h14",
