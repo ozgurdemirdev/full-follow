@@ -4,6 +4,7 @@ import type { Actor } from "./constants";
 import { localDate, nowIso } from "./dates";
 import type { Db, Q } from "./db/client";
 import { events } from "./db/schema";
+import type { ModuleRuntime } from "./modules/types";
 
 export type ErrorCode = "validation" | "not_found" | "rule" | "ambiguous" | "forbidden" | "duplicate";
 
@@ -40,7 +41,7 @@ export interface Clock {
 
 export const systemClock: Clock = { now: nowIso, today: () => localDate() };
 
-export interface Ctx {
+export interface Ctx extends ModuleRuntime {
   db: Db;
   sqlite: Database.Database;
   actor: Actor;

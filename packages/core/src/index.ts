@@ -37,6 +37,8 @@ import { quotaFor } from "./services/quota";
 import { weeklyReview } from "./services/review";
 import { isCategory, restoreFromTrash, trashList, TYPE_LABEL } from "./services/trash";
 import { TRASH_TYPES } from "./constants";
+import { createRegistry, type ModuleRegistry } from "./modules/registry";
+import type { SaveResult } from "./modules/types";
 
 export * from "./constants";
 export * from "./dates";
@@ -48,12 +50,8 @@ export { normalizeType } from "./services/records";
 export type { Thread } from "./services/comments";
 export type { TrashItem } from "./services/trash";
 
-export interface SaveResult {
-  row?: any;
-  effects: string[];
-  /** silmede: geri almak için (Geri al bildirimi) */
-  trash?: { type: string; id: number };
-}
+export * from "./modules";
+export type * from "./contracts";
 
 /** Toplu kayıt sonucu: eklenenler, mükerrer diye atlananlar, hata verenler (sıra numarasıyla) */
 export interface BulkResult {
@@ -69,8 +67,9 @@ const isTrashType = (t: string): t is TrashType => (TRASH_TYPES as readonly stri
  * Çekirdek: web (NestJS, actor="ozgur") ve MCP (actor="claude") sadece buradan geçer.
  * `actor` giriş noktasından gelir; girdideki created_by asla kabul edilmez.
  */
-export function createCore(handle: DbHandle, actor: Actor, clock: Clock = systemClock) {
-  const ctx: Ctx = { db: handle.db, sqlite: handle.sqlite, actor, clock };
+export function createCore(handle: DbHandle, actor: Actor, clock: Clock = systemClock, registry: ModuleRegistry = createRegistry()) {
+  const ctx = { db: handle.db, sqlite: handle.sqlite, actor, clock } as Ctx;
+  Object.assign(ctx, registry.bind(ctx));
 
   const companies = companiesService(ctx);
   const people = peopleService(ctx);
@@ -253,6 +252,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
 
   return {
     actor,
+    /** installed feature modules (key, label) */
+    modules: { has: registry.has, list: registry.list },
     // yazma servisleri (REST controller'ları ve testler kullanır)
     companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
     oppPeople, offers, files,
