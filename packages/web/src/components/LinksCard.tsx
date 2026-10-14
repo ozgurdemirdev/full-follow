@@ -2,10 +2,10 @@ import { useState } from "react";
 import { remove, run } from "../api/actions";
 import { useQuery } from "../api/store";
 import type { LinkRow, List } from "../api/types";
-import { Card, Empty } from "./ui";
+import { Empty, SideSection } from "./ui";
 
 /** Labelled links on an opportunity, project or own project (roadmap, proposal deck, Figma, repo) */
-export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own_project"; id: number }) {
+export function LinksCard({ type, id, plain }: { type: "opportunity" | "project" | "own_project"; id: number; plain?: boolean }) {
   const links = useQuery<List<LinkRow>>(`/links?${type}_id=${id}&limit=200`);
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
@@ -27,7 +27,7 @@ export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own
   };
   const rows = links.data?.rows ?? [];
   return (
-    <Card title="Linkler" className="opp-side rise">
+    <SideSection title="Linkler" plain={plain}>
       {links.data && !rows.length ? <Empty>Roadmap, teklif sunumu, Figma, repo gibi linkleri buraya ekle.</Empty> : null}
       {rows.map((l) => (
         <div key={l.id} className="flex items-center gap-3">
@@ -45,6 +45,6 @@ export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own
           <button type="button" className="btn btn-sec" disabled={busy || !ready} onClick={add}>Ekle</button>
         </div>
       </div>
-    </Card>
+    </SideSection>
   );
 }

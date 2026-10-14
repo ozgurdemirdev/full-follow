@@ -248,6 +248,12 @@
   --spacing-comments-compose-height: 50px;
   --spacing-comments-close: 42px;
   --spacing-comments-state-height: 26px;
+  --spacing-projects-avatar: 42px;
+  --spacing-projects-row-pad-x: 22px;
+  --spacing-projects-col-name-min: 220px;
+  --spacing-projects-col-next-min: 170px;
+  --spacing-projects-step-min: 64px;
+  --spacing-projects-task-check: 24px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -438,6 +444,10 @@
   --color-kind-pay: var(--palette-gold-400);
   --color-kind-task: var(--palette-green-400);
   --color-comments-claude-bubble: var(--palette-orange-975);
+  --color-projects-note-bg: var(--palette-ember-975);
+  --color-projects-note-fg: var(--palette-ember-200);
+  --color-projects-late-border: var(--palette-rose-950);
+  --color-projects-late-bg: var(--palette-rec-950);
 }
 
 :root {
@@ -502,6 +512,8 @@
   --palette-orange-975: #1F1712;
   --palette-ink-950-a95: rgba(11,11,12,.95);
   --palette-ink-950-a0: rgba(11,11,12,0);
+  --palette-ember-975: #1F1712;
+  --palette-ember-200: #F2C3AE;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
@@ -537,6 +549,7 @@
   --dur-drafts-enter: 450ms;
   --dur-drafts-dot: 300ms;
   --dur-drafts-fade: 350ms;
+  --dur-projects-pulse: 1600ms;
   --stagger: 50ms;
   --rise-distance: 14px;
   --press-scale: 0.97;
@@ -559,6 +572,7 @@
   --opacity-count: 0.6;
   --opacity-off: 0.3;
   --opacity-outside: 0.35;
+  --opacity-projects-pulse: 45%;
 }
 
 @utility dur-press {
@@ -701,6 +715,10 @@
   transition-duration: var(--dur-drafts-fade);
 }
 
+@utility dur-projects-pulse {
+  transition-duration: var(--dur-projects-pulse);
+}
+
 @utility z-sidebar {
   z-index: var(--z-sidebar);
 }
@@ -759,4 +777,8 @@
 
 @utility opacity-outside {
   opacity: var(--opacity-outside);
+}
+
+@utility opacity-projects-pulse {
+  opacity: var(--opacity-projects-pulse);
 }

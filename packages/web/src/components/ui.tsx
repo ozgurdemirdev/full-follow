@@ -50,8 +50,8 @@ const AVATAR_COLORS = 5;
 const hashName = (s: string) => [...s].reduce((h, c) => h + c.charCodeAt(0), 0);
 /** Initials on one of the five avatar colour pairs: picked by record id, by name when there is no id */
 export const avatarPair = (name: string, id?: number) => `avatar-${((id ?? hashName(name)) % AVATAR_COLORS) + 1}`;
-export function Avatar({ name, size = "md", id }: { name: string; size?: keyof typeof AV; id?: number }) {
-  return <span className={`avatar ${avatarPair(name, id)} ${AV[size]}`} aria-hidden="true">{initials(name)}</span>;
+export function Avatar({ name, size = "md", id, className = "" }: { name: string; size?: keyof typeof AV; id?: number; className?: string }) {
+  return <span className={`avatar ${avatarPair(name, id)} ${AV[size]} ${className}`} aria-hidden="true">{initials(name)}</span>;
 }
 
 /** Kademeli giriş animasyonu için sıra numarası */
@@ -189,6 +189,17 @@ export function Card({ title, label, count, onExpand, actions, children, classNa
           ) : null}
         </div>
       ) : null}
+      {children}
+    </section>
+  );
+}
+
+/** Side block of an opportunity, project or own project page: a board card, or a bare labelled section inside a project page (plain) */
+export function SideSection({ title, plain, children }: { title: string; plain?: boolean; children: ReactNode }) {
+  if (!plain) return <Card title={title} className="opp-side rise">{children}</Card>;
+  return (
+    <section className="prj-sec" data-gap="loose">
+      <span className="prj-sec-label">{title}</span>
       {children}
     </section>
   );

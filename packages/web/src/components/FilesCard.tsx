@@ -3,13 +3,13 @@ import { remove, run } from "../api/actions";
 import type { FileRow } from "../api/types";
 import { fmtDay, fmtSize } from "../lib/format";
 import { FILE_ACCEPT } from "../lib/labels";
-import { Card, Empty } from "./ui";
+import { Empty, SideSection } from "./ui";
 
 /** Download address of a stored file (images and PDF open in the tab) */
 export const fileHref = (id: number) => `/api/files/${id}`;
 
 /** Files of an opportunity or project: upload, open, delete (into the trash) */
-export function FilesCard({ type, id, files }: { type: "opportunity" | "project"; id: number; files: FileRow[] }) {
+export function FilesCard({ type, id, files, plain }: { type: "opportunity" | "project"; id: number; files: FileRow[]; plain?: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const upload = async (file: File | undefined) => {
@@ -29,7 +29,7 @@ export function FilesCard({ type, id, files }: { type: "opportunity" | "project"
     }
   };
   return (
-    <Card title="Dosyalar" className="opp-side rise">
+    <SideSection title="Dosyalar" plain={plain}>
       {!files.length ? <Empty>Teklif PDF’i, sunum, sözleşme gibi dosyaları buraya ekle.</Empty> : null}
       {files.map((f) => (
         <div key={f.id} className="flex items-center gap-3">
@@ -40,6 +40,6 @@ export function FilesCard({ type, id, files }: { type: "opportunity" | "project"
       ))}
       <input ref={input} type="file" accept={FILE_ACCEPT} className="hidden" aria-label="Dosya seç" onChange={(e) => void upload(e.target.files?.[0])} />
       <button type="button" className="btn btn-sec self-start" disabled={busy} onClick={() => input.current?.click()}>{busy ? "Yükleniyor" : "Dosya ekle"}</button>
-    </Card>
+    </SideSection>
   );
 }
