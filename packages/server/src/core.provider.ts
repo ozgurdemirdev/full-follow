@@ -1,8 +1,10 @@
-import { createCore, openDb, type Core } from "@fullfollow/core";
+import { createApp, type App } from "@fullfollow/app";
+import { openDb } from "@fullfollow/core";
 
 export const CORE = Symbol("CORE");
 export const FOLLOWUPS = Symbol("FOLLOWUPS");
-export type { Core };
+/** The composed app (core plus installed modules); controllers inject it under the CORE token. */
+export type Core = App;
 
 /** Otomatik takip taslakları: Claude adına hazırlanır, onay yine Özgür'de */
 export interface AutoFollowups {
@@ -19,8 +21,8 @@ let shared: { core: Core; auto: AutoFollowups } | null = null;
 function init() {
   if (shared) return shared;
   const handle = openDb();
-  const core = createCore(handle, "ozgur");
-  const claude = createCore(handle, "claude");
+  const core = createApp(handle, "ozgur");
+  const claude = createApp(handle, "claude");
   const auto: AutoFollowups = { run: () => claude.followups.generate() };
   if (process.env.FF_AUTO_FOLLOWUP !== "0") {
     const tick = () => {

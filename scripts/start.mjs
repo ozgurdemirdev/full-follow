@@ -79,7 +79,8 @@ function step(title, args) {
 const skipBuild = process.argv.includes("--no-build") || process.env.FF_SKIP_BUILD === "1";
 if (!skipBuild) {
   const tsc = require.resolve("typescript/bin/tsc", { paths: [root] });
-  await step("Arka uç derleniyor", [tsc, "-b", "packages/core", "packages/server", "packages/mcp"]);
+  await step("Modül listesi üretiliyor", [join(root, "scripts", "gen-modules.mjs")]);
+  await step("Arka uç derleniyor", [tsc, "-b", "packages/core", "packages/app", "packages/server", "packages/mcp"]);
   const npmCli = process.env.npm_execpath;
   if (npmCli && /\.c?js$/.test(npmCli)) {
     await step("Arayüz derleniyor", [npmCli, "run", "build", "-w", "@fullfollow/web"]);

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createCore, defaultDbPath, loadRootEnv, openDb } from "@fullfollow/core";
+import { createApp } from "@fullfollow/app";
+import { defaultDbPath, loadRootEnv, openDb } from "@fullfollow/core";
 import { registerTools } from "./tools";
 
 /**
@@ -13,7 +14,7 @@ async function main() {
   loadRootEnv();
   const dbPath = defaultDbPath();
   const handle = openDb(dbPath);
-  const core = createCore(handle, "claude");
+  const core = createApp(handle, "claude");
 
   const server = new McpServer({ name: "full-follow", version: "0.1.0" });
   registerTools(server, core);

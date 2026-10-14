@@ -1,0 +1,17 @@
+{
+  "name": "@fullfollow/app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fullfollow/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^5.0.3"
+  }
+}

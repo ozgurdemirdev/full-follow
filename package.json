@@ -4,14 +4,16 @@
   "version": "0.1.0",
   "description": "Küçük işletmeler ve şahıs şirketleri için CRM",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/modules/*"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -b packages/core packages/server packages/mcp && npm run build -w @fullfollow/web",
-    "test": "npm run test -w @fullfollow/core",
+    "gen:modules": "node scripts/gen-modules.mjs",
+    "build": "node scripts/gen-modules.mjs && tsc -b packages/core packages/app packages/server packages/mcp && npm run build -w @fullfollow/web",
+    "test": "node scripts/gen-modules.mjs && npm run test -w @fullfollow/core && npm run test -w @fullfollow/app",
     "start": "node scripts/start.mjs",
     "serve": "node scripts/start.mjs --no-build",
     "backup": "node scripts/backup.cjs",

@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "node ../../scripts/guard-db-generate.mjs && drizzle-kit generate"
   },
   "dependencies": {
     "better-sqlite3": "~12.11.1",
