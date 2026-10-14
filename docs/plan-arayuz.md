@@ -176,33 +176,33 @@ Opportunity page (`pages/Opportunity.tsx`) and Haftalık inceleme (`pages/Review
 
 Each gap lists the smallest core change; "derive" means a new core query with no schema change.
 
-| # | Board shows | Smallest core change | Alternative |
-|---|---|---|---|
-| G1 | Light / dark / system theme | Light palette does not exist; needs a second semantic value set | Dark only, hide the toggle |
-| G2 | Dashboard third goal "Yeni müşteri 2 / 3" | Setting `monthly_new_clients_target`, count projects started this month | Drop the meter |
-| G3 | Calendar items with time and kind (Görüşme, Takip, Görev) | `tasks.due_time` (HH:MM) and `tasks.kind`; kind from a keyword rule in core when typed in quick add | Time only, all items "Görev" |
-| G4 | 12 week contact rhythm per person | Derive from touches | Drop the sparkline |
-| G5 | Company segment, city, size | Segment derived (won project → Müşteri, ajans or iş ortağı tag → Partner, else Aday); `companies.city` column | Drop city and size |
-| G6 | Influence role on company people (Karar verici, Etkileyici, Kullanıcı), KPI "Karar vericiye ulaşılmamış" | `people.influence` nullable enum | Use opportunity team roles only |
-| G7 | Company money: won, due, open | Derive from projects, payments, opportunities | none needed |
-| G8 | Loose touches with a suggested person or company | Derive by matching existing keys (domain, email) | Show list without suggestion |
-| G9 | Win probability and stale days per stage, weighted forecast, stage to stage rates, card hint | Named constants in core plus a stage rate query over stage events; hint = latest open Claude comment on the opportunity | Drop probability and forecast |
-| G10 | Draft tone rewrite (kısa, sıcak, resmi) | Needs Claude: button opens a comment asking for a rewrite, Claude saves a new body over MCP (not instant) | Drop, keep Düzenle |
-| G11 | Email subject on drafts | `drafts.subject` nullable | Subject inside the body |
-| G12 | "Claude'un öğrendikleri" from reject reasons, deletable in Settings | Setting `draft_rules` (JSON list) filled from reject notes, shown to Claude in `today()` | Show recent reject notes read only |
-| G13 | Quick answer chips on Claude questions, "Yeni cevap" unread state | `comments.options` (JSON) and `comments.read_at` | Free text replies only |
-| G14 | Project waiting on Sen / Müşteri / Gecikti, task owner Müşteri | Add `musteri` to task assignees (constant and Zod, text column); waiting derived | Late only |
-| G15 | Own project focus, journey stage, next step | Setting `focus_own_project_id`, `own_projects.stage`, next step derived from the top open high priority idea | Derive stage from ideas, no focus |
-| G16 | Idea money note | `ideas.money_note` | Use notes |
-| G17 | Post format, "Claude'un önerisi" next post | `posts.format` nullable; suggestion = latest Claude comment on posts | Drop both |
-| G18 | Referral thank-you and ask lists | Derive (recent won from a referral; delivered project, paid, no referral given; skip when a payment is late) | Drop the two lists |
-| G19 | Template tip | Derive from `templateComparison()` | Drop |
-| G20 | Report insight sentence | Derive from expected payments and floor gap | Drop |
-| G21 | Settings toggles: Monday summary, default draft tone, auto stage, learn from rejects, close on "Cevap beklemiyorum", MCP connection line | Connection line derived from the latest event by Claude; others are new settings or core rule switches | Keep only the connection line and existing settings |
-| G22 | Weekly activity per day for drafts and offers | Extend the activity query | Touches only |
-| G23 | Timeline week strip (Sen vs Claude, tahsilat, biten görev) | Derive from events | Drop the strip |
+| # | Board shows | Smallest core change | Alternative | Proposed |
+|---|---|---|---|---|
+| G1 | Light / dark / system theme | Light palette does not exist; needs a second semantic value set | Dark only, hide the toggle | Alternative |
+| G2 | Dashboard third goal "Yeni müşteri 2 / 3" | Setting `monthly_new_clients_target`, count projects started this month | Drop the meter | Alternative |
+| G3 | Calendar items with time and kind (Görüşme, Takip, Görev) | `tasks.due_time` (HH:MM) and `tasks.kind`; kind from a keyword rule in core when typed in quick add | Time only, all items "Görev" | Build |
+| G4 | 12 week contact rhythm per person | Derive from touches | Drop the sparkline | Build |
+| G5 | Company segment, city, size | Segment derived (won project → Müşteri, ajans or iş ortağı tag → Partner, else Aday); `companies.city` column | Drop city and size | Build segment and city, drop size |
+| G6 | Influence role on company people (Karar verici, Etkileyici, Kullanıcı), KPI "Karar vericiye ulaşılmamış" | `people.influence` nullable enum | Use opportunity team roles only | Build |
+| G7 | Company money: won, due, open | Derive from projects, payments, opportunities | none needed | Build |
+| G8 | Loose touches with a suggested person or company | Derive by matching existing keys (domain, email) | Show list without suggestion | Build |
+| G9 | Win probability and stale days per stage, weighted forecast, stage to stage rates, card hint | Named constants in core plus a stage rate query over stage events; hint = latest open Claude comment on the opportunity | Drop probability and forecast | Build, hint from comments |
+| G10 | Draft tone rewrite (kısa, sıcak, resmi) | Needs Claude: button opens a comment asking for a rewrite, Claude saves a new body over MCP (not instant) | Drop, keep Düzenle | Alternative |
+| G11 | Email subject on drafts | `drafts.subject` nullable | Subject inside the body | Build |
+| G12 | "Claude'un öğrendikleri" from reject reasons, deletable in Settings | Setting `draft_rules` (JSON list) filled from reject notes, shown to Claude in `today()` | Show recent reject notes read only | Build |
+| G13 | Quick answer chips on Claude questions, "Yeni cevap" unread state | `comments.options` (JSON) and `comments.read_at` | Free text replies only | Build |
+| G14 | Project waiting on Sen / Müşteri / Gecikti, task owner Müşteri | Add `musteri` to task assignees (constant and Zod, text column); waiting derived | Late only | Build |
+| G15 | Own project focus, journey stage, next step | Setting `focus_own_project_id`, `own_projects.stage`, next step derived from the top open high priority idea | Derive stage from ideas, no focus | Build |
+| G16 | Idea money note | `ideas.money_note` | Use notes | Build |
+| G17 | Post format, "Claude'un önerisi" next post | `posts.format` nullable; suggestion = latest Claude comment on posts | Drop both | Build format, drop suggestion |
+| G18 | Referral thank-you and ask lists | Derive (recent won from a referral; delivered project, paid, no referral given; skip when a payment is late) | Drop the two lists | Build |
+| G19 | Template tip | Derive from `templateComparison()` | Drop | Build |
+| G20 | Report insight sentence | Derive from expected payments and floor gap | Drop | Build |
+| G21 | Settings toggles: Monday summary, default draft tone, auto stage, learn from rejects, close on "Cevap beklemiyorum", MCP connection line | Connection line derived from the latest event by Claude; others are new settings or core rule switches | Keep only the connection line and existing settings | Connection line only, drop the toggles |
+| G22 | Weekly activity per day for drafts and offers | Extend the activity query | Touches only | Build |
+| G23 | Timeline week strip (Sen vs Claude, tahsilat, biten görev) | Derive from events | Drop the strip | Build |
 
-Any gap Özgür turns down is left out of the UI, not faked.
+"Proposed" is the recommendation given to Özgür; his answer is recorded here before the first screen starts. Any gap he turns down is left out of the UI, not faked.
 
 ## 5. Order and review
 
