@@ -2,7 +2,7 @@
 
 One folder per feature, one npm workspace package each (`@fullfollow/mod-<key>`). Removing the folder (or setting
 `FF_MODULES_OFF=<key>`) takes the feature out of the build, the server, MCP and the tests, and nothing else needs an edit.
-The plan is `docs/plan-moduler.md`; `calendar` is the reference module, copy its shape; `people`, `companies` and `network` show a group of modules that use each other, `pipeline` and `projects` show a rule that crosses two modules as an event (a won opportunity opens its project), and `drafts`, `templates`, `ideas`, `own-projects` and `referrals` show hooks that run in an order (the send warnings, the interest of an idea, the trash cleanup) and modules whose table is read by others.
+The plan is `docs/plan-moduler.md`; `calendar` is the reference module, copy its shape; `people`, `companies` and `network` show a group of modules that use each other, `pipeline` and `projects` show a rule that crosses two modules as an event (a won opportunity opens its project), and `drafts`, `templates`, `ideas`, `own-projects` and `referrals` show hooks that run in an order (the send warnings, the interest of an idea, the trash cleanup) and modules whose table is read by others. `reports` (reads every number through `ctx.mod`, adds the price floor to the settings view), `timeline` (reads the `events` table; the other modules list the events they write with `timelineKinds`) and `chat` (the Claude runner as Nest providers, `softTrash`) are the last three.
 
 ## Layout
 
@@ -17,7 +17,7 @@ packages/modules/<key>/
   src/api.ts       implements the contract from core/src/contracts/<key>.ts
   src/entities.ts  the record types it owns (save, find, get, delete, aliases, name ref)
   src/service/*    services, Zod schemas, constants
-  src/server/index.ts  exports `controllers` (NestJS); they inject the app with APP_TOKEN, never the server package
+  src/server/index.ts  exports `controllers` (NestJS) and optionally `providers` (services that start and stop with the server); they inject the app with APP_TOKEN, never the server package
   src/mcp.ts       MCP output of its records, its own tools, its fragments of the generic tool descriptions
   test/*.test.ts   Vitest, in-memory SQLite, `createCore(..., createRegistry([module]))`
 ```
@@ -41,9 +41,10 @@ packages/modules/<key>/
   - `entities`: record types for the generic `save` / `find` / `get` / `delete` / `move` / `restore`; `aliases`, `ref` (name lookup, `<type>` input key), `refKeys` (more input keys, `referred_by`),
     `related`, `prepare` (rewrites the input of `save`), `bulk` (duplicate keys of a list save).
   - `contribute`: `trashTypes`, `recordLabels`, `today` sections (a section is a record or a plain value under its own key), `relations` (what `get(..., with)` can load on other types; `load(ctx, by, limit, row)`; one name can be served by several modules for different types), `meta` (for `/api/meta`),
-    `commentTargets` (record types comments hang on), `chatCards` (what a record chip of the panel chat shows),
+    `commentTargets` (record types comments hang on; `links` / `files` allow labelled links / uploaded files on the type, `linksFrom` adds another record's links to its list), `chatCards` (what a record chip of the panel chat shows),
+    `timelineKinds` (event type to the kind it has in the timeline feed: `{ kind, amount?, row? }`, so the timeline module never names an event), `settingsView` (figures computed from the settings, added to `GET /api/settings`), `sourceCounts` (extra count columns of the sources list), `softTrash` (records hidden in place by a `deleted_at` column: the trash lists and restores them),
     `jobs` (scheduled work for the server host: `{ name, everyMs, firstRunMs?, enabled?, run(app) }`; `app` acts as Claude, a job never overlaps itself, the host stops them on shutdown).
-  - `mcp`: `entities` (line, details, kind, openable), `tools`, `docs` (fragments sorted by `at`, core's are 100, 200, ...), `today` sections (`head: true` puts the text before the sections, after the week line), `marketing` lines, `relations` (relation name to the record type its rows are written as; `"people:idea"` names the type for one record type).
+  - `mcp`: `entities` (line, details, kind, openable), `tools` (a tool's `description` is a text or fragments that the other modules' `docs` for that tool continue), `skip` (row fields `get` does not repeat), `docs` (fragments sorted by `at`, core's are 100, 200, ...), `today` sections (`head: true` puts the text before the sections, after the week line), `marketing` lines, `relations` (relation name to the record type its rows are written as; `"people:idea"` names the type for one record type).
   - `hookOrder`: see events above.
 - Anything the module still needs from a feature that is not a module yet is marked `// TODO(modules): via ctx.mod("<future module>")`.
 

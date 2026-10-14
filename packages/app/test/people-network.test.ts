@@ -143,7 +143,7 @@ suite("people, companies and network together", () => {
       for (const key of ["drafts", "followups", "quota"]) (off.includes("drafts") ? expect(today).not : expect(today)).toHaveProperty(key);
       for (const call of [() => bare.mod("reports")!.marketing(), () => bare.mod("reports")!.review(), () => bare.mod("reports")!.report(), () => bare.find("trash"),
         ...(off.includes("drafts") ? [] : [() => bare.find("draft")]), () => bare.find("comment"), () => bare.find("note"), () => bare.ctx.mod("posts")?.stats(), () => bare.mod("reports")!.month("2026-10"), () => bare.ctx.mod("calendar")?.calendar("2026-10-01", "2026-10-31"),
-        ...(off.includes("pipeline") ? [] : [() => bare.find("opportunity"), () => bare.get("opportunity", o.id, ["comments", ...(off.includes("drafts") ? [] : ["drafts"])]), () => bare.mod("timeline")!.forRecord("opportunity", o.id)]),
+        ...(off.includes("pipeline") ? [] : [() => bare.find("opportunity"), () => bare.get("opportunity", o.id, ["comments", ...(off.includes("drafts") ? [] : ["drafts"])]), () => bare.mod("timeline")?.forRecord("opportunity", o.id)]),
         ...(off.includes("projects") ? [] : [() => bare.find("project"), () => bare.find("payment")])]) {
         expect(call).not.toThrow();
       }
