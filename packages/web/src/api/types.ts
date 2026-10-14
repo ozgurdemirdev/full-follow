@@ -410,6 +410,8 @@ export interface Draft extends Base {
   reason: string | null;
   template_id: number | null;
   followup_step: number | null;
+  /** G11, not in core yet: email subject line */
+  subject?: string | null;
 }
 export interface Payment extends Base {
   project_id: number;

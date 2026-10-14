@@ -26,7 +26,7 @@ const AFFECTS: Record<string, string[]> = {
   payments: [...PLAN, "/payments", "/projects", "/today", "/report", "/timeline", "/trash"],
   tasks: ["/tasks", "/today", "/projects", "/timeline", "/trash", ...PLAN],
   goals: ["/goals", "/today", "/timeline", "/trash", ...PLAN],
-  drafts: ["/drafts", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
+  drafts: ["/drafts", "/settings", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
   touches: [...CONTACTS, "/opportunities", "/ideas", "/followups", "/trash"],
   comments: ["/comments", "/own-projects", "/today", "/timeline", "/people", "/companies", "/trash"],
   settings: ["/settings", "/report", "/review", "/today", "/people", "/network", "/followups"],
