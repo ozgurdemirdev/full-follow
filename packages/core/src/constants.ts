@@ -123,6 +123,9 @@ export const SETTING_KEYS = [
 /** Network ayarlarının varsayılanları (gün) */
 export const NETWORK_DEFAULTS = { reply_wait_days: 3, cooling_days: 30 } as const;
 
+/** Number of ISO weeks in the per person contact rhythm (the current week is the last one) */
+export const RHYTHM_WEEKS = 12;
+
 /** Kazanınca üretilen ödeme planı şablonu (settings.payment_template ile değiştirilebilir) */
 export const DEFAULT_PAYMENT_TEMPLATE = [
   { milestone: "pesinat", percent: 40, days: 0 },

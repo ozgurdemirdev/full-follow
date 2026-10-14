@@ -1,7 +1,8 @@
 // Kişi ve firma listeleri, filtreleri ve kartları (queries.ts'ten ayrıldı)
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
 import { sectorsOf, tagsOf } from "./categories";
-import { labelFields, networkStats } from "./network";
+import { RHYTHM_WEEKS } from "../constants";
+import { labelFields, networkStats, weeklyRhythm } from "./network";
 import { sectorIds } from "./sectors";
 
 type Rows = { rows: any[]; total: number };
@@ -57,6 +58,7 @@ function labelFilter<T extends { tag_ids: number[]; sectors: { id: number }[]; s
 export function peopleList(ctx: Ctx, o: ListOpts): Rows {
   const f = o.filter ?? {};
   const net = networkStats(ctx);
+  const rhythm = weeklyRhythm(ctx);
   const tags = tagsOf(ctx, "person");
   const sectors = sectorsOf(ctx, "person");
   let list = rows(ctx, `
@@ -71,6 +73,7 @@ export function peopleList(ctx: Ctx, o: ListOpts): Rows {
         ...stripKeys(p), ...labelFields(tags.get(p.id), sectors.get(p.id)),
         last_touch_at: n.last_touch_at, last_channel: n.last_channel, last_direction: n.last_direction,
         days_since: n.days_since, awaiting: n.awaiting, cooling: n.cooling,
+        rhythm: rhythm.get(p.id) ?? new Array<number>(RHYTHM_WEEKS).fill(0),
       };
     });
   list = labelFilter(ctx, list, f);

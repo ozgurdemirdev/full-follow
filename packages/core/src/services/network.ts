@@ -1,4 +1,4 @@
-import { CHANNELS, CONNECTION_TAGS, NETWORK_DEFAULTS, OPEN_OPP_STAGES } from "../constants";
+import { CHANNELS, CONNECTION_TAGS, NETWORK_DEFAULTS, OPEN_OPP_STAGES, RHYTHM_WEEKS } from "../constants";
 import { addDays, dayOf, daysBetween, weekStart } from "../dates";
 import { row, rows, type Ctx } from "../context";
 import { sectorsOf, tagsOf } from "./categories";
@@ -74,6 +74,26 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
       days_since, awaiting,
       cooling: connection && !awaiting && !r.next_follow_up_at && days_since >= cfg.cooling_days,
     });
+  }
+  return out;
+}
+
+/**
+ * Weekly contact rhythm: per person, touch counts of the last RHYTHM_WEEKS ISO weeks (Monday weeks), oldest first,
+ * the current week last. One grouped query for everyone; people without touches are not in the map.
+ */
+export function weeklyRhythm(ctx: Ctx): Map<number, number[]> {
+  const first = addDays(weekStart(ctx.clock.today()), -7 * (RHYTHM_WEEKS - 1));
+  // one day wider than the window: the day is cut by local time below
+  const list = rows<{ person_id: number; happened_at: string; n: number }>(ctx,
+    "SELECT person_id, happened_at, COUNT(*) AS n FROM touches WHERE person_id IS NOT NULL AND happened_at >= ? GROUP BY person_id, happened_at", addDays(first, -1));
+  const out = new Map<number, number[]>();
+  for (const t of list) {
+    const week = Math.floor(daysBetween(first, dayOf(t.happened_at)) / 7);
+    if (week < 0 || week >= RHYTHM_WEEKS) continue;
+    const counts = out.get(t.person_id) ?? new Array<number>(RHYTHM_WEEKS).fill(0);
+    counts[week] += t.n;
+    out.set(t.person_id, counts);
   }
   return out;
 }
