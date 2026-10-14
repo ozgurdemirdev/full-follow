@@ -520,6 +520,10 @@ export interface PriceFloor {
   chat_pinned_notes: string;
   subtotal: number;
   floor: number;
+  /** days after which a post is due for a refresh; absent until core has the setting (hidden then) */
+  post_refresh_days?: number;
+  /** reject rules Claude learned; absent until core has them, deletable once present (PUT /settings {draft_rules}) */
+  draft_rules?: string[];
 }
 export * from "./types-report";
 export interface Detail<T, R = { [k: string]: unknown[] | undefined }> {

@@ -42,6 +42,7 @@
   --text-pipeline-count: 20px;
   --text-own-title-lg: 36px;
   --text-own-title-md: 32px;
+  --text-settings-title: 20px;
   --text-own-h3: 20px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
@@ -163,8 +164,20 @@
   --spacing-chat-thumb-width: 120px;
   --spacing-chat-thumb-height: 90px;
   --spacing-chat-goal-width: 72px;
-  --spacing-settings-rail: 220px;
-  --spacing-settings-search-max: 520px;
+  --spacing-settings-rail: 250px;
+  --spacing-settings-search-width: 360px;
+  --spacing-settings-search-height: 44px;
+  --spacing-settings-cat-height: 44px;
+  --spacing-settings-row-min: 200px;
+  --spacing-settings-row-basis: 260px;
+  --spacing-settings-switch-width: 48px;
+  --spacing-settings-switch-height: 28px;
+  --spacing-settings-switch-knob: 22px;
+  --spacing-settings-switch-travel: 20px;
+  --spacing-settings-chip-remove: 22px;
+  --spacing-settings-pill-button: 34px;
+  --spacing-settings-range-width: 180px;
+  --spacing-settings-input-width: 160px;
   --spacing-mascot-min: 56px;
   --spacing-mascot-max: 180px;
   --spacing-mascot-default: 96px;
@@ -565,6 +578,7 @@
   --dur-drafts-enter: 450ms;
   --dur-drafts-dot: 300ms;
   --dur-drafts-fade: 350ms;
+  --dur-settings-in: 350ms;
   --dur-projects-pulse: 1600ms;
   --dur-own-glow: 2200ms;
   --stagger: 50ms;
@@ -730,6 +744,10 @@
 
 @utility dur-drafts-fade {
   transition-duration: var(--dur-drafts-fade);
+}
+
+@utility dur-settings-in {
+  transition-duration: var(--dur-settings-in);
 }
 
 @utility dur-projects-pulse {

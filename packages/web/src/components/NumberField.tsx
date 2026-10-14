@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type KeyboardEvent } from "react";
 
 const LOCALE = "tr-TR";
-const show = (n: number | null) => (n === null ? "" : n.toLocaleString(LOCALE));
+const show = (n: number | null, prefix = "", suffix = "") => (n === null ? "" : `${prefix}${n.toLocaleString(LOCALE)}${suffix}`);
 const digitsOf = (s: string) => s.replace(/\D/g, "");
 const clamp = (n: number, min?: number, max?: number) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
 
@@ -10,7 +10,7 @@ const clamp = (n: number, min?: number, max?: number) => Math.min(max ?? Infinit
  * non digits. Optional pill stepper (minus and plus buttons, like the settings board).
  */
 export function NumberField({
-  value, onChange, min, max, step = 1, stepper, id, className = "inp inp-num", placeholder, ariaLabel, required, autoFocus, onKeyDown,
+  value, onChange, min, max, step = 1, stepper, prefix, suffix, id, className = "inp inp-num", placeholder, ariaLabel, required, autoFocus, onKeyDown,
 }: {
   value: number | null;
   onChange: (value: number | null) => void;
@@ -19,6 +19,9 @@ export function NumberField({
   step?: number;
   /** pill with minus and plus buttons around the value */
   stepper?: boolean;
+  /** unit text shown around the number ("₺" before, " gün" after); digits only are parsed back */
+  prefix?: string;
+  suffix?: string;
   id?: string;
   className?: string;
   placeholder?: string;
@@ -64,7 +67,7 @@ export function NumberField({
       aria-label={ariaLabel}
       required={required}
       autoFocus={autoFocus}
-      value={show(value)}
+      value={show(value, prefix, suffix)}
       onChange={(e) => typed(e.target.value, e.target.selectionStart)}
       onBlur={settle}
       onKeyDown={onKeyDown}
