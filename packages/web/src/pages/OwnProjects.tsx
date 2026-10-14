@@ -1,135 +1,76 @@
-// Kendi projelerim: Özgür'ün kendi ürünleri, satılabilir mi, hangi sektöre uyar, sıradaki fikirler
-import { useState } from "react";
-import { Link, useLocation, useParams } from "wouter";
-import { remove as trash, run } from "../api/actions";
-import { useOwnProjects } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { Detail, Idea, OwnProject, Thread } from "../api/types";
+// Kendi projelerim: odaktaki proje, üzerinde çalışılanlar, raf, proje penceresi (fikirler, satılabilirlik, linkler)
+import { useMemo, useState } from "react";
+import { useLocation, useParams } from "wouter";
+import { run } from "../api/actions";
+import { useIdeas, useOwnProjects } from "../api/keys";
+import type { OwnRow } from "../api/types";
 import { Page } from "../app/Page";
 import { PATHS } from "../app/routes";
 import { openSheet } from "../app/ui";
-import { Comments } from "../components/contact";
-import { LinksCard } from "../components/LinksCard";
-import { ProjectIdeas } from "../components/ProjectIdeas";
-import { Chip, Empty, ErrorBox, Filters, PageSkeleton, Who } from "../components/ui";
-import { OWN_STATUS, OWN_STATUS_TONE, OWN_STATUSES, SELLABLE, SELLABLE_TONE } from "../lib/labels";
-import { useIsDesktop } from "../lib/media";
+import { BoardIcon } from "../components/boardIcons";
+import { Gallery } from "../components/own-projects/Gallery";
+import { Hero } from "../components/own-projects/Hero";
+import { ProjectOverlay } from "../components/own-projects/ProjectOverlay";
+import { Shelf } from "../components/own-projects/Shelf";
+import { Empty, ErrorBox, PageSkeleton } from "../components/ui";
+import { EMPTY_STATS, onShelf, ownStats, useFocusId } from "../lib/ownProjects";
+
+/** Size of the box the overlay grows from when a project is opened by address, not by a click */
+const FALLBACK_BOX = { width: 240, height: 140 };
+const fallbackRect = () => new DOMRect((innerWidth - FALLBACK_BOX.width) / 2, (innerHeight - FALLBACK_BOX.height) / 2, FALLBACK_BOX.width, FALLBACK_BOX.height);
 
 export default function OwnProjects() {
   const projects = useOwnProjects();
+  const ideas = useIdeas();
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
-  const desk = useIsDesktop();
-  const [status, setStatus] = useState("");
-  const shown = projects.rows.filter((p) => !status || p.status === status);
-  const selId = Number(params.id) || (desk ? shown[0]?.id : undefined);
-  const active = projects.rows.filter((p) => p.status === "aktif").length;
-  const openIdeas = projects.rows.reduce((a, p) => a + p.open_ideas, 0);
-  const showList = desk || !params.id;
-  const showCard = !!selId && (desk || !!params.id);
+  const [focusId, setFocusId] = useFocusId();
+  const [from, setFrom] = useState<DOMRect | null>(null);
+  const openId = Number(params.id) || null;
+
+  const rows = projects.rows as OwnRow[];
+  const stats = useMemo(() => ownStats(ideas.rows), [ideas.rows]);
+  const live = useMemo(() => rows.filter((p) => !onShelf(p)), [rows]);
+  const shelf = useMemo(() => rows.filter(onShelf), [rows]);
+  const focus = live.find((p) => p.id === focusId) ?? live[0];
+  const others = useMemo(() => live.filter((p) => p !== focus), [live, focus]);
+  const openIdeas = live.reduce((a, p) => a + p.open_ideas, 0);
+  const error = (projects.error && !projects.data ? projects : ideas.error && !ideas.data ? ideas : null);
+
+  const open = (id: number, rect: DOMRect) => {
+    setFrom(rect);
+    navigate(`${PATHS.ownProjects}/${id}`, { replace: true });
+  };
+  const revive = (p: OwnRow) => run("patch", `/own-projects/${p.id}`, { status: "aktif" }, { ok: `Raftan indirildi: ${p.name}` }).catch(() => {});
+  const makeFocus = (p: OwnRow) => {
+    setFocusId(p.id);
+    if (onShelf(p)) void revive(p);
+  };
 
   return (
     <Page
       title="Kendi projelerim"
-      sub={projects.data ? `${active} aktif · ${openIdeas} açık fikir` : ""}
-      right={<button type="button" className="btn btn-pri" onClick={() => openSheet("own_project")}>Proje ekle</button>}
-      className="grid grid-cols-1 items-start gap-7 desk:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] desk:gap-9"
+      sub={projects.data ? `${live.length} proje üzerinde çalışıyorsun · ${openIdeas} açık fikir` : ""}
+      right={
+        <button type="button" className="dash-new" onClick={() => openSheet("own_project")}>
+          <BoardIcon name="plus" className="size-icon-md" stroke={2} />
+          Proje ekle
+        </button>
+      }
     >
-      {projects.error && !projects.data ? <ErrorBox error={projects.error} retry={projects.reload} /> : null}
-      {!projects.data ? (
-        !projects.error && <PageSkeleton />
+      {error ? <ErrorBox error={error.error} retry={error.reload} /> : null}
+      {!projects.data || !ideas.data ? (
+        !error && <PageSkeleton />
       ) : (
         <>
-          {showList ? (
-            <section className="flex min-w-0 flex-col gap-6">
-              <div className="rise">
-                <Filters label="Durum" value={status} onChange={setStatus} items={[{ value: "", label: "Hepsi" }, ...OWN_STATUSES.map((s) => ({ value: s, label: OWN_STATUS[s] }))]} />
-              </div>
-              <div className="card rise overflow-hidden">
-                {shown.length === 0 ? <Empty>Henüz kendi projen yok. Kendi ürününü ekle; satılabilir mi, hangi sektöre uyar, sıradaki fikirler neler, burada dursun.</Empty> : null}
-                {shown.map((p) => (
-                  <button key={p.id} type="button" data-record={`own_project-${p.id}`} onClick={() => navigate(`${PATHS.ownProjects}/${p.id}`)} aria-current={p.id === selId || undefined}
-                    className={`row cv-auto flex w-full flex-col gap-2 border-x-0 border-t-0 py-5 pl-7 pr-7 text-left text-text-primary ${p.id === selId && desk ? "bg-surface-2" : "bg-transparent"}`}>
-                    <span className="flex items-center gap-3">
-                      <span className="min-w-0 flex-grow truncate text-base font-medium">{p.name}</span>
-                      <Chip tone={OWN_STATUS_TONE[p.status]}>{OWN_STATUS[p.status]}</Chip>
-                      <Chip tone={SELLABLE_TONE[p.sellable]}>{SELLABLE[p.sellable]}</Chip>
-                      <Who actor={p.created_by} />
-                    </span>
-                    <span className="truncate text-base-sm text-text-secondary">
-                      {p.open_ideas} açık fikir · {p.done_ideas} yapıldı{p.sectors.length ? ` · ${p.sectors.map((s) => s.path).join(", ")}` : ""}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          {showCard ? (
-            <div className="flex min-w-0 flex-col gap-7">
-              {!desk ? <Link href={PATHS.ownProjects} className="text-base-sm">← Kendi projelerim</Link> : null}
-              <OwnProjectCard key={selId} id={selId!} />
-            </div>
-          ) : null}
+          {rows.length === 0 ? <Empty>Henüz kendi projen yok. Kendi ürününü ekle; satılabilir mi, hangi sektöre uyar, sıradaki fikirler neler, burada dursun.</Empty> : null}
+          {focus ? <Hero key={focus.id} p={focus} stats={stats.get(focus.id) ?? EMPTY_STATS} onOpen={(rect) => open(focus.id, rect)} /> : null}
+          <Gallery rows={others} stats={stats} empty={EMPTY_STATS} onOpen={open} />
+          <Shelf rows={shelf} onRevive={revive} />
+          <ProjectOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} p={openId ? rows.find((p) => p.id === openId) : undefined}
+            isFocus={!!focus && focus.id === openId} onFocus={makeFocus} onClose={() => navigate(PATHS.ownProjects, { replace: true })} />
         </>
       )}
     </Page>
-  );
-}
-
-type Related = { ideas: Idea[]; comments: Thread[] };
-
-function OwnProjectCard({ id }: { id: number }) {
-  const key = `/own-projects/${id}?with=ideas,comments`;
-  const d = useQuery<Detail<OwnProject, Related>>(key);
-  const [, navigate] = useLocation();
-  const p = d.data?.row;
-  if (!p) {
-    return (
-      <aside className="card detail p-9" aria-busy={!d.error}>
-        {d.error ? <ErrorBox error={d.error} retry={d.reload} /> : <div className="h-chart-height" />}
-      </aside>
-    );
-  }
-  const setStatus = (status: string) => status !== p.status && run("patch", `/own-projects/${id}`, { status }, { ok: `Durum: ${OWN_STATUS[status]}` }).catch(() => {});
-  const remove = () => {
-    void trash(`/own-projects/${id}`, `“${p.name}” projesi`).then(() => navigate(PATHS.ownProjects, { replace: true })).catch(() => {});
-  };
-
-  return (
-    <>
-      <aside className="card slide-in flex flex-col gap-8 p-9" aria-label="Kendi projesi">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="m-0 text-lg font-semibold">{p.name}</h2>
-            <Chip tone={OWN_STATUS_TONE[p.status]}>{OWN_STATUS[p.status]}</Chip>
-            <Who actor={p.created_by} />
-            <span className="flex-grow" />
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("own_project", { own_project_id: id })}>Düzenle</button>
-            <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={remove}>Sil</button>
-          </div>
-          {p.description ? <p className="m-0 whitespace-pre-line text-base leading-normal text-text-primary">{p.description}</p> : <span className="text-base-sm text-text-muted">Ne yaptığı yazılmadı</span>}
-        </div>
-
-        <div className="inset flex flex-col gap-3 px-6 py-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <Chip tone={SELLABLE_TONE[p.sellable]}>{SELLABLE[p.sellable]}</Chip>
-            {p.sellable_note ? <span className="text-base-sm text-text-primary">{p.sellable_note}</span> : null}
-          </div>
-          {p.sectors.length ? <div className="flex flex-wrap gap-2">{p.sectors.map((s) => <Chip key={s.id} tone="source">{s.path}</Chip>)}</div> : <span className="text-base-sm text-text-muted">Uygun sektör seçilmedi</span>}
-        </div>
-
-        <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="Durum">
-          {OWN_STATUSES.map((s) => (
-            <button key={s} type="button" role="radio" aria-checked={p.status === s} className="fchip h-control-height-xs" onClick={() => setStatus(s)}>{OWN_STATUS[s]}</button>
-          ))}
-        </div>
-
-        <ProjectIdeas projectId={id} ideas={d.data!.related.ideas ?? []} detailKey={key} />
-
-        {p.notes ? <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{p.notes}</p> : null}
-      </aside>
-      <LinksCard type="own_project" id={id} />
-      <Comments target={{ type: "own_project", id, label: p.name }} threads={d.data!.related.comments ?? []} />
-    </>
   );
 }

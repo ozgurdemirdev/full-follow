@@ -1,19 +1,20 @@
-// Ideas of one own project: Yüksek / Orta / Düşük groups, drag order on desktop, up/down on mobile, done list
+// Ideas of one own project: Yüksek / Orta / Düşük columns, drag order on desktop, up/down on mobile, done list
 import {
   closestCenter, DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, useDroppable, useSensor, useSensors,
   type CollisionDetection, type DragEndEvent, type DragOverEvent, type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { run } from "../api/actions";
 import { mutate } from "../api/store";
 import type { Detail, Idea, IdeaPriority, OwnProject, Thread } from "../api/types";
 import { openSheet } from "../app/ui";
+import { IDEA_STAGE, PRIORITIES, PRIORITY } from "../lib/labels";
 import { useIsDesktop } from "../lib/media";
-import { PRIORITIES, PRIORITY } from "../lib/labels";
+import { IDEA_STAGE_CLS, PRIORITY_DOT } from "../lib/ownProjects";
+import { BoardIcon } from "./boardIcons";
 import { Icon } from "./icons";
-import { Who } from "./ui";
 
 type Cols = Record<string, number[]>;
 type Dt = Detail<OwnProject, { ideas: Idea[]; comments: Thread[] }>;
@@ -39,7 +40,6 @@ export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: numbe
   const byId = new Map(ideas.map((i) => [i.id, i]));
   const [cols, setCols] = useState<Cols>(() => group(ideas));
   const [activeId, setActiveId] = useState<number | null>(null);
-  const [showDone, setShowDone] = useState(false);
   useEffect(() => {
     if (activeId == null) setCols(group(ideas));
   }, [ideas, activeId]);
@@ -141,26 +141,27 @@ export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: numbe
   });
 
   return (
-    <section className="flex flex-col gap-5" aria-label="Fikirler">
-      <QuickAdd projectId={projectId} />
-      {total === 0 && done.length === 0 ? <span className="text-base-sm text-text-muted">Bu projede fikir yok. Aklına geleni yukarıdan ekle; sürükleyerek sırala.</span> : null}
+    <section className="opr-ideas" aria-label="Fikirler">
+      <div className="opr-ideas-head">
+        <h3>Fikirler</h3>
+        <QuickAdd projectId={projectId} />
+      </div>
+      {total === 0 && done.length === 0 ? <span className="opr-empty">Bu projede fikir yok. Aklına geleni yukarıdan ekle; sürükleyerek sırala.</span> : null}
       {desk ? (
         <DndContext sensors={sensors} collisionDetection={collide} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => (setActiveId(null), setCols(group(ideas)))}>
-          {groups}
-          <DragOverlay>{active ? <RowBody idea={active} overlay /> : null}</DragOverlay>
+          <div className="opr-cols">{groups}</div>
+          <DragOverlay>{active ? <IdeaCard idea={active} overlay /> : null}</DragOverlay>
         </DndContext>
-      ) : groups}
+      ) : <div className="opr-cols">{groups}</div>}
       {done.length ? (
-        <div className="flex flex-col gap-2">
-          <button type="button" className="self-start border-0 bg-transparent p-0 text-base-sm text-text-secondary hover:text-text-primary" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>
-            Yapılanlar ({done.length})
-          </button>
-          {showDone ? done.map((i) => (
-            <div key={i.id} className="row flex items-center gap-3 py-2">
-              <span className="min-w-0 flex-grow truncate text-base text-text-muted line-through">{i.title}</span>
-              <button type="button" className="btn btn-ghost btn-sm" aria-label="Geri al" onClick={() => setDone(i.id, false)}>Geri al</button>
-            </div>
-          )) : null}
+        <div className="opr-done">
+          <span>Yapıldı</span>
+          {done.map((i) => (
+            <button key={i.id} type="button" aria-label={`${i.title}, geri al`} onClick={() => setDone(i.id, false)}>
+              <span className="opr-done-tick"><BoardIcon name="check" className="size-own-done-tick" stroke={3} /></span>
+              {i.title}
+            </button>
+          ))}
         </div>
       ) : null}
     </section>
@@ -184,57 +185,66 @@ function QuickAdd({ projectId }: { projectId: number }) {
     }
   };
   return (
-    <div className="flex flex-wrap gap-3">
-      <input className="inp min-w-0 flex-1" placeholder="Fikir ekle" aria-label="Fikir ekle" value={title} onChange={(e) => setTitle(e.target.value)}
+    <div className="opr-add">
+      <input placeholder="Yeni fikir yaz, Enter ile ekle" aria-label="Fikir ekle" value={title} onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void add())} />
-      <select className="inp w-auto" aria-label="Öncelik" value={priority} onChange={(e) => setPriority(e.target.value)}>
+      <select aria-label="Öncelik" value={priority} onChange={(e) => setPriority(e.target.value)}>
         {PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY[p]}</option>)}
       </select>
-      <button type="button" className="btn btn-sec" disabled={busy || !title.trim()} onClick={() => void add()}>Ekle</button>
+      <button type="button" className="opr-add-btn" aria-label="Fikir ekle" disabled={busy || !title.trim()} onClick={() => void add()}>
+        <BoardIcon name="plus" className="size-icon-chip" stroke={2.2} />
+      </button>
     </div>
   );
 }
 
-function Group({ priority, ids, desk, children }: { priority: string; ids: number[]; desk: boolean; children: React.ReactNode }) {
+function Group({ priority, ids, desk, children }: { priority: string; ids: number[]; desk: boolean; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: `group:${priority}`, disabled: !desk });
   return (
-    <div ref={setNodeRef} className={`flex flex-col gap-1 rounded-card transition-colors dur-fade ${isOver ? "bg-surface-inset" : ""}`}>
-      <h3 className="m-0 text-base-sm font-medium text-text-secondary">{PRIORITY[priority]} · {ids.length}</h3>
+    <div ref={setNodeRef} className="opr-colbox" data-over={isOver}>
+      <h4 className="opr-colhead">
+        <span className={`opr-dot ${PRIORITY_DOT[priority]}`} />
+        {PRIORITY[priority]}
+        <span className="opr-colcount">{ids.length}</span>
+      </h4>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>{children}</SortableContext>
-      {desk && !ids.length ? <span className="inset px-6 py-4 text-base-sm text-text-muted">Buraya sürükle</span> : null}
+      {desk && !ids.length ? <span className="opr-drop">Buraya sürükle</span> : null}
     </div>
   );
 }
 
 function Row({ idea, desk, first, last, onDone, onStep }: { idea: Idea; desk: boolean; first: boolean; last: boolean; onDone: () => void; onStep: (dir: -1 | 1) => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: idea.id, disabled: !desk });
+  // the whole card is the drag surface; a keyboard drag starts only with focus on the card itself, so the buttons inside keep their keys
+  const drag = desk ? { ref: setActivatorNodeRef, tabIndex: attributes.tabIndex, "aria-roledescription": attributes["aria-roledescription"], "aria-describedby": attributes["aria-describedby"], ...listeners } : undefined;
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={isDragging ? "opacity-disabled" : ""}>
-      <RowBody idea={idea}
-        handle={desk ? <button type="button" ref={setActivatorNodeRef} className="ibtn cursor-grab" aria-label="Sırala" {...attributes} {...listeners}><Icon name="menu" /></button> : null}
+      <IdeaCard idea={idea} drag={drag} onDone={onDone}
         steps={desk ? null : (
-          <>
+          <div className="opr-steps">
             <button type="button" className="ibtn" aria-label="Yukarı" disabled={first} onClick={() => onStep(-1)}><Icon name="arrow" className="size-icon-lg -rotate-90" /></button>
             <button type="button" className="ibtn" aria-label="Aşağı" disabled={last} onClick={() => onStep(1)}><Icon name="arrow" className="size-icon-lg rotate-90" /></button>
-          </>
-        )}
-        onDone={onDone} />
+          </div>
+        )} />
     </div>
   );
 }
 
-function RowBody({ idea, handle, steps, onDone, overlay }: { idea: Idea; handle?: React.ReactNode; steps?: React.ReactNode; onDone?: () => void; overlay?: boolean }) {
+/** A click that ends a drag is not a click on the card's buttons */
+const settled = () => Date.now() - lastDragEnd > 250;
+
+function IdeaCard({ idea, drag, steps, onDone, overlay }: { idea: Idea; drag?: object; steps?: ReactNode; onDone?: () => void; overlay?: boolean }) {
   return (
-    <div className={`row flex items-center gap-2 py-2 ${overlay ? "card px-4" : ""}`}>
-      {handle}
-      <button type="button" className="ibtn" aria-label="Yapıldı" onClick={onDone}><Icon name="check" /></button>
-      <button type="button" className="flex min-w-0 flex-grow flex-col items-start border-0 bg-transparent p-0 text-left text-text-primary"
-        onClick={() => Date.now() - lastDragEnd > 250 && openSheet("idea", { idea_id: idea.id })}>
-        <span className="w-full truncate text-base">{idea.title}</span>
-        {idea.problem ? <span className="w-full truncate text-base-sm text-text-muted">{idea.problem}</span> : null}
-      </button>
-      <Who actor={idea.created_by} />
-      {steps}
+    <div className="opr-idea" data-drag={drag ? "" : undefined} data-overlay={overlay ? "" : undefined} {...drag}>
+      <div className="opr-idea-top">
+        <button type="button" className="opr-idea-check" aria-label={`${idea.title}, yapıldı olarak işaretle`} onClick={() => settled() && onDone?.()} />
+        <button type="button" className="opr-idea-title" onClick={() => settled() && openSheet("idea", { idea_id: idea.id })}>{idea.title}</button>
+      </div>
+      <div className="opr-idea-meta">
+        <span className={`opr-chip ${IDEA_STAGE_CLS[idea.stage]}`} data-size="sm">{IDEA_STAGE[idea.stage]}</span>
+        <span>{idea.told ? `${idea.told} kişi · ${idea.interested} ilgilendi` : "Anlatılmadı"}</span>
+        {steps}
+      </div>
     </div>
   );
 }

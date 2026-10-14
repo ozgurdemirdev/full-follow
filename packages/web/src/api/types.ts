@@ -619,3 +619,4 @@ export interface Activity {
   status: Record<"people" | "companies", { status: string; count: number }[]>;
 }
 export type * from "./types-projects";
+export * from "./types-own";
