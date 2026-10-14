@@ -17,6 +17,7 @@
 @import "./own-projects-overlay.css";
 @import "./settings.css";
 @import "./comments.css";
+@import "./timeline.css";
 
 @layer base {
   html {
