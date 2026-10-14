@@ -7,11 +7,11 @@ import { modules } from "../src/modules.generated";
 export const installed = (...keys: string[]) => keys.every((k) => modules.some((m) => m.key === k));
 
 /** A suite that needs the whole composed app: skipped when a module is switched off (the removal runs test the rest) */
-export const suite = describe.skipIf(!installed("calendar", "companies", "network", "people", "pipeline", "posts", "projects", "referrals", "drafts", "templates"));
+export const suite = describe.skipIf(!installed("calendar", "companies", "network", "people", "pipeline", "posts", "projects", "referrals", "drafts", "templates", "ideas", "own-projects"));
 
 /**
  * The composed app (core plus every installed module) with shorthands for the module APIs the cross module tests use:
- * `people`, `companies`, `touches`, `personCard`, `companyCard`, `network()`, `reports.week/activity/referrals`, `tasks`, `goals`, `opportunities`, `offers`, `oppPeople`, `projects`, `payments`, `drafts`, `templates`, `followups`, `quota`.
+ * `people`, `companies`, `touches`, `personCard`, `companyCard`, `network()`, `reports.week/activity/referrals`, `tasks`, `goals`, `opportunities`, `offers`, `oppPeople`, `projects`, `payments`, `drafts`, `templates`, `ideas`, `ownProjects`, `followups`, `quota`.
  */
 export function appFor(handle: DbHandle, actor: Actor, clock?: Clock) {
   const app = createApp(handle, actor, clock);
@@ -24,6 +24,8 @@ export function appFor(handle: DbHandle, actor: Actor, clock?: Clock) {
   const referrals = app.mod("referrals")!;
   const drafts = app.mod("drafts")!;
   const templates = app.mod("templates")!;
+  const ideas = app.mod("ideas")!;
+  const ownProjects = app.mod("own-projects")!;
   return Object.assign(app, {
     people: { create: people.create, update: people.update, remove: people.remove },
     companies: { create: companies.create, update: companies.update, remove: companies.remove },
@@ -40,6 +42,8 @@ export function appFor(handle: DbHandle, actor: Actor, clock?: Clock) {
     payments: projects.payments,
     drafts,
     templates,
+    ideas,
+    ownProjects,
     followups: drafts.followups,
     quota: drafts.quota,
     goals: { ...cal.goals, plan: cal.plan, calendar: cal.calendar },

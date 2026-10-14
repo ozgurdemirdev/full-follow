@@ -5,7 +5,6 @@ import { sourcesService, tagsService } from "./services/categories";
 import { commentsService } from "./services/comments";
 import { assertKeysFree, recordSkipped } from "./services/dupes";
 import { queriesFor } from "./services/queries";
-import { coreHooks } from "./services/coreHooks";
 import { linksService } from "./services/links";
 import { filesService } from "./services/files";
 import { notesService } from "./services/notes";
@@ -13,10 +12,8 @@ import { entityHandler, isCoreType, normalizeType, resolveId } from "./services/
 import { sectorsService } from "./services/sectors";
 import { reportsService } from "./services/reports";
 import { settingsService } from "./services/settings";
-import { resolveInput, resolveRef, TARGET_TABLE } from "./services/shared";
+import { resolveInput, resolveRef } from "./services/shared";
 import { todayService } from "./services/today";
-import { ideasService } from "./services/ideas";
-import { ownProjectsService } from "./services/ownProjects";
 import { chatService } from "./services/chat";
 import { marketingReport } from "./services/marketing";
 import { weeklyReview } from "./services/review";
@@ -36,17 +33,16 @@ export type * from "./contracts";
 
 // ---- What a module's services and server code build on ("service kit") ----
 export { assertOzgur, emit as writeEvent, keptRow, keptRows, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
-export { placeInGroup, requireRow, requireTarget, resolveRef, truncate, link as eventLink } from "./services/shared";
+export { placeInGroup, renumberGroup, requireRow, requireTarget, resolveRef, truncate, link as eventLink } from "./services/shared";
 export { filesOf } from "./services/files";
 export { announceTrashed, Bin } from "./services/trash";
 export { bool, has, labelFilter, stripKeys } from "./services/directory";
 export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, isColdEmail, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
-export { ensureSector, sectorMatch } from "./services/sectors";
+export { ensureSector, sectorInput, sectorMatch, setSectorLinks } from "./services/sectors";
 export { marketingSettings, networkSettings, readSetting, readTemplate } from "./services/settings";
 export { queriesFor } from "./services/queries";
-export { ideaPeople } from "./services/ideas";
 export { listThreads } from "./services/comments";
 export { companyKeys, contactKey, personKeys } from "./keys";
 export * as schema from "./db/schema";
@@ -67,7 +63,7 @@ export interface BulkResult {
  */
 export function createCore(handle: DbHandle, actor: Actor, clock: Clock = systemClock, registry: ModuleRegistry = createRegistry()) {
   const ctx = { db: handle.db, sqlite: handle.sqlite, actor, clock } as Ctx;
-  Object.assign(ctx, registry.bind(ctx, coreHooks));
+  Object.assign(ctx, registry.bind(ctx));
   /** alias or name to the canonical record type; core types and the installed modules' types */
   const typeOf = (type: string) => normalizeType(ctx, type);
 
@@ -82,8 +78,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const queries = queriesFor(ctx);
   const reports = reportsService(ctx);
   const todayFn = todayService(ctx);
-  const ideas = ideasService(ctx);
-  const ownProjects = ownProjectsService(ctx);
   const chat = chatService(ctx);
 
   /** Kayıt oluştur ya da güncelle (id verilirse güncelle). Aşama değişikliği burada yapılmaz. */
@@ -100,10 +94,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "link": return nid ? links.update(nid, d) : links.create(d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
-      case "idea": return nid ? ideas.update(nid, d) : ideas.create(d);
-      case "own_project":
-        return d.from_idea !== undefined ? ownProjects.fromIdea(resolveRef(ctx, "idea", d.from_idea)) : nid ? ownProjects.update(nid, d) : ownProjects.create(d);
-      case "interest": return nid ? ideas.updateInterest(nid, d) : ideas.saveInterest(d);
       case "trash": throw new FFError("validation", "çöp kutusuna kayıt yazılmaz; geri yüklemek için restore");
     }
   }
@@ -132,15 +122,14 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     return out;
   }
 
-  /** Stage change: opportunities and projects (the owning module's `move` handler), ideas and own projects */
+  /** Stage change: the types whose module has a `move` handler (opportunities, projects, ideas, own projects) */
   function move(type: string, id: string | number, stage: string, reason?: string, position?: number): SaveResult {
     const t = typeOf(type);
     const nid = resolveId(ctx, t, id);
-    if (t === "idea") return ideas.move(nid, stage);
-    if (t === "own_project") return ownProjects.move(nid, stage);
     const moveStage = ctx.types.entity(t)?.move;
     if (moveStage) return moveStage(ctx, nid, { stage, reason, position });
-    throw new FFError("validation", "move sadece opportunity, project, idea ve own_project için");
+    const movable = ctx.types.entityTypes().filter((x) => ctx.types.entity(x)?.move);
+    throw new FFError("validation", `move sadece ${movable.join(", ")} için`);
   }
 
   /** Silme: kayıt çöp kutusuna gider (restore ile geri gelir); etiket, sektör ve kaynak yerinde gizlenir */
@@ -155,9 +144,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
-      case "idea": return ideas.remove(nid);
-      case "own_project": return ownProjects.remove(nid);
-      case "interest": return ideas.removeInterest(nid);
       case "setting": throw new FFError("validation", "ayar silinmez");
       case "trash": throw new FFError("validation", "çöp kutusundan kalıcı silme yok");
     }
@@ -208,7 +194,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     /** typed access to another module's API; undefined when that module is not installed */
     mod: ctx.mod,
     /** record types comments can hang on: core's and the installed modules' */
-    commentTargets: (): string[] => [...Object.keys(TARGET_TABLE), ...ctx.types.commentTargets()],
+    commentTargets: (): string[] => ctx.types.commentTargets(),
     /** the context services run with (actor, clock, db): module tools (MCP) call their module's API through it */
     ctx,
     /** alias or name to the canonical record type; unknown types and types of modules that are not installed are a clear error */
@@ -216,7 +202,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     // yazma servisleri (REST controller'ları ve testler kullanır)
     sources, tags, comments, settings, sectors, notes, links,
     files,
-    ideas, ownProjects, chat,
+    chat,
     // Paket 2: pazarlama özeti
     marketing: () => marketingReport(ctx),
     review: (week?: string) => weeklyReview(ctx, week),

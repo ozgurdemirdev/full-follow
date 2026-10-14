@@ -1,4 +1,4 @@
-import { defineModule, row } from "@fullfollow/core";
+import { defineModule, row, type RecordTrashed } from "@fullfollow/core";
 import { postsApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
@@ -14,6 +14,12 @@ export default defineModule({
   uses: ["ideas", "network"],
   api: postsApi,
   entities,
+  hooks: {
+    // the link from a post to an idea that goes to the trash is emptied (the post stays; restoring ties it back)
+    "record.trashed": (_ctx, { type, id, bin }: RecordTrashed) => {
+      if (type === "idea") bin.unlink("posts", "idea_id", id);
+    },
+  },
   contribute: {
     trashTypes: [{ type: "post", label: "paylaşım" }],
     commentTargets: {

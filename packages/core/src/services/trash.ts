@@ -107,7 +107,7 @@ export function trashList(ctx: Ctx): TrashItem[] {
 /** Turkish names of the record types core owns; module types bring theirs through the registry (`typeLabel`) */
 const CORE_TYPE_LABEL: Record<string, string> = {
   note: "not",
-  idea: "fikir", own_project: "kendi projesi", comment: "yorum", interest: "fikir ilgisi", link: "link",
+  comment: "yorum", link: "link",
   file: "dosya",
   tag: "etiket", sector: "sektör", source: "kaynak", chat_session: "sohbet",
 };

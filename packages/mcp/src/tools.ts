@@ -16,7 +16,7 @@ function run(fn: () => string) {
 }
 
 /** Record types that have a page in the panel (what `open` may show) */
-const CORE_OPENABLE = ["idea", "own_project", "comment"];
+const CORE_OPENABLE = ["comment"];
 const idOrName = z.union([z.number(), z.string()]);
 const obj = z.record(z.string(), z.any());
 /**
@@ -45,7 +45,6 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("open", {
     description: describe("open", [
       [100, "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası olarak çağırma. type: "],
-      [202, "|idea|own_project"],
       [300, "|comment; id sayı ya da isim."],
     ]),
     inputSchema: { type: z.string(), id: idOrName },
@@ -64,12 +63,12 @@ export function registerTools(server: McpServer, core: Core) {
       [100, "Ara/listele. type: "],
       [206, "|source|comment"],
       [220, "|sector|note|setting"],
-      [301, "|idea|own_project|interest|tag"],
+      [304, "|tag"],
       [401, "|trash. "],
       [423, "{unanswered:true}(comment) "],
       [440, "{all:true}("],
       [500, "tag/sector/source: silinenler dahil); "],
-      [601, "idea {stage,sector,own_project:'Full Follow',general:true}; own_project {status,sellable,sector}; interest {idea_id|person_id}; trash {type:'person'}."],
+      [604, "trash {type:'person'}."],
     ]),
     inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().optional(), offset: z.number().optional() },
   }, ({ type, q, filter, limit, offset }) => run(() => list(core.normalizeType(type), core.find(type, { q, filter, limit, offset }), offset ?? 0)));
@@ -84,9 +83,8 @@ export function registerTools(server: McpServer, core: Core) {
       [400, "comments,"],
       [400.2, "links,"],
       [402, "; "],
-      [420, "idea: people"],
       [500, "; "],
-      [600, "own_project: ideas,links,comments)."],
+      [601, ")."],
     ]),
     inputSchema: { type: z.string(), id: idOrName, with: z.array(z.string()).optional() },
   }, ({ type, id, with: w }) => run(() => block(core.get(type, id, w ?? []))));
@@ -101,7 +99,6 @@ export function registerTools(server: McpServer, core: Core) {
       [144.2, "note: {person,body}. "],
       [144.4, "link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). "],
       [146, "comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
-      [201, "idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. own_project: {name,description,status,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. "],
     ]),
     inputSchema: { type: z.string(), data: z.union([obj, z.array(obj)]), id: idOrName.optional() },
   }, ({ type, data, id }) => run(() => {
@@ -115,7 +112,6 @@ export function registerTools(server: McpServer, core: Core) {
     // the opportunity and project stage lists come from their modules
     description: describe("move", [
       [100, "Aşama değiştir. "],
-      [130, "Fikir: fikir|dogrulaniyor|demo|urun. Kendi projesi: aktif|beklemede|tamamlandi|birakildi."],
     ]),
     inputSchema: { type: z.string(), id: idOrName, stage: z.string(), reason: z.string().optional() },
   }, ({ type, id, stage, reason }) => run(() => {
@@ -132,7 +128,6 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("report", {
     description: describe("report", [
       [120, "pazarlama ("],
-      [200, "fikir ilgisi, "],
       [202, "kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM. week: YYYY-Www, haftadan bir tarih ya da \"bu\" verilirse rapor yerine o haftanın incelemesi (Cuma özeti): giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için 2-4 öneri."],
     ]),
     inputSchema: { month: z.string().optional(), week: z.string().optional() },

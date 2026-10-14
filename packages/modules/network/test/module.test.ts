@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defineModule, FFError, openDb, type Clock, type TouchCreated, type TouchUpdated } from "@fullfollow/core";
-import { appFor } from "./helpers";
+import { appFor, fakeIdeas } from "./helpers";
 
 const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
 const mail = (summary: string, extra: Record<string, unknown> = {}) => ({ contact: "info@x.example", channel: "email", direction: "giden", summary, ...extra });
@@ -58,7 +58,7 @@ describe("network as a module", () => {
   });
 
   it("the Today view gets the network lists and the week numbers; the touch relation loads on a few types", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "ozgur", clock, [fakeIdeas()]);
     app.network.touches.create(mail("a"));
     app.network.touches.create(mail("b", { direction: "gelen" }));
     const today = app.today();
@@ -79,7 +79,7 @@ describe("network as a module", () => {
   });
 
   it("an idea, opportunity or project that is deleted lets go of its touches; the touches stay", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "ozgur", clock, [fakeIdeas()]);
     const idea = app.save("idea", { title: "Klinik botu" }).row;
     // an idea link needs a person: write the row by hand (the people module is not installed here)
     app.ctx.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES ('Ada', ?, ?, 'ozgur')").run(clock.now(), clock.now());

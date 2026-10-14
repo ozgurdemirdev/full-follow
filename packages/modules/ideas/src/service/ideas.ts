@@ -1,27 +1,26 @@
 import { eq } from "drizzle-orm";
-import { IDEA_STAGES, label } from "../constants";
-import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
-import type { Q } from "../db/client";
-import { idea_people, idea_sectors, ideas } from "../db/schema";
-import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "../schemas";
-import { sectorInput, setSectorLinks } from "./sectors";
-import { placeInGroup, renumberGroup, requireRow, truncate } from "./shared";
-import { announceTrashed, Bin } from "./trash";
+import {
+  announceTrashed, Bin, FFError, IDEA_STAGES, keptRow, keptRows, label, parse, placeInGroup, renumberGroup, requireRow, schema, sectorInput, setSectorLinks, stamp,
+  truncate, writeEvent as emit, type Ctx, type IdeaRecord, type InterestLevel, type InterestRecord, type OwnProjectRecord, type Q,
+} from "@fullfollow/core";
+import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "./schemas";
+
+const { idea_people, ideas } = schema;
 
 /**
  * Kişiyi fikre bağlar (yoksa "anlatıldı" olarak). Fikir hakkındaki temas da bunu çağırır.
  * Var olan bağda ilgi seviyesi verilmişse güncellenir.
  */
-export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: number; interest?: (typeof idea_people.$inferSelect)["interest"]; note?: string | null; touch_id?: number | null }) {
+export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: number; interest?: InterestLevel; note?: string | null; touch_id?: number | null }) {
   const idea = requireRow(ctx, "ideas", d.idea_id);
   const person = requireRow(ctx, "people", d.person_id);
-  const cur = row(ctx, "SELECT * FROM idea_people WHERE idea_id = ? AND person_id = ?", d.idea_id, d.person_id);
+  const cur = keptRow(ctx, "SELECT * FROM idea_people WHERE idea_id = ? AND person_id = ?", d.idea_id, d.person_id);
   if (!cur) {
     const r = q.insert(idea_people).values({
       idea_id: d.idea_id, person_id: d.person_id, interest: d.interest ?? "anlatildi", note: d.note ?? null, touch_id: d.touch_id ?? null, ...stamp(ctx),
     }).returning().get();
     emit(q, ctx, { type: "idea.told", person_id: person.id, summary: `Fikir anlatıldı: ${truncate(idea.title, 50)}${d.interest && d.interest !== "anlatildi" ? ` (${label(d.interest)})` : ""}`, data: { idea_id: idea.id } });
-    return { row: r, effects: [`${person.name} fikre bağlandı`] };
+    return { row: r as InterestRecord, effects: [`${person.name} fikre bağlandı`] };
   }
   const set: Record<string, unknown> = {};
   if (d.interest && d.interest !== cur.interest) set.interest = d.interest;
@@ -31,50 +30,14 @@ export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: 
     q.update(idea_people).set({ ...set, updated_at: ctx.clock.now() }).where(eq(idea_people.id, cur.id)).run();
     if (set.interest) emit(q, ctx, { type: "idea.interest", person_id: person.id, summary: `Fikre ilgi: ${truncate(idea.title, 50)} → ${label(String(set.interest))}`, data: { idea_id: idea.id } });
   }
-  return { row: requireRow(ctx, "idea_people", cur.id), effects: [] as string[] };
+  return { row: requireRow<InterestRecord>(ctx, "idea_people", cur.id), effects: [] as string[] };
 }
 
-/** Fikir listesi + ilgi ölçümü: kaç kişiye anlatıldı, kaçı ilgilendi, oran; hedef sektörler; temas ve paylaşım sayısı */
-export function ideaStats(ctx: Ctx) {
-  const secs = rows<{ idea_id: number; id: number; path: string }>(ctx, `
-    SELECT x.idea_id, s.id, CASE WHEN p.name IS NULL THEN s.name ELSE p.name || ' > ' || s.name END AS path
-    FROM idea_sectors x JOIN sectors s ON s.id = x.sector_id LEFT JOIN sectors p ON p.id = s.parent_id ORDER BY path`);
-  return rows(ctx, `
-    SELECT i.*,
-      (SELECT COUNT(*) FROM idea_people x WHERE x.idea_id = i.id) AS told,
-      (SELECT COUNT(*) FROM idea_people x WHERE x.idea_id = i.id AND x.interest = 'ilgilendi') AS interested,
-      (SELECT COUNT(*) FROM idea_people x WHERE x.idea_id = i.id AND x.interest = 'ilgilenmedi') AS not_interested,
-      (SELECT COUNT(*) FROM touches t WHERE t.idea_id = i.id) AS touch_count,
-      (SELECT COUNT(*) FROM posts p WHERE p.idea_id = i.id) AS post_count,
-      (SELECT COUNT(*) FROM people x JOIN posts p ON p.id = x.post_id WHERE p.idea_id = i.id) AS post_people,
-      (SELECT title FROM ideas pa WHERE pa.id = i.parent_id) AS parent_title,
-      (SELECT name FROM own_projects o WHERE o.id = i.own_project_id) AS own_project_title,
-      (SELECT COUNT(*) FROM ideas c WHERE c.parent_id = i.id) AS child_count
-    FROM ideas i ORDER BY i.updated_at DESC, i.id DESC`)
-    .map((i) => {
-      const s = secs.filter((x) => x.idea_id === i.id);
-      return { ...i, sectors: s.map((x) => ({ id: x.id, path: x.path })), interest_rate: i.told ? i.interested / i.told : null };
-    })
-    .sort((a, b) => IDEA_STAGES.indexOf(b.stage) - IDEA_STAGES.indexOf(a.stage) || b.updated_at.localeCompare(a.updated_at));
-}
-
-/** Bir fikre bağlı kişiler (ilgisiyle) */
-export function ideaPeople(ctx: Ctx, ideaId?: number, personId?: number) {
-  return rows(ctx, `
-    SELECT x.*, p.name AS person_name, c.name AS company_name, i.title AS idea_title, i.stage AS idea_stage
-    FROM idea_people x JOIN people p ON p.id = x.person_id JOIN ideas i ON i.id = x.idea_id LEFT JOIN companies c ON c.id = p.company_id
-    WHERE (? IS NULL OR x.idea_id = ?) AND (? IS NULL OR x.person_id = ?)
-    ORDER BY CASE x.interest WHEN 'ilgilendi' THEN 0 WHEN 'anlatildi' THEN 1 ELSE 2 END, x.updated_at DESC`,
-    ideaId ?? null, ideaId ?? null, personId ?? null, personId ?? null);
-}
-
-/** Bağlı kişi ve sektör satırları gider; temas ve paylaşımlar kalır, fikir bağı kopar */
+/** Bağlı kişi ve sektör satırları gider; temas ve paylaşımlar kalır, fikir bağı kopar (touches and posts unlink themselves when they hear the announcement) */
 export function trashIdea(tx: Q, ctx: Ctx, id: number) {
   const cur = requireRow(ctx, "ideas", id);
   const bin = new Bin(ctx);
-  // touches about the idea are the network module's to unlink
   announceTrashed(ctx, bin, "idea", id);
-  bin.unlink("posts", "idea_id", id);
   bin.unlink("ideas", "parent_id", id);
   bin.take("idea_people", "idea_id = ?", id);
   bin.take("idea_sectors", "idea_id = ?", id);
@@ -93,7 +56,16 @@ export function ideasService(ctx: Ctx) {
     const p = requireRow(ctx, "ideas", parentId, "üst fikir");
     if (p.own_project_id) throw new FFError("validation", "proje fikri üst fikir olamaz");
     if (p.parent_id) throw new FFError("validation", `${p.title} zaten bir alt fikir; alt fikrin altına fikir konmaz`);
-    if (selfId && row(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", "alt fikirleri olan bir fikir başka bir fikrin altına konamaz");
+    if (selfId && keptRow(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", "alt fikirleri olan bir fikir başka bir fikrin altına konamaz");
+  }
+
+  /** An own project is the own-projects module's: a project given to an idea must exist there */
+  function projectOf(id: number): OwnProjectRecord {
+    const projects = ctx.mod("own-projects");
+    if (!projects) throw new FFError("validation", `kendi projesi verildi (#${id}) ama "own-projects" modülü kurulu değil`);
+    const p = projects.ref(id);
+    if (!p) throw new FFError("not_found", `kendi projesi #${id} bulunamadı`);
+    return p;
   }
 
   /** Priority group of a project idea (done ideas sit outside the groups) */
@@ -104,7 +76,7 @@ export function ideasService(ctx: Ctx) {
       const { sector_ids, ...d } = parse(ideaCreate, sectorInput(tx, ctx, input));
       if (d.own_project_id) {
         if (d.parent_id) throw new FFError("validation", "proje fikri bir üst fikrin altına konamaz");
-        requireRow(ctx, "own_projects", d.own_project_id, "kendi projesi");
+        projectOf(d.own_project_id);
       } else if (d.priority) {
         throw new FFError("validation", "öncelik, sıra ve yapıldı sadece proje fikirlerinde");
       }
@@ -113,7 +85,7 @@ export function ideasService(ctx: Ctx) {
       if (r.own_project_id) placeInGroup(tx, ctx, "ideas", GROUP, [r.own_project_id, r.priority], r.id);
       if (sector_ids?.length) setSectorLinks(tx, ctx, "idea", r.id, sector_ids);
       emit(tx, ctx, { type: "idea.created", summary: `Fikir: ${truncate(d.title, 60)}`, data: { idea_id: r.id } });
-      return { row: requireRow(ctx, "ideas", r.id), effects: [] as string[] };
+      return { row: requireRow<IdeaRecord>(ctx, "ideas", r.id), effects: [] as string[] };
     });
   }
 
@@ -127,8 +99,9 @@ export function ideasService(ctx: Ctx) {
       }
       if (projectId) {
         if (d.parent_id) throw new FFError("validation", "proje fikri bir üst fikrin altına konamaz");
-        if (row(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", id)) throw new FFError("validation", "alt fikirleri olan fikir projeye taşınamaz; önce alt fikirleri ayır");
-        requireRow(ctx, "own_projects", projectId, "kendi projesi");
+        if (keptRow(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", id)) throw new FFError("validation", "alt fikirleri olan fikir projeye taşınamaz; önce alt fikirleri ayır");
+        // a project the idea already belongs to exists (deleting a project lets its ideas go), so only a new one is looked up
+        if (d.own_project_id !== undefined) projectOf(projectId);
         d.parent_id = null;
       }
       checkParent(d.parent_id, id);
@@ -157,7 +130,7 @@ export function ideasService(ctx: Ctx) {
       const effects: string[] = [];
       const title = truncate(d.title ?? cur.title, 50);
       if (scopeChanged) {
-        const name = projectId ? requireRow(ctx, "own_projects", projectId).name : "Para kazanma fikirleri";
+        const name = projectId ? projectOf(projectId).name : "Para kazanma fikirleri";
         emit(tx, ctx, { type: "idea.moved", summary: `Fikir taşındı: ${title} → ${name}`, data: { idea_id: id, from: cur.own_project_id, to: projectId } });
         effects.push(`fikir → ${name}`);
       } else if (done !== undefined && done !== wasDone) {
@@ -168,7 +141,7 @@ export function ideasService(ctx: Ctx) {
       } else if (Object.keys(set).length || sector_ids) {
         emit(tx, ctx, { type: "idea.updated", summary: `Fikir düzenlendi: ${truncate(d.title ?? cur.title, 60)}`, data: { idea_id: id } });
       }
-      return { row: requireRow(ctx, "ideas", id), effects };
+      return { row: requireRow<IdeaRecord>(ctx, "ideas", id), effects };
     });
   }
 
@@ -179,6 +152,16 @@ export function ideasService(ctx: Ctx) {
 
   function remove(id: number) {
     return ctx.db.transaction((tx) => trashIdea(tx, ctx, id));
+  }
+
+  /** An own project takes the idea over: its sub ideas move into the project (first ones first), then the idea goes to the trash */
+  function handOver(tx: Q, ideaId: number, projectId: number): number {
+    const now = ctx.clock.now();
+    const kids = keptRows<{ id: number }>(ctx, "SELECT id FROM ideas WHERE parent_id = ? ORDER BY id", ideaId);
+    const move = ctx.sqlite.prepare("UPDATE ideas SET parent_id = NULL, own_project_id = ?, priority = 'orta', position = ?, updated_at = ? WHERE id = ?");
+    kids.forEach((k, i) => move.run(projectId, i, now, k.id));
+    trashIdea(tx, ctx, ideaId);
+    return kids.length;
   }
 
   // ---- ilgi (fikir ↔ kişi) ----
@@ -203,5 +186,5 @@ export function ideasService(ctx: Ctx) {
     });
   }
 
-  return { create, update, move, remove, saveInterest, updateInterest, removeInterest };
+  return { create, update, move, remove, handOver, saveInterest, updateInterest, removeInterest };
 }

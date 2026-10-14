@@ -12,7 +12,7 @@ import { peopleList } from "./service/list";
 export default defineModule({
   key: "people",
   label: "Kişiler",
-  uses: ["companies", "network", "referrals", "drafts"],
+  uses: ["companies", "network", "referrals", "drafts", "ideas"],
   api: peopleApi,
   entities,
   hooks: {

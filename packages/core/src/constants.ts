@@ -15,7 +15,7 @@ export const STICKY_CONTACT_STATUSES: readonly ContactStatus[] = ["olumsuz", "ta
 /** How far a status has come: a touch only moves a status forward (a negative rank is a hand set one) */
 export const CONTACT_STATUS_RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1, es_gecildi: -1, tanidik: -1, arkadas: -1 };
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
-export const CORE_TRASH_TYPES = ["note", "idea", "comment", "interest", "link", "own_project", "file"] as const;
+export const CORE_TRASH_TYPES = ["note", "comment", "link", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -50,16 +50,12 @@ export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 export const MODULE_TYPE_OWNER = {
   task: "calendar", goal: "calendar", goal_log: "calendar", post: "posts", person: "people", company: "companies", touch: "network",
   opportunity: "pipeline", offer: "pipeline", opportunity_person: "pipeline", project: "projects", payment: "projects",
-  draft: "drafts", template: "templates",
+  draft: "drafts", template: "templates", idea: "ideas", interest: "ideas", own_project: "own-projects",
 } as const;
 
 export const RECORD_TYPES = [
   "source", "comment", "setting",
   "sector", "note", "tag", "trash", "link",
-  // Paket 2: pazarlama
-  "idea", "interest",
-  // kendi projelerim
-  "own_project",
 ] as const;
 export type RecordType = (typeof RECORD_TYPES)[number];
 
@@ -67,8 +63,6 @@ export const TYPE_ALIASES: Record<string, RecordType> = {
   kaynak: "source",
   yorum: "comment", ayar: "setting", settings: "setting",
   sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link",
-  fikir: "idea", ideas: "idea", ilgi: "interest",
-  own: "own_project", own_projects: "own_project", kendi_proje: "own_project", "kendi projem": "own_project", projelerim: "own_project", urunum: "own_project",
   etiket: "tag", tags: "tag", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
 };
 
@@ -92,13 +86,18 @@ export const SOURCE_WEAK_SHARE = 1 / 3;
 export const NO_SECTOR_LABEL = "Sektörsüz";
 /** Own product lifecycle */
 export const OWN_PROJECT_STATUSES = ["aktif", "beklemede", "tamamlandi", "birakildi"] as const;
+export type OwnProjectStatus = (typeof OWN_PROJECT_STATUSES)[number];
 /** Could this own product be sold later */
 export const SELLABLE = ["evet", "belki", "hayir"] as const;
+export type Sellable = (typeof SELLABLE)[number];
 /** Project idea priority, in display order */
 export const IDEA_PRIORITIES = ["yuksek", "orta", "dusuk"] as const;
+export type IdeaPriority = (typeof IDEA_PRIORITIES)[number];
 export const IDEA_STAGES = ["fikir", "dogrulaniyor", "demo", "urun"] as const;
+export type IdeaStage = (typeof IDEA_STAGES)[number];
 /** Fikir anlatılan kişinin ilgisi */
 export const INTEREST_LEVELS = ["anlatildi", "ilgilendi", "ilgilenmedi"] as const;
+export type InterestLevel = (typeof INTEREST_LEVELS)[number];
 /** Pazarlama ayarlarının varsayılanları: takip dizisi günleri (ilk cevapsız mesajdan sonra), haftalık giden mesaj hedefi (0 = kapalı) */
 export const MARKETING_DEFAULTS = { followup_days: [3, 7], weekly_target: 0 } as const;
 /** Daily outgoing message limit per channel (a channel without a limit has no counter) */

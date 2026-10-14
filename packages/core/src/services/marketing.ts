@@ -1,7 +1,6 @@
 import { CHANNELS } from "../constants";
 import { addDays } from "../dates";
 import { rows, type Ctx } from "../context";
-import { ideaStats } from "./ideas";
 
 /**
  * Kanal performansı (son `days` gün): kaç kişiye yazıldı, kaçı sonra döndü, oran.
@@ -28,7 +27,7 @@ export function marketingReport(ctx: Ctx) {
   return {
     posts: posts.slice().sort((a, b) => b.won_value - a.won_value || b.people_count - a.people_count || b.opp_count - a.opp_count),
     posts_due: posts.filter((p) => p.refresh_due),
-    ideas: ideaStats(ctx),
+    ideas: ctx.mod("ideas")?.stats() ?? [],
     template_groups: ctx.mod("templates")?.comparison() ?? [],
     channels: channelPerformance(ctx, 30),
     followups: ctx.mod("drafts")?.followups.due() ?? [],

@@ -1,26 +1,14 @@
 import { eq } from "drizzle-orm";
-import { label, OWN_PROJECT_STATUSES } from "../constants";
-import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
-import { own_projects, own_project_sectors } from "../db/schema";
-import { ownProjectCreate, ownProjectUpdate } from "../schemas";
-import { trashIdea } from "./ideas";
-import { sectorInput, setSectorLinks } from "./sectors";
-import { requireRow, truncate } from "./shared";
-import { Bin } from "./trash";
+import {
+  announceTrashed, Bin, FFError, keptRow, label, OWN_PROJECT_STATUSES, parse, requireRow, schema, sectorInput, setSectorLinks, stamp, truncate, writeEvent as emit,
+  type Ctx, type OwnProjectRecord,
+} from "@fullfollow/core";
+import { ownProjectCreate, ownProjectUpdate } from "./schemas";
 
-/** Own products list with open/done idea counts and sectors, grouped by status */
-export function ownProjectStats(ctx: Ctx) {
-  const secs = rows<{ own_project_id: number; id: number; path: string }>(ctx, `
-    SELECT x.own_project_id, s.id, CASE WHEN p.name IS NULL THEN s.name ELSE p.name || ' > ' || s.name END AS path
-    FROM own_project_sectors x JOIN sectors s ON s.id = x.sector_id LEFT JOIN sectors p ON p.id = s.parent_id ORDER BY path`);
-  return rows(ctx, `
-    SELECT o.*,
-      (SELECT COUNT(*) FROM ideas i WHERE i.own_project_id = o.id AND i.done_at IS NULL) AS open_ideas,
-      (SELECT COUNT(*) FROM ideas i WHERE i.own_project_id = o.id AND i.done_at IS NOT NULL) AS done_ideas
-    FROM own_projects o`)
-    .map((o) => ({ ...o, sectors: secs.filter((x) => x.own_project_id === o.id).map((x) => ({ id: x.id, path: x.path })) }))
-    .sort((a, b) => OWN_PROJECT_STATUSES.indexOf(a.status) - OWN_PROJECT_STATUSES.indexOf(b.status) || b.updated_at.localeCompare(a.updated_at));
-}
+const { own_projects, own_project_sectors } = schema;
+
+/** The stored row of one own project */
+export const ownProjectRef = (ctx: Ctx, id: number): OwnProjectRecord | undefined => keptRow<OwnProjectRecord>(ctx, "SELECT * FROM own_projects WHERE id = ?", id);
 
 export function ownProjectsService(ctx: Ctx) {
   function create(input: unknown) {
@@ -29,7 +17,7 @@ export function ownProjectsService(ctx: Ctx) {
       const r = tx.insert(own_projects).values({ ...d, ...stamp(ctx) }).returning().get();
       if (sector_ids?.length) setSectorLinks(tx, ctx, "own_project", r.id, sector_ids);
       emit(tx, ctx, { type: "own_project.created", summary: `Kendi projesi: ${truncate(d.name, 60)}`, data: { own_project_id: r.id } });
-      return { row: r, effects: [] as string[] };
+      return { row: r as OwnProjectRecord, effects: [] as string[] };
     });
   }
 
@@ -47,7 +35,7 @@ export function ownProjectsService(ctx: Ctx) {
       } else if (Object.keys(d).length || sector_ids) {
         emit(tx, ctx, { type: "own_project.updated", summary: `Kendi projesi düzenlendi: ${name}`, data: { own_project_id: id } });
       }
-      return { row: requireRow(ctx, "own_projects", id, "kendi projesi"), effects };
+      return { row: requireRow<OwnProjectRecord>(ctx, "own_projects", id, "kendi projesi"), effects };
     });
   }
 
@@ -56,12 +44,12 @@ export function ownProjectsService(ctx: Ctx) {
     return update(id, { status });
   }
 
-  /** Its ideas fall back to the general list (restore re-links them) */
+  /** Its ideas fall back to the general list (the ideas module empties their link when it hears the announcement; restoring re-links them) */
   function remove(id: number) {
     const cur = requireRow(ctx, "own_projects", id, "kendi projesi");
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      bin.unlink("ideas", "own_project_id", id);
+      announceTrashed(ctx, bin, "own_project", id);
       bin.take("own_project_sectors", "own_project_id = ?", id);
       bin.take("links", "target_type = 'own_project' AND target_id = ?", id);
       bin.take("comments", "target_type = 'own_project' AND target_id = ?", id);
@@ -72,23 +60,24 @@ export function ownProjectsService(ctx: Ctx) {
     });
   }
 
-  /** "Projeye dönüştür": a top level general idea becomes a project, its sub ideas become the project's ideas */
+  /** "Projeye dönüştür": a top level general idea becomes a project, its sub ideas become the project's ideas (the ideas module hands them over) */
   function fromIdea(ideaId: number) {
-    const idea = requireRow(ctx, "ideas", ideaId);
+    const ideas = ctx.mod("ideas");
+    if (!ideas) throw new FFError("validation", `fikirden proje için "ideas" modülü kurulu olmalı`);
+    const idea = ideas.ref(ideaId);
+    if (!idea) throw new FFError("not_found", `fikir #${ideaId} bulunamadı`);
     if (idea.own_project_id || idea.parent_id) throw new FFError("validation", "sadece en üstteki genel fikir projeye dönüşür");
     return ctx.db.transaction((tx) => {
       const now = ctx.clock.now();
       const p = tx.insert(own_projects).values({
         name: idea.title, description: idea.problem, notes: idea.notes, status: "aktif", sellable: "belki", ...stamp(ctx),
       }).returning().get();
-      for (const s of rows<{ sector_id: number }>(ctx, "SELECT sector_id FROM idea_sectors WHERE idea_id = ?", ideaId)) {
-        tx.insert(own_project_sectors).values({ own_project_id: p.id, sector_id: s.sector_id, created_at: now, created_by: ctx.actor }).run();
+      for (const sector_id of ideas.sectorIds(ideaId)) {
+        tx.insert(own_project_sectors).values({ own_project_id: p.id, sector_id, created_at: now, created_by: ctx.actor }).run();
       }
-      const kids = rows<{ id: number }>(ctx, "SELECT id FROM ideas WHERE parent_id = ? ORDER BY id", ideaId);
-      kids.forEach((k, i) => ctx.sqlite.prepare("UPDATE ideas SET parent_id = NULL, own_project_id = ?, priority = 'orta', position = ?, updated_at = ? WHERE id = ?").run(p.id, i, now, k.id));
-      trashIdea(tx, ctx, ideaId);
+      const kids = ideas.handOver(tx, ideaId, p.id);
       emit(tx, ctx, { type: "own_project.created", summary: `Fikirden proje: ${truncate(p.name, 60)}`, data: { own_project_id: p.id, idea_id: ideaId } });
-      return { row: p, effects: [`${kids.length} fikir projeye taşındı`, "kaynak fikir çöp kutusunda"] };
+      return { row: p as OwnProjectRecord, effects: [`${kids} fikir projeye taşındı`, "kaynak fikir çöp kutusunda"] };
     });
   }
 

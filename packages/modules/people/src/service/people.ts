@@ -73,7 +73,7 @@ export function peopleService(ctx: Ctx) {
 
   /**
    * Çöp kutusuna: kişi + temasları, notları, taslakları, görevleri, yorumları; fırsatı ya da projesi varsa silinmez.
-   * Temaslar, görevler ve taslaklar kendi modüllerinin işi (`record.trashed`); notlar ve fikir bağları henüz modül değil.
+   * Temaslar, görevler, taslaklar ve fikir bağları kendi modüllerinin işi (`record.trashed`); notlar henüz modül değil.
    * The opportunity team rows go through the pipeline module (`record.trashed`) too.
    */
   function remove(id: number) {
@@ -83,10 +83,9 @@ export function peopleService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.unlink("people", "referred_by_id", id);
-      // TODO(modules): ideas and notes clean their own rows when they hear `record.trashed` (raw takes for now)
-      bin.take("idea_people", "person_id = ?", id);
-      // touches, tasks (and the comments on them), drafts (and the comments on them) and the opportunity team rows go through the modules that own them
+      // touches, tasks (and the comments on them), drafts (and the comments on them), idea links and the opportunity team rows go through the modules that own them
       announceTrashed(ctx, bin, "person", id);
+      // TODO(modules): notes clean their own rows when they hear `record.trashed` (raw take for now)
       bin.take("notes", "person_id = ?", id);
       bin.take("comments", "target_type = 'person' AND target_id = ?", id);
       bin.take("person_tags", "person_id = ?", id);

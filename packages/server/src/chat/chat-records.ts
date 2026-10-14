@@ -2,7 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import type { Core } from "../core.provider";
 
 /** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, opportunities, payments, drafts, templates, ...) */
-export const CORE_CARD_TYPES = ["idea", "comment"] as const;
+export const CORE_CARD_TYPES = ["comment"] as const;
 type CardType = string;
 const MAX_KEYS = 30;
 const SNIPPET = 80;
@@ -43,10 +43,6 @@ export function cardRecords(core: Core, keys: string): CardRecord[] {
 
 function card(core: Core, type: CardType, id: number, personId?: number): Row {
   switch (type) {
-    case "idea": {
-      const r = core.get("idea", id).row as Row;
-      return { title: r.title, stage: r.stage };
-    }
     case "comment": {
       const r = core.get("comment", id).row as Row;
       return { title: clip(String(r.body ?? "")), target_label: r.target_label ?? null, resolved: !!r.resolved_at };

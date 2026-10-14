@@ -28,13 +28,6 @@ const LINE: Record<string, (r: Row) => string> = {
   source: (r) => join(`#${r.id} ${r.name}`, r.kind, `${r.opp_count ?? 0} fırsat`, !!r.people_count && `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
   comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, 60)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, 60)}"`, r.count > 1 && `${r.count} yorum`, r.last_by === "ozgur" && !r.resolved_at && "CEVAPSIZ", r.resolved_at && "kapalı"),
   setting: (r) => `${r.key}=${r.value}`,
-  idea: (r) => r.own_project_id
-    ? join(`#${r.id} ${r.title}`, `proje: ${r.own_project_title}`, label(r.priority), r.done_at && "yapıldı", r.problem && `açıklama: ${cut(r.problem, 50)}`)
-    : join(`#${r.id} ${r.title}`, label(r.stage), r.sectors?.map((x: Row) => x.path).join(", "),
-    `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
-    !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${cut(r.problem, 50)}`),
-  own_project: (r) => join(`#${r.id} ${r.name}`, label(r.status), `satılabilir: ${label(r.sellable)}`, `${r.open_ideas} açık fikir`, r.sectors?.map((x: Row) => x.path).join(", ")),
-  interest: (r) => join(`#${r.id} ${r.person_name}`, r.idea_title, label(r.interest), r.note && cut(r.note, 50)),
 };
 
 /** MCP output of the installed modules (set once by registerTools): record docs, relation names, today sections */
@@ -96,13 +89,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     out.push(`referans değeri: ${v.direct} tanıttı (ağ ${v.network}) · ${v.opps} fırsat · ${v.won} kazanıldı ${tl(v.won_value)}${v.open_value ? ` · açık ${tl(v.open_value)}` : ""}${v.collected ? ` · tahsil ${tl(v.collected)}` : ""}`);
   }
   if (row.post_title) out.push(`kaynak paylaşım: #${row.post_id} ${row.post_title}`);
-  if (type === "own_project") {
-    if (row.description) out.push(`ne yapıyor: ${row.description}`);
-    if (row.sellable_note) out.push(`satış: ${row.sellable_note}`);
-  }
-  if (type === "idea" && row.problem) out.push(`sorun: ${row.problem}`);
   out.push(...(entityDocs[type]?.details?.(row, mcpFormat) ?? []));
-  if (type === "interest" && row.note) out.push(`not: ${row.note}`);
   if (row.notes) out.push(`not: ${row.notes}`);
   if (row.body) out.push(`metin: ${row.body}`);
   if (res.comments_open) out.push(`açık yorum konusu: ${res.comments_open}`);
@@ -112,9 +99,8 @@ export function block(res: { type: string; id: number; row: Row; related: Record
       out.push(`kanallar: ${rows.map((c: Row) => `${label(c.channel)} ${c.out_count}→/${c.in_count}← son ${d(c.last_at)}${c.awaiting ? " (cevap bekliyor)" : ""}`).join(" · ")}`);
       continue;
     }
-    const t = name === "people" && type === "idea" ? "interest"
-      : name === "people" && type === "opportunity" ? "opp_person"
-      : ({ ...relationTypes, links: "link", notes: "note", comments: "comment", ideas: "idea", files: "file" } as Record<string, string>)[name];
+    // a module names its record type per relation, or per relation and record type ("people:idea": the people of an idea are interest rows)
+    const t = relationTypes[`${name}:${type}`] ?? ({ ...relationTypes, links: "link", notes: "note", comments: "comment", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -149,7 +135,6 @@ export function todayText(t: any): string {
 export function marketingText(m: any): string {
   // core's lines are numbered 100, 200, ...; a module's lines have their own number and land between them
   const core: { at: number; lines: string[] }[] = [
-    { at: 200, lines: m.ideas.length ? [`Fikirler: ${m.ideas.slice(0, 5).map((i: Row) => `${cut(i.title, 30)} (${label(i.stage)}) ${i.interested}/${i.told} ilgi`).join(" · ")}`] : [] },
     { at: 400, lines: m.channels.length ? [`Kanal (30 gün, kişi): ${m.channels.map((c: Row) => `${label(c.channel)} ${c.replied}/${c.people}`).join(" · ")}`] : [] },
   ];
   return [...core, ...marketingParts.map((p) => ({ at: p.at, lines: p.render(m, mcpFormat) }))]
@@ -206,8 +191,7 @@ export function reviewText(r: any): string {
 
 export const KIND_NAME: Record<string, string> = {
   source: "kaynak",
-  comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",
-  idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu",
+  comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", tag: "etiket", trash: "çöp kutusu",
 };
 
 /** Toplu kayıt özeti: eklenen sayısı, mükerrer diye atlananlar (hangi kayıtla çakıştı), hatalılar */

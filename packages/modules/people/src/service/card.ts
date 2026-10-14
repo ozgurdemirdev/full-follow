@@ -1,4 +1,4 @@
-import { FFError, ideaPeople, listThreads, queriesFor, type Ctx, type PersonCard } from "@fullfollow/core";
+import { FFError, listThreads, queriesFor, type Ctx, type PersonCard } from "@fullfollow/core";
 import { peopleList } from "./list";
 
 /**
@@ -6,8 +6,8 @@ import { peopleList } from "./list";
  * + referans eden/tanıttıkları + referans değeri + fırsat/proje + bekleyen taslaklar.
  * Temas parçaları network modülünden gelir (yoksa boş), paylaşım posts modülünden.
  * The opportunities come from the pipeline module, the projects from the projects module (empty without them).
- * The waiting drafts come from the drafts module (empty without it).
- * TODO(modules): notes and ideas through their modules once they are ones (core queries for now)
+ * The waiting drafts come from the drafts module, the told ideas from the ideas module (empty without them).
+ * TODO(modules): notes through its module once it is one (core query for now)
  */
 export function personCard(ctx: Ctx, id: number): PersonCard {
   const q = queriesFor(ctx);
@@ -36,6 +36,6 @@ export function personCard(ctx: Ctx, id: number): PersonCard {
     drafts: ctx.mod("drafts")?.list({ filter: { person_id: id, status: "bekliyor" }, limit: 20 }).rows ?? [],
     // Paket 2: kişiyi getiren paylaşım ve anlatılan fikirler
     post: person.post_id ? ctx.mod("posts")?.get(person.post_id) ?? null : null,
-    ideas: ideaPeople(ctx, undefined, id),
+    ideas: ctx.mod("ideas")?.people(undefined, id) ?? [],
   };
 }

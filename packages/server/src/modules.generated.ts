@@ -3,13 +3,15 @@ import type { Type } from "@nestjs/common";
 import { controllers as controllers0 } from "@fullfollow/mod-calendar/server";
 import { controllers as controllers1 } from "@fullfollow/mod-companies/server";
 import { controllers as controllers2 } from "@fullfollow/mod-drafts/server";
-import { controllers as controllers3 } from "@fullfollow/mod-network/server";
-import { controllers as controllers4 } from "@fullfollow/mod-people/server";
-import { controllers as controllers5 } from "@fullfollow/mod-pipeline/server";
-import { controllers as controllers6 } from "@fullfollow/mod-posts/server";
-import { controllers as controllers7 } from "@fullfollow/mod-projects/server";
-import { controllers as controllers8 } from "@fullfollow/mod-referrals/server";
-import { controllers as controllers9 } from "@fullfollow/mod-templates/server";
+import { controllers as controllers3 } from "@fullfollow/mod-ideas/server";
+import { controllers as controllers4 } from "@fullfollow/mod-network/server";
+import { controllers as controllers5 } from "@fullfollow/mod-own-projects/server";
+import { controllers as controllers6 } from "@fullfollow/mod-people/server";
+import { controllers as controllers7 } from "@fullfollow/mod-pipeline/server";
+import { controllers as controllers8 } from "@fullfollow/mod-posts/server";
+import { controllers as controllers9 } from "@fullfollow/mod-projects/server";
+import { controllers as controllers10 } from "@fullfollow/mod-referrals/server";
+import { controllers as controllers11 } from "@fullfollow/mod-templates/server";
 
 /** NestJS controllers of the installed modules; app.module spreads them */
-export const moduleControllers: Type<unknown>[] = [...controllers0, ...controllers1, ...controllers2, ...controllers3, ...controllers4, ...controllers5, ...controllers6, ...controllers7, ...controllers8, ...controllers9];
+export const moduleControllers: Type<unknown>[] = [...controllers0, ...controllers1, ...controllers2, ...controllers3, ...controllers4, ...controllers5, ...controllers6, ...controllers7, ...controllers8, ...controllers9, ...controllers10, ...controllers11];

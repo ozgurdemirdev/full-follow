@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  SOURCE_KINDS,
-  LINK_TARGETS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  TAG_COLORS, FILE_TARGETS, FILE_NAME_MAX,
-} from "../constants";
+import { SOURCE_KINDS, LINK_TARGETS, TAG_COLORS, FILE_TARGETS, FILE_NAME_MAX } from "../constants";
 import * as zodKit from "./kit";
 
 const { id, text, optText, tl, date, dateTime, patch } = zodKit;
@@ -32,59 +28,6 @@ export const noteUpdate = patch({ body: text });
 const url = z.string().trim().url("geçerli bir link gerekli");
 export const linkCreate = z.strictObject({ target_type: z.enum(LINK_TARGETS), target_id: id, label: text, url });
 export const linkUpdate = patch({ label: text, url });
-
-// ---- Paket 2: pazarlama ----
-export const ideaCreate = z.strictObject({
-  title: text,
-  problem: optText,
-  stage: z.enum(IDEA_STAGES).default("fikir"),
-  notes: optText,
-  sector_ids: z.array(id).optional(),
-  parent_id: id.nullish(),
-  own_project_id: id.nullish(),
-  priority: z.enum(IDEA_PRIORITIES).optional(),
-});
-export const ideaUpdate = patch({
-  title: text,
-  problem: optText,
-  stage: z.enum(IDEA_STAGES),
-  notes: optText,
-  sector_ids: z.array(id),
-  parent_id: id.nullable(),
-  own_project_id: id.nullable(),
-  priority: z.enum(IDEA_PRIORITIES),
-  position: z.number().int().min(0),
-  done: z.boolean(),
-});
-
-export const ownProjectCreate = z.strictObject({
-  name: text,
-  description: optText,
-  status: z.enum(OWN_PROJECT_STATUSES).default("aktif"),
-  sellable: z.enum(SELLABLE).default("belki"),
-  sellable_note: optText,
-  notes: optText,
-  sector_ids: z.array(id).optional(),
-});
-export const ownProjectUpdate = patch({
-  name: text,
-  description: optText,
-  status: z.enum(OWN_PROJECT_STATUSES),
-  sellable: z.enum(SELLABLE),
-  sellable_note: optText,
-  notes: optText,
-  sector_ids: z.array(id),
-});
-
-/** Kişiyi fikre bağla ya da ilgisini güncelle (fikir + kişi başına tek satır) */
-export const interestSave = z.strictObject({
-  idea_id: id,
-  person_id: id,
-  interest: z.enum(INTEREST_LEVELS).optional(),
-  note: optText.optional(),
-  touch_id: id.nullish(),
-});
-export const interestUpdate = patch({ interest: z.enum(INTEREST_LEVELS), note: optText });
 
 export const commentCreate = z.strictObject({
   /** a record type core or an installed module owns; the comment service checks it against the registry */

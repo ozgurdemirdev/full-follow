@@ -1,12 +1,19 @@
 import { eq } from "drizzle-orm";
 import {
-  Bin, bool, COMPANY_TOUCHES, eventLink as link, FFError, has, isColdEmail, page, parse, requireRow, resolveSubject, rows, sameSide, schema, stamp, truncate,
+  announceTrashed, Bin, bool, COMPANY_TOUCHES, eventLink as link, FFError, has, isColdEmail, page, parse, requireRow, resolveSubject, rows, sameSide, schema, stamp, truncate,
   writeEvent as emit, type Ctx, type ListOpts, type Q, type TouchInput, type TouchListRow, type TouchRecord,
 } from "@fullfollow/core";
 import { touchCreate, touchUpdate } from "./schemas";
 import { bumpContactStatus, statusOfTouch } from "./status";
 
 const { touches } = schema;
+
+/** The idea a touch is about comes from the ideas module (a link to it is refused while it is not installed) */
+function requireIdea(ctx: Ctx, id: number): void {
+  const ideas = ctx.mod("ideas");
+  if (!ideas) throw new FFError("validation", `fikir verildi (#${id}) ama "ideas" modülü kurulu değil`);
+  if (!ideas.ref(id)) throw new FFError("not_found", `fikir #${id} bulunamadı`);
+}
 
 /**
  * Temas kaydeder; muhatap kişi, firma ya da sadece adres olabilir (resolveSubject).
@@ -37,8 +44,7 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
     if (!p) throw new FFError("not_found", `proje #${d.project_id} bulunamadı`);
     if (!sameSide(ctx, p.person_id, s)) throw new FFError("validation", `proje #${d.project_id} bu kişiye ya da firmasına ait değil`);
   }
-  // TODO(modules): ideas through ctx.mod("ideas")
-  if (d.idea_id) requireRow(ctx, "ideas", d.idea_id);
+  if (d.idea_id) requireIdea(ctx, d.idea_id);
 
   const cold = isColdEmail(ctx, d, s);
   const r = q.insert(touches).values({
@@ -87,7 +93,7 @@ export function touchesService(ctx: Ctx) {
       if (!Object.keys(d).length) return { row: cur, effects: [] as string[] };
       if (d.idea_id) {
         if (!cur.person_id) throw new FFError("validation", "fikir bağlantısı sadece kişiye yazılan temasta olur");
-        requireRow(ctx, "ideas", d.idea_id);
+        requireIdea(ctx, d.idea_id);
       }
       tx.update(touches).set({ ...d, updated_at: ctx.clock.now() }).where(eq(touches.id, id)).run();
       const what = d.expects_reply === false ? "cevap beklenmiyor" : d.expects_reply ? "cevap bekleniyor" : "düzenlendi";
@@ -103,8 +109,8 @@ export function touchesService(ctx: Ctx) {
     const cur = requireRow<TouchRecord>(ctx, "touches", id);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      // TODO(modules): the ideas module unlinks its interest rows when it hears `record.trashed` for a touch
-      bin.unlink("idea_people", "touch_id", id);
+      // the ideas module empties the interest rows that point at the touch
+      announceTrashed(ctx, bin, "touch", id);
       bin.take("touches", "id = ?", id);
       bin.commit(tx, "touch", id, `Temas: ${truncate(cur.summary, 60)}`);
       emit(tx, ctx, { type: "touch.deleted", ...link(ctx, cur), summary: `Temas silindi: ${truncate(cur.summary, 60)}`, data: { touch_id: id } });

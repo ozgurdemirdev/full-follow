@@ -1,5 +1,5 @@
 import { FFError, type Ctx } from "../context";
-import type { ChatCard, CommentTargetDef, EntityHandler, EventName, EventPayload, Hook, ModAccess, ModuleDef, ModuleRuntime, TrashTypeDef, TypeRegistry } from "./types";
+import type { ChatCard, CommentTargetDef, EntityHandler, EventName, EventPayload, ModAccess, ModuleDef, ModuleRuntime, TrashTypeDef, TypeRegistry } from "./types";
 
 /** Identity helper: gives a module definition its type and checks the key shape. */
 export function defineModule<const D extends ModuleDef>(def: D): D {
@@ -13,11 +13,7 @@ export interface ModuleRegistry {
   list(): ModuleDef[];
   /** module keys given in the off list (known or not), sorted */
   off(): string[];
-  /**
-   * `coreHooks`: listeners for rules whose feature is not a module yet (drafts, ideas); they run before the modules' hooks of the same event,
-   * which is where those features land once they are modules (their keys sort before pipeline's), so the effect order does not change when they move
-   */
-  bind(ctx: Ctx, coreHooks?: Record<string, Hook>): ModuleRuntime;
+  bind(ctx: Ctx): ModuleRuntime;
 }
 
 /**
@@ -98,7 +94,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
     has: (key) => byKey.has(key),
     list: () => [...installed],
     off: () => [...offSet].sort(),
-    bind(ctx, coreHooks = {}) {
+    bind(ctx) {
       const apis = new Map<string, object>();
       const mod: ModAccess = (key) => {
         const def = byKey.get(key);
@@ -112,7 +108,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
       };
       const emit = <N extends EventName>(name: N, payload: EventPayload<N>): string[] => {
         if (!ctx.sqlite.inTransaction) throw new Error(`emit("${name}") must run inside the caller's transaction`);
-        const effects: string[] = [...(coreHooks[name]?.(ctx, payload) ?? [])];
+        const effects: string[] = [];
         for (const def of hooksOf(name)) {
           const out = def.hooks![name](ctx, payload);
           if (out) effects.push(...out);

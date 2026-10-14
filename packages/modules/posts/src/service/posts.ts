@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { addDays, announceTrashed, Bin, bool, has, page, parse, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
+import { addDays, announceTrashed, Bin, bool, FFError, has, page, parse, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
 import { PLATFORM_LABEL } from "./constants";
 import { postCreate, postUpdate } from "./schemas";
 
@@ -16,7 +16,7 @@ export const nextRefresh = (p: { posted_at: string; refreshed_at: string | null;
 export function postStats(ctx: Ctx): PostStats[] {
   const today = ctx.clock.today();
   // opportunity numbers come from the pipeline module (zero without it); the people of a post travel as ids
-  // TODO(modules): people via ctx.mod("people") and ideas via ctx.mod("ideas") (raw table reads for now)
+  // TODO(modules): people via ctx.mod("people") (raw table reads for now; the idea title is read from the ideas table the same way)
   const pipeline = ctx.mod("pipeline")?.personStats();
   return rows(ctx, `
     SELECT p.*, i.title AS idea_title,
@@ -35,12 +35,18 @@ export function postStats(ctx: Ctx): PostStats[] {
     });
 }
 
+/** The idea a post is about comes from the ideas module (a link to it is refused while it is not installed) */
+function requireIdea(ctx: Ctx, id: number): void {
+  const ideas = ctx.mod("ideas");
+  if (!ideas) throw new FFError("validation", `fikir verildi (#${id}) ama "ideas" modülü kurulu değil`);
+  if (!ideas.ref(id)) throw new FFError("not_found", `fikir #${id} bulunamadı`);
+}
+
 export function postsService(ctx: Ctx) {
   function create(input: unknown) {
     const d = parse(postCreate, input);
     return ctx.db.transaction((tx) => {
-      // TODO(modules): via ctx.mod("ideas")
-      if (d.idea_id) requireRow(ctx, "ideas", d.idea_id);
+      if (d.idea_id) requireIdea(ctx, d.idea_id);
       const r = tx.insert(posts).values({ ...d, posted_at: d.posted_at ?? ctx.clock.today(), ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "post.created", summary: `Paylaşım (${PLATFORM_LABEL[d.platform]}): ${truncate(d.title, 60)}`, data: { post_id: r.id } });
       return { row: r, effects: [] as string[] };
@@ -52,7 +58,7 @@ export function postsService(ctx: Ctx) {
     const { refreshed, ...d } = parse(postUpdate, input);
     return ctx.db.transaction((tx) => {
       const cur = requireRow(ctx, "posts", id);
-      if (d.idea_id) requireRow(ctx, "ideas", d.idea_id);
+      if (d.idea_id) requireIdea(ctx, d.idea_id);
       const effects: string[] = [];
       const set: Record<string, unknown> = { ...d };
       if (refreshed) {

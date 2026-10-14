@@ -3,7 +3,7 @@ import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { comments } from "../db/schema";
 import type { Actor, CommentTarget } from "../constants";
 import { commentCreate, commentUpdate } from "../schemas";
-import { requireRow, targetLabel, targetLink, targetTable, truncate, TARGET_TABLE } from "./shared";
+import { requireRow, targetLabel, targetLink, targetTable, truncate } from "./shared";
 import { Bin } from "./trash";
 
 export interface Thread {
@@ -93,7 +93,7 @@ export function commentsService(ctx: Ctx) {
         if (!d.target_type || !d.target_id) throw new FFError("validation", "yorum için target_type ve target_id (ya da reply_to) gerekli");
         type = d.target_type; targetId = d.target_id;
         const table = targetTable(ctx, type);
-        if (!table) throw new FFError("validation", `target_type: "${type}" için yorum yazılamaz (geçerli: ${[...Object.keys(TARGET_TABLE), ...ctx.types.commentTargets()].join(", ")})`);
+        if (!table) throw new FFError("validation", `target_type: "${type}" için yorum yazılamaz (geçerli: ${ctx.types.commentTargets().join(", ")})`);
         requireRow(ctx, table, targetId);
       }
       const r = tx.insert(comments).values({ target_type: type, target_id: targetId, body: d.body, parent_id: parentId, ...stamp(ctx) }).returning().get();

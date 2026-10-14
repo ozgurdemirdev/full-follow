@@ -8,8 +8,6 @@ import { NotesController } from "./controllers/notes.controller";
 import { SectorsController } from "./controllers/sectors.controller";
 import { MiscController } from "./controllers/misc.controller";
 import { SourcesController } from "./controllers/sources.controller";
-import { IdeasController } from "./controllers/ideas.controller";
-import { OwnProjectsController } from "./controllers/own-projects.controller";
 import { MarketingController } from "./controllers/marketing.controller";
 import { TagsController, TrashController } from "./controllers/tags.controller";
 import { ChatController } from "./chat/chat.controller";
@@ -23,7 +21,7 @@ import { moduleControllers } from "./modules.generated";
   controllers: [
     AuthController, MiscController, SourcesController,
     CommentsController, SectorsController, NotesController, LinksController, FilesController,
-    IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
+    MarketingController, TagsController, TrashController, ChatController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,
   ],

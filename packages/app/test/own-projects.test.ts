@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createCore, openDb, type Clock } from "../src";
+import { openDb, type Clock } from "@fullfollow/core";
+import { createApp } from "../src";
+import { suite } from "./helpers";
 
-describe("Kendi projelerim", () => {
+/** The ideas and own-projects modules together (an idea moves into a project, a project turns an idea into itself) */
+suite("Kendi projelerim", () => {
   const clock: Clock = { today: () => "2026-10-10", now: () => "2026-10-10T10:00:00Z" };
-  let c: ReturnType<typeof createCore>;
+  let c: ReturnType<typeof createApp>;
   let sql: <T = any>(q: string, ...a: unknown[]) => T[];
   beforeEach(() => {
     const h = openDb(":memory:");
-    c = createCore(h, "ozgur", clock);
+    c = createApp(h, "ozgur", clock);
     sql = (q, ...a) => h.sqlite.prepare(q).all(...a) as any[];
   });
   const pos = (project: number, prio: string) =>

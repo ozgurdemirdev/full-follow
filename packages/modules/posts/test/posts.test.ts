@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createCore, createRegistry, openDb, type Clock } from "@fullfollow/core";
 import posts from "../src";
+import { fakeIdeas } from "./helpers";
 
 describe("Paylaşımlar", () => {
   const clock: Clock = { today: () => "2026-10-09", now: () => "2026-10-09T10:00:00Z" };
   let ozgur: ReturnType<typeof createCore>;
   beforeEach(() => {
-    ozgur = createCore(openDb(":memory:"), "ozgur", clock, createRegistry([posts]));
+    ozgur = createCore(openDb(":memory:"), "ozgur", clock, createRegistry([posts, fakeIdeas()]));
   });
 
   const api = () => ozgur.mod("posts")!;

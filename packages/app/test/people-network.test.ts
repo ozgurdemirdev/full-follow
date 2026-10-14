@@ -129,7 +129,7 @@ suite("people, companies and network together", () => {
       app.drafts.create({ person_id: p.id, channel: "email", body: "taslak" });
       return { c, p, o };
     };
-    const matrix: string[][] = [["people"], ["companies"], ["network"], ["people", "companies", "network"], ["calendar"], ["posts"], ["pipeline"], ["projects"], ["pipeline", "projects"]];
+    const matrix: string[][] = [["people"], ["companies"], ["network"], ["people", "companies", "network"], ["calendar"], ["posts"], ["pipeline"], ["projects"], ["pipeline", "projects"], ["drafts"], ["templates"], ["ideas"], ["own-projects"], ["referrals"], ["drafts", "templates", "ideas", "own-projects", "referrals"]];
 
     it.each(matrix)("without %s", (...off) => {
       const { c, p, o } = seed();
@@ -138,10 +138,11 @@ suite("people, companies and network together", () => {
       // the views and aggregators answer, with less in them
       const today = bare.today(50);
       expect(today.follow_ups.people.total).toBe(off.includes("people") ? 0 : 1);
-      expect(today).toHaveProperty("drafts");
+      // the drafts, follow-ups and quota of the Today view are the drafts module's
+      for (const key of ["drafts", "followups", "quota"]) (off.includes("drafts") ? expect(today).not : expect(today)).toHaveProperty(key);
       for (const call of [() => bare.marketing(), () => bare.review(), () => bare.reports.report(), () => bare.find("trash"),
-        () => bare.find("draft"), () => bare.find("comment"), () => bare.find("note"), () => bare.ctx.mod("posts")?.stats(), () => bare.reports.month("2026-10"), () => bare.ctx.mod("calendar")?.calendar("2026-10-01", "2026-10-31"),
-        ...(off.includes("pipeline") ? [] : [() => bare.find("opportunity"), () => bare.get("opportunity", o.id, ["comments", "drafts"]), () => bare.timeline("opportunity", o.id)]),
+        ...(off.includes("drafts") ? [] : [() => bare.find("draft")]), () => bare.find("comment"), () => bare.find("note"), () => bare.ctx.mod("posts")?.stats(), () => bare.reports.month("2026-10"), () => bare.ctx.mod("calendar")?.calendar("2026-10-01", "2026-10-31"),
+        ...(off.includes("pipeline") ? [] : [() => bare.find("opportunity"), () => bare.get("opportunity", o.id, ["comments", ...(off.includes("drafts") ? [] : ["drafts"])]), () => bare.timeline("opportunity", o.id)]),
         ...(off.includes("projects") ? [] : [() => bare.find("project"), () => bare.find("payment")])]) {
         expect(call).not.toThrow();
       }

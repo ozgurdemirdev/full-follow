@@ -1,17 +1,14 @@
-import { IDEA_PRIORITIES, type RecordType } from "../constants";
+import type { RecordType } from "../constants";
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
 import { bool, has, tagsList } from "./directory";
 import { listThreads, threadOf } from "./comments";
 import { networkSettings, settingsService } from "./settings";
-import { sectorMatch } from "./sectors";
 
 import { trashList } from "./trash";
 import type { RelationDef } from "../modules/types";
 import { entityHandler, isCoreType } from "./records";
 import { requireRow, resolveRef, targetTable } from "./shared";
 
-import { ideaPeople, ideaStats } from "./ideas";
-import { ownProjectStats } from "./ownProjects";
 
 type Rows = { rows: any[]; total: number };
 
@@ -71,46 +68,6 @@ function queriesService(ctx: Ctx) {
     return page(list, o.limit, o.offset);
   }
 
-  // ---------- Paket 2: pazarlama ----------
-  function ideas(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = ideaStats(ctx);
-    if (f.stage) list = list.filter((i) => i.stage === f.stage);
-    if (f.sector) {
-      const ids = sectorMatch(ctx, f.sector);
-      list = list.filter((i) => i.sectors.some((s: { id: number }) => ids.includes(s.id)));
-    }
-    if (f.own_project) {
-      const pid = resolveRef(ctx, "own_project", f.own_project);
-      list = list.filter((i) => i.own_project_id === pid);
-    }
-    if (f.general) list = list.filter((i) => i.own_project_id == null);
-    list = list.filter((i) => has(o.q, i.title, i.problem, i.notes));
-    return page(list, o.limit, o.offset);
-  }
-
-  function ownProjects(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = ownProjectStats(ctx);
-    for (const k of ["status", "sellable"] as const) {
-      if (f[k]) { const want = String(f[k]).split(",").map((x) => x.trim()); list = list.filter((p) => want.includes(p[k])); }
-    }
-    if (f.sector) {
-      const ids = sectorMatch(ctx, f.sector);
-      list = list.filter((p) => p.sectors.some((s: { id: number }) => ids.includes(s.id)));
-    }
-    list = list.filter((p) => has(o.q, p.name, p.description, p.notes));
-    return page(list, o.limit, o.offset);
-  }
-
-  function interests(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = ideaPeople(ctx, f.idea_id ? Number(f.idea_id) : undefined, f.person_id ? Number(f.person_id) : undefined);
-    if (f.interest) list = list.filter((x) => x.interest === f.interest);
-    list = list.filter((x) => has(o.q, x.person_name, x.idea_title, x.note));
-    return page(list, o.limit, o.offset);
-  }
-
   function settings(): Rows {
     const s = { ...settingsService(ctx).all(), ...networkSettings(ctx) };
     const list = Object.entries(s).map(([key, value]) => ({ key, value: typeof value === "object" ? JSON.stringify(value) : value }));
@@ -120,7 +77,7 @@ function queriesService(ctx: Ctx) {
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     source: sources,
     comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, idea: ideas, own_project: ownProjects, interest: interests, tag: tags,
+    sector: sectors, note: notes, link: linkList, tag: tags,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
@@ -148,12 +105,6 @@ function queriesService(ctx: Ctx) {
   }
 
   // ---------- tek kayıt ----------
-  /** Relations of the record types core owns; a module type lists its own (`related`) and the modules add theirs (`relations` contribution: touches, tasks, referrals, ...) */
-  const relatedFor: Record<string, string[]> = {
-    own_project: ["ideas", "links", "comments"],
-    idea: ["people", "comments"],
-  };
-
   /** Tek kayıt + isteğe bağlı ilişkili kayıtlar (with). Her ilişkili liste en fazla relLimit (varsayılan 10) satır. */
   function get(type: string, id: number, withRel: string[] = [], relLimit = 10) {
     const own = (r: any) => (r === undefined ? undefined : r);
@@ -166,9 +117,6 @@ function queriesService(ctx: Ctx) {
       case "trash": throw new FFError("validation", "çöp kutusu için find(type: trash) kullan");
       case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
-      case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;
-      case "own_project": rowData = own(ownProjectStats(ctx).find((p) => p.id === id)); break;
-      case "interest": rowData = own(ideaPeople(ctx).find((p) => p.id === id)); break;
       case "comment": {
         const c = requireRow(ctx, "comments", id);
         const root = c.parent_id ? requireRow(ctx, "comments", c.parent_id) : c;
@@ -185,7 +133,8 @@ function queriesService(ctx: Ctx) {
     const moduleRelations: [string, RelationDef][] = ctx.contrib("relations").flatMap((m) => Object.entries(m));
     const relationFor = (name: string) => moduleRelations.find(([n, r]) => n === name && r.on.includes(type))?.[1];
     const allowed = [
-      ...(relatedFor[type] ?? ctx.types.entity(type)?.related ?? []),
+      // a module type lists its own (`related`) and the modules add theirs (`relations` contribution: touches, tasks, referrals, drafts, ...)
+      ...(ctx.types.entity(type)?.related ?? []),
       ...moduleRelations.filter(([, r]) => r.on.includes(type)).map(([name]) => name),
     ];
     const n = Math.min(Math.max(1, relLimit), 200);
@@ -194,20 +143,11 @@ function queriesService(ctx: Ctx) {
       if (!allowed.includes(name)) throw new FFError("validation", `${type} için geçerli ilişkiler: ${allowed.join(", ") || "yok"}`);
       const by = { [`${type}_id`]: id };
       switch (name) {
-        case "people":
-          related.people = type === "idea" ? ideaPeople(ctx, id).slice(0, n) : relationFor("people")?.load(ctx, by, n, rowData) ?? [];
-          break;
-        case "ideas": {
-          const prio = (x: any) => IDEA_PRIORITIES.indexOf(x.priority);
-          related.ideas = ideaStats(ctx).filter((i) => i.own_project_id === id)
-            .sort((a, b) => Number(!!a.done_at) - Number(!!b.done_at) || (a.done_at ? b.done_at.localeCompare(a.done_at) : prio(a) - prio(b) || a.position - b.position || a.id - b.id))
-            .slice(0, n);
-          break;
-        }
         case "links": related.links = cap(linkList({ filter: by, limit: n })); break;
         case "notes": related.notes = cap(notes({ filter: { person_id: id }, limit: n })); break;
         case "comments": related.comments = listThreads(ctx, { target_type: type, target_id: id, resolved: "all" }).slice(0, n); break;
-        default: related[name] = relationFor(name)!.load(ctx, by, n, rowData);
+        // a name an entity lists in `related` that no installed module serves (the people of a post without the people module) is empty
+        default: related[name] = relationFor(name)?.load(ctx, by, n, rowData) ?? [];
       }
     }
     // açık yorum konusu sayısı (Claude cevapsız yorumu fark etsin)
@@ -224,5 +164,5 @@ function queriesService(ctx: Ctx) {
     return list.map((e) => ({ ...e, data: e.data ? JSON.parse(e.data) : null }));
   }
 
-  return { find, get, timeline, sectors, tags, notes, ideas, interests, comments, sources };
+  return { find, get, timeline, sectors, tags, notes, comments, sources };
 }

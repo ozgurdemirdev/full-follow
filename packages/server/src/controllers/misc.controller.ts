@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, Param, Put, Query } from "@nestjs/common
 import {
   CHANNELS, DIRECTIONS,
   SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
-  IDEA_STAGES, INTEREST_LEVELS, CONTACT_STATUSES, TAG_COLORS,
+  CONTACT_STATUSES, TAG_COLORS,
 } from "@fullfollow/core";
 import { CORE, type Core } from "../core.provider";
 import { intId } from "../http";
@@ -29,7 +29,6 @@ export class MiscController {
     return {
       tags: TAGS, source_kinds: SOURCE_KINDS, channels: CHANNELS, directions: DIRECTIONS,
       touch_kinds: TOUCH_KINDS, connection_tags: CONNECTION_TAGS, network_defaults: NETWORK_DEFAULTS, comment_targets: this.core.commentTargets(), labels: LABELS,
-      idea_stages: IDEA_STAGES, interest_levels: INTEREST_LEVELS,
       contact_statuses: CONTACT_STATUSES, tag_colors: TAG_COLORS,
       ...this.core.moduleMeta(),
     };

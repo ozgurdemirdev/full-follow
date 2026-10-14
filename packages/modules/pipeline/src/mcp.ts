@@ -24,7 +24,8 @@ export const mcp: McpDef = {
       line: (r, f) => f.join(`#${r.id} ${r.person_name}`, f.label(r.role), r.company_name, r.note && f.cut(r.note, 60)),
     },
   },
-  relations: { opportunities: "opportunity", offers: "offer" },
+  // `get(opportunity, id, with: ["people"])` lists the team, not people
+  relations: { opportunities: "opportunity", offers: "offer", "people:opportunity": "opp_person" },
   today: [{ at: 700, render: (t, f) => f.section("Takip: fırsat", "opportunity", t.follow_ups.opportunities) }],
   docs: {
     open: [{ at: 130, text: "opportunity" }],
