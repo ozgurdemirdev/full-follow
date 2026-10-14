@@ -9,12 +9,13 @@ This plan comes before the remaining UI screens: every screen from now on is bui
 ```
 packages/
 ├─ core/         @fullfollow/core, the only thing every module depends on (today's core, reduced)
-├─ server/        NestJS host: loads core + installed modules
-├─ mcp/           MCP host: loads core + installed modules
+├─ app/          @fullfollow/app: composes core + installed modules (createApp); generated module list
+├─ server/        NestJS host: uses app
+├─ mcp/           MCP host: uses app
 ├─ web/           Vite host: shell, UI kit, loads installed modules
 └─ modules/
    ├─ people/     one npm workspace package per feature: @fullfollow/mod-people
-   │  ├─ api.ts       public contract: types + the API interface (the only file other modules may import)
+   │  ├─ api.ts       implements its contract from core/src/contracts/<m>.ts
    │  ├─ service/     services, rules, Zod schemas, constants, tests
    │  ├─ schema.ts    its tables (Drizzle)
    │  ├─ server/      its NestJS controllers
@@ -31,6 +32,7 @@ Root `package.json` workspaces become `["packages/*", "packages/modules/*"]`.
 
 - DB client, WAL, backups, the migration chain, `events` table, `settings` table and settings API, `trash` infrastructure (any module registers its trashable types), record type registry (`normalizeType`, `resolveRef`, labels come from modules), actor and `created_by`, clock, `FFError`.
 - Module system: `defineModule`, the registry, the event bus, contribution points (below).
+- Contracts: `core/src/contracts/<m>.ts` holds each module's public API as TypeScript types only (record shapes, the API interface, event payloads), plus the `ModuleApis` map. A contract stays when its module is removed, so code that optionally uses that module still typechecks; the contract is also what an outside user codes against. Core holds no behaviour of any module.
 - Record attachments, because they hang on any record type by `(target_type, target_id)` and no feature owns them: comments (the MCP `unanswered` flow depends on them), notes, links, files, and the shared pick lists tags, sectors and sources (definitions only; the join tables such as `person_tags` belong to the module of the tagged record).
 - Web: shell (sidebar, routes, Fab, search box, toasts), the Dashboard page as an empty host filled by module cards, the Settings page as a host filled by module sections, UI kit (`ui.tsx`, `layout.tsx`, `ExpandOverlay`, `NumberField`, `MicButton`, tokens), api client, `linkTo`.
 
@@ -59,7 +61,7 @@ A table belongs to exactly one module. "Uses" is never a hard import: it is `cor
 
 ## 2. Rules that make removal safe
 
-1. **Imports.** A module imports only `@fullfollow/core` and the `api.ts` of another module (types only, `import type`). Never another module's `service/`, `web/`, `server/`. Core and hosts never import a module by name. A check script (`npm run check:boundaries`) fails the build on a violation.
+1. **Imports.** A module imports only `@fullfollow/core` (including the contracts). Never another module's package. Core never imports a module; only `@fullfollow/app` (generated list) and the web's Vite glob load modules. A check script (`npm run check:boundaries`) fails the build on a violation.
 2. **Runtime access.** `ctx.mod<"pipeline">("pipeline")` returns the typed API or `undefined`. Every call site handles `undefined`.
 3. **Cross-module rules are event hooks**, run synchronously inside the same transaction as the event that triggers them (golden rule kept: events written in core, one transaction):
    - `opportunity.won` → projects opens a project with its payments (offer data travels in the payload, so projects never reads pipeline tables).
@@ -74,7 +76,7 @@ A table belongs to exactly one module. "Uses" is never a hard import: it is `cor
    - web: routes, nav item (group, order, label, icon, badge query), dashboard cards (column, order), settings sections, Fab quick add items, record links (`linkTo(type, id)` returns `null` when no module serves that type; the link renders as plain text), overlay panels shown on another module's record (e.g. pipeline adds "Açık fırsat" to the person overlay).
 5. **Discovery.**
    - web: `import.meta.glob("../../modules/*/web/index.ts", { eager: true })`, native Vite, nothing to edit when a folder disappears.
-   - core, server, mcp: a generated registry `packages/core/src/modules.generated.ts` written by `scripts/gen-modules.mjs`, which scans `packages/modules/*/package.json`. It runs in `npm run build`, `npm test`, `npm start`. It also honours `FF_MODULES_OFF=a,b` (used by the removal check and to switch a module off without deleting it).
+   - core, server, mcp: `packages/app/src/modules.generated.ts` written by `scripts/gen-modules.mjs`, which scans `packages/modules/*/package.json` (field `"fullfollow": { "module": "<key>" }`). Server and MCP call `createApp(handle, actor)` from `@fullfollow/app`; core stays free of module imports (no package cycle). Cross-module tests (e.g. won opportunity opens a project) live in `packages/app/test`. It runs in `npm run build`, `npm test`, `npm start`. It also honours `FF_MODULES_OFF=a,b` (used by the removal check and to switch a module off without deleting it).
    - The server exposes `GET /api/modules`; the web shows a module only when the server has it too.
 6. **Hide without removing.** Settings gets a "Modüller" section listing installed modules with a switch each (setting `modules_hidden`, a list). A hidden module disappears from the web (nav, routes, cards, widgets, links, quick add) but its data, API and hooks keep working, so turning it back on loses nothing. Removing the package (or `FF_MODULES_OFF`) takes it out entirely.
 7. **Data is never lost by removing code.** Tables are defined in the module packages, but the migration chain is one, owned by core, generated from every module present in this repo. Removing a module never runs a migration; its tables and rows stay in the database and come back when the package returns. `gen-modules` refuses to let `db:generate` run while a module is switched off, and a check fails any generated migration containing `DROP TABLE`.
@@ -89,7 +91,7 @@ A table belongs to exactly one module. "Uses" is never a hard import: it is `cor
 
 | Phase | Work | Done when |
 |---|---|---|
-| P1 | Core: module system (`defineModule`, registry, `ctx.mod`, event bus inside transactions, contribution points), `gen-modules.mjs`, boundary check script. Nothing moves yet; existing services keep working, so nothing else breaks. | build, tests, boundary check pass; registry and bus tests |
+| P1 | Core: module system (`defineModule`, registry, `ctx.mod`, event bus inside transactions, contribution points, contracts folder). `packages/app` with `createApp` and `gen-modules.mjs`; server and MCP switch to `createApp`. Boundary check script. Nothing moves yet; with zero modules `createApp` equals today's core, so nothing breaks. | build, tests, boundary check pass; registry and bus tests |
 | P2 | Move feature services out of core into module packages, a few per agent: (a) people, companies, network; (b) calendar, pipeline, projects, with the cross-rules as hooks; (c) drafts, templates, posts, ideas, own-projects, referrals; (d) reports, timeline, today as contributions. Each module gets `api.ts`. `createCore` becomes the composer. Existing tests move with their module and still pass. | after each sub step: build and all tests pass, MCP and web unchanged |
 | P3 | Server and MCP: controllers into modules, generated module list in `app.module.ts`, MCP entities and tools from modules, `/api/modules`. | MCP tool list and every endpoint unchanged with all modules installed; `check:modules` passes for core + server + mcp |
 | P4 | Web: module manifests, shell builds routes, nav, Fab, dashboard, settings, links from the registry; pages and their components move into `modules/<m>/web/`. Dashboard cards move to their modules. | app looks and works the same; `check:modules` passes for every module |
