@@ -10,6 +10,7 @@
 @import "./people.css";
 @import "./people-overlay.css";
 @import "./settings.css";
+@import "./comments.css";
 
 @layer base {
   html {

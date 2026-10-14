@@ -211,6 +211,9 @@
   --spacing-spark-lg-h-0: 6px;
   --spacing-spark-lg-h-1: 22px;
   --spacing-control-height-2xs: 30px;
+  --spacing-comments-compose-height: 50px;
+  --spacing-comments-close: 42px;
+  --spacing-comments-state-height: 26px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -388,6 +391,7 @@
   --color-kind-follow: var(--palette-blue-400);
   --color-kind-pay: var(--palette-gold-400);
   --color-kind-task: var(--palette-green-400);
+  --color-comments-claude-bubble: var(--palette-orange-975);
 }
 
 :root {
@@ -445,6 +449,7 @@
   --palette-gold-400: #E8B44C;
   --palette-green-400: #4CC97A;
   --palette-lime-850: #2E3A1A;
+  --palette-orange-975: #1F1712;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
