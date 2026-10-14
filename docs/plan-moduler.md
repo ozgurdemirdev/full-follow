@@ -32,7 +32,6 @@ Root `package.json` workspaces become `["packages/*", "packages/modules/*"]`.
 - DB client, WAL, backups, the migration chain, `events` table, `settings` table and settings API, `trash` infrastructure (any module registers its trashable types), record type registry (`normalizeType`, `resolveRef`, labels come from modules), actor and `created_by`, clock, `FFError`.
 - Module system: `defineModule`, the registry, the event bus, contribution points (below).
 - Record attachments, because they hang on any record type by `(target_type, target_id)` and no feature owns them: comments (the MCP `unanswered` flow depends on them), notes, links, files, and the shared pick lists tags, sectors and sources (definitions only; the join tables such as `person_tags` belong to the module of the tagged record).
-- Chat (Claude bridge) and the mascot.
 - Web: shell (sidebar, routes, Fab, search box, toasts), the Dashboard page as an empty host filled by module cards, the Settings page as a host filled by module sections, UI kit (`ui.tsx`, `layout.tsx`, `ExpandOverlay`, `NumberField`, `MicButton`, tokens), api client, `linkTo`.
 
 ### Modules and what they own
@@ -53,6 +52,8 @@ Root `package.json` workspaces become `["packages/*", "packages/modules/*"]`.
 | referrals | referral report (reads `people.referred_by_id` through the people API) | people, pipeline, projects |
 | reports | Report, Haftalık inceleme, monthly floor | every money and activity module through contributions |
 | timeline | event feed views | all, through event labels from modules |
+| chat | Claude chat bridge (server runner, sessions, chat_sessions, chat_messages, chat_attachments), chat widget | every module through record chips and search |
+| mascot | the mascot and its settings | chat (opens it when present) |
 
 A table belongs to exactly one module. "Uses" is never a hard import: it is `core.mod("pipeline")?.…` returning `undefined` when the package is missing.
 
@@ -75,9 +76,10 @@ A table belongs to exactly one module. "Uses" is never a hard import: it is `cor
    - web: `import.meta.glob("../../modules/*/web/index.ts", { eager: true })`, native Vite, nothing to edit when a folder disappears.
    - core, server, mcp: a generated registry `packages/core/src/modules.generated.ts` written by `scripts/gen-modules.mjs`, which scans `packages/modules/*/package.json`. It runs in `npm run build`, `npm test`, `npm start`. It also honours `FF_MODULES_OFF=a,b` (used by the removal check and to switch a module off without deleting it).
    - The server exposes `GET /api/modules`; the web shows a module only when the server has it too.
-6. **Data is never lost by removing code.** Tables are defined in the module packages, but the migration chain is one, owned by core, generated from every module present in this repo. Removing a module never runs a migration; its tables and rows stay in the database and come back when the package returns. `gen-modules` refuses to let `db:generate` run while a module is switched off, and a check fails any generated migration containing `DROP TABLE`.
-7. **Foreign keys across modules.** Inside one module foreign keys stay. Across modules (e.g. `opportunities.person_id` → `people`) they stay too, because every table always exists in this database. For someone who installs only a subset on a fresh database, the generated chain for their set is what matters; this is handled later (section 5) and does not block the split.
-8. **Tests** move into their module (`packages/modules/<m>/service/*.test.ts`). The core has tests for the registry, the event bus and the boundary rule.
+6. **Hide without removing.** Settings gets a "Modüller" section listing installed modules with a switch each (setting `modules_hidden`, a list). A hidden module disappears from the web (nav, routes, cards, widgets, links, quick add) but its data, API and hooks keep working, so turning it back on loses nothing. Removing the package (or `FF_MODULES_OFF`) takes it out entirely.
+7. **Data is never lost by removing code.** Tables are defined in the module packages, but the migration chain is one, owned by core, generated from every module present in this repo. Removing a module never runs a migration; its tables and rows stay in the database and come back when the package returns. `gen-modules` refuses to let `db:generate` run while a module is switched off, and a check fails any generated migration containing `DROP TABLE`.
+8. **Foreign keys across modules.** Inside one module foreign keys stay. Across modules (e.g. `opportunities.person_id` → `people`) they stay too, because every table always exists in this database. For someone who installs only a subset on a fresh database, the generated chain for their set is what matters; this is handled later (section 5) and does not block the split.
+9. **Tests** move into their module (`packages/modules/<m>/service/*.test.ts`). The core has tests for the registry, the event bus and the boundary rule.
 
 ## 3. Removal check
 
