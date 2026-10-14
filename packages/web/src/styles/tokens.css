@@ -118,6 +118,7 @@
   --spacing-fab-menu-width: 208px;
   --spacing-chart-height: 200px;
   --spacing-chart-height-mobile: 170px;
+  --spacing-ideas-ring: 92px;
   --spacing-rail: 2px;
   --spacing-tl-node: 32px;
   --spacing-comment-who: 54px;
@@ -300,6 +301,7 @@
   --radius-pipeline-col: 22px;
   --radius-bar: 2px;
   --radius-chart-bar: 14px;
+  --radius-ideas-lane: 22px;
   --radius-row: 20px;
   --radius-cell: 14px;
   --radius-event: 12px;
@@ -462,6 +464,12 @@
   --color-listening-bg: var(--palette-rec-950);
   --color-listening-fg: var(--palette-coral-200);
   --color-listening-border: var(--palette-rec-800);
+  --color-ideas-verdict: var(--palette-orange-200);
+  --color-ideas-step-off: var(--palette-ink-700);
+  --color-ideas-yes-bg: var(--palette-lime-950);
+  --color-ideas-yes-border: var(--palette-lime-850);
+  --color-ideas-no-bg: var(--palette-rec-950);
+  --color-ideas-no-border: var(--palette-coral-950);
   --color-danger-soft: var(--palette-coral-200);
   --color-drafts-reject-bg: var(--palette-wine-950);
   --color-drafts-reject-border: var(--palette-wine-900);
@@ -530,6 +538,7 @@
   --palette-mint-300: #9EE0B0;
   --palette-rose-950: #3A1F2A;
   --palette-bone-200: #D8D8D4;
+  --palette-orange-200: #F2C3AE;
   --palette-coral-200: #FF9A8C;
   --palette-rec-950: #2A1512;
   --palette-rec-800: #5A2A24;

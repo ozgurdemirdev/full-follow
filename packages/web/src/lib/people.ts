@@ -110,7 +110,7 @@ export function nextStep(p: Person, tasks: Task[], today = todayIso()): NextStep
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase("tr-TR") + s.slice(1);
 
 // ------------------------------------------------------------ per day memory (this browser only)
-type Kind = "gone" | "drafted" | "companyDrafted";
+type Kind = "gone" | "drafted" | "companyDrafted" | "pitched";
 const cache = new Map<string, ReadonlySet<number>>();
 const listeners = new Set<() => void>();
 const KEY_PREFIX = "ff.people.";

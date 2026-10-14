@@ -20,6 +20,8 @@
 
 @import "./settings.css";
 @import "./comments.css";
+@import "./ideas.css";
+
 
 @layer base {
   html {
