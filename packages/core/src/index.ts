@@ -40,7 +40,7 @@ export { bool, has, labelFilter, stripKeys } from "./services/directory";
 export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, isColdEmail, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
-export { ensureSector, sectorInput, sectorMatch, setSectorLinks } from "./services/sectors";
+export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLinks } from "./services/sectors";
 export { marketingSettings, networkSettings, readSetting, readTemplate } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";

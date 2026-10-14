@@ -37,11 +37,17 @@ export default defineModule({
   },
   contribute: {
     trashTypes: [{ type: "opportunity", label: "fırsat" }, { type: "offer", label: "teklif" }, { type: "opportunity_person", label: "ekip üyesi" }],
+    // the opportunities whose follow-up is due (the people's part of `follow_ups` comes from the people module)
+    today: (ctx, { limit }) => ({ follow_ups: { opportunities: ctx.mod("pipeline")!.opportunities.list({ limit, filter: { due: true } }) } }),
+    // opportunities count as the "fırsat" column of the sources list
+    sourceCounts: (ctx) => ({ opp_count: ctx.mod("pipeline")!.countsBySource() }),
     commentTargets: {
       opportunity: {
         table: "opportunities",
         label: (ctx, id) => ctx.mod("pipeline")!.opportunities.ref(id)?.title ?? `#${id}`,
         link: (_ctx, id) => ({ opportunity_id: id }),
+        links: true,
+        files: true,
       },
     },
     chatCards: {

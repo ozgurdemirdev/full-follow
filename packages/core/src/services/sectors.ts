@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { emit, FFError, norm, parse, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
-import { idea_sectors, own_project_sectors, sectors } from "../db/schema";
+import { sectors } from "../db/schema";
 import { sectorCreate, sectorUpdate } from "../schemas";
 import { duplicate } from "./dupes";
 import { requireRow } from "./shared";
@@ -94,13 +94,19 @@ export function sectorInput(q: Q, ctx: Ctx, input: unknown): unknown {
   return { ...rest, sector_ids: list.map((s) => ensureSector(q, ctx, typeof s === "number" ? s : String(s).trim())).filter((x): x is number => !!x) };
 }
 
-/** Fikrin ya da kendi projenin sektör bağlarını verilen listeyle değiştirir */
-export function setSectorLinks(q: Q, ctx: Ctx, owner: "idea" | "own_project", ownerId: number, ids: number[]) {
-  const [table, col] = owner === "idea" ? ([idea_sectors, idea_sectors.idea_id] as const) : ([own_project_sectors, own_project_sectors.own_project_id] as const);
-  q.delete(table).where(eq(col, ownerId)).run();
+/** A table that links one kind of record to sectors: the table (`idea_sectors`) and its owner column (`idea_id`); the module that owns the records names it */
+export interface SectorLinks {
+  table: string;
+  owner: string;
+}
+
+/** Bir kaydın sektör bağlarını verilen listeyle değiştirir (bağ tablosunu kaydın modülü verir); çağıranın transaction'ı içinde çalışır */
+export function setSectorLinks(ctx: Ctx, links: SectorLinks, ownerId: number, ids: number[]) {
+  ctx.sqlite.prepare(`DELETE FROM ${links.table} WHERE ${links.owner} = ?`).run(ownerId);
+  const insert = ctx.sqlite.prepare(`INSERT INTO ${links.table} (${links.owner}, sector_id, created_at, created_by) VALUES (?, ?, ?, ?)`);
   for (const sid of [...new Set(ids)]) {
     requireRow(ctx, "sectors", sid, "sektör");
-    q.insert(table as any).values({ [owner === "idea" ? "idea_id" : "own_project_id"]: ownerId, sector_id: sid, created_at: ctx.clock.now(), created_by: ctx.actor }).run();
+    insert.run(ownerId, sid, ctx.clock.now(), ctx.actor);
   }
 }
 

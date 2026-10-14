@@ -2,9 +2,9 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, LINK_TARGETS,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES,
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
-  OPP_ROLES, FILE_TARGETS,
+  OPP_ROLES,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
 } from "../constants";
@@ -287,7 +287,7 @@ export const goal_logs = sqliteTable("goal_logs", {
 /** Labelled links on an opportunity or project (roadmap, proposal deck, Figma, repo) */
 export const links = sqliteTable("links", {
   ...common(),
-  target_type: text("target_type", { enum: LINK_TARGETS }).notNull(),
+  target_type: text("target_type").notNull(),
   target_id: integer("target_id").notNull(),
   label: text("label").notNull(),
   url: text("url").notNull(),
@@ -305,7 +305,7 @@ export const opportunityPeople = sqliteTable("opportunity_people", {
 /** Files uploaded to an opportunity or project; the bytes live on disk (data/files/<stored_name>), deleted rows go to the trash */
 export const files = sqliteTable("files", {
   ...common(),
-  target_type: text("target_type", { enum: FILE_TARGETS }).notNull(),
+  target_type: text("target_type").notNull(),
   target_id: integer("target_id").notNull(),
   name: text("name").notNull(),
   mime: text("mime").notNull(),

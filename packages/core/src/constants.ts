@@ -40,10 +40,6 @@ export type CommentTarget = string;
 /** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */
 export const OPP_ROLES = ["karar_verici", "teknik", "ortak", "diger"] as const;
 export type OppRole = (typeof OPP_ROLES)[number];
-/** Records that can hold uploaded files */
-export const FILE_TARGETS = ["opportunity", "project"] as const;
-/** Records that carry labelled links (roadmap, proposal deck, Figma, repo) */
-export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 /** Record types that belong to a feature module, and the module key that owns each: names the missing module in the error when it is not installed */

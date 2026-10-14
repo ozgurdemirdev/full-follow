@@ -84,6 +84,12 @@ export interface CommentTargetDef {
   label(ctx: Ctx, id: number): string;
   /** event links of one record (defaults to none) */
   link?(ctx: Ctx, id: number): { person_id?: number | null; opportunity_id?: number | null; project_id?: number | null };
+  /** labelled links (roadmap, proposal deck, Figma, repo) can hang on this record type */
+  links?: boolean;
+  /** uploaded files can hang on this record type */
+  files?: boolean;
+  /** the record whose links also show on this record's link list (a project shows the links of its opportunity); `from` is the word those rows are marked with */
+  linksFrom?(ctx: Ctx, id: number): { type: string; id: number; from: string } | undefined;
 }
 
 /** What the panel chat shows on a record chip of this type: a small plain object (title and a few fields); `personId` is the `@person` of a template key */
@@ -130,6 +136,8 @@ export interface Contributions {
   commentTargets?: Record<string, CommentTargetDef>;
   /** record types the panel chat can show as a chip (`<type>:<id>` keys) */
   chatCards?: Record<string, ChatCard>;
+  /** extra count columns of the sources list: column name to the count per source id (the opportunities of a source) */
+  sourceCounts?: (ctx: Ctx) => Record<string, Map<number, number>>;
   /** scheduled work for the server host */
   jobs?: JobDef[];
 }
@@ -236,6 +244,10 @@ export interface TypeRegistry {
   commentTarget(type: string): CommentTargetDef | undefined;
   /** module-owned record types comments can hang on, in registration order */
   commentTargets(): string[];
+  /** record types labelled links can hang on, in registration order */
+  linkTargets(): string[];
+  /** record types uploaded files can hang on, in registration order */
+  fileTargets(): string[];
   /** chip data of a module-owned type for the panel chat */
   chatCard(type: string): ChatCard | undefined;
   /** module-owned record types the chat can show as a chip, in registration order */

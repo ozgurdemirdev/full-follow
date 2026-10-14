@@ -2,16 +2,16 @@ import { eq } from "drizzle-orm";
 import { emit, parse, stamp, type Ctx } from "../context";
 import { links } from "../db/schema";
 import { linkCreate, linkUpdate } from "../schemas";
-import { link, requireRow, requireTarget, truncate } from "./shared";
+import { assertAttachTarget, requireRow, requireTarget, targetLink, truncate } from "./shared";
 import { Bin } from "./trash";
 
-/** Labelled links on an opportunity, project or own project; a project also shows the links of the opportunity it came from. */
+/** Labelled links on the records whose module allows them (an opportunity, a project, an own project); a project also shows the links of the opportunity it came from. */
 export function linksService(ctx: Ctx) {
-  const owner = (r: { target_type: "opportunity" | "project" | "own_project"; target_id: number }) =>
-    link(ctx, r.target_type === "opportunity" ? { opportunity_id: r.target_id } : r.target_type === "project" ? { project_id: r.target_id } : {});
+  const owner = (r: { target_type: string; target_id: number }) => targetLink(ctx, r.target_type, r.target_id);
 
   function create(input: unknown) {
     const d = parse(linkCreate, input);
+    assertAttachTarget(ctx, d.target_type, ctx.types.linkTargets());
     return ctx.db.transaction((tx) => {
       requireTarget(ctx, d.target_type, d.target_id);
       const r = tx.insert(links).values({ ...d, ...stamp(ctx) }).returning().get();

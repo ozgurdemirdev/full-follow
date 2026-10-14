@@ -8,14 +8,24 @@ import type { EntityRef } from "../modules/types";
 /** Table of a comment target type, from the installed module that owns it; undefined for an unknown type or one whose module is not installed */
 export const targetTable = (ctx: Ctx, type: string): string | undefined => ctx.types.commentTarget(type)?.table;
 
-/** The row a file, link or comment hangs on: its table comes from the registry, so a record type whose module is not installed is a clear error */
-export function requireTarget(ctx: Ctx, type: string, id: number) {
+/** Table of a record type something hangs on; a record type whose module is not installed (or an unknown one) is a clear error */
+function requireTargetTable(ctx: Ctx, type: string): string {
   const table = targetTable(ctx, type);
   if (!table) {
     const owner = (MODULE_TYPE_OWNER as Record<string, string>)[type];
     throw new FFError("validation", owner ? `"${type}" türü için "${owner}" modülü kurulu değil` : `bilinmeyen kayıt türü "${type}"`);
   }
-  return requireRow(ctx, table, id);
+  return table;
+}
+
+/** The row a file, link or comment hangs on: its table comes from the registry */
+export const requireTarget = (ctx: Ctx, type: string, id: number) => requireRow(ctx, requireTargetTable(ctx, type), id);
+
+/** A file or link target type must be one of the types the modules allow it on (`allowed`); the error names the missing module or the allowed list */
+export function assertAttachTarget(ctx: Ctx, type: string, allowed: readonly string[]): void {
+  if (allowed.includes(type)) return;
+  requireTargetTable(ctx, type);
+  throw new FFError("validation", `target_type: Invalid option: expected one of ${allowed.map((t) => `"${t}"`).join("|")}`);
 }
 
 export const TABLE_LABEL: Record<string, string> = {

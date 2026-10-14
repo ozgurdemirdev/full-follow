@@ -28,11 +28,11 @@ function queriesService(ctx: Ctx) {
 
   function sources(o: ListOpts): Rows {
     const f = o.filter ?? {};
-    const oppCounts = ctx.mod("pipeline")?.countsBySource();
+    const counts = Object.entries(Object.assign({}, ...ctx.contrib("sourceCounts").map((f) => f(ctx)))) as [string, Map<number, number>][];
     const list = rows(ctx, `SELECT s.*,
         (SELECT COUNT(*) FROM people x WHERE x.source_id = s.id) AS people_count, (SELECT COUNT(*) FROM companies x WHERE x.source_id = s.id) AS company_count
       FROM sources s ORDER BY s.name COLLATE NOCASE`)
-      .map((s) => ({ ...s, opp_count: oppCounts?.get(s.id) ?? 0 }))
+      .map((s) => ({ ...s, ...Object.fromEntries(counts.map(([column, byId]) => [column, byId.get(s.id) ?? 0])) }))
       .filter((s) => (bool(f.all) || !s.deleted_at) && has(o.q, s.name, s.kind));
     return page(list, o.limit, o.offset);
   }
@@ -84,16 +84,16 @@ function queriesService(ctx: Ctx) {
     },
   };
 
-  /** Links of an opportunity or project; a project also lists the links of its opportunity (from: "fırsat") */
+  /** Links of a record (filter `<type>_id` for a type links can hang on); a record also lists the links of the record its module says they come from (a project: its opportunity, marked from: "fırsat") */
   function linkList(o: ListOpts): Rows {
     const f = o.filter ?? {};
     let list = rows(ctx, "SELECT * FROM links ORDER BY id");
-    if (f.opportunity_id) list = list.filter((l) => l.target_type === "opportunity" && l.target_id === Number(f.opportunity_id));
-    if (f.own_project_id) list = list.filter((l) => l.target_type === "own_project" && l.target_id === Number(f.own_project_id));
-    if (f.project_id) {
-      const oppId = ctx.mod("projects")?.projects.ref(Number(f.project_id))?.opportunity_id;
-      list = list.filter((l) => (l.target_type === "project" && l.target_id === Number(f.project_id)) || (oppId && l.target_type === "opportunity" && l.target_id === oppId))
-        .map((l) => (l.target_type === "opportunity" ? { ...l, from: "fırsat" } : l));
+    for (const type of ctx.types.linkTargets()) {
+      const id = f[`${type}_id`];
+      if (!id) continue;
+      const parent = ctx.types.commentTarget(type)?.linksFrom?.(ctx, Number(id));
+      list = list.filter((l) => (l.target_type === type && l.target_id === Number(id)) || (parent && l.target_type === parent.type && l.target_id === parent.id))
+        .map((l) => (parent && l.target_type === parent.type ? { ...l, from: parent.from } : l));
     }
     list = list.filter((l) => has(o.q, l.label, l.url));
     return page(list, o.limit, o.offset);

@@ -24,6 +24,8 @@ export default defineModule({
   },
   contribute: {
     trashTypes: [{ type: "person", label: "kişi" }],
+    // the people whose follow-up is due (the opportunities' part of `follow_ups` comes from the pipeline module)
+    today: (ctx, { limit }) => ({ follow_ups: { people: ctx.mod("people")!.list({ limit, filter: { follow_up_due: true } }) } }),
     commentTargets: {
       person: {
         table: "people",

@@ -137,7 +137,8 @@ suite("people, companies and network together", () => {
       expect(bare.modules.list().map((m) => m.key)).not.toEqual(expect.arrayContaining(off));
       // the views and aggregators answer, with less in them
       const today = bare.today(50);
-      expect(today.follow_ups.people.total).toBe(off.includes("people") ? 0 : 1);
+      // the follow-ups of people and of opportunities are filled by their modules: nothing of a module that is off
+      expect(today.follow_ups?.people?.total ?? 0).toBe(off.includes("people") ? 0 : 1);
       // the drafts, follow-ups and quota of the Today view are the drafts module's
       for (const key of ["drafts", "followups", "quota"]) (off.includes("drafts") ? expect(today).not : expect(today)).toHaveProperty(key);
       for (const call of [() => bare.marketing(), () => bare.review(), () => bare.reports.report(), () => bare.find("trash"),
@@ -150,9 +151,10 @@ suite("people, companies and network together", () => {
       if (off.includes("pipeline")) {
         expect(() => bare.find("opportunity")).toThrow(/"opportunity" türü için "pipeline" modülü kurulu değil/);
         expect(() => bare.move("opportunity", o.id, "temas")).toThrow(FFError);
-        expect(today.follow_ups.opportunities.total).toBe(0);
+        expect(today.follow_ups?.opportunities).toBeUndefined();
         expect(bare.reports.bySource()).toEqual([]);
-        expect(bare.find("source").rows.find((s) => s.name === "R10")).toMatchObject({ opp_count: 0 });
+        // the opportunity count column of the sources list is the pipeline's
+        expect(bare.find("source").rows.find((s) => s.name === "R10")).not.toHaveProperty("opp_count");
       } else expect(bare.find("source").rows.find((s) => s.name === "R10")).toMatchObject({ opp_count: 1 });
       if (off.includes("projects")) {
         expect(() => bare.find("project")).toThrow(/"project" türü için "projects" modülü kurulu değil/);
@@ -189,7 +191,8 @@ suite("people, companies and network together", () => {
       const { p } = seed();
       const bare = appWithout(everyKey, h, "ozgur", clock);
       expect(bare.modules.list()).toEqual([]);
-      expect(bare.today(5)).toMatchObject({ comments: { total: 2 }, follow_ups: { people: { total: 0 } } });
+      expect(bare.today(5)).toMatchObject({ comments: { total: 2 } });
+      expect(bare.today(5)).not.toHaveProperty("follow_ups");
       // a draft is the drafts module's: refused with a clear error while it is not installed
       expect(() => bare.save("draft", { contact: "z@x.example", channel: "email", body: "x" })).toThrow(/"draft" türü için "drafts" modülü kurulu değil/);
       expect(p).toBeTruthy();

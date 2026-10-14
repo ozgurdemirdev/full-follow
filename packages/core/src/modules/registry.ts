@@ -56,6 +56,8 @@ function buildTypes(installed: ModuleDef[]): TypeRegistry {
     inputRefs: () => inputRefs,
     commentTarget: (type) => targets.get(type),
     commentTargets: () => [...targets.keys()],
+    linkTargets: () => [...targets].filter(([, t]) => t.links).map(([type]) => type),
+    fileTargets: () => [...targets].filter(([, t]) => t.files).map(([type]) => type),
     chatCard: (type) => cards.get(type),
     chatCardTypes: () => [...cards.keys()],
   };

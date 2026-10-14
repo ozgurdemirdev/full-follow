@@ -1,7 +1,7 @@
 import { emit, parse, rows, stamp, type Ctx } from "../context";
 import { files } from "../db/schema";
 import { fileCreate } from "../schemas";
-import { link, requireRow, requireTarget, truncate } from "./shared";
+import { assertAttachTarget, requireRow, requireTarget, targetLink, truncate } from "./shared";
 import { announceTrashed, Bin } from "./trash";
 
 type FileRow = typeof files.$inferSelect;
@@ -16,11 +16,11 @@ export function filesOf(ctx: Ctx, targetType: "opportunity" | "project", targetI
  * Removing a file puts its row in the trash; the bytes stay so it can come back.
  */
 export function filesService(ctx: Ctx) {
-  const owner = (r: Pick<FileRow, "target_type" | "target_id">) =>
-    link(ctx, r.target_type === "opportunity" ? { opportunity_id: r.target_id } : { project_id: r.target_id });
+  const owner = (r: Pick<FileRow, "target_type" | "target_id">) => targetLink(ctx, r.target_type, r.target_id);
 
   function create(input: unknown) {
     const d = parse(fileCreate, input);
+    assertAttachTarget(ctx, d.target_type, ctx.types.fileTargets());
     return ctx.db.transaction((tx) => {
       requireTarget(ctx, d.target_type, d.target_id);
       const r = tx.insert(files).values({ ...d, ...stamp(ctx) }).returning().get();

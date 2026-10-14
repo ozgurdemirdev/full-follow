@@ -5,6 +5,9 @@ import {
 } from "@fullfollow/core";
 import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "./schemas";
 
+/** The table that links ideas to sectors */
+const SECTOR_LINKS = { table: "idea_sectors", owner: "idea_id" };
+
 const { idea_people, ideas } = schema;
 
 /**
@@ -83,7 +86,7 @@ export function ideasService(ctx: Ctx) {
       checkParent(d.parent_id);
       const r = tx.insert(ideas).values({ ...d, ...stamp(ctx) }).returning().get();
       if (r.own_project_id) placeInGroup(tx, ctx, "ideas", GROUP, [r.own_project_id, r.priority], r.id);
-      if (sector_ids?.length) setSectorLinks(tx, ctx, "idea", r.id, sector_ids);
+      if (sector_ids?.length) setSectorLinks(ctx, SECTOR_LINKS, r.id, sector_ids);
       emit(tx, ctx, { type: "idea.created", summary: `Fikir: ${truncate(d.title, 60)}`, data: { idea_id: r.id } });
       return { row: requireRow<IdeaRecord>(ctx, "ideas", r.id), effects: [] as string[] };
     });
@@ -125,7 +128,7 @@ export function ideasService(ctx: Ctx) {
           placeInGroup(tx, ctx, "ideas", GROUP, [projectId, priority], id, pos);
         }
       }
-      if (sector_ids) setSectorLinks(tx, ctx, "idea", id, sector_ids);
+      if (sector_ids) setSectorLinks(ctx, SECTOR_LINKS, id, sector_ids);
 
       const effects: string[] = [];
       const title = truncate(d.title ?? cur.title, 50);

@@ -5,6 +5,9 @@ import {
 } from "@fullfollow/core";
 import { ownProjectCreate, ownProjectUpdate } from "./schemas";
 
+/** The table that links own projects to sectors */
+const SECTOR_LINKS = { table: "own_project_sectors", owner: "own_project_id" };
+
 const { own_projects, own_project_sectors } = schema;
 
 /** The stored row of one own project */
@@ -15,7 +18,7 @@ export function ownProjectsService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const { sector_ids, ...d } = parse(ownProjectCreate, sectorInput(tx, ctx, input));
       const r = tx.insert(own_projects).values({ ...d, ...stamp(ctx) }).returning().get();
-      if (sector_ids?.length) setSectorLinks(tx, ctx, "own_project", r.id, sector_ids);
+      if (sector_ids?.length) setSectorLinks(ctx, SECTOR_LINKS, r.id, sector_ids);
       emit(tx, ctx, { type: "own_project.created", summary: `Kendi projesi: ${truncate(d.name, 60)}`, data: { own_project_id: r.id } });
       return { row: r as OwnProjectRecord, effects: [] as string[] };
     });
@@ -27,7 +30,7 @@ export function ownProjectsService(ctx: Ctx) {
       const cur = requireRow(ctx, "own_projects", id, "kendi projesi");
       const effects: string[] = [];
       if (Object.keys(d).length) tx.update(own_projects).set({ ...d, updated_at: ctx.clock.now() }).where(eq(own_projects.id, id)).run();
-      if (sector_ids) setSectorLinks(tx, ctx, "own_project", id, sector_ids);
+      if (sector_ids) setSectorLinks(ctx, SECTOR_LINKS, id, sector_ids);
       const name = truncate(d.name ?? cur.name, 50);
       if (d.status && d.status !== cur.status) {
         emit(tx, ctx, { type: "own_project.status", summary: `Proje ${label(cur.status)} → ${label(d.status)}: ${name}`, data: { own_project_id: id, from: cur.status, to: d.status } });

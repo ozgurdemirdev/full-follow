@@ -26,6 +26,13 @@ export default defineModule({
         table: "projects",
         label: (ctx, id) => ctx.mod("projects")!.projects.ref(id)?.name ?? `#${id}`,
         link: (_ctx, id) => ({ project_id: id }),
+        links: true,
+        files: true,
+        // a project shows the links of the opportunity it came from
+        linksFrom: (ctx, id) => {
+          const opportunityId = ctx.mod("projects")!.projects.ref(id)?.opportunity_id;
+          return opportunityId ? { type: "opportunity", id: opportunityId, from: "fırsat" } : undefined;
+        },
       },
       payment: {
         table: "payments",

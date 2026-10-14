@@ -17,7 +17,7 @@ export default defineModule({
   contribute: {
     trashTypes: [{ type: "own_project", label: "kendi projesi" }],
     commentTargets: {
-      own_project: { table: "own_projects", label: (ctx, id) => row(ctx, "SELECT name FROM own_projects WHERE id = ?", id)?.name ?? `#${id}` },
+      own_project: { table: "own_projects", label: (ctx, id) => row(ctx, "SELECT name FROM own_projects WHERE id = ?", id)?.name ?? `#${id}`, links: true },
     },
   },
   mcp,
