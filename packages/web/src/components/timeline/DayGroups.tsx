@@ -1,10 +1,10 @@
 import { memo } from "react";
-import type { TlItem, TlRec } from "../../api/types";
+import type { TlRec, TlRow } from "../../api/types";
 import { lira } from "../../lib/format";
 import { fmtClock, recKind, recTone, TL_TYPE, type TlDay } from "../../lib/timeline";
 import { PathIcon } from "./PathIcon";
 
-const Row = memo(function Row({ e, onFocus }: { e: TlItem; onFocus: (r: TlRec) => void }) {
+const Row = memo(function Row({ e, onFocus }: { e: TlRow; onFocus: (r: TlRec) => void }) {
   const type = TL_TYPE[e.type];
   const rec = e.rec;
   return (
@@ -12,8 +12,8 @@ const Row = memo(function Row({ e, onFocus }: { e: TlItem; onFocus: (r: TlRec) =
       <span className="tlx-ev-icon"><PathIcon d={type.icon} /></span>
       <div className="tlx-ev-body">
         <span className="tlx-meta">
-          {e.timed ? <span className="tlx-time">{fmtClock(e.at)}</span> : null}
-          <span className="tlx-actor" data-by={e.by}>{e.by === "ozgur" ? "Sen" : "Claude"}</span>
+          <span className="tlx-time">{fmtClock(e.created_at)}</span>
+          <span className="tlx-actor" data-by={e.created_by}>{e.created_by === "ozgur" ? "Sen" : "Claude"}</span>
           <span>{type.label}</span>
         </span>
         <span className="tlx-text">{e.text}</span>
@@ -45,7 +45,7 @@ export const DayGroups = memo(function DayGroups({ days, onFocus }: { days: TlDa
             <span className="tlx-day-sum">{d.sum}</span>
           </div>
           <div className="tlx-events">
-            {d.events.map((e) => <Row key={e.key} e={e} onFocus={onFocus} />)}
+            {d.events.map((e) => <Row key={e.id} e={e} onFocus={onFocus} />)}
           </div>
         </section>
       ))}

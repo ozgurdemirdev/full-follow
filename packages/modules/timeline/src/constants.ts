@@ -15,6 +15,8 @@ export const RECORD_TIMELINE_HTTP_LIMIT = 50;
 
 /** Days of the week strip */
 export const WEEK_DAYS = 7;
+/** Draft statuses that count as approved in the week strip ("Claude taslağı: N onaylandı") */
+export const DRAFT_APPROVED_STATUSES = ["onaylandi", "gonderildi"];
 
 /** Events core itself writes that show in the feed (the other modules list theirs with the `timelineKinds` contribution) */
 export const CORE_EVENT_KINDS: Record<string, TimelineEventDef> = {

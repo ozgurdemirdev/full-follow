@@ -109,8 +109,16 @@ export function mutate<T>(key: string, fn: (prev: T | undefined) => T | undefine
   return prev;
 }
 
+const invalidated = new Set<(prefixes: string[]) => void>();
+/** invalidate() çağrılınca haber ver: kendi sayfalı verisini tutan görünümler (önbellekte kaydı olmayanlar) için */
+export const onInvalidate = (fn: (prefixes: string[]) => void) => {
+  invalidated.add(fn);
+  return () => void invalidated.delete(fn);
+};
+
 /** Değişiklikten sonra: verilen önekle başlayan anahtarları tazele (abonesi olanlar hemen, diğerleri sonra) */
 export function invalidate(...prefixes: string[]) {
+  invalidated.forEach((fn) => fn(prefixes));
   for (const [k, e] of cache) {
     if (!prefixes.some((p) => k.startsWith(p))) continue;
     e.fetchedAt = 0;
