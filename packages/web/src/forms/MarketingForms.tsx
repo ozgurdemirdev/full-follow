@@ -8,7 +8,8 @@ import { Form, Note } from "../components/forms/Form";
 import { AreaField, ChipsField, DateField, NumField, SegField, TextField, Field } from "../components/forms/fields";
 import { ComboField, SuggField, type Suggestion } from "../components/forms/fields-rich";
 import { todayIso } from "../lib/format";
-import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PLATFORMS, PRIORITIES, PRIORITY, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
+import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PLATFORMS, POST_FORMAT, POST_FORMATS, PRIORITIES, PRIORITY, TEMPLATE_KIND, TEMPLATE_KINDS, type PostFormat } from "../lib/labels";
+import { useSettings } from "../lib/settings";
 import { emptyRef, ensureCompany, ensurePerson, type Ref } from "./helpers";
 import { SectorTagsField } from "./pickers";
 import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "./shared";
@@ -16,12 +17,13 @@ import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, t
 const CHANNEL_OPTIONS = CHANNELS.map((c) => ({ value: c, label: CHANNEL[c] }));
 const TOKENS = ["{ad}", "{firma}"];
 const ALL_TOKENS = ["{ad}", "{ad_soyad}", "{firma}", "{sektor}"];
-const REFRESH_DEFAULT = 7;
+const REFRESH_MAX_DAYS = 365;
 const SUGGESTED = 8;
 
 /** Link as the record keeps it: with a scheme */
 const withScheme = (v: string) => (!v.trim() || /^https?:\/\//i.test(v.trim()) ? v.trim() : `https://${v.trim()}`);
 const showUrl = (v: string | null | undefined) => (v ?? "").replace(/^https:\/\//i, "");
+const EMAIL_CHANNEL = "email";
 
 // ---------------------------------------------------------------- taslak
 const TO_KINDS = [{ value: "person" as const, label: "Kişi" }, { value: "company" as const, label: "Firma" }];
@@ -47,6 +49,7 @@ export function DraftForm(p: FormProps) {
   const [channel, setChannel] = useState(pre?.channel ?? "");
   const ch = channel || known?.last_channel || "email";
   const [templateId, setTemplateId] = useState<number | null>(null);
+  const [subjectLine, setSubjectLine] = useState("");
   const [body, setBody] = useState("");
   const [reason, setReason] = useState("");
 
@@ -91,7 +94,7 @@ export function DraftForm(p: FormProps) {
         ? { company_id: companyId ?? await ensureCompany(toCompany) }
         : { person_id: await ensurePerson(person, { tags: ["aday"] }) };
       await saveRecord(p, null, {
-        ...to, channel: ch, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
+        ...to, channel: ch, subject: ch === EMAIL_CHANNEL ? subjectLine.trim() || undefined : undefined, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
         opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,
       });
     },
@@ -121,6 +124,7 @@ export function DraftForm(p: FormProps) {
       ) : (
         <Field label="Şablon"><span className="form-hint">Bu kanal için şablon yok. Şablonlar sayfasından ekleyebilirsin.</span></Field>
       )}
+      {ch === EMAIL_CHANNEL ? <TextField label="Konu" value={subjectLine} onChange={setSubjectLine} placeholder="E-postada görünür" /> : null}
       <AreaField name="body" label="Metin" req value={body} onChange={setBody} placeholder="Mesaj metni" rows={6} tokens={TOKENS} />
       <TextField label="Neden şimdi" opt value={reason} onChange={setReason} placeholder="Örn. paylaşıma yorum yaptı" />
     </Form>
@@ -132,16 +136,19 @@ const PLATFORM_DOT: Record<string, string> = {
   r10: "var(--color-entity-payment)", linkedin: "var(--color-entity-person)", instagram: "var(--color-entity-comment)", diger: "var(--color-entity-neutral)",
 };
 const PLATFORM_OPTIONS = PLATFORMS.map((x) => ({ value: x, label: PLATFORM[x], dot: PLATFORM_DOT[x] ?? PLATFORM_DOT.diger }));
+const FORMAT_OPTIONS: { value: PostFormat | ""; label: string }[] = POST_FORMATS.map((value) => ({ value, label: POST_FORMAT[value] }));
 
 export function PostForm(p: FormProps) {
   const editId = p.sheet.preset?.post_id;
   const existing = useQuery<Detail<Post>>(editId ? `/posts/${editId}` : null);
   const ideas = useIdeas();
+  const refreshDays = useSettings().data?.post_refresh_days;
   const [platform, setPlatform] = useState("r10");
+  const [format, setFormat] = useState<PostFormat | "">("");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [postedAt, setPostedAt] = useState(todayIso());
-  const [refresh, setRefresh] = useState<number | null>(REFRESH_DEFAULT);
+  const [refresh, setRefresh] = useState<number | null>(null);
   const [idea, setIdea] = useState<Ref>(() => ({ id: p.sheet.preset?.idea_id ?? null, text: "" }));
   const [body, setBody] = useState("");
   const [notes, setNotes] = useState("");
@@ -157,6 +164,7 @@ export function PostForm(p: FormProps) {
   useEffect(() => {
     if (!row) return;
     setPlatform(row.platform);
+    setFormat(row.format ?? "");
     setTitle(row.title);
     setUrl(showUrl(row.url));
     setPostedAt(row.posted_at.slice(0, 10));
@@ -170,7 +178,7 @@ export function PostForm(p: FormProps) {
     p,
     async () => {
       await saveRecord(p, editId, {
-        platform, title: title.trim(), url: withScheme(url), posted_at: postedAt || undefined, body, notes,
+        platform, format: format || null, title: title.trim(), url: withScheme(url), posted_at: postedAt || undefined, body, notes,
         refresh_days: refresh ? Math.max(1, Math.round(refresh)) : null,
         idea_id: idea.id,
       });
@@ -180,12 +188,17 @@ export function PostForm(p: FormProps) {
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <ChipsField label="Platform" value={platform} onChange={(v) => { if (!v) return; setPlatform(v); if (!editId && !refresh && v === "r10") setRefresh(REFRESH_DEFAULT); }} options={PLATFORM_OPTIONS} />
+      <ChipsField label="Platform" value={platform} onChange={(v) => v && setPlatform(v)} options={PLATFORM_OPTIONS} />
+      <SegField label="Format" options={FORMAT_OPTIONS} value={format} onChange={setFormat} />
       <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Örn. Kurumsal web sitesi yapıyorum" autoFocus />
       <AreaField label="Metin" opt value={body} onChange={setBody} rows={4} />
       <TextField label="Link" opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder="instagram.com/p/..." />
       <DateField label="Paylaşım tarihi" half value={postedAt} onChange={setPostedAt} placeholder="Örn. 12 Ekim" />
-      <NumField label="Güncelleme aralığı" half opt suffix="gün" hint="Bu kadar gün eskiyince hatırlatır, boş = hatırlatma yok" value={refresh} onChange={setRefresh} />
+      <NumField
+        label="Güncelleme aralığı" half opt suffix="gün" max={REFRESH_MAX_DAYS} value={refresh} onChange={setRefresh}
+        placeholder={refreshDays ? String(refreshDays) : undefined}
+        hint={refreshDays ? `Bu kadar gün eskiyince hatırlatır, boşsa ayardaki ${refreshDays} gün` : "Bu kadar gün eskiyince hatırlatır"}
+      />
       {ideas.rows.length ? <ComboField label="Tanıttığı fikir" opt value={idea} onChange={setIdea} options={ideaOptions} placeholder="Fikir ara" /> : null}
       <TextField label="Not" opt value={notes} onChange={setNotes} />
     </Form>
@@ -205,6 +218,7 @@ export function IdeaForm(p: FormProps) {
   const [parent, setParent] = useState<Ref>(emptyRef);
   const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
+  const [money, setMoney] = useState("");
   const [stage, setStage] = useState("fikir");
   const [sectors, setSectors] = useState<(number | string)[]>([]);
   const [notes, setNotes] = useState("");
@@ -217,6 +231,7 @@ export function IdeaForm(p: FormProps) {
     setPriority(row.priority);
     setParent({ id: row.parent_id, text: "" });
     setProblem(row.problem ?? "");
+    setMoney(row.money_note ?? "");
     setStage(row.stage);
     setSectors(row.sectors.map((s) => s.id));
     setNotes(row.notes ?? "");
@@ -243,7 +258,7 @@ export function IdeaForm(p: FormProps) {
       // inside a project: priority only; general idea: stage, sectors and optional parent
       const data = projectId
         ? { title: title.trim(), problem, notes, own_project_id: Number(projectId), priority }
-        : { title: title.trim(), problem, stage, notes, sectors, parent_id: parent.id, ...(row?.own_project_id ? { own_project_id: null } : {}) };
+        : { title: title.trim(), problem, money_note: money, stage, notes, sectors, parent_id: parent.id, ...(row?.own_project_id ? { own_project_id: null } : {}) };
       await saveRecord(p, editId, data);
     },
     () => errorsOf({ title: !title.trim() && "Başlık gerekli" }),
@@ -258,6 +273,7 @@ export function IdeaForm(p: FormProps) {
         <SegField label="Öncelik" options={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
       ) : (
         <>
+          <TextField label="Para notu" opt value={money} onChange={setMoney} placeholder="Kabaca nasıl para kazandırır" />
           <ChipsField label="Aşama" value={stage} onChange={(v) => v && setStage(v)} options={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} />
           <SectorTagsField value={sectors} onChange={setSectors} />
           <ComboField label="Üst fikir" opt value={parent} onChange={setParent} options={parentOptions} placeholder="Bağlı olduğu fikir" />
