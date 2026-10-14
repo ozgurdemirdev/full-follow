@@ -2,7 +2,7 @@
 
 One folder per feature, one npm workspace package each (`@fullfollow/mod-<key>`). Removing the folder (or setting
 `FF_MODULES_OFF=<key>`) takes the feature out of the build, the server, MCP and the tests, and nothing else needs an edit.
-The plan is `docs/plan-moduler.md`; `calendar` is the reference module, copy its shape.
+The plan is `docs/plan-moduler.md`; `calendar` is the reference module, copy its shape; `people`, `companies` and `network` show a group of modules that use each other.
 
 ## Layout
 
@@ -25,13 +25,19 @@ packages/modules/<key>/
 ## Rules
 
 - A module imports only `@fullfollow/core` (`npm run check:boundaries` fails the build otherwise). Core exports what a service needs:
-  `writeEvent`, `parse`, `row(s)`, `stamp`, `Bin`, `requireRow`, `schema` (every Drizzle table), `zodKit`, the contracts, `APP_TOKEN`, `intId`, `listOpts`, `withList`.
+  `writeEvent`, `parse`, `row(s)`, `stamp`, `Bin`, `announceTrashed`, `requireRow`, `resolveRef`, `schema` (every Drizzle table), `zodKit`, the contracts, `APP_TOKEN`, `intId`, `listOpts`, `withList`,
+  and the shared helpers of the features that are not modules yet (tags and sectors, duplicate keys, recipients, `queriesFor`).
 - Tables stay in core's Drizzle schema. A module owns its tables by convention; removing it never touches data and `db:generate` must produce nothing.
 - The contract (`core/src/contracts/<key>.ts`, types only) is registered in `ModuleApis`. Anyone else reaches the module with
-  `ctx.mod("<key>")?.…` and handles `undefined`. Cross-module rules are hooks on events, run in the transaction of the emitter.
+  `ctx.mod("<key>")?.…` and handles `undefined`. Cross-module rules are hooks on events, run in the transaction of the emitter
+  (`ctx.emit(name, payload)` returns the effect strings of the hooks; a throwing hook rolls everything back). Events so far:
+  `touch.created`, `touch.updated` (network), `record.trashed` (before a record's row is taken: a module takes or unlinks what points at it through the `bin`;
+  restoring puts it back from the same trash row) and `record.restored`. Rules whose feature is not a module yet run as core listeners (`services/coreHooks.ts`, after the modules' hooks).
 - A module plugs into the shared parts through `defineModule`:
-  - `entities`: record types for the generic `save` / `find` / `get` / `delete` / `restore`; `aliases`, `ref` (name lookup, `<type>` input key), `related`.
-  - `contribute`: `trashTypes`, `recordLabels`, `today` sections, `relations` (what `get(..., with)` can load on other types), `meta` (for `/api/meta`).
+  - `entities`: record types for the generic `save` / `find` / `get` / `delete` / `restore`; `aliases`, `ref` (name lookup, `<type>` input key), `refKeys` (more input keys, `referred_by`),
+    `related`, `prepare` (rewrites the input of `save`), `bulk` (duplicate keys of a list save).
+  - `contribute`: `trashTypes`, `recordLabels`, `today` sections, `relations` (what `get(..., with)` can load on other types; `load(ctx, by, limit, row)`), `meta` (for `/api/meta`),
+    `commentTargets` (record types comments hang on), `chatCards` (what a record chip of the panel chat shows).
   - `mcp`: `entities` (line, details, kind, openable), `tools`, `docs` (fragments sorted by `at`, core's are 100, 200, ...), `today` sections, `relations`.
 - Anything the module still needs from a feature that is not a module yet is marked `// TODO(modules): via ctx.mod("<future module>")`.
 
