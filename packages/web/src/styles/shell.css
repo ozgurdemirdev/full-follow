@@ -196,9 +196,7 @@
     height: 100dvh;
     gap: var(--spacing-sidebar-gap);
     padding: var(--spacing-10) var(--spacing-7);
-    overflow-x: hidden;
-    overflow-y: auto;
-    scrollbar-width: none;
+    overflow: hidden;
     border-bottom: 0;
     border-right: var(--bw-default) solid var(--color-border-subtle);
     transition:
@@ -214,10 +212,14 @@
   .ff-toggle {
     display: flex;
   }
+  /* the menu is its own scroll area: the footer after it never covers an item */
   .ff-nav {
+    flex: 1 1 auto;
+    min-height: 0;
     flex-direction: column;
     gap: var(--spacing-nav-gap);
-    overflow-x: visible;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   .ff-group {
     flex-direction: column;
@@ -226,16 +228,11 @@
   .ff-glabel {
     display: block;
   }
-  /* stays in view when the menu is taller than the window; the extra padding hides the items scrolling under it */
   .ff-sidefoot {
-    position: sticky;
-    bottom: 0;
     display: flex;
+    flex: none;
     flex-direction: column;
     gap: var(--spacing-4);
-    margin: auto 0 calc(var(--spacing-10) * -1);
-    padding-bottom: var(--spacing-10);
-    background: var(--color-bg-canvas);
   }
   .ff-item-phone {
     display: none;
