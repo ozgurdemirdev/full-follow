@@ -23,6 +23,9 @@ export interface Bucket {
   meetings: number;
   new_people: number;
   new_companies: number;
+  /** drafts and offers created in the bucket (any status) */
+  drafts: number;
+  offers: number;
 }
 
 /**
@@ -38,7 +41,7 @@ export function activity(ctx: Ctx, period: string = "week") {
   const cur = p === "day" ? today : p === "week" ? weekStart(today) : monthStart(today);
   for (let i = n - 1; i >= 0; i--) starts.push(p === "day" ? addDays(cur, -i) : p === "week" ? addDays(cur, -7 * i) : addMonths(cur, -i));
   const next = (s: string) => (p === "day" ? addDays(s, 1) : p === "week" ? addDays(s, 7) : addMonths(s, 1));
-  const buckets: Bucket[] = starts.map((s) => ({ start: s, end: addDays(next(s), -1), sent: 0, replies: 0, meetings: 0, new_people: 0, new_companies: 0 }));
+  const buckets: Bucket[] = starts.map((s) => ({ start: s, end: addDays(next(s), -1), sent: 0, replies: 0, meetings: 0, new_people: 0, new_companies: 0, drafts: 0, offers: 0 }));
   const indexOf = (day: string) => {
     for (let i = buckets.length - 1; i >= 0; i--) if (day >= buckets[i].start) return day <= buckets[i].end ? i : -1;
     return -1;
@@ -62,7 +65,7 @@ export function activity(ctx: Ctx, period: string = "week") {
       channels.set(t.channel, c);
     }
   }
-  for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"]] as const) {
+  for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"], ["drafts", "drafts"], ["offers", "offers"]] as const) {
     for (const r of rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, since)) {
       const i = indexOf(dayOf(r.created_at));
       if (i >= 0) buckets[i][key]++;

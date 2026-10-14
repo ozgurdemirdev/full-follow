@@ -432,7 +432,7 @@ describe("fırsat detay: teklifler", () => {
   beforeEach(() => { t = setup(); });
 
   it("tek kabul edilmiş teklif: kabul diğerlerini temizler ve fırsat değerini teklif tutarına çeker", () => {
-    const o = t.opp("Örnek Pizza", 50000);
+    const o = t.opp("Pizza Z", 50000);
     const v1 = t.ozgur.offers.create({ opportunity_id: o.id, amount: 60000, items: [{ label: "Site", amount: 60000 }] }).row;
     const v2 = t.ozgur.offers.create({ opportunity_id: o.id, amount: 80000 }).row;
     expect([v1.version, v2.version]).toEqual([1, 2]);
@@ -447,7 +447,7 @@ describe("fırsat detay: teklifler", () => {
   });
 
   it("kazanınca ödeme planı kabul edilen teklif tutarından çıkar", () => {
-    const o = t.opp("Örnek Pizza", 50000);
+    const o = t.opp("Pizza Z", 50000);
     const offer = t.ozgur.offers.create({ opportunity_id: o.id, amount: 80000 }).row;
     t.ozgur.offers.update(offer.id, { accepted: true });
     // fırsat değeri sonradan elle değişse de kabul edilen teklif belirleyici
@@ -456,5 +456,26 @@ describe("fırsat detay: teklifler", () => {
     t.ozgur.opportunities.move(o.id, { stage: "kazanildi" });
     expect(t.sql("SELECT price FROM projects")[0].price).toBe(80000);
     expect(t.sql("SELECT expected_amount FROM payments ORDER BY id").map((p) => p.expected_amount)).toEqual([32000, 24000, 24000]);
+  });
+});
+
+describe("haftalık aktivite", () => {
+  it("günlük dilimler temasın yanında oluşturulan taslak ve teklif sayısını da verir", () => {
+    const t = setup("2026-10-09");
+    const o = t.opp();
+    const at = (day: string) => `${day}T10:00:00Z`;
+    t.ozgur.touches.create({ contact: "a@x.com", channel: "email", direction: "giden", summary: "mail", happened_at: at("2026-10-09") });
+    t.claude.drafts.create({ person_id: t.person.id, channel: "email", body: "bir" });
+    t.claude.drafts.create({ person_id: t.person.id, channel: "email", body: "iki" });
+    t.ozgur.offers.create({ opportunity_id: o.id, amount: 1000 });
+    // geçmiş güne yazılmış kayıtlar kendi dilimine düşer
+    t.handle.sqlite.prepare("UPDATE drafts SET created_at = ? WHERE body = 'iki'").run(at("2026-10-07"));
+    t.handle.sqlite.prepare("UPDATE offers SET created_at = ?").run(at("2026-10-08"));
+
+    const a = t.ozgur.reports.activity("day");
+    const day = (iso: string) => a.buckets.find((b) => b.start === iso)!;
+    expect(day("2026-10-09")).toMatchObject({ sent: 1, drafts: 1, offers: 0 });
+    expect(day("2026-10-08")).toMatchObject({ drafts: 0, offers: 1 });
+    expect(day("2026-10-07")).toMatchObject({ drafts: 1, offers: 0 });
   });
 });
