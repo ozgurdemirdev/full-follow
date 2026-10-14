@@ -30,7 +30,7 @@ export function reportText(r: any, f: McpFormat): string {
   const refs = r.referrals?.length ? `Referans: ${r.referrals.slice(0, 5).map((x: Row) => `${x.name} ${x.network} kişi, ${x.won} kazanıldı ${f.tl(x.won_value)}`).join(" · ")}\n` : "";
   const mk = r.marketing ? marketingText(r.marketing, f) : "";
   const funnel = sourceFunnelText(r.source_funnel);
-  return `${week}${refs}${mk ? `${mk}\n` : ""}${funnel ? `${funnel}\n` : ""}${src}\n${m.month}: tahsilat ${f.tl(m.collected)} · taban ${f.tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${f.tl(m.outstanding_due)}` : ""}`;
+  return `${week}${refs}${mk ? `${mk}\n` : ""}${funnel ? `${funnel}\n` : ""}${src}\n${m.month}: tahsilat ${f.tl(m.collected)} · taban ${f.tl(m.floor)} · fark ${gap}${m.outstanding_due ? ` · vadesi bu ayda kalan ${f.tl(m.outstanding_due)}` : ""}${m.insight ? `\n${m.insight}` : ""}`;
 }
 
 const pctText = (r: number | null | undefined) => (r === null || r === undefined ? "–" : `%${Math.round(r * 100)}`);

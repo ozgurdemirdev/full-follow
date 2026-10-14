@@ -4,7 +4,7 @@ import { pipelineServices } from "./service";
 import { countOf, offerGet, offerList, openIdsOf, opportunityGet, opportunityList, opportunityRef, titlesOf } from "./service/list";
 import { offersOf } from "./service/offers";
 import { pipelineMeta } from "./service/stages";
-import { bySource, countsBySource, followUpsDue, offerCreatedSince, offersMade, openByCompany, openOfferTimes, personStats } from "./service/stats";
+import { bySource, countsBySource, followUpsDue, lostIn, offerCreatedSince, offersMade, openByCompany, openOfferTimes, personStats } from "./service/stats";
 import { teamOf } from "./service/team";
 
 /** The pipeline module's implementation of its contract (`PipelineApi` in core's contracts) */
@@ -46,6 +46,7 @@ export function pipelineApi(ctx: Ctx): PipelineApi {
     personStats: () => personStats(ctx),
     followUpsDue: (from, to) => followUpsDue(ctx, from, to),
     offersMade: (from, to) => offersMade(ctx, from, to),
+    lostIn: (ym) => lostIn(ctx, ym),
     openOfferTimes: () => openOfferTimes(ctx),
     offerCreatedSince: (since) => offerCreatedSince(ctx, since),
   };

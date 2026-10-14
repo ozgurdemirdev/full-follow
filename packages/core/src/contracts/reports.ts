@@ -17,7 +17,10 @@ export interface PriceFloor {
   [setting: string]: unknown;
 }
 
-/** One month: what was collected (zero without the projects module), what is still due in it, the floor and the gap to it */
+/**
+ * One month: what was collected (zero without the projects module), what is still due in it, the floor and the gap to it,
+ * one Turkish sentence about it (null for a coming month and while no floor is set) and what was lost in it (null without the pipeline module)
+ */
 export interface MonthReport {
   month: string;
   collected: number;
@@ -25,6 +28,9 @@ export interface MonthReport {
   floor: number;
   floor_detail: PriceFloor;
   gap: number;
+  insight: string | null;
+  /** opportunities lost in the month: how many and the sum of their estimated values */
+  lost: { count: number; budget: number } | null;
 }
 
 /** Outgoing people of a channel over the last days, how many of them answered */

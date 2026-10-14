@@ -214,6 +214,8 @@ export interface PipelineApi {
   followUpsDue(from: string, to: string): OpportunityFollowUp[];
   /** opportunities that moved to the offer stage in the range (counted from the stage events) */
   offersMade(from: string, to: string): number;
+  /** opportunities lost in a month (YYYY-MM, by the day they were closed): how many and the sum of their estimated values */
+  lostIn(ym: string): { count: number; budget: number };
   /** when opportunities in the offer stage were last touched (open offers; the silent ones are old) */
   openOfferTimes(): string[];
   /** creation times of offers made since the date */

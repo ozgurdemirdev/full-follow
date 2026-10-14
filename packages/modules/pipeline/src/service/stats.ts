@@ -61,3 +61,10 @@ export const openOfferTimes = (ctx: Ctx): string[] =>
 /** Creation times of the offers made since the date */
 export const offerCreatedSince = (ctx: Ctx, since: string): string[] =>
   rows<{ created_at: string }>(ctx, "SELECT created_at FROM offers WHERE created_at >= ?", since).map((r) => r.created_at);
+
+/** Opportunities lost in a month (YYYY-MM, by the day they were closed): how many and the sum of their estimated values */
+export function lostIn(ctx: Ctx, ym: string): { count: number; budget: number } {
+  const r = keptRows<{ count: number; budget: number }>(ctx, `SELECT COUNT(*) AS count, COALESCE(SUM(estimated_value), 0) AS budget FROM opportunities
+    WHERE stage = 'kaybedildi' AND substr(closed_at, 1, 7) = ?`, ym)[0];
+  return { count: r?.count ?? 0, budget: r?.budget ?? 0 };
+}
