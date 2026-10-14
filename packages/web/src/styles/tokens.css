@@ -45,6 +45,7 @@
   --text-own-h3: 20px;
   --text-posts-stat: 20px;
   --text-templates-title: 17px;
+  --text-report-hero: 56px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
@@ -291,6 +292,20 @@
   --spacing-timeline-actor-chip-height: 20px;
   --spacing-timeline-chip-height: 26px;
   --spacing-timeline-rec-dot: 6px;
+  --spacing-report-hero-pad: 26px;
+  --spacing-report-chart-height: 220px;
+  --spacing-report-bar-height: 160px;
+  --spacing-report-bar-max: 56px;
+  --spacing-report-axis-pad: 26px;
+  --spacing-report-amount-col: 72px;
+  --spacing-report-src-count: 70px;
+  --spacing-report-src-won: 90px;
+  --spacing-report-src-value: 110px;
+  --spacing-report-src-count-mobile: 44px;
+  --spacing-report-pct-col: 36px;
+  --spacing-report-bar-hatch-line: 6px;
+  --spacing-report-bar-hatch-period: 9px;
+  --spacing-report-pend-hatch-line: 3px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -317,6 +332,8 @@
   --radius-cell: 14px;
   --radius-event: 12px;
   --radius-spark: 3px;
+  --radius-report-bar: 12px;
+  --radius-report-hero: 28px;
   --shadow-card-hover: 0 22px 48px rgba(0,0,0,.38);
   --shadow-fab: 0 10px 28px rgba(4,4,5,.55);
   --shadow-menu: 0 16px 40px rgba(4,4,5,.6);
@@ -507,6 +524,9 @@
   --color-posts-flow: var(--palette-ink-500);
   --color-templates-tip-bg: var(--palette-ember-950);
   --color-templates-tip-fg: var(--palette-ember-200);
+  --color-report-under: var(--palette-bone-300);
+  --color-report-under-past: var(--palette-ink-550);
+  --color-report-floor-line: var(--palette-ink-500);
 }
 
 :root {
@@ -577,6 +597,7 @@
   --palette-amber-975: #1A1710;
   --palette-sand-300: #C9B98A;
   --palette-ember-950: #1F1712;
+  --palette-ink-550: #4A4A50;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
@@ -642,6 +663,7 @@
   --opacity-off: 0.3;
   --opacity-outside: 0.35;
   --opacity-projects-pulse: 45%;
+  --opacity-report-pending: 0.7;
 }
 
 @utility dur-press {
@@ -874,4 +896,8 @@
 
 @utility opacity-projects-pulse {
   opacity: var(--opacity-projects-pulse);
+}
+
+@utility opacity-report-pending {
+  opacity: var(--opacity-report-pending);
 }

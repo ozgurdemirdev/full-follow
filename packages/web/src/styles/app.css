@@ -17,15 +17,12 @@
 @import "./own-projects-overlay.css";
 @import "./posts.css";
 @import "./referrals.css";
-
 @import "./settings.css";
 @import "./comments.css";
 @import "./ideas.css";
-
 @import "./templates.css";
-
 @import "./timeline.css";
-
+@import "./report.css";
 
 @layer base {
   html {
