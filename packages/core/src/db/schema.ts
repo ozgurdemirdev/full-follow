@@ -2,11 +2,11 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, TASK_KINDS, DEFAULT_TASK_KIND, COMMENT_TARGETS, LINK_TARGETS,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES, FILE_TARGETS,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES, GOAL_METRICS,
+  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -240,7 +240,8 @@ export const tasks = sqliteTable("tasks", {
   due_date: text("due_date"),
   /** "HH:MM" on the due date; null = sometime that day */
   due_time: text("due_time"),
-  kind: text("kind", { enum: TASK_KINDS }).notNull().default(DEFAULT_TASK_KIND),
+  /** gorusme | takip | gorev: the calendar module validates it */
+  kind: text("kind").notNull().default("gorev"),
   done_at: text("done_at"),
   person_id: integer("person_id").references(() => people.id),
   company_id: integer("company_id").references(() => companies.id),
@@ -268,7 +269,7 @@ export const daily_goals = sqliteTable("daily_goals", {
   days: text("days").notNull().default("1,2,3,4,5,6,7"),
   channel: text("channel", { enum: CHANNELS }),
   /** counts new records of the day by itself (instead of a channel); a goal has a channel or a metric, not both */
-  metric: text("metric", { enum: GOAL_METRICS }),
+  metric: text("metric"),
   /** kalıcı not (örn. kişiye özel not yaz) */
   note: text("note"),
 });

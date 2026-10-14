@@ -1,0 +1,29 @@
+{
+  "name": "@fullfollow/mod-calendar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Full Follow calendar module: tasks, daily goals, the day plan and the calendar feed",
+  "fullfollow": { "module": "calendar" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./server": { "types": "./dist/server/index.d.ts", "default": "./dist/server/index.js" }
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fullfollow/core": "*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.5"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^5.0.3"
+  }
+}

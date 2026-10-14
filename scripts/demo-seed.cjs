@@ -3,7 +3,8 @@
 // Every name, company and number here is fictional.
 const fs = require("node:fs");
 const path = require("node:path");
-const { createCore, openDb } = require("../packages/core/dist/index.js");
+const { openDb } = require("../packages/core/dist/index.js");
+const { createApp } = require("../packages/app/dist/index.js");
 
 const TODAY = new Date().toISOString().slice(0, 10);
 const file = path.resolve(__dirname, "../data/demo.db");
@@ -16,10 +17,10 @@ const shift = (days) => {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 };
-// A core whose clock sits `days` from today, so history spreads over the past weeks
+// The app (core plus installed modules) whose clock sits `days` from today, so history spreads over the past weeks
 const at = (days, actor = "ozgur") => {
   const day = shift(days);
-  return createCore(handle, actor, { today: () => day, now: () => `${day}T09:30:00Z` });
+  return createApp(handle, actor, { today: () => day, now: () => `${day}T09:30:00Z` });
 };
 const core = at(0);
 
@@ -109,13 +110,14 @@ pay(-40, shop.id, 1);
 at(-20).projects.move(projectOf(shop.id), { stage: "test_surumu" });
 pay(-19, dealer.id, 0);
 
-const task = (title, days, extra) => core.tasks.create({ title, due_date: shift(days), ...extra });
+const calendar = core.mod("calendar");
+const task = (title, days, extra) => calendar?.tasks.create({ title, due_date: shift(days), ...extra });
 task("Klinik teklifi için dönüş al", 0, { opportunity_id: clinic.id });
 task("Vardiya paneli için örnek ekran hazırla", 1, { opportunity_id: shifts.id });
 task("Pera Butik test sürümünü mağazaya yükle", 2, { project_id: projectOf(shop.id) });
 task("Ali Bey'e teşekkür et, yeni tanıştırmaları sor", 3, { person_id: ali.id });
 
-core.goals.create({ title: "Yeni temas", target: 5, days: [1, 2, 3, 4, 5] });
+calendar?.goals.create({ title: "Yeni temas", target: 5, days: [1, 2, 3, 4, 5] });
 
 // The assistant prepares follow-ups; a person approves before anything is sent
 const claude = at(0, "claude");

@@ -1,10 +1,12 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, parse, stamp, type Ctx } from "../context";
-import { tasks } from "../db/schema";
-import { parseQuickTask } from "../quickAdd";
-import { taskCreate, taskQuick, taskUpdate } from "../schemas";
-import { link, requireRow, truncate } from "./shared";
-import { Bin } from "./trash";
+import {
+  Bin, bool, eventLink as link, FFError, has, page, parse, requireRow, row, rows, schema, stamp, truncate, writeEvent as emit,
+  type Ctx, type ListOpts, type NextTask, type TaskListRow,
+} from "@fullfollow/core";
+import { parseQuickTask } from "./quickAdd";
+import { taskCreate, taskQuick, taskUpdate } from "./schemas";
+
+const { tasks } = schema;
 
 function checkTargets(ctx: Ctx, d: { person_id?: number | null; company_id?: number | null; opportunity_id?: number | null; project_id?: number | null }) {
   const set = [d.person_id, d.company_id, d.opportunity_id, d.project_id].filter(Boolean).length;
@@ -61,5 +63,29 @@ export function tasksService(ctx: Ctx) {
     });
   }
 
-  return { create, quick, update, remove };
+  /** Filters: all, done, assignee, overdue, due (due today or earlier), person_id, company_id, opportunity_id, project_id; open tasks by default */
+  function list(o: ListOpts): { rows: TaskListRow[]; total: number } {
+    const f = o.filter ?? {};
+    const today = ctx.clock.today();
+    let items = rows(ctx, `
+      SELECT t.*, p.name AS person_name, co.name AS company_name, op.title AS opportunity_title, pr.name AS project_name
+      FROM tasks t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies co ON co.id = t.company_id LEFT JOIN opportunities op ON op.id = t.opportunity_id
+      LEFT JOIN projects pr ON pr.id = t.project_id
+      ORDER BY (t.due_date IS NULL), t.due_date, t.id`);
+    const wantDone = bool(f.done);
+    if (!bool(f.all)) items = items.filter((t) => (wantDone ? !!t.done_at : !t.done_at));
+    if (f.assignee) items = items.filter((t) => t.assignee === f.assignee);
+    if (bool(f.overdue)) items = items.filter((t) => t.due_date && t.due_date < today);
+    if (bool(f.due)) items = items.filter((t) => t.due_date && t.due_date <= today);
+    for (const k of ["person_id", "company_id", "opportunity_id", "project_id"]) if (f[k]) items = items.filter((t) => t[k] === Number(f[k]));
+    items = items.filter((t) => has(o.q, t.title, t.person_name, t.company_name, t.opportunity_title, t.project_name));
+    return page(items, o.limit, o.offset);
+  }
+
+  /** The open task of a project that is due first (undated ones last) */
+  function next(projectId: number): NextTask | null {
+    return row<NextTask>(ctx, "SELECT id, title, due_date, assignee, created_by FROM tasks WHERE project_id = ? AND done_at IS NULL ORDER BY (due_date IS NULL), due_date, id LIMIT 1", projectId) ?? null;
+  }
+
+  return { create, quick, update, remove, list, next };
 }

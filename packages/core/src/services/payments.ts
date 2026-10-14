@@ -7,6 +7,23 @@ import { z } from "zod";
 import { link, requireRow } from "./shared";
 import { Bin } from "./trash";
 
+export interface DuePayment {
+  id: number;
+  project_id: number;
+  project_name: string;
+  milestone: string;
+  expected_amount: number;
+  paid_amount: number;
+  done: boolean;
+}
+
+/** Payments whose due date falls in the range (paid ones too, they show as done); the calendar feed reads this */
+export function paymentsDue(ctx: Ctx, from: string, to: string): (DuePayment & { due_date: string })[] {
+  return rows(ctx, `SELECT p.id, p.project_id, pr.name AS project_name, p.milestone, p.expected_amount, p.paid_amount, p.due_date, p.paid_amount >= p.expected_amount AS done
+    FROM payments p JOIN projects pr ON pr.id = p.project_id WHERE p.due_date BETWEEN ? AND ? ORDER BY p.id`, from, to)
+    .map((r) => ({ ...r, done: !!r.done }));
+}
+
 export type PaymentStatus = "odendi" | "kismi" | "gecikmis" | "bekliyor";
 
 /** Durum saklanmaz, hesaplanır */

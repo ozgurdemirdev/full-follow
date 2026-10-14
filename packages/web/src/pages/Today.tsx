@@ -37,11 +37,11 @@ export default function Today() {
         !today.error && <PageSkeleton />
       ) : (
         <>
-          <GoalMeters plan={d.plan} sent={d.week.sent} target={d.network.settings.weekly_target} />
+          {d.plan ? <GoalMeters plan={d.plan} sent={d.week.sent} target={d.network.settings.weekly_target} /> : null}
           <Asks />
           <Masonry columns={DASH_COLUMNS} pinned={BOARD_COLUMNS}>
             {d.review.ready ? <ReviewCard key="review" /> : null}
-            <PlanCard key="plan" plan={d.plan} />
+            {d.plan ? <PlanCard key="plan" plan={d.plan} /> : null}
             <DraftsCard key="drafts" list={d.drafts} />
             <AwaitingCard key="awaiting" list={d.network.awaiting} waitDays={d.network.settings.reply_wait_days} />
             {d.followups.total ? <FollowupsDueCard key="followups-due" list={d.followups} /> : null}

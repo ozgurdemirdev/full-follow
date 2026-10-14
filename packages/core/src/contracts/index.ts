@@ -22,8 +22,14 @@
  *   export interface ModuleEvents { "opportunity.won": OpportunityWon }
  */
 
+import type { CalendarApi } from "./calendar";
+
+export type * from "./calendar";
+
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
-export interface ModuleApis {}
+export interface ModuleApis {
+  calendar: CalendarApi;
+}
 
 /** Event name to its payload type. Names not listed here are accepted with an `unknown` payload. */
 export interface ModuleEvents {}

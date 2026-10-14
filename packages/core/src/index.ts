@@ -16,14 +16,12 @@ import { linksService } from "./services/links";
 import { filesService } from "./services/files";
 import { offersService } from "./services/offers";
 import { oppPeopleService } from "./services/oppPeople";
-import { goalsService } from "./services/goals";
 import { notesService } from "./services/notes";
 import { entityHandler, isCoreType, normalizeType, resolveId } from "./services/records";
 import { sectorsService } from "./services/sectors";
 import { reportsService } from "./services/reports";
 import { settingsService } from "./services/settings";
 import { resolveInput, resolveRef } from "./services/shared";
-import { tasksService } from "./services/tasks";
 import { todayService } from "./services/today";
 import { touchesService } from "./services/touches";
 import { postsService } from "./services/posts";
@@ -41,7 +39,6 @@ import type { SaveResult } from "./modules/types";
 
 export * from "./constants";
 export * from "./dates";
-export { parseQuickTask, taskKindOf, type QuickTask } from "./quickAdd";
 export { openDb, defaultDbPath, loadRootEnv, backupDb, type DbHandle, type Db } from "./db/client";
 export { FFError, systemClock, type Clock, type ListOpts, type ErrorCode, type DuplicateHit } from "./context";
 export { paymentStatus } from "./services/payments";
@@ -50,6 +47,18 @@ export type { TrashItem } from "./services/trash";
 
 export * from "./modules";
 export type * from "./contracts";
+
+// ---- What a module's services and server code build on ("service kit") ----
+export { emit as writeEvent, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
+export { requireRow, truncate, link as eventLink } from "./services/shared";
+export { Bin } from "./services/trash";
+export { bool, has } from "./services/directory";
+export { outgoingMessageCounts } from "./services/quota";
+export { paymentsDue, type DuePayment } from "./services/payments";
+export { followUpsDue, type DueFollowUp } from "./services/followups";
+export * as schema from "./db/schema";
+export * as zodKit from "./schemas/kit";
+export type { Q } from "./db/client";
 export { APP_TOKEN, intId, listOpts, withList } from "./http";
 
 /** Toplu kayıt sonucu: eklenenler, mükerrer diye atlananlar, hata verenler (sıra numarasıyla) */
@@ -78,7 +87,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const drafts = draftsService(ctx);
   const projects = projectsService(ctx);
   const payments = paymentsService(ctx);
-  const tasks = tasksService(ctx);
   const comments = commentsService(ctx);
   const sectors = sectorsService(ctx);
   const notes = notesService(ctx);
@@ -86,7 +94,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const oppPeople = oppPeopleService(ctx);
   const offers = offersService(ctx);
   const files = filesService(ctx);
-  const goals = goalsService(ctx);
   const settings = settingsService(ctx);
   const queries = queriesService(ctx);
   const reports = reportsService(ctx);
@@ -125,7 +132,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "tag": return nid ? tags.update(nid, d) : tags.create(d);
       case "opportunity": return nid ? opportunities.update(nid, d) : opportunities.create(d);
       case "project": return nid ? projects.update(nid, d) : projects.create(d);
-      case "task": return nid ? tasks.update(nid, d) : tasks.create(d);
       case "payment": return nid ? payments.update(nid, d) : payments.create(d);
       case "draft": return nid ? drafts.update(nid, d) : drafts.create(d);
       case "touch": return nid ? touches.update(nid, d) : touches.create(d);
@@ -133,8 +139,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
       case "link": return nid ? links.update(nid, d) : links.create(d);
       case "offer": return nid ? offers.update(nid, d) : offers.create(d);
-      case "goal": return nid ? goals.update(nid, d) : goals.create(d);
-      case "goal_log": return goals.log(nid ? { ...d, goal_id: nid } : d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
       case "post": return nid ? posts.update(nid, d) : posts.create(d);
@@ -194,7 +198,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "sector": return { ...sectors.remove(nid), trash: { type: "sector", id: nid } };
       case "opportunity": return opportunities.remove(nid);
       case "project": return projects.remove(nid);
-      case "task": return tasks.remove(nid);
       case "payment": return payments.remove(nid);
       case "draft": return drafts.remove(nid);
       case "touch": return touches.remove(nid);
@@ -202,8 +205,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
       case "offer": return offers.remove(nid);
-      case "goal": return goals.remove(nid);
-      case "goal_log": throw new FFError("validation", "ilerleme silinmez; count:0 ile sıfırla");
       case "post": return posts.remove(nid);
       case "template": return templates.remove(nid);
       case "idea": return ideas.remove(nid);
@@ -263,7 +264,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     /** alias or name to the canonical record type; unknown types and types of modules that are not installed are a clear error */
     normalizeType: typeOf,
     // yazma servisleri (REST controller'ları ve testler kullanır)
-    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, tasks, comments, settings, sectors, notes, links, goals,
+    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, comments, settings, sectors, notes, links,
     oppPeople, offers, files,
     posts, templates, ideas, ownProjects, chat,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti

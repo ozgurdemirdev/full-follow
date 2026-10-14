@@ -1,4 +1,5 @@
-import { DEFAULT_TASK_KIND, TASK_KIND_KEYWORDS, type TaskKind } from "./constants";
+import type { TaskKind } from "@fullfollow/core";
+import { DEFAULT_TASK_KIND, TASK_KIND_KEYWORDS } from "./constants";
 
 /** A leading or trailing time: "14:00", "9.30" (hour 0 to 23, minutes two digits) */
 const LEADING_TIME = /^\s*([01]?\d|2[0-3])[:.]([0-5]\d)(?:\s+|$)/;

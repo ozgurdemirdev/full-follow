@@ -1,56 +1,21 @@
 import { eq } from "drizzle-orm";
-import { BULK_SKIPPED_EVENT } from "../constants";
-import { addDays, daysBetween } from "../dates";
-import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
-import { daily_goals, goal_logs } from "../db/schema";
-import { goalCreate, goalLogInput, goalUpdate } from "../schemas";
-import { followUpsDue, paymentsDue, TASK_ORDER_SQL } from "./calendarFeed";
-import { outgoingMessageCounts } from "./quota";
-import { requireRow, truncate } from "./shared";
-import { Bin } from "./trash";
+import {
+  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, followUpsDue, has, isoWeekday, outgoingMessageCounts, page, parse, paymentsDue, requireRow, row, rows, schema, stamp,
+  truncate, writeEvent as emit, type CalendarDay, type CalendarTask, type Ctx, type DayPlan, type GoalDay, type GoalRecord, type ListOpts,
+} from "@fullfollow/core";
+import { MAX_CALENDAR_DAYS, STREAK_LOOKBACK_DAYS, TASK_ORDER_SQL } from "./constants";
+import { goalCreate, goalLogInput, goalUpdate } from "./schemas";
 
-interface GoalRow {
-  id: number;
-  title: string;
-  target: number;
-  days: string;
-  channel: string | null;
-  metric: string | null;
-  note: string | null;
-  created_at: string;
-}
+const { daily_goals, goal_logs } = schema;
 
-export interface GoalDay {
-  id: number;
-  title: string;
-  target: number;
-  channel: string | null;
-  /** what the goal counts by itself instead of a channel (new_records) */
-  metric: string | null;
-  manual: number;
-  auto: number;
-  /** new_records goals: duplicates skipped by bulk saves that day */
-  duplicates: number;
-  done: number;
-  complete: boolean;
-  /** the day's note */
-  note: string | null;
-  /** the goal's permanent note */
-  goal_note: string | null;
-}
+type GoalRow = GoalRecord;
 
-/** Longest calendar range in one call (about three months) */
-const MAX_CALENDAR_DAYS = 92;
-/** How far back the streak looks */
-const STREAK_LOOKBACK_DAYS = 365;
-
-/** ISO weekday: 1 = Monday ... 7 = Sunday */
-export const isoWeekday = (date: string) => ((new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
 const mondayOf = (date: string) => addDays(date, -(isoWeekday(date) - 1));
 /** A goal applies on a day if the weekday is in its repeat list and the goal already existed */
 const appliesOn = (g: GoalRow, date: string) => g.days.split(",").includes(String(isoWeekday(date))) && date >= g.created_at.slice(0, 10);
 
 /** New people and companies created per day (date → count); deleted records are gone from the tables, so they do not count */
+// TODO(modules): via ctx.mod("people") and ctx.mod("companies")
 function newRecordCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
   const list = rows<{ d: string; n: number }>(ctx, `SELECT d, SUM(n) AS n FROM (
       SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM people GROUP BY d
@@ -86,6 +51,7 @@ export function goalsService(ctx: Ctx) {
   function days(from: string, to: string): { date: string; goals: GoalDay[] }[] {
     const goals = all();
     // outgoing messages on the goal's channel and new records count by themselves
+    // TODO(modules): via ctx.mod("drafts") quota
     const auto = outgoingMessageCounts(ctx, from, to);
     const wantsRecords = goals.some((g) => g.metric === "new_records");
     const added = wantsRecords ? newRecordCounts(ctx, from, to) : new Map<string, number>();
@@ -127,7 +93,7 @@ export function goalsService(ctx: Ctx) {
   }
 
   /** The day's plan: goals plus tasks due that day (today also lists overdue open tasks) */
-  function plan(date?: string) {
+  function plan(date?: string): DayPlan {
     const today = ctx.clock.today();
     const d = date ?? today;
     const goals = days(d, d)[0].goals;
@@ -137,11 +103,13 @@ export function goalsService(ctx: Ctx) {
   }
 
   /** Calendar: goal fill rate, tasks (timed first), payments due and follow-ups due for every day in the range */
-  function calendar(from: string, to: string) {
+  function calendar(from: string, to: string): CalendarDay[] {
     if (from > to || daysBetween(from, to) >= MAX_CALENDAR_DAYS) throw new FFError("validation", `takvim aralığı en fazla ${MAX_CALENDAR_DAYS} gün olabilir`);
-    const taskRows = rows<{ id: number; title: string; due_date: string; due_time: string | null; kind: string; done_at: string | null }>(ctx,
+    const taskRows = rows<CalendarTask & { due_date: string }>(ctx,
       `SELECT id, title, due_date, due_time, kind, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY ${TASK_ORDER_SQL}`, from, to);
+    // TODO(modules): via ctx.mod("projects") payments due
     const payments = paymentsDue(ctx, from, to);
+    // TODO(modules): via ctx.mod("drafts") follow-ups due
     const followUps = followUpsDue(ctx, from, to);
     return days(from, to).map((d) => {
       const target = d.goals.reduce((s, g) => s + g.target, 0);
@@ -217,5 +185,20 @@ export function goalsService(ctx: Ctx) {
     return all().map((g) => ({ ...g, today: state.get(g.id) ?? null }));
   }
 
-  return { create, update, remove, log, plan, calendar, list };
+  /** Manual counts and day notes per goal and day; filter: {goal_id, from, to} */
+  function logList(o: ListOpts) {
+    const f = o.filter ?? {};
+    let items = rows(ctx, "SELECT l.*, g.title AS goal_title FROM goal_logs l JOIN daily_goals g ON g.id = l.goal_id ORDER BY l.date DESC, l.id DESC");
+    if (f.goal_id) items = items.filter((l) => l.goal_id === Number(f.goal_id));
+    if (f.from) items = items.filter((l) => l.date >= f.from);
+    if (f.to) items = items.filter((l) => l.date <= f.to);
+    return page(items.filter((l) => has(o.q, l.goal_title, l.note)), o.limit, o.offset);
+  }
+
+  /** Goals matching a text search, each with today's state */
+  function find(o: ListOpts) {
+    return page(list().filter((x) => has(o.q, x.title, x.note)), o.limit, o.offset);
+  }
+
+  return { create, update, remove, log, plan, calendar, list, find, logList };
 }

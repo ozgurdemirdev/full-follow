@@ -86,11 +86,7 @@ describe("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
     ozgur.remove("person", p.id);
     expect(dupOf(() => ozgur.people.create({ name: "Başka Zeynep", email: "Z@gulus.com" }))).toMatchObject({ id: p.id, field: "e-posta", in_trash: true });
 
-    // her kart türü çöp kutusundan döner (görev, firma)
-    const task = ozgur.tasks.create({ title: "ara" }).row;
-    ozgur.remove("task", task.id);
-    ozgur.restore("task", task.id);
-    expect(sql("SELECT title FROM tasks WHERE id = ?", task.id)[0].title).toBe("ara");
+    // her kart türü çöp kutusundan döner (firma; görev ve paylaşım modüllerinin testinde)
     ozgur.remove("company", co.id);
     ozgur.restore("company", co.id);
     expect(sql("SELECT name FROM companies WHERE id = ?", co.id)[0].name).toBe("Gülüş Diş");
@@ -171,7 +167,7 @@ describe("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
   });
   it("linkler: fırsat linkleri projede de görünür, fırsatla birlikte çöp kutusuna gider", () => {
     const p = ozgur.people.create({ name: "Deniz" }).row;
-    const o = claude.save("opportunity", { title: "Örnek Pizza", person: "Deniz", source: "LinkedIn", stage: "teklif" }).row;
+    const o = claude.save("opportunity", { title: "Pizza Z", person: "Deniz", source: "LinkedIn", stage: "teklif" }).row;
     const deck = claude.save("link", { target_type: "opportunity", target_id: o.id, label: "Teklif sunumu", url: "https://example.com/deck" }).row;
     expect(deck.created_by).toBe("claude");
     expect(() => claude.save("link", { target_type: "opportunity", target_id: o.id, label: "x", url: "olmayan link" })).toThrow(FFError);

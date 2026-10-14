@@ -43,6 +43,9 @@ export function dayOf(iso: string): string {
   return iso.length <= 10 ? iso : localDate(new Date(iso));
 }
 
+/** ISO weekday: 1 = Monday ... 7 = Sunday */
+export const isoWeekday = (date: string) => ((new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+
 /** İki gün arası fark (b − a), gün olarak */
 export function daysBetween(a: string, b: string): number {
   const t = (s: string) => {

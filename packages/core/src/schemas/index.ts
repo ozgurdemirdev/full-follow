@@ -1,31 +1,12 @@
 import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  ASSIGNEES, TASK_KINDS, DEFAULT_TASK_KIND, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS, GOAL_METRICS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
+  COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  CONTACT_STATUSES, TAG_COLORS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
 } from "../constants";
-import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
+import * as zodKit from "./kit";
 
-const id = z.coerce.number().int().positive();
-const text = z.string().trim().min(1);
-const optText = z.string().trim().nullish().transform((v) => (v ? v : null));
-const tl = z.coerce.number().int().min(0);
-
-/** YYYY-MM-DD; "bugün", "yarın", "+3g" gibi kısa biçimler de kabul edilir. Boş değer = temizle. */
-const date = z.preprocess(
-  (v) => (v === "" ? null : resolveRelativeDate(v)),
-  z.string().refine(isIsoDate, "tarih YYYY-MM-DD olmalı").nullable(),
-);
-/** HH:MM, 00:00 to 23:59. Empty value = clear. */
-const TIME_RE = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
-const time = z.preprocess((v) => (v === "" ? null : v), z.string().regex(TIME_RE, "saat HH:MM olmalı (00:00 ile 23:59 arası)").nullable());
-const dateTime = z.preprocess(
-  (v) => resolveRelativeDate(v),
-  z.string().refine(isIsoDateTime, "tarih ISO olmalı"),
-);
-
-/** create şemasını güncellemeye çevirir: alanlar opsiyonel */
-const patch = <T extends z.ZodRawShape>(shape: T) => z.strictObject(shape).partial();
+const { id, text, optText, tl, date, dateTime, patch } = zodKit;
 
 /** Etiket ya da sektör: id, ad ("Sıcak") ya da sektör yolu ("Sağlık > Diş hekimi") */
 const refList = z.array(z.union([z.number().int().positive(), z.string().trim().min(1)]));
@@ -333,32 +314,6 @@ export const paymentUpdate = patch({
   paid_at: date,
 });
 
-export const taskCreate = z.strictObject({
-  title: text,
-  assignee: z.enum(ASSIGNEES).default("ozgur"),
-  due_date: date.optional(),
-  due_time: time.optional(),
-  kind: z.enum(TASK_KINDS).default(DEFAULT_TASK_KIND),
-  person_id: id.nullish(),
-  company_id: id.nullish(),
-  opportunity_id: id.nullish(),
-  project_id: id.nullish(),
-});
-/** Calendar quick add: one line of text, the time and kind are read from it */
-export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(ASSIGNEES).default("ozgur") });
-export const taskUpdate = patch({
-  title: text,
-  assignee: z.enum(ASSIGNEES),
-  due_date: date,
-  due_time: time,
-  kind: z.enum(TASK_KINDS),
-  person_id: id.nullable(),
-  company_id: id.nullable(),
-  opportunity_id: id.nullable(),
-  project_id: id.nullable(),
-  done: z.boolean(),
-});
-
 export const commentCreate = z.strictObject({
   target_type: z.enum(COMMENT_TARGETS).optional(),
   target_id: id.optional(),
@@ -375,34 +330,3 @@ export const stageMove = z.strictObject({
 
 export const oppStageEnum = z.enum(OPP_STAGES);
 export const projectStageEnum = z.enum(PROJECT_STAGES);
-
-// ---- Günlük iş planı ----
-/** Tekrar günleri: ISO numaraları dizisi (1 = pazartesi) ya da "her_gun" | "hafta_ici" | "hafta_sonu"; veritabanında virgüllü metin */
-const goalDays = z.union([z.enum(Object.keys(GOAL_DAY_PRESETS) as [keyof typeof GOAL_DAY_PRESETS, ...(keyof typeof GOAL_DAY_PRESETS)[]]), z.array(z.coerce.number().int().min(1).max(7)).min(1)])
-  .transform((v) => [...new Set(typeof v === "string" ? GOAL_DAY_PRESETS[v] : v)].sort().join(","));
-
-export const goalCreate = z.strictObject({
-  title: text,
-  target: z.coerce.number().int().positive(),
-  days: goalDays.default("1,2,3,4,5,6,7"),
-  channel: z.enum(CHANNELS).nullish(),
-  metric: z.enum(GOAL_METRICS).nullish(),
-  note: optText,
-});
-export const goalUpdate = patch({
-  title: text,
-  target: z.coerce.number().int().positive(),
-  days: goalDays,
-  channel: z.enum(CHANNELS).nullable(),
-  metric: z.enum(GOAL_METRICS).nullable(),
-  note: optText,
-});
-
-/** Bir günün elle girilen sayısı: add = üstüne ekle, count = o günün sayısını belirle; note = o güne not */
-export const goalLogInput = z.strictObject({
-  goal_id: id,
-  date: date.optional(),
-  add: z.coerce.number().int().optional(),
-  count: z.coerce.number().int().min(0).optional(),
-  note: z.string().trim().nullish(),
-});

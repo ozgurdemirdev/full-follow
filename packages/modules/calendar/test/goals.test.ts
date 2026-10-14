@@ -1,17 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createCore, FFError, openDb, type Clock } from "../src";
+import { FFError, openDb, type Clock } from "@fullfollow/core";
+import { appFor, type TestApp } from "./helpers";
 
 describe("Günlük iş planı", () => {
   // 2026-10-09 is a Friday
   let day = "2026-10-09";
   const clock: Clock = { today: () => day, now: () => `${day}T10:00:00Z` };
-  let ozgur: ReturnType<typeof createCore>;
-  let claude: ReturnType<typeof createCore>;
+  let ozgur: TestApp;
+  let claude: TestApp;
   beforeEach(() => {
     day = "2026-10-09";
     const h = openDb(":memory:");
-    ozgur = createCore(h, "ozgur", clock);
-    claude = createCore(h, "claude", clock);
+    ozgur = appFor(h, "ozgur", clock);
+    claude = appFor(h, "claude", clock);
   });
   const mail = (to: string, at: string) => ozgur.touches.create({ contact: to, channel: "email", direction: "giden", summary: "cold mail", happened_at: at });
 

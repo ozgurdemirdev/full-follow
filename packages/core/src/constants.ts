@@ -11,7 +11,7 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
-export const CORE_TRASH_TYPES = ["person", "company", "opportunity", "project", "task", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "goal", "own_project", "opportunity_person", "offer", "file"] as const;
+export const CORE_TRASH_TYPES = ["person", "company", "opportunity", "project", "touch", "note", "post", "template", "idea", "draft", "payment", "comment", "interest", "link", "own_project", "opportunity_person", "offer", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -30,15 +30,6 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number];
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
 export const ASSIGNEES = ACTORS;
-/** Task kinds (payments and follow-ups are derived kinds of the calendar feed, not task kinds) */
-export const TASK_KINDS = ["gorusme", "takip", "gorev"] as const;
-export type TaskKind = (typeof TASK_KINDS)[number];
-export const DEFAULT_TASK_KIND: TaskKind = "gorev";
-/** Words that make a quick added task a meeting or a follow-up (lower case, matched inside the text); the first matching kind wins */
-export const TASK_KIND_KEYWORDS: readonly { kind: TaskKind; words: readonly string[] }[] = [
-  { kind: "gorusme", words: ["görüşme", "toplantı", "call", "arama"] },
-  { kind: "takip", words: ["takip", "dönüş"] },
-];
 export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea", "own_project"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
 /** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */
@@ -51,13 +42,11 @@ export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 /** Record types that belong to a feature module, and the module key that owns each: names the missing module in the error when it is not installed */
-export const MODULE_TYPE_OWNER = {} as const;
+export const MODULE_TYPE_OWNER = { task: "calendar", goal: "calendar", goal_log: "calendar" } as const;
 
 export const RECORD_TYPES = [
-  "person", "company", "opportunity", "project", "task", "draft", "payment", "source", "comment", "touch", "setting",
+  "person", "company", "opportunity", "project", "draft", "payment", "source", "comment", "touch", "setting",
   "sector", "note", "tag", "trash", "link", "offer",
-  // günlük iş planı
-  "goal", "goal_log",
   // Paket 2: pazarlama
   "post", "template", "idea", "interest",
   // kendi projelerim
@@ -68,13 +57,12 @@ export type RecordType = (typeof RECORD_TYPES)[number];
 export const TYPE_ALIASES: Record<string, RecordType> = {
   opp: "opportunity", fırsat: "opportunity", firsat: "opportunity",
   kisi: "person", kişi: "person", people: "person",
-  firma: "company", proje: "project", gorev: "task", görev: "task",
+  firma: "company", proje: "project",
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
   yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
   sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
   paylasim: "post", paylaşım: "post", posts: "post", sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
-  hedef: "goal", hedefler: "goal", goals: "goal", ilerleme: "goal_log", progress: "goal_log",
   own: "own_project", own_projects: "own_project", kendi_proje: "own_project", "kendi projem": "own_project", projelerim: "own_project", urunum: "own_project",
   etiket: "tag", tags: "tag", companies: "company", firmalar: "company", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
 };
@@ -164,15 +152,9 @@ export const REVIEW_MAX_SUGGESTIONS = 4;
 export const REVIEW_WEEKDAY = 5;
 export const WEEK_DAYS = 7;
 
-// ---- Günlük iş planı ----
-/** Hafta günleri ISO numarasıyla (1 = pazartesi); hedef tekrarı bu numaraların virgüllü listesidir */
-export const GOAL_DAY_PRESETS = { her_gun: [1, 2, 3, 4, 5, 6, 7], hafta_ici: [1, 2, 3, 4, 5], hafta_sonu: [6, 7] } as const;
-/** What a goal counts by itself besides a channel: new people and companies created that day (deleted ones are gone from the tables) */
-export const GOAL_METRICS = ["new_records"] as const;
-export type GoalMetric = (typeof GOAL_METRICS)[number];
+// ---- Bulk saves ----
 /** Event written once per bulk save that skipped duplicates; data: { record_type, count, keys } */
 export const BULK_SKIPPED_EVENT = "bulk.skipped";
-export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
 
 // ---- Panel chat ----
 /** Models the panel chat may use; context is the window the CLI assumes (it warns "not in catalog" for Haiku 5.5 and auto compacts at 200K); ids are passed to the Claude CLI, so they come only from this list */

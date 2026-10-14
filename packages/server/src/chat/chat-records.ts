@@ -47,7 +47,7 @@ function card(core: Core, type: CardType, id: number, personId?: number): Row {
     }
     case "goal": {
       const r = core.get("goal", id).row as Row;
-      const today = core.goals.plan().goals.find((g: Row) => g.id === id);
+      const today = core.mod("calendar")?.plan().goals.find((g: Row) => g.id === id);
       return { title: r.title, target: r.target, done: today?.done ?? 0 };
     }
     case "person": {

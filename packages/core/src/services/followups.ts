@@ -1,10 +1,30 @@
-import { label } from "../constants";
+import { label, OPEN_OPP_STAGES } from "../constants";
 import { dayOf, daysBetween } from "../dates";
 import { row, rows, type Ctx } from "../context";
 import { draftsService } from "./drafts";
 import { marketingSettings } from "./settings";
 import { subjectWhere } from "./subject";
 import { renderTemplate, suggestTemplates } from "./templates";
+
+export interface DueFollowUp {
+  type: "person" | "opportunity";
+  id: number;
+  name: string;
+  /** an outgoing touch on or after the follow-up date */
+  done: boolean;
+}
+
+/** Follow-up dates of people and open opportunities in the range; the calendar feed reads this */
+export function followUpsDue(ctx: Ctx, from: string, to: string): (DueFollowUp & { date: string })[] {
+  const open = OPEN_OPP_STAGES.map(() => "?").join(",");
+  const people = rows<DueFollowUp & { date: string }>(ctx, `SELECT 'person' AS type, p.id, p.name, substr(p.next_follow_up_at, 1, 10) AS date,
+      EXISTS (SELECT 1 FROM touches t WHERE t.person_id = p.id AND t.direction = 'giden' AND substr(t.happened_at, 1, 10) >= substr(p.next_follow_up_at, 1, 10)) AS done
+    FROM people p WHERE substr(p.next_follow_up_at, 1, 10) BETWEEN ? AND ?`, from, to);
+  const opps = rows<DueFollowUp & { date: string }>(ctx, `SELECT 'opportunity' AS type, o.id, o.title AS name, substr(o.next_follow_up_at, 1, 10) AS date,
+      EXISTS (SELECT 1 FROM touches t WHERE (t.opportunity_id = o.id OR t.person_id = o.person_id) AND t.direction = 'giden' AND substr(t.happened_at, 1, 10) >= substr(o.next_follow_up_at, 1, 10)) AS done
+    FROM opportunities o WHERE o.stage IN (${open}) AND substr(o.next_follow_up_at, 1, 10) BETWEEN ? AND ?`, ...OPEN_OPP_STAGES, from, to);
+  return [...people, ...opps].map((r) => ({ ...r, done: !!r.done }));
+}
 
 export interface FollowupDue {
   /** muhatap: kişi, firma ya da sadece adres (biri dolu) */

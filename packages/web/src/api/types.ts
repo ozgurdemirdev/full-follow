@@ -477,11 +477,12 @@ export interface TimelineEvent {
 }
 export interface Today {
   date: string;
-  plan: Plan;
+  /** day plan and tasks come from the calendar module: absent when it is not installed */
+  plan?: Plan;
   comments: List<Thread>;
   drafts: List<Draft>;
   follow_ups: { people: List<Person>; opportunities: List<Opportunity> };
-  tasks: List<Task>;
+  tasks?: List<Task>;
   payments: List<Payment>;
   window_end: string;
   week: {

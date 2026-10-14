@@ -7,7 +7,6 @@ import { FilesController } from "./controllers/files.controller";
 import { OffersController } from "./controllers/offers.controller";
 import { OpportunityPeopleController } from "./controllers/opportunity-people.controller";
 import { LinksController } from "./controllers/links.controller";
-import { GoalsController } from "./controllers/goals.controller";
 import { NotesController } from "./controllers/notes.controller";
 import { SectorsController } from "./controllers/sectors.controller";
 import { DraftsController } from "./controllers/drafts.controller";
@@ -17,7 +16,6 @@ import { PaymentsController } from "./controllers/payments.controller";
 import { PeopleController } from "./controllers/people.controller";
 import { ProjectsController } from "./controllers/projects.controller";
 import { SourcesController } from "./controllers/sources.controller";
-import { TasksController } from "./controllers/tasks.controller";
 import { TouchesController } from "./controllers/touches.controller";
 import { PostsController } from "./controllers/posts.controller";
 import { TemplatesController } from "./controllers/templates.controller";
@@ -35,8 +33,8 @@ import { moduleControllers } from "./modules.generated";
 @Module({
   controllers: [
     AuthController, MiscController, PeopleController, CompaniesController, SourcesController,
-    OpportunitiesController, ProjectsController, PaymentsController, TasksController, DraftsController,
-    TouchesController, CommentsController, SectorsController, NotesController, LinksController, FilesController, OffersController, OpportunityPeopleController, GoalsController,
+    OpportunitiesController, ProjectsController, PaymentsController, DraftsController,
+    TouchesController, CommentsController, SectorsController, NotesController, LinksController, FilesController, OffersController, OpportunityPeopleController,
     PostsController, TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,

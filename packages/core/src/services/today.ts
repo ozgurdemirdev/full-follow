@@ -1,11 +1,10 @@
 import { REVIEW_WEEKDAY } from "../constants";
-import { addDays, isoWeekOf } from "../dates";
+import { addDays, isoWeekday, isoWeekOf } from "../dates";
 import { row } from "../context";
 import type { Ctx } from "../context";
 import { networkLists, weekStats } from "./network";
 import { queriesService } from "./queries";
 import { followupsDue } from "./followups";
-import { goalsService, isoWeekday } from "./goals";
 import { quotaFor } from "./quota";
 
 /** "Bugün" ekranı: her bölüm {total, rows}, bölüm başına en fazla `limit` satır */
@@ -30,15 +29,11 @@ export function todayService(ctx: Ctx) {
     };
   }
 
-  const goals = goalsService(ctx);
-
   return function today(limit = 10) {
     const date = ctx.clock.today();
     const o = { limit };
     return {
       date,
-      // günlük iş planı: hedefler ve o günün görevleri
-      plan: goals.plan(date),
       // Claude'un cevap vermesi gereken yorumlar (son yorum Özgür'den)
       comments: q.comments({ ...o, filter: { unanswered: true } }),
       drafts: q.drafts({ ...o, filter: { status: "bekliyor" } }),
@@ -46,7 +41,6 @@ export function todayService(ctx: Ctx) {
         people: q.people({ ...o, filter: { follow_up_due: true } }),
         opportunities: q.opportunities({ ...o, filter: { due: true } }),
       },
-      tasks: q.tasks({ ...o, filter: { due: true } }),
       payments: q.payments({ ...o, filter: { due_within_days: 7 } }),
       window_end: addDays(date, 7),
       // network: cevap bekleyenler (kanal, gün, deneme) ve soğuyan bağlantılar
@@ -64,7 +58,7 @@ export function todayService(ctx: Ctx) {
       })(),
       // Claude'un MCP üzerinden yaptığı son işlem (bağlı mı, ne zaman çalıştı)
       claude_last_at: row<{ at: string | null }>(ctx, "SELECT MAX(created_at) AS at FROM events WHERE created_by = 'claude'")?.at ?? null,
-      // sections the installed modules add
+      // sections the installed modules add (the day plan and tasks of the calendar, ...)
       ...Object.assign({}, ...ctx.contrib("today").map((section) => section(ctx, { limit }))),
     };
   };

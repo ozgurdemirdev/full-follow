@@ -1,5 +1,5 @@
 /** Kısa düz metin çıktılar: boş alan yazılmaz, tek satır = tek kayıt */
-import { label, PLATFORM_LABEL, WEEKDAY_SHORT } from "@fullfollow/core";
+import { label, PLATFORM_LABEL, type McpDef, type McpEntityDoc, type McpFormat } from "@fullfollow/core";
 
 const thisYear = () => new Date().getFullYear();
 
@@ -13,12 +13,10 @@ export function cut(s: string | null | undefined, n = 60): string {
   const t = (s ?? "").replace(/\s+/g, " ").trim();
   return t.length > n ? t.slice(0, n - 1) + "…" : t;
 }
-const who = (a?: string) => (a === "claude" ? "Claude" : a === "ozgur" ? "Özgür" : a ?? "");
-const join = (...p: (string | number | null | undefined | false)[]) => p.filter((x) => x !== null && x !== undefined && x !== "" && x !== false).join(" · ");
+export const who = (a?: string) => (a === "claude" ? "Claude" : a === "ozgur" ? "Özgür" : a ?? "");
+export const join = (...p: (string | number | null | undefined | false)[]) => p.filter((x) => x !== null && x !== undefined && x !== "" && x !== false).join(" · ");
 
 type Row = Record<string, any>;
-
-const dayNames = (days: string) => (days === "1,2,3,4,5,6,7" ? "her gün" : days === "1,2,3,4,5" ? "hafta içi" : days.split(",").map((n) => WEEKDAY_SHORT[Number(n) - 1]).join(" "));
 
 const LINE: Record<string, (r: Row) => string> = {
   person: (r) => join(
@@ -44,7 +42,6 @@ const LINE: Record<string, (r: Row) => string> = {
     r.next_payment && `sıradaki: ${label(r.next_payment.milestone)} ${tl(r.next_payment.remaining)}${r.next_payment.due_date ? ` ${d(r.next_payment.due_date)}` : ""}`,
     r.next_task && `görev: ${cut(r.next_task.title, 40)}`,
   ),
-  task: (r) => join(`#${r.id} [${who(r.assignee)}] ${r.title}`, r.due_date && `son ${d(r.due_date)}${r.due_time ? ` ${r.due_time}` : ""}`, r.kind !== "gorev" && r.kind, r.done_at && "bitti", r.person_name || r.company_name || r.opportunity_title || r.project_name),
   draft: (r) => join(`#${r.id} ${r.to_name ?? r.person_name}`, label(r.channel), label(r.status), !!r.followup_step && `${r.followup_step}. takip`, `"${cut(r.body, 60)}"`, r.reject_note && `ret: ${cut(r.reject_note, 40)}`),
   payment: (r) => join(`#${r.id} ${r.project_name}`, label(r.milestone), `${tl(r.paid_amount)}/${tl(r.expected_amount)}`, r.due_date && `vade ${d(r.due_date)}`, r.status !== "bekliyor" && label(r.status === "odendi" ? "ödendi" : r.status === "kismi" ? "kısmi" : "gecikmiş")),
   touch: (r) => join(`#${r.id} ${d(r.happened_at)} ${r.direction} ${label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && "firma", cut(r.summary, 60), r.outcome && `→ ${cut(r.outcome, 30)}`, r.expects_reply && "cevap bekler"),
@@ -64,16 +61,31 @@ const LINE: Record<string, (r: Row) => string> = {
     `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
     !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${cut(r.problem, 50)}`),
   own_project: (r) => join(`#${r.id} ${r.name}`, label(r.status), `satılabilir: ${label(r.sellable)}`, `${r.open_ideas} açık fikir`, r.sectors?.map((x: Row) => x.path).join(", ")),
-  goal: (r) => join(`#${r.id} ${r.title}`, `günde ${r.target}`, dayNames(r.days), r.channel && `otomatik: ${label(r.channel)}`, r.metric && `otomatik: ${label(r.metric)}`, r.today && `bugün ${r.today.done}/${r.today.target}`, r.note && `not: ${cut(r.note, 40)}`),
-  goal_log: (r) => join(`#${r.id} ${r.goal_title} ${d(r.date)}`, `elle ${r.count}`, r.note && `not: ${cut(r.note, 50)}`),
   interest: (r) => join(`#${r.id} ${r.person_name}`, r.idea_title, label(r.interest), r.note && cut(r.note, 50)),
 };
 
 LINE.followup = (r) => join(r.person_id ? `kişi #${r.person_id} ${r.name}` : r.company_id ? `firma #${r.company_id} ${r.name}` : r.name, r.person_id && r.company_name, `${r.step}/${r.steps}. takip`, `${r.days}g cevapsız`, label(r.channel));
 
-export function line(type: string, r: Row): string {
-  return LINE[type](r);
+/** MCP output of the installed modules (set once by registerTools): record docs, relation names, today sections */
+let entityDocs: Record<string, McpEntityDoc> = {};
+let relationTypes: Record<string, string> = {};
+let todaySections: { at: number; render(t: any, f: McpFormat): string }[] = [];
+
+export function useMcpDefs(defs: McpDef[]) {
+  entityDocs = Object.assign({}, ...defs.map((d) => d.entities ?? {}));
+  relationTypes = Object.assign({}, ...defs.map((d) => d.relations ?? {}));
+  todaySections = defs.flatMap((d) => d.today ?? []);
 }
+
+export function line(type: string, r: Row): string {
+  return (LINE[type] ?? ((x: Row) => entityDocs[type].line(x, mcpFormat)))(r);
+}
+
+/** Short Turkish name of a record type in confirmations ("görev") */
+export const kindName = (type: string): string => KIND_NAME[type] ?? entityDocs[type]?.kind ?? type;
+
+/** What a module's formatters get to format like the core types do */
+export const mcpFormat: McpFormat = { d, tl, cut, who, join, label, line, section: (title, type, res) => sec(title, type, res) };
 
 export function list(type: string, res: { rows: Row[]; total: number }, offset = 0): string {
   if (!res.rows.length) return "kayıt yok";
@@ -98,7 +110,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     for (const c of row.comments) out.push(`#${c.id} ${who(c.created_by)} ${d(c.created_at)}: ${c.body}`);
     return out.join("\n");
   }
-  out.push(LINE[type] ? line(type, row) : `#${id} ${type}`);
+  out.push(LINE[type] || entityDocs[type] ? line(type, row) : `#${id} ${type}`);
   // satırda olmayan alanları ek satır olarak yaz
   const extra = Object.entries(row)
     .filter(([k, v]) => !SKIP.has(k) && v !== null && v !== "" && v !== undefined && typeof v !== "object")
@@ -116,6 +128,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
   }
   if (type === "idea" && row.problem) out.push(`sorun: ${row.problem}`);
   if (type === "post" && row.refresh_days) out.push(`yenileme: ${row.refresh_days} günde bir${row.refreshed_at ? ` · son ${d(row.refreshed_at)}` : ""}`);
+  out.push(...(entityDocs[type]?.details?.(row, mcpFormat) ?? []));
   if (type === "interest" && row.note) out.push(`not: ${row.note}`);
   if (row.notes) out.push(`not: ${row.notes}`);
   if (row.body) out.push(`metin: ${row.body}`);
@@ -128,7 +141,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     }
     const t = name === "people" && type === "idea" ? "interest"
       : name === "people" && type === "opportunity" ? "opp_person"
-      : ({ links: "link", notes: "note", touches: "touch", tasks: "task", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
+      : ({ ...relationTypes, links: "link", notes: "note", touches: "touch", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", posts: "post", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -141,27 +154,6 @@ export function timelineText(events: Row[]): string {
 
 const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =>
   res.total ? `${title} (${res.total}):\n` + res.rows.map((r) => "  " + line(type, r)).join("\n") + (res.total > res.rows.length ? `\n  … +${res.total - res.rows.length}` : "") : "";
-
-/** Auto count of a goal: `(otomatik 8)` for a channel, `(12 eklendi, 3 mükerrer atlandı)` for new records */
-const autoText = (g: Row) =>
-  g.metric === "new_records" ? (g.auto || g.duplicates ? ` (${g.auto} eklendi${g.duplicates ? `, ${g.duplicates} mükerrer atlandı` : ""})` : "") : g.auto ? ` (otomatik ${g.auto})` : "";
-
-/** Günün planı: hedefler (yapılan/hedef), o günün görevleri, seri ve haftalık oran */
-export function planText(p: any): string {
-  const goals = p.goals.map((g: Row) => `  #${g.id} ${g.title} ${g.done}/${g.target}${g.complete ? " ✓" : ""}${autoText(g)}${g.note ? ` · not: ${cut(g.note, 50)}` : ""}`);
-  const tasks = p.tasks.map((t: Row) => "  " + line("task", t));
-  const head = join(`PLAN ${p.date}`, p.streak ? `seri ${p.streak} gün` : "", p.week_ratio !== null && p.week_ratio !== undefined && `hafta %${Math.round(p.week_ratio * 100)}`);
-  return [head, goals.length ? `Hedef:\n${goals.join("\n")}` : "hedef yok (save goal ile ekle)", tasks.length ? `Görev:\n${tasks.join("\n")}` : ""].filter(Boolean).join("\n");
-}
-
-/** Takvim: gün başına bir satır, altında o günün görevleri (id ile, panel sohbeti kart yapabilsin) */
-export function calendarText(days: Row[]): string {
-  return days.map((c) => [
-    join(`${d(c.date)} ${WEEKDAY_SHORT[(new Date(`${c.date}T12:00:00Z`).getUTCDay() + 6) % 7]}`,
-      c.ratio === null ? "hedef yok" : `hedef %${Math.round(c.ratio * 100)}`, c.tasks.length && `görev ${c.tasks.filter((t: Row) => t.done_at).length}/${c.tasks.length}`),
-    ...c.tasks.map((t: Row) => "  " + line("task", t)),
-  ].join("\n")).join("\n");
-}
 
 const QUOTA_NOTE: Record<string, string> = { near: " (yakın)", over: " (doldu)" };
 
@@ -176,20 +168,23 @@ function quotaText(q: any): string[] {
 }
 
 export function todayText(t: any): string {
-  const parts = [
-    t.plan?.goals.length ? planText(t.plan) : "",
-    sec("Cevapsız yorum", "comment", t.comments),
-    sec("Cevap bekleyen", "person", t.network.awaiting),
-    t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "",
-    sec("Onay bekleyen taslak", "draft", t.drafts),
-    sec("Takip zamanı (taslak yok)", "followup", t.followups ?? { rows: [], total: 0 }),
-    sec("Güncellenecek paylaşım", "post", t.posts_due ?? { rows: [], total: 0 }),
-    sec("Takip: kişi", "person", t.follow_ups.people),
-    sec("Takip: fırsat", "opportunity", t.follow_ups.opportunities),
-    sec("Soğuyan bağlantı", "person", t.network.cooling),
-    sec("Görev", "task", t.tasks),
-    sec("Ödeme (7 gün)", "payment", t.payments),
-  ].filter(Boolean);
+  // core's sections are numbered 100, 200, ...; a module's section has its own number and lands between them
+  const core: { at: number; text: string }[] = [
+    { at: 100, text: sec("Cevapsız yorum", "comment", t.comments) },
+    { at: 200, text: sec("Cevap bekleyen", "person", t.network.awaiting) },
+    { at: 300, text: t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "" },
+    { at: 400, text: sec("Onay bekleyen taslak", "draft", t.drafts) },
+    { at: 500, text: sec("Takip zamanı (taslak yok)", "followup", t.followups ?? { rows: [], total: 0 }) },
+    { at: 550, text: sec("Güncellenecek paylaşım", "post", t.posts_due ?? { rows: [], total: 0 }) },
+    { at: 600, text: sec("Takip: kişi", "person", t.follow_ups.people) },
+    { at: 700, text: sec("Takip: fırsat", "opportunity", t.follow_ups.opportunities) },
+    { at: 800, text: sec("Soğuyan bağlantı", "person", t.network.cooling) },
+    { at: 900, text: sec("Ödeme (7 gün)", "payment", t.payments) },
+  ];
+  const parts = [...core, ...todaySections.map((s) => ({ at: s.at, text: s.render(t, mcpFormat) }))]
+    .sort((a, b) => a.at - b.at)
+    .map((p) => p.text)
+    .filter(Boolean);
   const w = t.week;
   const target = t.network?.settings?.weekly_target;
   const week = w ? `Hafta: ${w.sent}${target ? `/${target} hedef` : ""} giden (geçen ${w.sent_prev}) · ${w.replies} dönüş · ${w.meetings} görüşme${w.by_channel?.length ? ` · ${w.by_channel.map((c: Row) => `${label(c.channel)} ${c.sent}/${c.replies}`).join(", ")}` : ""}` : "";

@@ -9,8 +9,8 @@ import { channelSummary, networkSettings, referralValues } from "./network";
 import { sectorIds } from "./sectors";
 
 import { trashList } from "./trash";
-import { entityHandler, isCoreType } from "./records";
 import type { RelationDef } from "../modules/types";
+import { entityHandler, isCoreType } from "./records";
 import { requireRow, resolveRef } from "./shared";
 import { postStats } from "./posts";
 import { templateStats } from "./templates";
@@ -22,7 +22,6 @@ function sectorMatch(ctx: Ctx, sector: string | number): number[] {
   return sid ? sectorIds(ctx, sid) : [];
 }
 import { ideaPeople, ideaStats } from "./ideas";
-import { goalsService } from "./goals";
 import { filesOf } from "./files";
 import { offersOf } from "./offers";
 import { teamOf } from "./oppPeople";
@@ -84,27 +83,9 @@ export function queriesService(ctx: Ctx) {
     sliced.rows = sliced.rows.map((p) => {
       const np = row(ctx, `SELECT id, milestone, expected_amount - paid_amount AS remaining, due_date FROM payments
         WHERE project_id = ? AND paid_amount < expected_amount ORDER BY (due_date IS NULL), due_date, id LIMIT 1`, p.id);
-      const nt = row(ctx, `SELECT id, title, due_date, assignee, created_by FROM tasks WHERE project_id = ? AND done_at IS NULL ORDER BY (due_date IS NULL), due_date, id LIMIT 1`, p.id);
-      return { ...p, next_payment: np ?? null, next_task: nt ?? null };
+      return { ...p, next_payment: np ?? null, next_task: ctx.mod("calendar")?.tasks.next(p.id) ?? null };
     });
     return sliced;
-  }
-
-  function tasks(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = rows(ctx, `
-      SELECT t.*, p.name AS person_name, co.name AS company_name, op.title AS opportunity_title, pr.name AS project_name
-      FROM tasks t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies co ON co.id = t.company_id LEFT JOIN opportunities op ON op.id = t.opportunity_id
-      LEFT JOIN projects pr ON pr.id = t.project_id
-      ORDER BY (t.due_date IS NULL), t.due_date, t.id`);
-    const wantDone = bool(f.done);
-    if (!bool(f.all)) list = list.filter((t) => (wantDone ? !!t.done_at : !t.done_at));
-    if (f.assignee) list = list.filter((t) => t.assignee === f.assignee);
-    if (bool(f.overdue)) list = list.filter((t) => t.due_date && t.due_date < today());
-    if (bool(f.due)) list = list.filter((t) => t.due_date && t.due_date <= today());
-    for (const k of ["person_id", "company_id", "opportunity_id", "project_id"]) if (f[k]) list = list.filter((t) => t[k] === Number(f[k]));
-    list = list.filter((t) => has(o.q, t.title, t.person_name, t.company_name, t.opportunity_title, t.project_name));
-    return page(list, o.limit, o.offset);
   }
 
   function drafts(o: ListOpts): Rows {
@@ -261,8 +242,8 @@ export function queriesService(ctx: Ctx) {
 
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     person: people, company: companies, source: sources, opportunity: opportunities, project: projects,
-    task: tasks, draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, offer: offerList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags, goal: goals, goal_log: goalLogs,
+    draft: drafts, payment: payments, touch: touches, comment: comments, setting: settings,
+    sector: sectors, note: notes, link: linkList, offer: offerList, post: posts, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
@@ -294,20 +275,6 @@ export function queriesService(ctx: Ctx) {
     return page(list, o.limit, o.offset);
   }
 
-  function goals(o: ListOpts): Rows {
-    return page(goalsService(ctx).list().filter((g) => has(o.q, g.title, g.note)), o.limit, o.offset);
-  }
-
-  /** Manual counts and day notes per goal and day; filter: {goal_id, from, to} */
-  function goalLogs(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = rows(ctx, "SELECT l.*, g.title AS goal_title FROM goal_logs l JOIN daily_goals g ON g.id = l.goal_id ORDER BY l.date DESC, l.id DESC");
-    if (f.goal_id) list = list.filter((l) => l.goal_id === Number(f.goal_id));
-    if (f.from) list = list.filter((l) => l.date >= f.from);
-    if (f.to) list = list.filter((l) => l.date <= f.to);
-    return page(list.filter((l) => has(o.q, l.goal_title, l.note)), o.limit, o.offset);
-  }
-
   function find(type: string, o: ListOpts = {}) {
     const opts = { ...o, limit: o.limit ?? 20, offset: o.offset ?? 0 };
     return isCoreType(type) ? LISTS[type](opts) : entityHandler(ctx, type, "find")(ctx, opts);
@@ -317,11 +284,11 @@ export function queriesService(ctx: Ctx) {
   const COMMENT_TYPES = { person: "person", company: "company", opportunity: "opportunity", project: "project", task: "task", draft: "draft", payment: "payment", post: "post", idea: "idea", own_project: "own_project" } as const;
 
   const relatedFor: Record<string, string[]> = {
-    person: ["touches", "tasks", "opportunities", "projects", "comments", "referrals", "drafts", "notes", "channels"],
+    person: ["touches", "opportunities", "projects", "comments", "referrals", "drafts", "notes", "channels"],
     company: ["people", "touches", "opportunities", "drafts", "comments", "channels"],
-    opportunity: ["touches", "tasks", "comments", "drafts", "links", "people", "offers", "files"],
-    project: ["payments", "tasks", "touches", "comments", "drafts", "links"],
-    payment: ["comments"], task: ["comments"], draft: ["comments"],
+    opportunity: ["touches", "comments", "drafts", "links", "people", "offers", "files"],
+    project: ["payments", "touches", "comments", "drafts", "links"],
+    payment: ["comments"], draft: ["comments"],
     own_project: ["ideas", "links", "comments"],
     post: ["people", "comments"], idea: ["people", "touches", "posts", "comments"], template: ["drafts"],
   };
@@ -337,7 +304,6 @@ export function queriesService(ctx: Ctx) {
       case "source": rowData = own(find("source", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "opportunity": rowData = own(find("opportunity", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "project": rowData = own(find("project", { limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "task": rowData = own(find("task", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "draft": rowData = own(find("draft", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "payment": rowData = own(find("payment", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "touch": rowData = own(find("touch", { limit: 100000 }).rows.find((p) => p.id === id)); break;
@@ -345,8 +311,6 @@ export function queriesService(ctx: Ctx) {
       case "tag": rowData = own(find("tag", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "trash": throw new FFError("validation", "çöp kutusu için find(type: trash) kullan");
       case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "goal": rowData = own(goals({ limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "goal_log": rowData = own(goalLogs({ limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "offer": rowData = own(offerList({ filter: {}, limit: 100000 }).rows.find((r) => r.id === id)); break;
       case "post": rowData = own(postStats(ctx).find((p) => p.id === id)); break;
@@ -378,7 +342,6 @@ export function queriesService(ctx: Ctx) {
       const by = type === "company" ? { company_scope: id } : { [`${type}_id`]: id };
       switch (name) {
         case "touches": related.touches = cap(touches({ filter: by, limit: n })); break;
-        case "tasks": related.tasks = cap(tasks({ filter: by, limit: n })); break;
         case "opportunities": related.opportunities = cap(opportunities({ filter: type === "company" ? { company_id: id } : by, limit: n })); break;
         case "projects": related.projects = cap(projects({ filter: by, limit: n })); break;
         case "payments": related.payments = cap(payments({ filter: by, limit: n })); break;
@@ -462,5 +425,5 @@ export function queriesService(ctx: Ctx) {
     return list.map((e) => ({ ...e, data: e.data ? JSON.parse(e.data) : null }));
   }
 
-  return { find, get, timeline, personCard, companyCard, sectors, tags, notes, posts, templates, ideas, interests, people, opportunities, projects, tasks, drafts, payments, touches, comments, companies, sources };
+  return { find, get, timeline, personCard, companyCard, sectors, tags, notes, posts, templates, ideas, interests, people, opportunities, projects, drafts, payments, touches, comments, companies, sources };
 }

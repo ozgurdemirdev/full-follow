@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createCore, FFError, openDb, parseQuickTask, type Clock } from "../src";
+import { FFError, openDb, type Clock } from "@fullfollow/core";
+import { parseQuickTask } from "../src";
+import { appFor, type TestApp } from "./helpers";
 
 describe("Görev saati ve türü", () => {
   const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
-  let core: ReturnType<typeof createCore>;
+  let core: TestApp;
   beforeEach(() => {
-    core = createCore(openDb(":memory:"), "ozgur", clock);
+    core = appFor(openDb(":memory:"), "ozgur", clock);
   });
 
   it("hızlı eklemede saat metnin başından ya da sonundan alınır, tür anahtar kelimeden gelir", () => {
