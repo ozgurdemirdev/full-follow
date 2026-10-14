@@ -26,6 +26,7 @@
 @import "./login.css";
 @import "./forms.css";
 @import "./forms-fields.css";
+@import "./quick-add.css";
 
 @layer base {
   html {
