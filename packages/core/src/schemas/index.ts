@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  ASSIGNEES, TASK_KINDS, DEFAULT_TASK_KIND, COMMENT_TARGETS, LINK_TARGETS, POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   CONTACT_STATUSES, TAG_COLORS, GOAL_DAY_PRESETS, GOAL_METRICS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
 } from "../constants";
 import { isIsoDate, isIsoDateTime, resolveRelativeDate } from "../dates";
@@ -16,6 +16,9 @@ const date = z.preprocess(
   (v) => (v === "" ? null : resolveRelativeDate(v)),
   z.string().refine(isIsoDate, "tarih YYYY-MM-DD olmalı").nullable(),
 );
+/** HH:MM, 00:00 to 23:59. Empty value = clear. */
+const TIME_RE = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+const time = z.preprocess((v) => (v === "" ? null : v), z.string().regex(TIME_RE, "saat HH:MM olmalı (00:00 ile 23:59 arası)").nullable());
 const dateTime = z.preprocess(
   (v) => resolveRelativeDate(v),
   z.string().refine(isIsoDateTime, "tarih ISO olmalı"),
@@ -334,15 +337,21 @@ export const taskCreate = z.strictObject({
   title: text,
   assignee: z.enum(ASSIGNEES).default("ozgur"),
   due_date: date.optional(),
+  due_time: time.optional(),
+  kind: z.enum(TASK_KINDS).default(DEFAULT_TASK_KIND),
   person_id: id.nullish(),
   company_id: id.nullish(),
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
 });
+/** Calendar quick add: one line of text, the time and kind are read from it */
+export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(ASSIGNEES).default("ozgur") });
 export const taskUpdate = patch({
   title: text,
   assignee: z.enum(ASSIGNEES),
   due_date: date,
+  due_time: time,
+  kind: z.enum(TASK_KINDS),
   person_id: id.nullable(),
   company_id: id.nullable(),
   opportunity_id: id.nullable(),

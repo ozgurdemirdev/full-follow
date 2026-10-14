@@ -40,6 +40,7 @@ import { TRASH_TYPES } from "./constants";
 
 export * from "./constants";
 export * from "./dates";
+export { parseQuickTask, taskKindOf, type QuickTask } from "./quickAdd";
 export { openDb, defaultDbPath, loadRootEnv, backupDb, type DbHandle, type Db } from "./db/client";
 export { FFError, systemClock, type Clock, type ListOpts, type ErrorCode, type DuplicateHit } from "./context";
 export { paymentStatus } from "./services/payments";

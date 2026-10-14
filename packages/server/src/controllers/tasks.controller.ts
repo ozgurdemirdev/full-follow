@@ -21,6 +21,12 @@ export class TasksController {
     return this.core.tasks.create(b);
   }
 
+  /** Body: { text, due_date? }; "14:00 Elif ile görüşme" gives due_time 14:00 and kind gorusme */
+  @Post("quick")
+  quick(@Body() b: unknown) {
+    return this.core.tasks.quick(b);
+  }
+
   @Patch(":id")
   update(@Param("id") id: string, @Body() b: unknown) {
     return this.core.tasks.update(intId(id), b);

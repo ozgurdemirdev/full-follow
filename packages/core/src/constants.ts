@@ -30,6 +30,15 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number];
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
 export const ASSIGNEES = ACTORS;
+/** Task kinds (payments and follow-ups are derived kinds of the calendar feed, not task kinds) */
+export const TASK_KINDS = ["gorusme", "takip", "gorev"] as const;
+export type TaskKind = (typeof TASK_KINDS)[number];
+export const DEFAULT_TASK_KIND: TaskKind = "gorev";
+/** Words that make a quick added task a meeting or a follow-up (lower case, matched inside the text); the first matching kind wins */
+export const TASK_KIND_KEYWORDS: readonly { kind: TaskKind; words: readonly string[] }[] = [
+  { kind: "gorusme", words: ["görüşme", "toplantı", "call", "arama"] },
+  { kind: "takip", words: ["takip", "dönüş"] },
+];
 export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea", "own_project"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
 /** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */

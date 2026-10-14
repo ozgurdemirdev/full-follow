@@ -4,6 +4,7 @@ import { addDays, daysBetween } from "../dates";
 import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { daily_goals, goal_logs } from "../db/schema";
 import { goalCreate, goalLogInput, goalUpdate } from "../schemas";
+import { followUpsDue, paymentsDue, TASK_ORDER_SQL } from "./calendarFeed";
 import { outgoingMessageCounts } from "./quota";
 import { requireRow, truncate } from "./shared";
 import { Bin } from "./trash";
@@ -130,20 +131,25 @@ export function goalsService(ctx: Ctx) {
     const today = ctx.clock.today();
     const d = date ?? today;
     const goals = days(d, d)[0].goals;
-    const tasks = rows(ctx, `SELECT id, title, assignee, due_date, done_at FROM tasks
-      WHERE due_date = ? OR (? = ? AND due_date < ? AND done_at IS NULL) ORDER BY done_at IS NOT NULL, due_date, id`, d, d, today, d);
+    const tasks = rows(ctx, `SELECT id, title, assignee, due_date, due_time, kind, done_at FROM tasks
+      WHERE due_date = ? OR (? = ? AND due_date < ? AND done_at IS NULL) ORDER BY done_at IS NOT NULL, due_date, ${TASK_ORDER_SQL}`, d, d, today, d);
     return { date: d, weekday: isoWeekday(d), goals, tasks, streak: streak(today), week_ratio: weekRatio(today) };
   }
 
-  /** Calendar: goal fill rate and tasks for every day in the range */
+  /** Calendar: goal fill rate, tasks (timed first), payments due and follow-ups due for every day in the range */
   function calendar(from: string, to: string) {
     if (from > to || daysBetween(from, to) >= MAX_CALENDAR_DAYS) throw new FFError("validation", `takvim aralığı en fazla ${MAX_CALENDAR_DAYS} gün olabilir`);
-    const taskRows = rows<{ id: number; title: string; due_date: string; done_at: string | null }>(ctx,
-      "SELECT id, title, due_date, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY id", from, to);
+    const taskRows = rows<{ id: number; title: string; due_date: string; due_time: string | null; kind: string; done_at: string | null }>(ctx,
+      `SELECT id, title, due_date, due_time, kind, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY ${TASK_ORDER_SQL}`, from, to);
+    const payments = paymentsDue(ctx, from, to);
+    const followUps = followUpsDue(ctx, from, to);
     return days(from, to).map((d) => {
       const target = d.goals.reduce((s, g) => s + g.target, 0);
       const done = d.goals.reduce((s, g) => s + Math.min(g.done, g.target), 0);
-      return { ...d, tasks: taskRows.filter((t) => t.due_date === d.date), ratio: target ? done / target : null };
+      return {
+        ...d, tasks: taskRows.filter((t) => t.due_date === d.date), ratio: target ? done / target : null,
+        payments: payments.filter((p) => p.due_date === d.date), follow_ups: followUps.filter((f) => f.date === d.date),
+      };
     });
   }
 

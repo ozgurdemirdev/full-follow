@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { emit, FFError, parse, stamp, type Ctx } from "../context";
 import { tasks } from "../db/schema";
-import { taskCreate, taskUpdate } from "../schemas";
+import { parseQuickTask } from "../quickAdd";
+import { taskCreate, taskQuick, taskUpdate } from "../schemas";
 import { link, requireRow, truncate } from "./shared";
 import { Bin } from "./trash";
 
@@ -23,6 +24,12 @@ export function tasksService(ctx: Ctx) {
       emit(tx, ctx, { type: "task.created", ...link(ctx, r), summary: `Görev eklendi (${r.assignee}): ${truncate(r.title, 60)}` });
       return { row: r, effects: [] as string[] };
     });
+  }
+
+  /** Task from the calendar quick add: { text, due_date? }; the time and the kind come out of the text */
+  function quick(input: unknown) {
+    const { text, ...rest } = parse(taskQuick, input);
+    return create({ ...rest, ...parseQuickTask(text) });
   }
 
   function update(id: number, input: unknown) {
@@ -54,5 +61,5 @@ export function tasksService(ctx: Ctx) {
     });
   }
 
-  return { create, update, remove };
+  return { create, quick, update, remove };
 }

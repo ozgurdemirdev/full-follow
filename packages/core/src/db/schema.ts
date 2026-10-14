@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, TASK_KINDS, DEFAULT_TASK_KIND, COMMENT_TARGETS, LINK_TARGETS,
   POST_PLATFORMS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES, FILE_TARGETS,
   TAG_COLORS, CONTACT_STATUSES, TRASH_TYPES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
@@ -238,6 +238,9 @@ export const tasks = sqliteTable("tasks", {
   title: text("title").notNull(),
   assignee: text("assignee", { enum: ASSIGNEES }).notNull().default("ozgur"),
   due_date: text("due_date"),
+  /** "HH:MM" on the due date; null = sometime that day */
+  due_time: text("due_time"),
+  kind: text("kind", { enum: TASK_KINDS }).notNull().default(DEFAULT_TASK_KIND),
   done_at: text("done_at"),
   person_id: integer("person_id").references(() => people.id),
   company_id: integer("company_id").references(() => companies.id),
