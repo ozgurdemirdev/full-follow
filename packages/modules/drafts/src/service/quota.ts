@@ -1,31 +1,12 @@
-import { CHANNELS, label, QUOTA_NEAR_RATIO, type Channel } from "../constants";
-import { addDays } from "../dates";
-import { row, rows, type Ctx } from "../context";
-import { marketingSettings } from "./settings";
-import type { ResolvedSubject } from "./subject";
-
-/** ok = under the near threshold, near = close to the limit, over = limit reached or passed */
-export type QuotaState = "ok" | "near" | "over";
-
-export interface ChannelQuota {
-  channel: Channel;
-  sent: number;
-  limit: number;
-  state: QuotaState;
-}
-
-export interface Quota {
-  date: string;
-  /** Only channels that have a daily limit, in channel order */
-  channels: ChannelQuota[];
-  /** Cold email is off until `until` (inclusive) */
-  email_warmup: { until: string | null; active: boolean };
-}
+import {
+  addDays, CHANNELS, keptRows, label, marketingSettings, QUOTA_NEAR_RATIO,
+  type Channel, type Ctx, type Quota, type QuotaOverDays, type QuotaState,
+} from "@fullfollow/core";
 
 /** Outgoing messages per channel and day ("channel|date" → count); daily goals and the daily quota both count from here */
 export function outgoingMessageCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
   const m = new Map<string, number>();
-  for (const r of rows<{ channel: string; d: string; n: number }>(ctx, `SELECT channel, substr(happened_at, 1, 10) AS d, COUNT(*) AS n
+  for (const r of keptRows<{ channel: string; d: string; n: number }>(ctx, `SELECT channel, substr(happened_at, 1, 10) AS d, COUNT(*) AS n
       FROM touches WHERE direction = 'giden' AND kind = 'mesaj' AND substr(happened_at, 1, 10) BETWEEN ? AND ? GROUP BY channel, d`, from, to)) {
     m.set(`${r.channel}|${r.d}`, r.n);
   }
@@ -38,7 +19,7 @@ const stateOf = (sent: number, limit: number): QuotaState => (sent >= limit ? "o
 export function quotaFor(ctx: Ctx, date: string): Quota {
   const { channel_limits, email_warmup_until } = marketingSettings(ctx);
   const counts = outgoingMessageCounts(ctx, date, date);
-  const channels = CHANNELS.flatMap((channel) => {
+  const channels = CHANNELS.flatMap((channel: Channel) => {
     const limit = channel_limits[channel];
     if (!limit) return [];
     const sent = counts.get(`${channel}|${date}`) ?? 0;
@@ -48,10 +29,10 @@ export function quotaFor(ctx: Ctx, date: string): Quota {
 }
 
 /** Per limited channel: on how many days from..to the limit was reached or passed, and the most sent in a day */
-export function quotaOverDays(ctx: Ctx, from: string, to: string) {
+export function quotaOverDays(ctx: Ctx, from: string, to: string): QuotaOverDays[] {
   const { channel_limits } = marketingSettings(ctx);
   const counts = outgoingMessageCounts(ctx, from, to);
-  return CHANNELS.flatMap((channel) => {
+  return CHANNELS.flatMap((channel: Channel) => {
     const limit = channel_limits[channel];
     if (!limit) return [];
     let over_days = 0;
@@ -66,13 +47,6 @@ export function quotaOverDays(ctx: Ctx, from: string, to: string) {
 }
 
 const dayMonth = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
-
-/** Cold email: an outgoing email message to a recipient (person, company or bare address) with no earlier touch at all. Call before inserting the touch. */
-export function isColdEmail(ctx: Ctx, t: { channel: string; direction: string; kind: string }, s: ResolvedSubject): boolean {
-  if (t.channel !== "email" || t.direction !== "giden" || t.kind !== "mesaj") return false;
-  const [column, value] = s.person_id ? ["person_id", s.person_id] : s.company_id ? ["company_id", s.company_id] : ["contact_key", s.contact_key];
-  return !row(ctx, `SELECT 1 FROM touches WHERE ${column} = ? LIMIT 1`, value);
-}
 
 /**
  * Send time warnings (never a block): the channel reached or passed its daily limit, or a cold email went out during warmup.

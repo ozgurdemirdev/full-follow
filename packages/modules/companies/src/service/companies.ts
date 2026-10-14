@@ -59,17 +59,14 @@ export function companiesService(ctx: Ctx) {
 
   /**
    * Çöp kutusuna: firma + doğrudan temasları, taslakları, yorumları. Çalışanlar kalır, firma bağları boşalır (geri yüklenince döner).
-   * Çalışanlar, temaslar ve görevler kendi modüllerinin işi (`record.trashed`); taslaklar henüz modül değil.
+   * Çalışanlar, temaslar, görevler ve taslaklar kendi modüllerinin işi (`record.trashed`).
    */
   function remove(id: number) {
     const cur = requireRow(ctx, "companies", id);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      // the people of the company lose the link (people), its own touches and the tasks hanging on it go (network, calendar)
+      // the people of the company lose the link (people), its own touches, the tasks hanging on it and its drafts go (network, calendar, drafts)
       announceTrashed(ctx, bin, "company", id);
-      // TODO(modules): drafts clean their own rows when they hear `record.trashed` (raw takes for now)
-      bin.take("comments", "target_type = 'draft' AND target_id IN (SELECT id FROM drafts WHERE company_id = ?)", id);
-      bin.take("drafts", "company_id = ?", id);
       bin.take("comments", "target_type = 'company' AND target_id = ?", id);
       bin.take("company_tags", "company_id = ?", id);
       bin.take("company_sectors", "company_id = ?", id);

@@ -16,16 +16,9 @@ function run(fn: () => string) {
 }
 
 /** Record types that have a page in the panel (what `open` may show) */
-const CORE_OPENABLE = ["draft", "template", "idea", "own_project", "comment"];
+const CORE_OPENABLE = ["idea", "own_project", "comment"];
 const idOrName = z.union([z.number(), z.string()]);
 const obj = z.record(z.string(), z.any());
-/** Muhatap: kişi, firma ya da sadece adres (biri) */
-const subject = (core: Core, a: { person?: string | number; company?: string | number; contact?: string }) => ({
-  person_id: a.person !== undefined ? core.resolveRef("person", a.person) : undefined,
-  company_id: a.company !== undefined ? core.resolveRef("company", a.company) : undefined,
-  contact: a.contact,
-});
-
 /**
  * 12 araç (modüllerin kendi araçları ayrıca). Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
  * Taslak onaylama ve "gönderildi" işaretleme MCP'de yoktur (sadece Özgür).
@@ -40,20 +33,19 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("today", {
     description: describe("today", [
       [100, "Bugünün işleri: cevapsız yorumlar, "],
-      [120, "takip dizisi (zamanı gelen takip taslakları otomatik hazırlanır), taslaklar, "],
       [320, "."],
     ]),
     inputSchema: { limit: z.number().optional() },
   }, ({ limit }) => run(() => {
-    // takip dizisi: zamanı gelenlere Claude adına taslak (tekrar çağrılırsa aynı adım için ikinci taslak açılmaz)
-    const auto = core.followups.generate().created.map((c) => `${c.name} ${c.step}. takip #${c.draft_id}`);
+    // takip dizisi: zamanı gelenlere Claude adına taslak (tekrar çağrılırsa aynı adım için ikinci taslak açılmaz); drafts modülü kurulu değilse yok
+    const auto = core.mod("drafts")?.followups.generate().created.map((c) => `${c.name} ${c.step}. takip #${c.draft_id}`) ?? [];
     return todayText({ ...core.today(limit ?? 10), auto });
   }));
 
   server.registerTool("open", {
     description: describe("open", [
       [100, "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası olarak çağırma. type: "],
-      [200, "|draft|template|idea|own_project"],
+      [202, "|idea|own_project"],
       [300, "|comment; id sayı ya da isim."],
     ]),
     inputSchema: { type: z.string(), id: idOrName },
@@ -70,15 +62,14 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("find", {
     description: describe("find", [
       [100, "Ara/listele. type: "],
-      [200, "|draft"],
       [206, "|source|comment"],
       [220, "|sector|note|setting"],
-      [300, "|template|idea|own_project|interest|tag"],
+      [301, "|idea|own_project|interest|tag"],
       [401, "|trash. "],
-      [422, "{status:'bekliyor'}(draft) {unanswered:true}(comment) "],
+      [423, "{unanswered:true}(comment) "],
       [440, "{all:true}("],
       [500, "tag/sector/source: silinenler dahil); "],
-      [600, "template {channel,sector,kind:'takip'}; idea {stage,sector,own_project:'Full Follow',general:true}; own_project {status,sellable,sector}; interest {idea_id|person_id}; trash {type:'person'}."],
+      [601, "idea {stage,sector,own_project:'Full Follow',general:true}; own_project {status,sellable,sector}; interest {idea_id|person_id}; trash {type:'person'}."],
     ]),
     inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().optional(), offset: z.number().optional() },
   }, ({ type, q, filter, limit, offset }) => run(() => list(core.normalizeType(type), core.find(type, { q, filter, limit, offset }), offset ?? 0)));
@@ -86,11 +77,12 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("get", {
     description: describe("get", [
       [100, "Tek kaydın tam hali. id sayı ya da isim. with: "],
-      [202, "drafts|comments"],
+      [203, "comments"],
       [220, "|people|notes"],
       [300, "|links"],
       [302, " (opportunity: "],
-      [400, "comments,drafts,links,"],
+      [400, "comments,"],
+      [400.2, "links,"],
       [402, "; "],
       [420, "idea: people"],
       [500, "; "],
@@ -109,7 +101,7 @@ export function registerTools(server: McpServer, core: Core) {
       [144.2, "note: {person,body}. "],
       [144.4, "link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). "],
       [146, "comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
-      [200, "template: {name,kind:ilk|takip|teklif|diger,channel?,sector?,body} yer tutucu {ad} {firma} {sektor}. idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. own_project: {name,description,status,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. "],
+      [201, "idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. own_project: {name,description,status,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. "],
     ]),
     inputSchema: { type: z.string(), data: z.union([obj, z.array(obj)]), id: idOrName.optional() },
   }, ({ type, data, id }) => run(() => {
@@ -132,19 +124,6 @@ export function registerTools(server: McpServer, core: Core) {
     return ok(kindName(t), r.row?.id, r.effects, `→ ${stage}`);
   }));
 
-  server.registerTool("draft", {
-    description: "Özgür'ün onayına taslak mesaj bırak (why: neden şimdi, tek cümle). Muhatap person, company ya da contact. body yoksa template (id/ad) muhataba uygulanır ({ad} {firma} {sektor}); uygun şablon: find template {channel,sector}. Onaylama ve gönderme sadece Özgür'de.",
-    inputSchema: { person: idOrName.optional(), company: idOrName.optional(), contact: z.string().optional(), channel: z.string(), body: z.string().optional(), template: idOrName.optional(), why: z.string().optional(), opp: idOrName.optional(), project: idOrName.optional() },
-  }, (a) => run(() => {
-    const r = core.drafts.create({
-      ...subject(core, a), channel: a.channel, body: a.body, reason: a.why,
-      template_id: a.template !== undefined ? core.resolveRef("template", a.template) : undefined,
-      opportunity_id: a.opp !== undefined ? core.resolveRef("opportunity", a.opp) : undefined,
-      project_id: a.project !== undefined ? core.resolveRef("project", a.project) : undefined,
-    });
-    return ok("taslak", r.row.id, ["onay bekliyor"]);
-  }));
-
   server.registerTool("timeline", {
     description: "Kişi/fırsat/proje olay geçmişi (son N, eskiden yeniye).",
     inputSchema: { type: z.string(), id: idOrName, limit: z.number().optional() },
@@ -153,7 +132,8 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("report", {
     description: describe("report", [
       [120, "pazarlama ("],
-      [200, "fikir ilgisi, şablon dönüşü, kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM. week: YYYY-Www, haftadan bir tarih ya da \"bu\" verilirse rapor yerine o haftanın incelemesi (Cuma özeti): giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için 2-4 öneri."],
+      [200, "fikir ilgisi, "],
+      [202, "kanal dönüşü), kaynak hunisi (bulundu→yazıldı→cevap→görüşme→teklif→kazanıldı, son 90 gün; zayıf/erken işaretli), kaynak dönüşümü, ayın tahsilatı vs fiyat tabanı. month: YYYY-MM. week: YYYY-Www, haftadan bir tarih ya da \"bu\" verilirse rapor yerine o haftanın incelemesi (Cuma özeti): giden/hedef, dönüş oranı, görüşme, teklif, yeni kayıt, şablon ve kaynak öne çıkanları, limit aşımı, gelecek hafta için 2-4 öneri."],
     ]),
     inputSchema: { month: z.string().optional(), week: z.string().optional() },
   }, ({ month, week }) => run(() => (week ? reviewText(core.review(week === "bu" ? undefined : week)) : reportText({ ...core.reports.report(month), week: core.mod("network")?.weekStats(), referrals: core.mod("referrals")?.report() ?? [], marketing: core.marketing(), source_funnel: core.reports.sourceFunnel() }))));

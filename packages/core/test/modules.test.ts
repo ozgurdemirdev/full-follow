@@ -77,6 +77,21 @@ describe("event bus", () => {
     expect(effects).toEqual(["a1", "a2", "d1"]);
   });
 
+  it("hookOrder moves a module's hook after or before the others of that event, per event; the rest keep key order", () => {
+    const calls: string[] = [];
+    const on = (name: string) => () => { calls.push(name); return [name]; };
+    const defs = [
+      mk("a", { hooks: { e: on("a"), f: on("a-f") }, hookOrder: { e: 10 } }),
+      mk("b", { hooks: { e: on("b"), f: on("b-f") } }),
+      mk("c", { hooks: { e: on("c") }, hookOrder: { e: -1 } }),
+    ];
+    const { ctx } = ctxFor(defs);
+    expect(ctx.sqlite.transaction(() => ctx.emit("e", {}))()).toEqual(["c", "b", "a"]);
+    // another event is not affected
+    expect(ctx.sqlite.transaction(() => ctx.emit("f", {}))()).toEqual(["a-f", "b-f"]);
+    expect(calls).toEqual(["c", "b", "a", "a-f", "b-f"]);
+  });
+
   it("an event nobody listens to returns no effects", () => {
     const { ctx } = ctxFor([]);
     expect(ctx.sqlite.transaction(() => ctx.emit("nobody", {}))()).toEqual([]);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-  SOURCE_KINDS, CHANNELS,
-  LINK_TARGETS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  SOURCE_KINDS,
+  LINK_TARGETS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
   TAG_COLORS, FILE_TARGETS, FILE_NAME_MAX,
 } from "../constants";
 import * as zodKit from "./kit";
@@ -23,8 +23,6 @@ export const fileCreate = z.strictObject({
   stored_name: text,
 });
 
-const { subjectShape: subject, needSubject, subjectMsg } = zodKit;
-
 export const sectorCreate = z.strictObject({ name: text, parent_id: id.nullish() });
 export const sectorUpdate = patch({ name: text, parent_id: id.nullable() });
 
@@ -35,35 +33,7 @@ const url = z.string().trim().url("geçerli bir link gerekli");
 export const linkCreate = z.strictObject({ target_type: z.enum(LINK_TARGETS), target_id: id, label: text, url });
 export const linkUpdate = patch({ label: text, url });
 
-export const draftCreate = z.strictObject({
-  ...subject,
-  opportunity_id: id.nullish(),
-  project_id: id.nullish(),
-  channel: z.enum(CHANNELS),
-  /** boşsa şablondan doldurulur */
-  body: optText,
-  reason: optText,
-  template_id: id.nullish(),
-  followup_step: z.coerce.number().int().min(1).max(10).nullish(),
-}).refine(needSubject, subjectMsg);
-export const draftUpdate = patch({ channel: z.enum(CHANNELS), body: text, reason: optText, template_id: id.nullable() });
-
 // ---- Paket 2: pazarlama ----
-export const templateCreate = z.strictObject({
-  name: text,
-  kind: z.enum(TEMPLATE_KINDS).default("ilk"),
-  channel: z.enum(CHANNELS).nullish(),
-  sector_id: id.nullish(),
-  body: text,
-});
-export const templateUpdate = patch({
-  name: text,
-  kind: z.enum(TEMPLATE_KINDS),
-  channel: z.enum(CHANNELS).nullable(),
-  sector_id: id.nullable(),
-  body: text,
-});
-
 export const ideaCreate = z.strictObject({
   title: text,
   problem: optText,

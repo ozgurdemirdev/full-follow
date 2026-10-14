@@ -9,7 +9,7 @@ export const entities: Record<string, EntityHandler> = {
     // `referred_by: "Ada"` names the introducer
     refKeys: { referred_by: "referred_by_id" },
     // touches, referrals, channels, opportunities and projects come from the relations the modules contribute
-    related: ["comments", "drafts", "notes"],
+    related: ["comments", "notes"],
     bulk: { label: "kişi", keys: (item) => keyList(personKeys(item)) },
     prepare: withCompany,
     save: (ctx, d, id) => (id ? ctx.mod("people")!.update(id, d) : ctx.mod("people")!.create(d)),

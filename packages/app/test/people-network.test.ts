@@ -109,11 +109,11 @@ suite("people, companies and network together", () => {
     expect(sent.effects).toEqual(expect.arrayContaining([`temas #${sent.touch.id} oluştu`, "Ada: yazıldı", `fırsat #${o.id} → temas`]));
     expect(app.get("opportunity", o.id).row.stage).toBe("temas");
     const bare = appWithout(["network"], h, "ozgur", clock);
-    const d2 = bare.drafts.create({ person_id: p.id, channel: "email", body: "ikinci" }).row;
-    const sent2 = bare.drafts.markSent(d2.id);
+    const d2 = bare.mod("drafts")!.create({ person_id: p.id, channel: "email", body: "ikinci" }).row;
+    const sent2 = bare.mod("drafts")!.markSent(d2.id);
     expect(sent2.touch).toBeUndefined();
     expect(sent2.effects).toEqual([]);
-    expect(bare.drafts.create({ person_id: p.id, channel: "email", body: "x" }).row.status).toBe("bekliyor");
+    expect(bare.mod("drafts")!.create({ person_id: p.id, channel: "email", body: "x" }).row.status).toBe("bekliyor");
   });
 
   describe("removal: each module can be switched off and the rest keeps running", () => {
@@ -189,8 +189,8 @@ suite("people, companies and network together", () => {
       const bare = appWithout(everyKey, h, "ozgur", clock);
       expect(bare.modules.list()).toEqual([]);
       expect(bare.today(5)).toMatchObject({ comments: { total: 2 }, follow_ups: { people: { total: 0 } } });
-      // a draft is core's: it still works with a contact address
-      expect(bare.drafts.create({ contact: "z@x.example", channel: "email", body: "x" }).row.status).toBe("bekliyor");
+      // a draft is the drafts module's: refused with a clear error while it is not installed
+      expect(() => bare.save("draft", { contact: "z@x.example", channel: "email", body: "x" })).toThrow(/"draft" türü için "drafts" modülü kurulu değil/);
       expect(p).toBeTruthy();
     });
   });

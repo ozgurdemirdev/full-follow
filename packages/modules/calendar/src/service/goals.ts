@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import {
-  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, followUpsDue, has, isoWeekday, outgoingMessageCounts, page, parse, requireRow, row, rows, schema, stamp,
+  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, has, isoWeekday, page, parse, requireRow, row, rows, schema, stamp,
   truncate, writeEvent as emit, type CalendarDay, type CalendarTask, type Ctx, type DayPlan, type GoalDay, type GoalRecord, type ListOpts,
 } from "@fullfollow/core";
 import { MAX_CALENDAR_DAYS, STREAK_LOOKBACK_DAYS, TASK_ORDER_SQL } from "./constants";
@@ -50,9 +50,8 @@ export function goalsService(ctx: Ctx) {
   /** Goal state per day (from..to); days without applicable goals have an empty list */
   function days(from: string, to: string): { date: string; goals: GoalDay[] }[] {
     const goals = all();
-    // outgoing messages on the goal's channel and new records count by themselves
-    // TODO(modules): via ctx.mod("drafts") quota
-    const auto = outgoingMessageCounts(ctx, from, to);
+    // outgoing messages on the goal's channel (from the drafts module: none without it) and new records count by themselves
+    const auto = ctx.mod("drafts")?.outgoingMessageCounts(from, to) ?? new Map<string, number>();
     const wantsRecords = goals.some((g) => g.metric === "new_records");
     const added = wantsRecords ? newRecordCounts(ctx, from, to) : new Map<string, number>();
     const skipped = wantsRecords ? skippedCounts(ctx, from, to) : new Map<string, number>();
@@ -109,8 +108,8 @@ export function goalsService(ctx: Ctx) {
       `SELECT id, title, due_date, due_time, kind, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY ${TASK_ORDER_SQL}`, from, to);
     // payments come from the projects module (none without it)
     const payments = ctx.mod("projects")?.payments.due(from, to) ?? [];
-    // TODO(modules): via ctx.mod("drafts") follow-ups due
-    const followUps = followUpsDue(ctx, from, to);
+    // follow-up dates come from the drafts module (none without it)
+    const followUps = ctx.mod("drafts")?.followUpDates(from, to) ?? [];
     return days(from, to).map((d) => {
       const target = d.goals.reduce((s, g) => s + g.target, 0);
       const done = d.goals.reduce((s, g) => s + Math.min(g.done, g.target), 0);

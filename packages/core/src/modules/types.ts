@@ -165,8 +165,8 @@ export interface McpDef {
   tools?: McpToolDef[];
   /** tool name to the fragments added to its description */
   docs?: Record<string, DocFragment[]>;
-  /** sections of the `today` text, sorted by `at` among core's (100, 200, ...) */
-  today?: { at: number; render(t: any, f: McpFormat): string }[];
+  /** sections of the `today` text, sorted by `at` among core's (100, 200, ...); `head` puts the text with the lines before the sections (after the week line) instead */
+  today?: { at: number; head?: boolean; render(t: any, f: McpFormat): string }[];
   /** lines of the marketing part of the `report` text, sorted by `at` */
   marketing?: { at: number; render(m: any, f: McpFormat): string[] }[];
   /** relation name (get with) to the record type its rows are written as */
@@ -185,6 +185,8 @@ export interface ModuleDef {
   entities?: Record<string, EntityHandler>;
   /** event name to the hook run when that event is emitted */
   hooks?: Record<string, Hook>;
+  /** event name to the place of this module's hook among the others of that event: lower runs first, the default is 0, ties keep module key order */
+  hookOrder?: Record<string, number>;
   contribute?: Contributions;
   /** MCP side: formatters, tools and description fragments */
   mcp?: McpDef;

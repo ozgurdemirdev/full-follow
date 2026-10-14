@@ -2,9 +2,7 @@ import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTION
 import { addDays, daysBetween, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
 import { FFError, type Ctx } from "../context";
 import type { WeekStats } from "../contracts";
-import { quotaOverDays } from "./quota";
 import { marketingSettings } from "./settings";
-import { templateComparison } from "./templates";
 
 export interface Suggestion {
   key: string;
@@ -23,9 +21,9 @@ function weekStartOf(ctx: Ctx, week?: string): string {
   return monday;
 }
 
-/** Template groups that have a clear leader or early (small sample) templates; the loser is the weakest template with enough sample */
+/** Template groups that have a clear leader or early (small sample) templates; the loser is the weakest template with enough sample (none without the templates module) */
 function templateHighlights(ctx: Ctx) {
-  return templateComparison(ctx).flatMap((g) => {
+  return (ctx.mod("templates")?.comparison() ?? []).flatMap((g) => {
     const leader = g.templates.find((t) => t.leader);
     const settled = g.templates.filter((t) => !t.early);
     const early = g.templates.length - settled.length;
@@ -67,7 +65,7 @@ function buildFacts(ctx: Ctx, ws: string) {
     offers: { this_week: ctx.mod("pipeline")?.offersMade(ws, until) ?? 0, last_week: ctx.mod("pipeline")?.offersMade(prev, addDays(ws, -1)) ?? 0 },
     templates: templateHighlights(ctx),
     sources: sourceHighlights(ctx),
-    quota: quotaOverDays(ctx, ws, until),
+    quota: ctx.mod("drafts")?.quotaOverDays(ws, until) ?? [],
   };
 }
 

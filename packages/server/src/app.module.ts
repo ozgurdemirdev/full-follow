@@ -6,10 +6,8 @@ import { FilesController } from "./controllers/files.controller";
 import { LinksController } from "./controllers/links.controller";
 import { NotesController } from "./controllers/notes.controller";
 import { SectorsController } from "./controllers/sectors.controller";
-import { DraftsController } from "./controllers/drafts.controller";
 import { MiscController } from "./controllers/misc.controller";
 import { SourcesController } from "./controllers/sources.controller";
-import { TemplatesController } from "./controllers/templates.controller";
 import { IdeasController } from "./controllers/ideas.controller";
 import { OwnProjectsController } from "./controllers/own-projects.controller";
 import { MarketingController } from "./controllers/marketing.controller";
@@ -17,22 +15,21 @@ import { TagsController, TrashController } from "./controllers/tags.controller";
 import { ChatController } from "./chat/chat.controller";
 import { ChatHub } from "./chat/chat-hub";
 import { ClaudeRunner } from "./chat/claude-runner";
-import { coreProvider, followupsProvider } from "./core.provider";
+import { claudeProvider, coreProvider } from "./core.provider";
 import { ErrorFilter } from "./http";
 import { moduleControllers } from "./modules.generated";
 
 @Module({
   controllers: [
     AuthController, MiscController, SourcesController,
-    DraftsController,
     CommentsController, SectorsController, NotesController, LinksController, FilesController,
-    TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
+    IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,
   ],
   providers: [
     coreProvider,
-    followupsProvider,
+    claudeProvider,
     ChatHub,
     ClaudeRunner,
     { provide: APP_GUARD, useClass: AuthGuard },

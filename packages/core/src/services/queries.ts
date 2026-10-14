@@ -3,20 +3,13 @@ import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../cont
 import { bool, has, tagsList } from "./directory";
 import { listThreads, threadOf } from "./comments";
 import { networkSettings, settingsService } from "./settings";
-import { sectorIds } from "./sectors";
+import { sectorMatch } from "./sectors";
 
 import { trashList } from "./trash";
 import type { RelationDef } from "../modules/types";
 import { entityHandler, isCoreType } from "./records";
 import { requireRow, resolveRef, targetTable } from "./shared";
-import { templateStats } from "./templates";
 
-/** Sektör id ya da adı → o sektörün ve alt sektörlerinin id'leri (bilinmeyen sektör: boş) */
-function sectorMatch(ctx: Ctx, sector: string | number): number[] {
-  const sid = /^\d+$/.test(String(sector)) ? Number(sector)
-    : rows<{ id: number; name: string }>(ctx, "SELECT id, name FROM sectors").find((x) => norm(x.name) === norm(String(sector)))?.id;
-  return sid ? sectorIds(ctx, sid) : [];
-}
 import { ideaPeople, ideaStats } from "./ideas";
 import { ownProjectStats } from "./ownProjects";
 
@@ -44,23 +37,6 @@ function queriesService(ctx: Ctx) {
       FROM sources s ORDER BY s.name COLLATE NOCASE`)
       .map((s) => ({ ...s, opp_count: oppCounts?.get(s.id) ?? 0 }))
       .filter((s) => (bool(f.all) || !s.deleted_at) && has(o.q, s.name, s.kind));
-    return page(list, o.limit, o.offset);
-  }
-
-  function drafts(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = rows(ctx, `SELECT d.*, p.name AS person_name, c.name AS company_name, COALESCE(p.name, c.name, d.contact) AS to_name
-      FROM drafts d LEFT JOIN people p ON p.id = d.person_id LEFT JOIN companies c ON c.id = d.company_id ORDER BY d.id DESC`);
-    if (f.status) list = list.filter((d) => d.status === f.status);
-    if (f.person_id) list = list.filter((d) => d.person_id === Number(f.person_id));
-    if (f.template_id) list = list.filter((d) => d.template_id === Number(f.template_id));
-    if (f.company_id) list = list.filter((d) => d.company_id === Number(f.company_id));
-    if (f.company_scope) {
-      const ids = new Set(rows<{ id: number }>(ctx, "SELECT id FROM people WHERE company_id = ?", f.company_scope).map((r) => r.id));
-      list = list.filter((d) => d.company_id === Number(f.company_scope) || ids.has(d.person_id));
-    }
-    if (bool(f.followup)) list = list.filter((d) => d.followup_step);
-    list = list.filter((d) => has(o.q, d.body, d.to_name));
     return page(list, o.limit, o.offset);
   }
 
@@ -96,19 +72,6 @@ function queriesService(ctx: Ctx) {
   }
 
   // ---------- Paket 2: pazarlama ----------
-  function templates(o: ListOpts): Rows {
-    const f = o.filter ?? {};
-    let list = templateStats(ctx);
-    if (f.kind) list = list.filter((t) => t.kind === f.kind);
-    if (f.channel) list = list.filter((t) => !t.channel || t.channel === f.channel);
-    if (f.sector) {
-      const ids = sectorMatch(ctx, f.sector);
-      list = list.filter((t) => !t.sector_id || ids.includes(t.sector_id));
-    }
-    list = list.filter((t) => has(o.q, t.name, t.body, t.sector_path));
-    return page(list, o.limit, o.offset);
-  }
-
   function ideas(o: ListOpts): Rows {
     const f = o.filter ?? {};
     let list = ideaStats(ctx);
@@ -156,8 +119,8 @@ function queriesService(ctx: Ctx) {
 
   const LISTS: Record<Exclude<RecordType, "setting"> | "setting", (o: ListOpts) => Rows> = {
     source: sources,
-    draft: drafts, comment: comments, setting: settings,
-    sector: sectors, note: notes, link: linkList, template: templates, idea: ideas, own_project: ownProjects, interest: interests, tag: tags,
+    comment: comments, setting: settings,
+    sector: sectors, note: notes, link: linkList, idea: ideas, own_project: ownProjects, interest: interests, tag: tags,
     trash: (o) => {
       const t = (o.filter ?? {}).type;
       return page(trashList(ctx).filter((x) => (!t || x.type === t) && has(o.q, x.label)), o.limit, o.offset);
@@ -187,9 +150,8 @@ function queriesService(ctx: Ctx) {
   // ---------- tek kayıt ----------
   /** Relations of the record types core owns; a module type lists its own (`related`) and the modules add theirs (`relations` contribution: touches, tasks, referrals, ...) */
   const relatedFor: Record<string, string[]> = {
-    draft: ["comments"],
     own_project: ["ideas", "links", "comments"],
-    idea: ["people", "comments"], template: ["drafts"],
+    idea: ["people", "comments"],
   };
 
   /** Tek kayıt + isteğe bağlı ilişkili kayıtlar (with). Her ilişkili liste en fazla relLimit (varsayılan 10) satır. */
@@ -199,13 +161,11 @@ function queriesService(ctx: Ctx) {
     if (!isCoreType(type)) rowData = entityHandler(ctx, type, "get")(ctx, id);
     else switch (type) {
       case "source": rowData = own(find("source", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "draft": rowData = own(find("draft", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "sector": rowData = own(find("sector", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "tag": rowData = own(find("tag", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "trash": throw new FFError("validation", "çöp kutusu için find(type: trash) kullan");
       case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
-      case "template": rowData = own(templateStats(ctx).find((p) => p.id === id)); break;
       case "idea": rowData = own(ideaStats(ctx).find((p) => p.id === id)); break;
       case "own_project": rowData = own(ownProjectStats(ctx).find((p) => p.id === id)); break;
       case "interest": rowData = own(ideaPeople(ctx).find((p) => p.id === id)); break;
@@ -234,8 +194,6 @@ function queriesService(ctx: Ctx) {
       if (!allowed.includes(name)) throw new FFError("validation", `${type} için geçerli ilişkiler: ${allowed.join(", ") || "yok"}`);
       const by = { [`${type}_id`]: id };
       switch (name) {
-        // a company's drafts are those written to it or to its people
-        case "drafts": related.drafts = cap(drafts({ filter: type === "company" ? { company_scope: id } : by, limit: n })); break;
         case "people":
           related.people = type === "idea" ? ideaPeople(ctx, id).slice(0, n) : relationFor("people")?.load(ctx, by, n, rowData) ?? [];
           break;
@@ -266,5 +224,5 @@ function queriesService(ctx: Ctx) {
     return list.map((e) => ({ ...e, data: e.data ? JSON.parse(e.data) : null }));
   }
 
-  return { find, get, timeline, sectors, tags, notes, templates, ideas, interests, drafts, comments, sources };
+  return { find, get, timeline, sectors, tags, notes, ideas, interests, comments, sources };
 }

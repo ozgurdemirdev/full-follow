@@ -50,14 +50,18 @@ export function activity(ctx: Ctx, period: string = "week"): ActivityReport {
       channels.set(t.channel, c);
     }
   }
-  // TODO(modules): people and companies through ctx.mod, drafts through ctx.mod("drafts") (raw table reads for now)
-  for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"], ["drafts", "drafts"]] as const) {
+  // TODO(modules): people and companies through ctx.mod (raw table reads for now)
+  for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"]] as const) {
     for (const r of rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, since)) {
       const i = indexOf(dayOf(r.created_at));
       if (i >= 0) buckets[i][key]++;
     }
   }
-  // offers come from the pipeline module (none without it)
+  // drafts come from the drafts module, offers from the pipeline module (none without them)
+  for (const created_at of ctx.mod("drafts")?.createdSince(since) ?? []) {
+    const i = indexOf(dayOf(created_at));
+    if (i >= 0) buckets[i].drafts++;
+  }
   for (const created_at of ctx.mod("pipeline")?.offerCreatedSince(since) ?? []) {
     const i = indexOf(dayOf(created_at));
     if (i >= 0) buckets[i].offers++;

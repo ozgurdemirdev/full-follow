@@ -1,8 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
 import type { Core } from "../core.provider";
 
-/** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, opportunities, payments, ...) */
-export const CORE_CARD_TYPES = ["draft", "template", "idea", "comment"] as const;
+/** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, opportunities, payments, drafts, templates, ...) */
+export const CORE_CARD_TYPES = ["idea", "comment"] as const;
 type CardType = string;
 const MAX_KEYS = 30;
 const SNIPPET = 80;
@@ -43,11 +43,6 @@ export function cardRecords(core: Core, keys: string): CardRecord[] {
 
 function card(core: Core, type: CardType, id: number, personId?: number): Row {
   switch (type) {
-    case "draft": {
-      const r = core.get("draft", id).row as Row;
-      return { title: r.to_name ?? r.person_name ?? r.contact ?? `Taslak #${id}`, channel: r.channel, status: r.status, body: clip(String(r.body ?? "")) };
-    }
-    case "template": return template(core, id, personId);
     case "idea": {
       const r = core.get("idea", id).row as Row;
       return { title: r.title, stage: r.stage };
@@ -62,20 +57,4 @@ function card(core: Core, type: CardType, id: number, personId?: number): Row {
       return build(core.ctx, id, personId);
     }
   }
-}
-
-/** Stored text, reply stats, and the text filled for the person with the same placeholder fill the follow-up drafts use */
-function template(core: Core, id: number, personId?: number): Row {
-  const t = core.find("template", { limit: 1000 }).rows.find((x: Row) => x.id === id) as Row | undefined;
-  if (!t) throw new Error("template not found");
-  let filled: string | null = null;
-  let forName: string | null = null;
-  if (personId) {
-    filled = core.templates.render(id, { person_id: personId }).body;
-    forName = core.mod("people")?.get(personId)?.name ?? null;
-  }
-  return {
-    title: t.name, kind: t.kind, channel: t.channel, body: t.body, filled, for_name: forName, person_id: personId ?? null,
-    used: t.used, sent: t.sent, replied: t.replied, reply_rate: t.reply_rate,
-  };
 }

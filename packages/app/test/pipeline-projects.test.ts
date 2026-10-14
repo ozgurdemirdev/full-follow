@@ -53,7 +53,7 @@ suite("pipeline and projects together", () => {
     const bare = appWithout(["pipeline"], h, "ozgur", clock);
     expect(() => bare.save("touch", { person_id: p.id, channel: "email", direction: "giden", summary: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
     expect(() => bare.save("task", { title: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
-    expect(() => bare.drafts.create({ person_id: p.id, channel: "email", body: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
+    expect(() => bare.mod("drafts")!.create({ person_id: p.id, channel: "email", body: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
     expect(() => bare.ctx.mod("projects")!.projects.create({ name: "P", person_id: p.id, opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
     // a touch without an opportunity is fine, and nothing advances
     expect(bare.save("touch", { person_id: p.id, channel: "email", direction: "giden", summary: "x" }).row.opportunity_id).toBeNull();

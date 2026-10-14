@@ -1,9 +1,7 @@
 import { CHANNELS } from "../constants";
 import { addDays } from "../dates";
 import { rows, type Ctx } from "../context";
-import { followupsDue } from "./followups";
 import { ideaStats } from "./ideas";
-import { templateComparison } from "./templates";
 
 /**
  * Kanal performansı (son `days` gün): kaç kişiye yazıldı, kaçı sonra döndü, oran.
@@ -23,7 +21,7 @@ export function channelPerformance(ctx: Ctx, days = 30) {
     .map((x) => ({ ...x, reply_rate: x.people ? x.replied / x.people : null }));
 }
 
-/** Pazarlama özeti: paylaşımlar (getirdikleri), fikirler (ilgi), şablonlar (tür ve kanal gruplarında kıyas), kanal performansı, takip dizisi */
+/** Pazarlama özeti: paylaşımlar (getirdikleri), fikirler (ilgi), şablonlar (tür ve kanal gruplarında kıyas), kanal performansı, takip dizisi; kurulu olmayan modülün parçası boş gelir */
 export function marketingReport(ctx: Ctx) {
   // posts come from the posts module; without it the lists are empty
   const posts = ctx.mod("posts")?.stats() ?? [];
@@ -31,8 +29,8 @@ export function marketingReport(ctx: Ctx) {
     posts: posts.slice().sort((a, b) => b.won_value - a.won_value || b.people_count - a.people_count || b.opp_count - a.opp_count),
     posts_due: posts.filter((p) => p.refresh_due),
     ideas: ideaStats(ctx),
-    template_groups: templateComparison(ctx),
+    template_groups: ctx.mod("templates")?.comparison() ?? [],
     channels: channelPerformance(ctx, 30),
-    followups: followupsDue(ctx),
+    followups: ctx.mod("drafts")?.followups.due() ?? [],
   };
 }

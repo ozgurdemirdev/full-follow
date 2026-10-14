@@ -9,7 +9,7 @@ export const entities: Record<string, EntityHandler> = {
     ref: { table: "opportunities", col: "title", label: "fırsat" },
     refKeys: { opp: "opportunity_id" },
     // the team (people), offers and files come from the relations this module contributes
-    related: ["comments", "drafts", "links"],
+    related: ["comments", "links"],
     save: (ctx, d, id) => (id ? pipeline(ctx).opportunities.update(id, d) : pipeline(ctx).opportunities.create(d)),
     get: (ctx, id) => pipeline(ctx).opportunities.get(id),
     find: (ctx, o) => pipeline(ctx).opportunities.list(o),

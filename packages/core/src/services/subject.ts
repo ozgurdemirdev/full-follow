@@ -1,5 +1,5 @@
 // Temas ve taslağın muhatabı: kişi, firma ya da sadece adres/hesap (soğuk e-postadaki info@firma.com gibi).
-// TODO(modules): shared by network (touches) and drafts; it moves with drafts when that becomes a module.
+// Shared by the network, drafts and templates modules, so it stays in core.
 import { FFError, row, rows, type Ctx } from "../context";
 import { contactKey } from "../keys";
 import { requireRow } from "./shared";
@@ -87,3 +87,27 @@ export function sameSide(ctx: Ctx, ownerId: number, s: { person_id?: number | nu
 
 /** SQL for the touches of a company: written to the company itself or to one of its people (touch alias `t`, the company id twice) */
 export const COMPANY_TOUCHES = "(t.company_id = ? OR t.person_id IN (SELECT id FROM people WHERE company_id = ?))";
+
+/**
+ * Şablondaki yer tutucular: {ad} {ad_soyad} {firma} {sektor}. Bilinmeyen yer tutucu olduğu gibi kalır.
+ * Firmaya giden mesajda {ad} ve {firma} firma adıdır; sadece adrese giden mesajda {ad} boş kalır.
+ */
+export function renderTemplate(ctx: Ctx, body: string, subject: Subject): string {
+  const p = subjectInfo(ctx, subject);
+  if (!p) return body;
+  const sector = p.sectors[0]?.name ?? "";
+  const vals: Record<string, string> = { ad: p.first, ad_soyad: p.name, firma: p.company, sektor: sector, sektör: sector };
+  return body.replace(/\{(\w+|sektör)\}/g, (m, k: string) => (k in vals ? vals[k] : m)).replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",");
+}
+
+/** SQL: touch `x` (a sent message) got a later incoming touch from the same person, company or bare contact */
+export const REPLIED_AFTER = `EXISTS (
+  SELECT 1 FROM touches g WHERE g.direction = 'gelen' AND g.happened_at > x.happened_at AND (g.person_id = x.person_id
+    OR (x.person_id IS NULL AND g.company_id = x.company_id) OR (x.person_id IS NULL AND x.company_id IS NULL AND g.contact_key = x.contact_key)))`;
+
+/** Cold email: an outgoing email message to a recipient (person, company or bare address) with no earlier touch at all. Call before inserting the touch. */
+export function isColdEmail(ctx: Ctx, t: { channel: string; direction: string; kind: string }, s: ResolvedSubject): boolean {
+  if (t.channel !== "email" || t.direction !== "giden" || t.kind !== "mesaj") return false;
+  const [column, value] = s.person_id ? ["person_id", s.person_id] : s.company_id ? ["company_id", s.company_id] : ["contact_key", s.contact_key];
+  return !row(ctx, `SELECT 1 FROM touches WHERE ${column} = ? LIMIT 1`, value);
+}

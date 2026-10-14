@@ -24,6 +24,7 @@
 
 import type { CalendarApi } from "./calendar";
 import type { CompaniesApi } from "./companies";
+import type { DraftsApi } from "./drafts";
 import type { NetworkApi, TouchCreated, TouchUpdated } from "./network";
 import type { PeopleApi } from "./people";
 import type { OpportunityWon, PipelineApi } from "./pipeline";
@@ -31,9 +32,11 @@ import type { PostsApi } from "./posts";
 import type { ProjectsApi } from "./projects";
 import type { ReferralsApi } from "./referrals";
 import type { RecordRestored, RecordTrashed } from "./records";
+import type { TemplatesApi } from "./templates";
 
 export type * from "./calendar";
 export type * from "./companies";
+export type * from "./drafts";
 export type * from "./network";
 export type * from "./people";
 export type * from "./pipeline";
@@ -41,17 +44,20 @@ export type * from "./posts";
 export type * from "./projects";
 export type * from "./records";
 export type * from "./referrals";
+export type * from "./templates";
 
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
 export interface ModuleApis {
   calendar: CalendarApi;
   companies: CompaniesApi;
+  drafts: DraftsApi;
   network: NetworkApi;
   people: PeopleApi;
   pipeline: PipelineApi;
   posts: PostsApi;
   projects: ProjectsApi;
   referrals: ReferralsApi;
+  templates: TemplatesApi;
 }
 
 /** Event name to its payload type. Names not listed here are accepted with an `unknown` payload. */

@@ -83,6 +83,17 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
     return list;
   };
 
+  // the modules that listen to an event, in the order their hooks run: by `hookOrder`, then by module key (the installed order). Built once per event name.
+  const listeners = new Map<string, ModuleDef[]>();
+  const hooksOf = (name: string): ModuleDef[] => {
+    let list = listeners.get(name);
+    if (!list) {
+      list = installed.filter((d) => d.hooks?.[name]).sort((a, b) => (a.hookOrder?.[name] ?? 0) - (b.hookOrder?.[name] ?? 0));
+      listeners.set(name, list);
+    }
+    return list;
+  };
+
   return {
     has: (key) => byKey.has(key),
     list: () => [...installed],
@@ -102,8 +113,8 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
       const emit = <N extends EventName>(name: N, payload: EventPayload<N>): string[] => {
         if (!ctx.sqlite.inTransaction) throw new Error(`emit("${name}") must run inside the caller's transaction`);
         const effects: string[] = [...(coreHooks[name]?.(ctx, payload) ?? [])];
-        for (const def of installed) {
-          const out = def.hooks?.[name]?.(ctx, payload);
+        for (const def of hooksOf(name)) {
+          const out = def.hooks![name](ctx, payload);
           if (out) effects.push(...out);
         }
         return effects;

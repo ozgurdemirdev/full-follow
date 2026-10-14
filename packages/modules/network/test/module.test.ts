@@ -27,7 +27,7 @@ describe("network as a module", () => {
     const r = app.network.touches.create(mail("ilk"));
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({ touch: { id: r.row.id, summary: "ilk" }, subject: { person_id: null, contact: "info@x.example" }, cold: true, input: { channel: "email", direction: "giden", kind: "mesaj" } });
-    // the module's effect comes first, then core's send warnings (the cold email warmup is off by default: the daily limit is the only warning)
+    // the drafts module (send warnings) is not installed here: the other module's effect is all there is
     expect(r.effects[0]).toBe("probe ran");
     const second = app.network.touches.create(mail("ikinci"));
     expect(seen[1].cold).toBe(false);

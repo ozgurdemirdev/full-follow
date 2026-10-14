@@ -8,7 +8,7 @@ export const entities: Record<string, EntityHandler> = {
     aliases: ["proje"],
     ref: { table: "projects", col: "name", label: "proje" },
     // the payments come from the relation this module contributes
-    related: ["comments", "drafts", "links"],
+    related: ["comments", "links"],
     save: (ctx, d, id) => (id ? projects(ctx).projects.update(id, d) : projects(ctx).projects.create(d)),
     get: (ctx, id) => projects(ctx).projects.get(id),
     find: (ctx, o) => projects(ctx).projects.list(o),

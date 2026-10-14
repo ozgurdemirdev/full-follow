@@ -28,6 +28,13 @@ export function sectorIds(ctx: Ctx, id: number): number[] {
   return [id, ...rows<{ id: number }>(ctx, "SELECT id FROM sectors WHERE parent_id = ?", id).map((r) => r.id)];
 }
 
+/** Sektör id ya da adı → o sektörün ve alt sektörlerinin id'leri (bilinmeyen sektör: boş) */
+export function sectorMatch(ctx: Ctx, sector: string | number): number[] {
+  const sid = /^\d+$/.test(String(sector)) ? Number(sector)
+    : rows<{ id: number; name: string }>(ctx, "SELECT id, name FROM sectors").find((x) => norm(x.name) === norm(String(sector)))?.id;
+  return sid ? sectorIds(ctx, sid) : [];
+}
+
 /** Aynı üst sektörde aynı adlı sektör (silinmiş olan da sayılır; etkin olan önce) */
 const findChild = (ctx: Ctx, name: string, parentId: number | null) =>
   rows<{ id: number; name: string; deleted_at: string | null }>(ctx,

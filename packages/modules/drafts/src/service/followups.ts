@@ -1,43 +1,16 @@
-import { label } from "../constants";
-import { dayOf, daysBetween } from "../dates";
-import { row, rows, type Ctx } from "../context";
-import { draftsService } from "./drafts";
-import { marketingSettings } from "./settings";
-import { subjectWhere } from "./subject";
-import { renderTemplate, suggestTemplates } from "./templates";
-
-export interface DueFollowUp {
-  type: "person" | "opportunity";
-  id: number;
-  name: string;
-  /** an outgoing touch on or after the follow-up date */
-  done: boolean;
-}
+import {
+  dayOf, daysBetween, keptRow, keptRows, label, marketingSettings, renderTemplate, subjectWhere,
+  type Ctx, type FollowupDue, type FollowUpDate,
+} from "@fullfollow/core";
+import { draftsServices } from "./index";
 
 /** Follow-up dates of people and (through the pipeline module) open opportunities in the range; the calendar feed reads this */
-export function followUpsDue(ctx: Ctx, from: string, to: string): (DueFollowUp & { date: string })[] {
-  const people = rows<DueFollowUp & { date: string }>(ctx, `SELECT 'person' AS type, p.id, p.name, substr(p.next_follow_up_at, 1, 10) AS date,
+export function followUpDates(ctx: Ctx, from: string, to: string): FollowUpDate[] {
+  const people = keptRows<FollowUpDate>(ctx, `SELECT 'person' AS type, p.id, p.name, substr(p.next_follow_up_at, 1, 10) AS date,
       EXISTS (SELECT 1 FROM touches t WHERE t.person_id = p.id AND t.direction = 'giden' AND substr(t.happened_at, 1, 10) >= substr(p.next_follow_up_at, 1, 10)) AS done
     FROM people p WHERE substr(p.next_follow_up_at, 1, 10) BETWEEN ? AND ?`, from, to);
   const opps = ctx.mod("pipeline")?.followUpsDue(from, to) ?? [];
   return [...people, ...opps].map((r) => ({ ...r, done: !!r.done }));
-}
-
-export interface FollowupDue {
-  /** muhatap: kişi, firma ya da sadece adres (biri dolu) */
-  person_id: number | null;
-  company_id: number | null;
-  contact: string | null;
-  name: string;
-  company_name: string | null;
-  channel: string;
-  /** 1 = ilk takip */
-  step: number;
-  steps: number;
-  /** ilk cevapsız mesajdan bu yana gün */
-  days: number;
-  attempts: number;
-  since: string;
 }
 
 /** Şablon yoksa kullanılan takip metinleri (adım sırasıyla; son metin sonraki adımlarda da kullanılır) */
@@ -62,7 +35,7 @@ export function followupsDue(ctx: Ctx): FollowupDue[] {
   const { followup_days } = marketingSettings(ctx);
   if (!followup_days.length) return [];
   const today = ctx.clock.today();
-  const list = rows(ctx, `
+  const list = keptRows(ctx, `
     WITH t AS (SELECT *, ${SUBJECT_KEY} AS sk FROM touches),
     li AS (
       SELECT sk, MAX(at) AS at FROM (
@@ -103,16 +76,17 @@ export function followupsDue(ctx: Ctx): FollowupDue[] {
 /**
  * Zamanı gelen her takip için onaya taslak bırakır (şablon: muhatabın kanal ve sektörüne uyan "takip" şablonu, yoksa varsayılan metin).
  * Tekrar çağrılırsa aynı adım için ikinci taslak açılmaz. Onay ve gönderme yine Özgür'de.
+ * The template comes from the templates module when it is installed.
  */
 export function generateFollowups(ctx: Ctx) {
-  const drafts = draftsService(ctx);
+  const { drafts } = draftsServices(ctx);
   const created: { draft_id: number; person_id: number | null; company_id: number | null; name: string; step: number }[] = [];
   for (const f of followupsDue(ctx)) {
     const subject = { person_id: f.person_id, company_id: f.company_id, contact: f.contact };
     // aynı çağrı içinde başka bir yol taslak açtıysa atla
     const [where, params] = subjectWhere(subject);
-    if (row(ctx, `SELECT 1 x FROM drafts WHERE ${where} AND status IN ('bekliyor', 'onaylandi')`, ...params)) continue;
-    const t = suggestTemplates(ctx, subject, f.channel, "takip")[0];
+    if (keptRow(ctx, `SELECT 1 x FROM drafts WHERE ${where} AND status IN ('bekliyor', 'onaylandi')`, ...params)) continue;
+    const t = ctx.mod("templates")?.suggest(subject, f.channel, "takip")[0];
     const body = renderTemplate(ctx, t?.body ?? DEFAULT_BODIES[Math.min(f.step, DEFAULT_BODIES.length) - 1], subject);
     const r = drafts.create({
       ...subject, channel: f.channel, body, template_id: t?.id ?? null, followup_step: f.step,

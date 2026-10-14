@@ -6,7 +6,7 @@ import { MODULE_TYPE_OWNER, type CommentTarget } from "../constants";
 import type { EntityRef } from "../modules/types";
 
 /** Tables of the comment targets core owns; the modules' targets come from the registry (`targetTable`) */
-export const TARGET_TABLE: Record<string, string> = { draft: "drafts", idea: "ideas", own_project: "own_projects" };
+export const TARGET_TABLE: Record<string, string> = { idea: "ideas", own_project: "own_projects" };
 
 /** Table of a comment target type: core's, else the installed module's; undefined for an unknown type or one whose module is not installed */
 export const targetTable = (ctx: Ctx, type: string): string | undefined => TARGET_TABLE[type] ?? ctx.types.commentTarget(type)?.table;
@@ -61,20 +61,12 @@ export function targetLink(ctx: Ctx, type: CommentTarget, id: number): Required<
   switch (type) {
     case "idea":
     case "own_project": return link(ctx, {});
-    case "draft": {
-      const r = row(ctx, "SELECT person_id, opportunity_id, project_id FROM drafts WHERE id = ?", id);
-      return link(ctx, r ?? {});
-    }
     default: return link(ctx, ctx.types.commentTarget(type)?.link?.(ctx, id) ?? {});
   }
 }
 
 export function targetLabel(ctx: Ctx, type: CommentTarget, id: number): string {
   switch (type) {
-    case "draft": {
-      const d = row(ctx, "SELECT p.name FROM drafts d JOIN people p ON p.id = d.person_id WHERE d.id = ?", id);
-      return `taslak #${id}${d ? ` (${d.name})` : ""}`;
-    }
     case "idea": return row(ctx, "SELECT title FROM ideas WHERE id = ?", id)?.title ?? `#${id}`;
     case "own_project": return row(ctx, "SELECT name FROM own_projects WHERE id = ?", id)?.name ?? `#${id}`;
     default: return ctx.types.commentTarget(type)?.label(ctx, id) ?? `#${id}`;
@@ -93,7 +85,6 @@ const CORE_REFS = {
   sector: { table: "sectors", col: "name", label: "sektör" },
   idea: { table: "ideas", col: "title", label: "fikir" },
   own_project: { table: "own_projects", col: "name", label: "kendi projesi" },
-  template: { table: "templates", col: "name", label: "şablon" },
   tag: { table: "tags", col: "name", label: "etiket" },
 } as const;
 export type RefType = keyof typeof CORE_REFS;
@@ -128,10 +119,10 @@ export function resolveRef(ctx: Ctx, type: string, ref: string | number): number
 
 const CORE_INPUT_REFS: Record<string, [string, string]> = {
   source: ["source_id", "source"],
-  idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
+  idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"],
 };
 
-/** Girdideki isim alanlarını (source, idea, template ve kurulu modüllerin türleri: person, company, post, opportunity, opp, project, referred_by...) *_id'ye çevirir */
+/** Girdideki isim alanlarını (source, idea ve kurulu modüllerin türleri: person, company, post, opportunity, opp, project, referred_by...) *_id'ye çevirir */
 export function resolveInput<T extends Record<string, any>>(ctx: Ctx, data: T): Record<string, any> {
   const out: Record<string, any> = { ...data };
   const moduleRefs = ctx.types.inputRefs().map(([key, idKey, type]): [string, [string, string]] => [key, [idKey, type]]);

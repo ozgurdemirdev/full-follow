@@ -1,4 +1,4 @@
-import { contactKey, rows, type Ctx } from "@fullfollow/core";
+import { rows, type Ctx } from "@fullfollow/core";
 import { bumpContactStatus, statusOfTouch } from "./status";
 
 /**
@@ -16,9 +16,7 @@ export function adoptLoose(ctx: Ctx, owner: { person_id?: number; company_id?: n
     ctx.sqlite.prepare(`UPDATE touches SET ${col} = ? WHERE id = ?`).run(id, t.id);
     bumpContactStatus(ctx, owner, statusOfTouch(t));
   }
-  // TODO(modules): loose drafts are the drafts module's to adopt (it listens to the person or company being created)
-  const drafts = rows<{ id: number; contact: string }>(ctx, "SELECT id, contact FROM drafts WHERE person_id IS NULL AND company_id IS NULL AND contact IS NOT NULL")
-    .filter((d) => wanted.has(contactKey(d.contact) ?? ""));
-  for (const d of drafts) ctx.sqlite.prepare(`UPDATE drafts SET ${col} = ? WHERE id = ?`).run(id, d.id);
+  // the drafts saved with only this address join too (the drafts module owns them)
+  ctx.mod("drafts")?.adoptLoose(owner, [...wanted]);
   return loose.length ? [`${loose.length} temas bağlandı`] : [];
 }

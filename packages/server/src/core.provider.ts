@@ -1,35 +1,28 @@
 import { createApp, type App } from "@fullfollow/app";
-import { APP_TOKEN, openDb } from "@fullfollow/core";
+import { APP_TOKEN, CLAUDE_APP_TOKEN, openDb } from "@fullfollow/core";
 
 /** The composed app is injected under core's string token, so module packages can ask for it without importing the server */
 export const CORE = APP_TOKEN;
-export const FOLLOWUPS = Symbol("FOLLOWUPS");
 /** The composed app (core plus installed modules); controllers inject it under the CORE token. */
 export type Core = App;
 
-/** Otomatik takip taslakları: Claude adına hazırlanır, onay yine Özgür'de */
-export interface AutoFollowups {
-  run(): ReturnType<Core["followups"]["generate"]>;
-}
-
-let shared: { core: Core; auto: AutoFollowups } | null = null;
+let shared: { core: Core; claude: Core } | null = null;
 
 /**
- * Tek veritabanı bağlantısı. Web her işlemi actor = "ozgur" ile yapar.
- * Takip dizisi taslakları zamanlayıcıyla (açılışta ve saatte bir) actor = "claude" olarak yazılır:
- * bunlar "Claude taslağı"dır, girdiden gelen bir kimlik değildir. FF_AUTO_FOLLOWUP=0 kapatır.
+ * Tek veritabanı bağlantısı. Web her işlemi actor = "ozgur" ile yapar; `claude` aynı uygulamanın actor = "claude" ile olanıdır.
+ * Takip dizisi taslakları (drafts modülü) zamanlayıcıyla (açılışta ve saatte bir) `claude` olarak yazılır:
+ * bunlar "Claude taslağı"dır, girdiden gelen bir kimlik değildir. FF_AUTO_FOLLOWUP=0 kapatır; drafts modülü yoksa zamanlayıcı bir şey yapmaz.
  */
 function init() {
   if (shared) return shared;
   const handle = openDb();
   const core = createApp(handle, "ozgur");
   const claude = createApp(handle, "claude");
-  const auto: AutoFollowups = { run: () => claude.followups.generate() };
   if (process.env.FF_AUTO_FOLLOWUP !== "0") {
     const tick = () => {
       try {
-        const r = auto.run();
-        if (r.created.length) console.log(`  Takip taslağı hazırlandı: ${r.effects.join(", ")}`);
+        const r = claude.mod("drafts")?.followups.generate();
+        if (r?.created.length) console.log(`  Takip taslağı hazırlandı: ${r.effects.join(", ")}`);
       } catch (e) {
         console.warn("  Takip taslakları hazırlanamadı:", e instanceof Error ? e.message : e);
       }
@@ -37,9 +30,10 @@ function init() {
     setTimeout(tick, 3000).unref();
     setInterval(tick, 60 * 60 * 1000).unref();
   }
-  shared = { core, auto };
+  shared = { core, claude };
   return shared;
 }
 
 export const coreProvider = { provide: CORE, useFactory: (): Core => init().core };
-export const followupsProvider = { provide: FOLLOWUPS, useFactory: (): AutoFollowups => init().auto };
+/** The app as Claude, for the modules that write on Claude's behalf (the "run follow-ups now" button) */
+export const claudeProvider = { provide: CLAUDE_APP_TOKEN, useFactory: (): Core => init().claude };
