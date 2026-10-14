@@ -1,5 +1,6 @@
 import { monthOf, type Ctx, type MonthReport } from "@fullfollow/core";
 import { priceFloor } from "./floor";
+import { insightOf } from "./insight";
 
 export function reportsService(ctx: Ctx) {
   /** Kaynak bazında dönüşüm: kazanılan / kapanan (kazanılan + kaybedilen). Açık fırsatlar paydaya girmez. Empty without the pipeline module. */
@@ -13,7 +14,9 @@ export function reportsService(ctx: Ctx) {
     const collected = projects?.collectedIn(ym) ?? 0;
     const expected = projects?.outstandingDue(ym) ?? 0;
     const f = priceFloor(ctx);
-    return { month: ym, collected, outstanding_due: expected, floor: f.floor, floor_detail: f, gap: collected - f.floor };
+    const lost = ctx.mod("pipeline")?.lostIn(ym) ?? null;
+    const insight = insightOf({ month: ym, current: monthOf(ctx.clock.today()), collected, due: expected, floor: f.floor, lost });
+    return { month: ym, collected, outstanding_due: expected, floor: f.floor, floor_detail: f, gap: collected - f.floor, insight, lost };
   }
 
   /** Son N ay (eskiden yeniye), grafik için */

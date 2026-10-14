@@ -13,6 +13,7 @@ const companyShape = {
   source_id: id.nullable(),
   contact_status: z.enum(CONTACT_STATUSES),
   notes: optText,
+  city: optText,
 };
 export const companyCreate = z.strictObject({
   ...companyShape,

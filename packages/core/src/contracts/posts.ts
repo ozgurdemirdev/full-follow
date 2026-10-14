@@ -3,6 +3,9 @@ import type { ListOpts } from "../context";
 /** Platform a post was shared on */
 export type PostPlatform = "r10" | "linkedin" | "instagram" | "diger";
 
+/** How a post is made: text, image, video or a carousel */
+export type PostFormat = "metin" | "gorsel" | "video" | "karusel";
+
 /** A post row as stored */
 export interface PostRecord {
   id: number;
@@ -12,9 +15,11 @@ export interface PostRecord {
   body: string | null;
   /** ISO date */
   posted_at: string;
-  /** days between refreshes; null = no reminder */
+  /** days between refreshes; null = the `post_refresh_days` setting decides */
   refresh_days: number | null;
   refreshed_at: string | null;
+  /** null = not said */
+  format: PostFormat | null;
   idea_id: number | null;
   notes: string | null;
   created_at: string;
@@ -29,9 +34,11 @@ export interface PostStats extends PostRecord {
   opp_count: number;
   won: number;
   won_value: number;
-  /** next refresh day, null when no interval is set */
+  /** the interval in force: the post's own, else the `post_refresh_days` setting */
+  refresh_every: number;
+  /** next refresh day: the last refresh (else the post day) plus the interval */
   next_refresh_at: string | null;
-  /** an interval is set and the next refresh day is today or earlier */
+  /** the next refresh day is today or earlier */
   refresh_due: boolean;
 }
 

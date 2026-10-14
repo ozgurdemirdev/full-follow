@@ -14,6 +14,8 @@ export interface OpportunityRecord {
   closed_at: string | null;
   /** order inside its stage column of the board */
   position: number;
+  /** when it entered its current stage (ISO; set on create and on every stage change) */
+  stage_since: string | null;
   /** link and date of the listing or topic the opportunity came from */
   source_url: string | null;
   source_date: string | null;
@@ -29,6 +31,25 @@ export interface OpportunityRow extends OpportunityRecord {
   company_name: string | null;
   source_name: string;
   project_id: number | null;
+}
+
+/** Per open stage: the chance an opportunity there is won (0 to 1, for the weighted forecast) and the days after which it counts as stale */
+export interface StageRule {
+  stage: OppStage;
+  probability: number;
+  stale_days: number;
+}
+
+/** Of the opportunities that left a stage in the last days, the share that moved forward (null while none left) */
+export interface StageRate {
+  stage: OppStage;
+  to_next: number | null;
+}
+
+/** What `GET /api/opportunities` adds to the list: the stage rules and the stage to stage rates */
+export interface PipelineMeta {
+  stages: StageRule[];
+  stage_rates: StageRate[];
 }
 
 /** What other modules need to know about an opportunity without loading the list */
@@ -183,14 +204,18 @@ export interface PipelineApi {
   bySource(): SourceConversion[];
   /** opportunity count per lead source */
   countsBySource(): Map<number, number>;
-  /** open opportunities per company (through the company's people) */
-  openCountsByCompany(): Map<number, number>;
+  /** open opportunities per company (through the company's people): how many and their estimated value */
+  openByCompany(): Map<number, { count: number; value: number }>;
+  /** the stage rules and the stage to stage rates of the last 90 days, from the stage change events (one grouped query) */
+  meta(): PipelineMeta;
   /** per person: opportunities, won ones and their value */
   personStats(): Map<number, PersonPipelineStats>;
   /** follow-up dates of open opportunities in the range */
   followUpsDue(from: string, to: string): OpportunityFollowUp[];
   /** opportunities that moved to the offer stage in the range (counted from the stage events) */
   offersMade(from: string, to: string): number;
+  /** opportunities lost in a month (YYYY-MM, by the day they were closed): how many and the sum of their estimated values */
+  lostIn(ym: string): { count: number; budget: number };
   /** when opportunities in the offer stage were last touched (open offers; the silent ones are old) */
   openOfferTimes(): string[];
   /** creation times of offers made since the date */

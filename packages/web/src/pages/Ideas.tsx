@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { useIdeas } from "../api/keys";
 import { useQuery } from "../api/store";
-import type { Detail, IdeaRelated, IdeaRow } from "../api/types";
+import type { Detail, IdeaRelated, Idea } from "../api/types";
 import { Page } from "../app/Page";
 import { PATHS } from "../app/routes";
 import { openSheet } from "../app/ui";
@@ -17,7 +17,7 @@ import { groupByStage } from "../lib/ideas";
 export default function Ideas() {
   const all = useIdeas();
   // project ideas live on their project's page; this screen is only the general money ideas
-  const rows = useMemo(() => all.rows.filter((i) => !i.own_project_id) as IdeaRow[], [all.rows]);
+  const rows = useMemo(() => all.rows.filter((i) => !i.own_project_id) as Idea[], [all.rows]);
   const lanes = useMemo(() => groupByStage(rows), [rows]);
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
@@ -27,7 +27,7 @@ export default function Ideas() {
   }, [inProject, navigate]);
   const sel = rows.find((i) => i.id === Number(params.id)) ?? lanes.find((l) => l.ideas.length)?.ideas[0];
   const pick = useCallback((id: number) => navigate(`${PATHS.ideas}/${id}`, { replace: true }), [navigate]);
-  const detail = useQuery<Detail<IdeaRow, IdeaRelated>>(sel ? `/ideas/${sel.id}?with=people,touches,posts` : null);
+  const detail = useQuery<Detail<Idea, IdeaRelated>>(sel ? `/ideas/${sel.id}?with=people,touches,posts` : null);
 
   return (
     <Page

@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
-import type { PostRow } from "../../api/types-posts";
+import type { Post } from "../../api/types";
 import { staleDays } from "../../lib/posts";
 import { PlatformPill, useRefresh } from "./PlatformPill";
 
-function StaleRow({ p }: { p: PostRow }) {
+function StaleRow({ p }: { p: Post }) {
   const { busy, refresh } = useRefresh(p.id);
   return (
     <div className="posts-stale-row rise-item">
@@ -18,7 +18,7 @@ function StaleRow({ p }: { p: PostRow }) {
 }
 
 /** Posts whose refresh date has come, oldest first */
-export function StaleCard({ rows, style }: { rows: PostRow[]; style?: CSSProperties }) {
+export function StaleCard({ rows, style }: { rows: Post[]; style?: CSSProperties }) {
   return (
     <section className="posts-stale rise" style={style} aria-label="Güncelleme zamanı">
       <div className="posts-stale-head">

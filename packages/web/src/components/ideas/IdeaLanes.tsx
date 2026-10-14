@@ -1,10 +1,10 @@
 import { memo } from "react";
-import type { IdeaRow } from "../../api/types";
-import { dotsOf, LANE_RATE_GOOD, rateOf, ratePct, type Lane } from "../../lib/ideas";
+import type { Idea } from "../../api/types";
+import { dotsOf, LANE_RATE_GOOD, ratePct, type Lane } from "../../lib/ideas";
 import { IDEA_STAGE } from "../../lib/labels";
 
-const LaneCard = memo(function LaneCard({ idea, on, onPick }: { idea: IdeaRow; on: boolean; onPick: (id: number) => void }) {
-  const rate = rateOf(idea);
+const LaneCard = memo(function LaneCard({ idea, on, onPick }: { idea: Idea; on: boolean; onPick: (id: number) => void }) {
+  const rate = idea.interest_share;
   return (
     <button type="button" className="ideas-card" aria-pressed={on} data-record={`idea-${idea.id}`} onClick={() => onPick(idea.id)}>
       <span className="ideas-card-title">{idea.title}</span>

@@ -1,8 +1,8 @@
-// Templates screen: rate tones, placeholder segments, the live render of a template for one person and the tip
+// Templates screen: rate tones, placeholder segments and the live render of a template for one person
 import { useEffect, useState } from "react";
 import { api, qs } from "../api/client";
-import type { Person, RenderedTemplate, Template, TemplateGroup } from "../api/types";
-import { pct, todayIso } from "./format";
+import type { Person, RenderedTemplate, Template } from "../api/types";
+import { todayIso } from "./format";
 import { channelName } from "./network";
 import { compareTouch } from "./people";
 
@@ -10,8 +10,6 @@ import { compareTouch } from "./people";
 export const RATE_GOOD = 0.4;
 /** Reply rate from which a template reads fair (warning), below it poor (danger) */
 export const RATE_FAIR = 0.25;
-/** A template with enough sends and a rate below this gets the "emekliye ayır" flag */
-export const RATE_RETIRE = 0.15;
 /** Quiet time after the last recipient pick before the render request goes out */
 const RENDER_DEBOUNCE_MS = 120;
 /** The "Kime" row shows this many people */
@@ -25,14 +23,13 @@ export const TONE_BAR: Record<RateTone, string> = { none: "bg-text-disabled", go
 export const TONE_TEXT: Record<RateTone, string> = { none: "text-text-disabled", good: "text-accent", fair: "text-warning", poor: "text-danger" };
 
 export const meta = (t: Template) => `${t.channel ? channelName(t.channel) : "Tüm kanallar"} · ${t.sector_path ?? "Hepsi"}`;
-export const shouldRetire = (t: Template) => t.reply_rate !== null && !t.early && t.reply_rate < RATE_RETIRE;
 
 /** Tiles by reply rate, best first; templates without a measurement last */
 export const byRate = (a: Template, b: Template) => (b.reply_rate ?? -1) - (a.reply_rate ?? -1);
 
 /** Small text on the tile corner: the retire flag, or "erken" while the sample is too small to trust the rate */
 export function flagOf(t: Template): { text: string; retire: boolean } | null {
-  if (shouldRetire(t)) return { text: "emekliye ayır", retire: true };
+  if (t.retire) return { text: "emekliye ayır", retire: true };
   return t.sent && t.early ? { text: "erken", retire: false } : null;
 }
 
@@ -95,21 +92,4 @@ export function useRendered(templateId: number, personId: number | null): string
     };
   }, [templateId, personId, key]);
   return personId && done?.key === key ? done.body : null;
-}
-
-/**
- * Gap G19: one sentence about a template, derived from the comparison of its group (same kind and channel).
- * This rule moves into core next to templateComparison() with the templates module; the web only renders it.
- */
-export function templateTip(t: Template, groups: TemplateGroup[]): string | null {
-  if (!t.sent) return "Henüz ölçüm yok. Bir taslakta kullanıp gönderince cevap oranı burada görünür.";
-  const group = groups.find((g) => g.kind === t.kind && g.channel === t.channel)?.templates ?? [];
-  const mine = group.find((x) => x.id === t.id);
-  if (shouldRetire(t)) {
-    const best = group.filter((x) => x.id !== t.id && !x.early && x.reply_rate !== null && x.reply_rate > t.reply_rate!).sort((a, b) => b.reply_rate! - a.reply_rate!)[0];
-    const own = `Bu şablon ${t.sent} kez gitti, ${t.replied} cevap aldı.`;
-    return best ? `${own} Aynı tür ve kanalda “${best.name}” ${pct(best.reply_rate)} cevap alıyor. Bunu arşive kaldırmanı öneririm.` : `${own} Bunu arşive kaldırmanı öneririm.`;
-  }
-  if (t.early) return "Gönderimi az olduğu için oranı henüz güvenilir değil.";
-  return mine?.leader ? `Aynı tür ve kanalda en yüksek cevap oranı bu şablonda (${pct(t.reply_rate)}).` : null;
 }

@@ -1,7 +1,7 @@
 /** Hook'lar on=false ile çağrılırsa istek yapılmaz (ör. arama ilk odaklanana kadar). */
 // Ekranlar arası paylaşılan sorgu anahtarları: aynı anahtar = tek istek, tek önbellek kaydı
 import { useMemo } from "react";
-import type { Company, Idea, List, OwnProject, Opportunity, Person, Post, Project, Sector, Source, Tag, Task, Template, Thread, TrashItem } from "./types";
+import type { Company, Idea, List, OwnProject, Opportunity, Person, PipelineMeta, Post, Project, Sector, Source, Tag, Task, Template, Thread, TrashItem } from "./types";
 import { useQuery } from "./store";
 
 const ALL = 1000;
@@ -31,8 +31,8 @@ export const K = {
   ownProjects: `/own-projects?limit=${ALL}`,
 };
 
-function useIndex<T extends { id: number }>(key: string | null) {
-  const q = useQuery<List<T>>(key);
+function useIndex<T extends { id: number }, Extra extends object = object>(key: string | null) {
+  const q = useQuery<List<T> & Extra>(key);
   const byId = useMemo(() => new Map((q.data?.rows ?? []).map((r) => [r.id, r])), [q.data]);
   return { ...q, rows: q.data?.rows ?? [], byId };
 }
@@ -40,7 +40,8 @@ function useIndex<T extends { id: number }>(key: string | null) {
 export const usePeople = (on = true) => useIndex<Person>(on ? K.people : null);
 export const useCompanies = (on = true) => useIndex<Company>(on ? K.companies : null);
 export const useSources = (on = true) => useIndex<Source>(on ? K.sources : null);
-export const useBoard = (on = true) => useIndex<Opportunity>(on ? K.board : null);
+/** The board list carries `meta`: the stage rules and the stage to stage rates (see PipelineMeta) */
+export const useBoard = (on = true) => useIndex<Opportunity, { meta?: PipelineMeta }>(on ? K.board : null);
 export const useOpps = (on = true) => useIndex<Opportunity>(on ? K.opps : null);
 export const useProjects = (on = true) => useIndex<Project>(on ? K.projects : null);
 export const useOpenTasks = (on = true) => useIndex<Task>(on ? K.openTasks : null);

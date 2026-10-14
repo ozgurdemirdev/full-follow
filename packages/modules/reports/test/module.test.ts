@@ -34,6 +34,31 @@ describe("reports as a module", () => {
     expect(app.reports.report("2026-09")).toMatchObject({ sources: [], month: { collected: 25000 } });
   });
 
+  it("the month insight: this month looks ahead at the due payments, a past month looks back at the floor and what was lost, a coming month and no floor say nothing", () => {
+    const fakePipeline = defineModule({ key: "pipeline", label: "P", api: () => ({ lostIn: (ym: string) => (ym === "2026-09" ? { count: 2, budget: 36000 } : { count: 0, budget: 0 }) }) });
+    const app = appFor(openDb(":memory:"), "ozgur", clock, [fakeProjects, fakePipeline]);
+    const insight = (target: number, ym: string) => {
+      app.settings.setMany({ target_net_monthly: target });
+      return app.reports.month(ym).insight;
+    };
+    expect(insight(0, "2026-10")).toBeNull();
+    expect(insight(30000, "2026-10")).toMatch(/^Bu ay taban kapandı/);
+    // 3.000 short, 5.000 due: the floor is reached with 2.000 to spare
+    expect(insight(43000, "2026-10")).toBe("Beklenen ₺5.000 ödeme gelirse taban kapanır ve ₺2.000 artı kalır.");
+    // 2.000 short even with all due, within a tenth of the floor
+    expect(insight(47000, "2026-10")).toBe("Beklenen ₺5.000 ödeme gelirse tabana yalnızca ₺2.000 eksik kalır.");
+    expect(insight(80000, "2026-10")).toBe("Beklenen ₺5.000 ödeme gelse bile tabana ₺35.000 eksik kalır.");
+    expect(insight(30000, "2026-09")).toBe("Eylül tabanın altında kaldı. O ay 2 teklif kaybedilmişti, toplam bütçesi ₺36.000.");
+    expect(insight(20000, "2026-09")).toBe("Eylül tabanın üstünde kapandı.");
+    expect(insight(30000, "2026-08")).toBe("Ağustos tabanın altında kaldı.");
+    expect(insight(30000, "2026-11")).toBeNull();
+    expect(app.reports.month("2026-09").lost).toEqual({ count: 2, budget: 36000 });
+    // without the pipeline module nothing is known about lost offers
+    const bare = appFor(openDb(":memory:"), "ozgur", clock, [fakeProjects]);
+    bare.settings.setMany({ target_net_monthly: 30000 });
+    expect(bare.reports.month("2026-09")).toMatchObject({ lost: null, insight: "Eylül tabanın altında kaldı." });
+  });
+
   it("without the other modules every part answers empty, never an error", () => {
     const app = appFor(openDb(":memory:"), "ozgur", clock);
     const month = app.reports.month("2026-10");

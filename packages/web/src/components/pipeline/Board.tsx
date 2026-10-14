@@ -12,7 +12,7 @@ import type { List, Opportunity } from "../../api/types";
 import { openSheet } from "../../app/ui";
 import { lira } from "../../lib/format";
 import { BOARD_STAGES, STAGE, STAGE_BG, type OppStage } from "../../lib/labels";
-import { isLive, percentOf } from "../../lib/pipeline";
+import { isLive, percentOf, useStageRules } from "../../lib/pipeline";
 import { BoardIcon } from "../boardIcons";
 import { LostReason } from "../LostReason";
 import { OppCard } from "./OppCard";
@@ -50,6 +50,7 @@ interface CardCtx {
 function Shell({ stage, count, sum, hot, dragging, setRef, children }: {
   stage: OppStage; count: number; sum: number; hot?: boolean; dragging: boolean; setRef?: (el: HTMLElement | null) => void; children: ReactNode;
 }) {
+  const rules = useStageRules();
   return (
     <section ref={setRef} id={`col-${stage}`} aria-label={STAGE[stage]} className="pipe-col" data-hot={hot || undefined}>
       <div className="pipe-col-head">
@@ -57,7 +58,7 @@ function Shell({ stage, count, sum, hot, dragging, setRef, children }: {
         <h2 className="m-0 flex-grow text-base font-medium">{STAGE[stage]}</h2>
         <span className="font-mono text-sm text-text-secondary">{count}</span>
       </div>
-      <span className="pipe-col-sum">{count ? `${lira(sum)}${isLive({ stage }) ? ` · ihtimal ${percentOf(stage)}` : ""}` : "Boş"}</span>
+      <span className="pipe-col-sum">{count ? `${lira(sum)}${isLive({ stage }) ? ` · ihtimal ${percentOf(stage, rules)}` : ""}` : "Boş"}</span>
       {children}
       {count ? null : <span className="pipe-col-empty">{dragging ? "Buraya bırak" : "Kart yok"}</span>}
       {stage !== "kazanildi" && stage !== "kaybedildi" ? (

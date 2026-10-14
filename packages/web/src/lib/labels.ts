@@ -4,6 +4,7 @@
 export type Actor = "ozgur" | "claude";
 export type OppStage = "bulundu" | "temas" | "cevap" | "gorusme" | "teklif" | "kazanildi" | "kaybedildi";
 export type ProjectStage = "pesinat" | "tasarim_onayi" | "test_surumu" | "yayin" | "teslim" | "bakim" | "iptal";
+export type PostFormat = "metin" | "gorsel" | "video" | "karusel";
 export type Tone = "opportunity" | "source" | "payment" | "warning" | "neutral" | "success" | "claude";
 
 export const OPEN_STAGES: OppStage[] = ["bulundu", "temas", "cevap", "gorusme", "teklif"];
@@ -58,6 +59,8 @@ export const ACTOR: Record<Actor, string> = { ozgur: "Özgür", claude: "Claude"
 // ---- Paket 2: pazarlama ----
 export const PLATFORM: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 export const PLATFORMS = Object.keys(PLATFORM);
+export const POST_FORMAT: Record<PostFormat, string> = { metin: "Metin", gorsel: "Görsel", video: "Video", karusel: "Karusel" };
+export const POST_FORMATS = Object.keys(POST_FORMAT) as PostFormat[];
 export const PLATFORM_DOT: Record<string, string> = { r10: "bg-danger", linkedin: "bg-chip-opportunity-fg", instagram: "bg-entity-source", diger: "bg-entity-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
 export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
@@ -125,6 +128,11 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
 };
 
 /** Günlük iş planı: hafta günü kısa adları (ISO sırası, pazartesi önde) ve hazır tekrarlar */
+/** Who a task belongs to: Özgür, Claude, or the client (the project then waits on the client) */
+export type TaskAssignee = Actor | "musteri";
+export const ASSIGNEE: Record<TaskAssignee, string> = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" };
+export const ASSIGNEE_ITEMS = (Object.keys(ASSIGNEE) as TaskAssignee[]).map((value) => ({ value, label: ASSIGNEE[value] }));
+
 /** Task kinds for the task form */
 export const TASK_KIND_ITEMS: { value: "gorusme" | "takip" | "gorev"; label: string }[] = [
   { value: "gorev", label: "Görev" }, { value: "gorusme", label: "Görüşme" }, { value: "takip", label: "Takip" },

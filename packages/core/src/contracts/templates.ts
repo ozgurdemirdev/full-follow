@@ -27,6 +27,10 @@ export interface TemplateStats extends TemplateRecord {
   reply_rate: number | null;
   /** fewer sent messages than the sample size that makes a reply rate worth ranking on */
   early: boolean;
+  /** enough sent messages and a reply rate so low that the template should be retired ("emekliye ayır") */
+  retire: boolean;
+  /** one sentence about the template read against the others of its kind and channel; null when there is nothing to say */
+  tip: string | null;
 }
 
 /** A template that fits a recipient and channel; the higher the score the better it fits */

@@ -9,9 +9,10 @@ export class OpportunitiesController {
     return this.app.mod("pipeline")!.opportunities;
   }
 
+  /** The list plus `meta`: the stage rules (probability, stale days) and the stage to stage rates of the last 90 days */
   @Get()
   list(@Query() query: Record<string, any>) {
-    return this.app.find("opportunity", listOpts(query));
+    return { ...this.app.find("opportunity", listOpts(query)), meta: this.app.mod("pipeline")!.meta() };
   }
 
   @Get(":id")

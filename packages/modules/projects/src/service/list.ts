@@ -1,8 +1,9 @@
 import {
   addDays, bool, has, keptRow, keptRows, page, rows,
-  type Ctx, type DuePayment, type ListOpts, type NextPayment, type PaymentRow, type PersonProjectStats, type ProjectRef, type ProjectRow,
+  type CompanyProjectMoney, type Ctx, type DuePayment, type ListOpts, type NextPayment, type PaymentRow, type PersonProjectStats, type ProjectRef, type ProjectRow,
 } from "@fullfollow/core";
 import { paymentStatus } from "./payments";
+import { waitingOf } from "./waiting";
 
 const PROJECT_SELECT = `
   SELECT pr.*, pe.name AS person_name,
@@ -10,14 +11,15 @@ const PROJECT_SELECT = `
     (SELECT COALESCE(SUM(expected_amount),0) FROM payments WHERE project_id = pr.id) AS expected_total
   FROM projects pr JOIN people pe ON pe.id = pr.person_id`;
 
-type Listed = Omit<ProjectRow, "next_payment" | "next_task">;
+type Listed = Omit<ProjectRow, "next_payment" | "next_task" | "waiting" | "waiting_amount">;
 
-/** For the project board: the next unpaid payment and the next open task (the task is null without the calendar module) */
+/** For the project board: the next unpaid payment, the next open task (null without the calendar module) and who the project waits on */
 function withNext(ctx: Ctx, list: Listed[]): ProjectRow[] {
+  const waiting = waitingOf(ctx, list.map((p) => p.id));
   return list.map((p) => {
     const np = keptRow<NextPayment>(ctx, `SELECT id, milestone, expected_amount - paid_amount AS remaining, due_date FROM payments
       WHERE project_id = ? AND paid_amount < expected_amount ORDER BY (due_date IS NULL), due_date, id LIMIT 1`, p.id);
-    return { ...p, next_payment: np ?? null, next_task: ctx.mod("calendar")?.tasks.next(p.id) ?? null };
+    return { ...p, next_payment: np ?? null, next_task: ctx.mod("calendar")?.tasks.next(p.id) ?? null, ...waiting.get(p.id)! };
   });
 }
 
@@ -61,6 +63,15 @@ export function personStats(ctx: Ctx): Map<number, PersonProjectStats> {
   return new Map(keptRows<PersonProjectStats & { person_id: number }>(ctx, `
     SELECT pr.person_id, COUNT(DISTINCT pr.id) AS projects, COALESCE(SUM(pa.paid_amount), 0) AS collected
     FROM projects pr LEFT JOIN payments pa ON pa.project_id = pr.id GROUP BY pr.person_id`).map(({ person_id, ...stats }): [number, PersonProjectStats] => [person_id, stats]));
+}
+
+/** Per company (through the person of each project): projects, money received and money still due on them, in one statement */
+export function moneyByCompany(ctx: Ctx): Map<number, CompanyProjectMoney> {
+  return new Map(keptRows<CompanyProjectMoney & { company_id: number }>(ctx, `
+    SELECT pe.company_id, COUNT(DISTINCT pr.id) AS projects, COALESCE(SUM(pa.paid_amount), 0) AS paid,
+      COALESCE(SUM(MAX(pa.expected_amount - pa.paid_amount, 0)), 0) AS due
+    FROM projects pr JOIN people pe ON pe.id = pr.person_id LEFT JOIN payments pa ON pa.project_id = pr.id
+    WHERE pe.company_id IS NOT NULL GROUP BY pe.company_id`).map(({ company_id, ...money }): [number, CompanyProjectMoney] => [company_id, money]));
 }
 
 const PAYMENT_SELECT = `

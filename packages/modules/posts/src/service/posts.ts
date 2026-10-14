@@ -1,20 +1,21 @@
 import { eq } from "drizzle-orm";
-import { addDays, announceTrashed, Bin, bool, FFError, has, page, parse, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
+import { addDays, announceTrashed, Bin, bool, FFError, has, page, parse, postRefreshDays, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
 import { PLATFORM_LABEL } from "./constants";
 import { postCreate, postUpdate } from "./schemas";
 
 const { posts } = schema;
 
-/** Bir sonraki yenileme günü: son yenileme (yoksa paylaşım günü) + aralık */
-export const nextRefresh = (p: { posted_at: string; refreshed_at: string | null; refresh_days: number | null }) =>
-  p.refresh_days ? addDays((p.refreshed_at ?? p.posted_at).slice(0, 10), p.refresh_days) : null;
+/** Bir sonraki yenileme günü: son yenileme (yoksa paylaşım günü) + aralık (kendi aralığı, yoksa `post_refresh_days` ayarı) */
+const nextRefresh = (p: { posted_at: string; refreshed_at: string | null; refresh_days: number | null }, fallbackDays: number) =>
+  addDays((p.refreshed_at ?? p.posted_at).slice(0, 10), p.refresh_days ?? fallbackDays);
 
 /**
  * Paylaşım listesi + getirdikleri: kişi (people.post_id), o kişilerin fırsatları, kazanılan ve tutar.
- * Yenileme zamanı gelen: aralık girilmiş ve son yenileme + aralık <= bugün.
+ * Yenileme zamanı gelen: son yenileme + aralık <= bugün.
  */
 export function postStats(ctx: Ctx): PostStats[] {
   const today = ctx.clock.today();
+  const fallbackDays = postRefreshDays(ctx);
   // opportunity numbers come from the pipeline module (zero without it); the people of a post travel as ids
   // the people and the idea title are direct table reads on purpose: tables always exist, so the list keeps working without those modules
   const pipeline = ctx.mod("pipeline")?.personStats();
@@ -25,13 +26,13 @@ export function postStats(ctx: Ctx): PostStats[] {
     FROM posts p LEFT JOIN ideas i ON i.id = p.idea_id
     ORDER BY p.posted_at DESC, p.id DESC`)
     .map(({ person_ids, ...p }) => {
-      const next = nextRefresh(p);
+      const next = nextRefresh(p, fallbackDays);
       const brought = { opp_count: 0, won: 0, won_value: 0 };
       for (const personId of JSON.parse(person_ids) as number[]) {
         const s = pipeline?.get(personId);
         if (s) { brought.opp_count += s.opps; brought.won += s.won; brought.won_value += s.won_value; }
       }
-      return { ...p, ...brought, next_refresh_at: next, refresh_due: !!next && next <= today };
+      return { ...p, ...brought, refresh_every: p.refresh_days ?? fallbackDays, next_refresh_at: next, refresh_due: next <= today };
     });
 }
 
@@ -63,8 +64,7 @@ export function postsService(ctx: Ctx) {
       const set: Record<string, unknown> = { ...d };
       if (refreshed) {
         set.refreshed_at = ctx.clock.today();
-        const next = nextRefresh({ ...cur, ...d, refreshed_at: ctx.clock.today() });
-        if (next) effects.push(`sonraki güncelleme ${next}`);
+        effects.push(`sonraki güncelleme ${nextRefresh({ ...cur, ...d, refreshed_at: ctx.clock.today() }, postRefreshDays(ctx))}`);
       }
       if (Object.keys(set).length) tx.update(posts).set({ ...set, updated_at: ctx.clock.now() }).where(eq(posts.id, id)).run();
       emit(tx, ctx, {

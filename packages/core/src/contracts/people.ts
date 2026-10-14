@@ -1,4 +1,4 @@
-import type { ContactStatus } from "../constants";
+import type { ContactStatus, Influence } from "../constants";
 import type { ListOpts } from "../context";
 import type { TouchDirection } from "./network";
 import type { ReferralValue } from "./referrals";
@@ -24,6 +24,8 @@ export interface PersonRecord {
   contact_status: ContactStatus;
   next_follow_up_at: string | null;
   notes: string | null;
+  /** role in a buying decision (null = not set) */
+  influence: Influence | null;
   created_at: string;
   updated_at: string;
   created_by: "ozgur" | "claude";

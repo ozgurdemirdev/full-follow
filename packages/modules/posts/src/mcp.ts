@@ -17,7 +17,7 @@ export const mcp: McpDef = {
         !!r.people_count && `${r.people_count} kişi`, !!r.opp_count && `${r.opp_count} fırsat`, !!r.won && `${r.won} kazanıldı ${f.tl(r.won_value)}`,
         r.idea_title && `fikir: ${f.cut(r.idea_title, 30)}`, r.url,
       ),
-      details: (r, f) => (r.refresh_days ? [`yenileme: ${r.refresh_days} günde bir${r.refreshed_at ? ` · son ${f.d(r.refreshed_at)}` : ""}`] : []),
+      details: (r, f) => [`yenileme: ${r.refresh_every} günde bir${r.refreshed_at ? ` · son ${f.d(r.refreshed_at)}` : ""}`, ...(r.format ? [`biçim: ${r.format}`] : [])],
     },
   },
   relations: { posts: "post" },
@@ -46,7 +46,7 @@ export const mcp: McpDef = {
     ],
     save: [{
       at: 150,
-      text: "post: {platform:r10|linkedin|instagram|diger,title,url,posted_at,refresh_days}; id + {refreshed:true} = güncellendi; kişinin kaynağı: person {post:'başlık'}. ",
+      text: "post: {platform:r10|linkedin|instagram|diger,title,url,posted_at,format:metin|gorsel|video|karusel,refresh_days (boşsa post_refresh_days ayarı)}; id + {refreshed:true} = güncellendi; kişinin kaynağı: person {post:'başlık'}. ",
     }],
     report: [{ at: 150, text: "paylaşım getirisi, " }],
   },

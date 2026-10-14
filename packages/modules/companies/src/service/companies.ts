@@ -9,7 +9,7 @@ const { companies } = schema;
 
 const FIELD_NAMES: Record<string, string> = {
   name: "ad", website: "web sitesi", email: "e-posta", phone: "telefon", instagram: "Instagram", linkedin: "LinkedIn",
-  source_id: "nereden", contact_status: "durum", notes: "not", tags: "etiket", sectors: "sektör",
+  source_id: "nereden", contact_status: "durum", notes: "not", city: "şehir", tags: "etiket", sectors: "sektör",
 };
 
 /**

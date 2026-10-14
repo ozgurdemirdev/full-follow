@@ -1,13 +1,10 @@
 // Companies screen: segments, money, sort, the stream of a company and the loose touches.
-// Money and segment are derived here from the lists the web already loads; both derivations move into
-// core with the companies module (plan gaps G5 and G7), after which these functions only read the fields.
+// Segment and money come from core (the companies module); the screen joins the people, projects and threads it already loads.
 import { useMemo } from "react";
 import { run } from "../api/actions";
-import { useCompanies, useOpps, usePeople, useProjects, useTags, useThreads } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { Comment, Company, CompanyCard, List, Opportunity, Payment, Person, Project, Tag, Thread, Touch } from "../api/types";
+import { useCompanies, usePeople, useProjects, useThreads } from "../api/keys";
+import type { Comment, Company, CompanyCard, Person, Project, Thread, Touch } from "../api/types";
 import { daysFrom, fmtMonth, initials, norm, todayIso } from "./format";
-import { OPEN_STAGES } from "./labels";
 import { channelName } from "./network";
 import { LUKEWARM_DAYS } from "./people";
 
@@ -21,10 +18,8 @@ export const COLD_DAYS = LUKEWARM_DAYS;
 export const LOOSE_NAMED = 3;
 /** Companies named under "Karar vericiye ulaşılmamış" */
 export const UNREACHED_NAMED = 2;
-/** Tags that mark a company as a partner (tag slugs) */
-const PARTNER_SLUGS = ["ajans", "is_ortagi"];
 
-export type Segment = "client" | "lead" | "partner";
+export type Segment = Company["segment"];
 export type SegmentFilter = "all" | Segment;
 export const SEGMENT_LABEL: Record<Segment, string> = { client: "Müşteri", lead: "Aday", partner: "Partner" };
 export const SEGMENT_FILTERS: { key: SegmentFilter; label: string }[] = [
@@ -45,14 +40,8 @@ export type Influence = NonNullable<Person["influence"]>;
 export const INFLUENCE_LABEL: Record<Influence, string> = { karar_verici: "Karar verici", etkileyici: "Etkileyici", kullanici: "Kullanıcı" };
 export const INFLUENCE_TONE: Record<Influence, "payment" | "opportunity" | "neutral"> = { karar_verici: "payment", etkileyici: "opportunity", kullanici: "neutral" };
 
-export interface Money {
-  /** paid on the projects of the company */
-  won: number;
-  /** unpaid part of the payments of those projects */
-  due: number;
-  /** estimated value of the open opportunities */
-  open: number;
-}
+/** Paid on the projects of the company, the unpaid part of their payments, the estimated value of its open opportunities */
+export type Money = Company["money"];
 
 export interface CompanyView {
   c: Company;
@@ -74,22 +63,14 @@ interface Inputs {
   companies: Company[];
   people: Person[];
   projects: Project[];
-  opps: Opportunity[];
-  payments: Payment[];
-  tags: ReadonlyMap<number, Tag>;
   threads: Thread[];
 }
 
 /** Days since an ISO time (0 for today and for the future) */
 export const daysSince = (iso: string) => Math.max(0, -daysFrom(iso, todayIso()));
 
-/** Company of a project: that of its opportunity, else that of its person */
-const projectCompany = (p: Project, oppById: ReadonlyMap<number, Opportunity>, personById: ReadonlyMap<number, Person>) =>
-  (p.opportunity_id ? oppById.get(p.opportunity_id)?.company_id : null) ?? personById.get(p.person_id)?.company_id ?? null;
-
-export function buildViews({ companies, people, projects, opps, payments, tags, threads }: Inputs): CompanyView[] {
-  const oppById = new Map(opps.map((o) => [o.id, o]));
-  const personById = new Map(people.map((p) => [p.id, p]));
+export function buildViews({ companies, people, projects, threads }: Inputs): CompanyView[] {
+  const companyOfPerson = new Map(people.map((p) => [p.id, p.company_id]));
   const group = <T,>(into: Map<number, T[]>, key: number | null | undefined, item: T) => {
     if (!key) return;
     const list = into.get(key);
@@ -99,32 +80,18 @@ export function buildViews({ companies, people, projects, opps, payments, tags, 
   const peopleOf = new Map<number, Person[]>();
   for (const p of people) group(peopleOf, p.company_id, p);
   const projectsOf = new Map<number, Project[]>();
-  const projectOwner = new Map<number, number>();
-  for (const p of projects) {
-    const co = projectCompany(p, oppById, personById);
-    if (!co) continue;
-    group(projectsOf, co, p);
-    projectOwner.set(p.id, co);
-  }
-  const dueOf = new Map<number, number>();
-  for (const pay of payments) {
-    const co = projectOwner.get(pay.project_id);
-    if (co) dueOf.set(co, (dueOf.get(co) ?? 0) + Math.max(0, pay.expected_amount - pay.paid_amount));
-  }
-  const openOf = new Map<number, number>();
-  for (const o of opps) if (o.company_id && OPEN_STAGES.includes(o.stage)) openOf.set(o.company_id, (openOf.get(o.company_id) ?? 0) + (o.estimated_value ?? 0));
+  for (const p of projects) group(projectsOf, companyOfPerson.get(p.person_id), p);
   const hintOf = new Map<number, string>();
   for (const t of threads) if (t.target_type === "company" && !t.resolved_at && t.last_by === "claude" && !hintOf.has(t.target_id)) hintOf.set(t.target_id, t.last_body);
 
   return companies.map((c) => {
     const own = projectsOf.get(c.id) ?? [];
-    const money: Money = { won: own.reduce((a, p) => a + p.paid_total, 0), due: dueOf.get(c.id) ?? 0, open: openOf.get(c.id) ?? 0 };
     const started = own.map((p) => p.started_at).filter((d): d is string => !!d).sort()[0];
     return {
       c,
-      segment: segmentOf(c, own.length > 0, tags),
-      money,
-      total: money.won + money.due + money.open,
+      segment: c.segment,
+      money: c.money,
+      total: c.money.won + c.money.due + c.money.open,
       people: (peopleOf.get(c.id) ?? []).sort((a, b) => (b.last_touch_at ?? "").localeCompare(a.last_touch_at ?? "")),
       projects: own,
       hint: hintOf.get(c.id) ?? null,
@@ -134,24 +101,15 @@ export function buildViews({ companies, people, projects, opps, payments, tags, 
   });
 }
 
-/** A project makes a client, an agency or partner tag a partner, everything else is a lead */
-function segmentOf(c: Company, hasProject: boolean, tags: ReadonlyMap<number, Tag>): Segment {
-  if (hasProject) return "client";
-  return c.tag_ids.some((id) => PARTNER_SLUGS.includes(tags.get(id)?.slug ?? "")) ? "partner" : "lead";
-}
-
-/** Everything the screen derives from the API, joined once in memory */
+/** Everything the screen needs, joined once in memory: the companies with their segment and money from core, their people, projects and threads */
 export function useCompanyViews() {
   const companies = useCompanies();
   const people = usePeople();
   const projects = useProjects();
-  const opps = useOpps();
-  const payments = useQuery<List<Payment>>("/payments?unpaid=true&limit=1000");
-  const tags = useTags();
   const threads = useThreads();
   const views = useMemo(
-    () => buildViews({ companies: companies.rows, people: people.rows, projects: projects.rows, opps: opps.rows, payments: payments.data?.rows ?? [], tags: tags.byId, threads: threads.rows }),
-    [companies.rows, people.rows, projects.rows, opps.rows, payments.data, tags.byId, threads.rows],
+    () => buildViews({ companies: companies.rows, people: people.rows, projects: projects.rows, threads: threads.rows }),
+    [companies.rows, people.rows, projects.rows, threads.rows],
   );
   const byId = useMemo(() => new Map(views.map((v) => [v.c.id, v])), [views]);
   return { views, byId, companies, ready: !!companies.data };
@@ -176,21 +134,22 @@ export interface Totals {
   dueCompanies: number;
   open: number;
   openCompanies: number;
-  /** null while no person carries an influence role (gap G6) */
-  unreached: string[] | null;
+  /** companies with a decision maker nobody has touched yet */
+  unreached: string[];
+  /** people marked as a decision maker, in all companies */
+  deciders: number;
 }
 
 export function totalsOf(views: CompanyView[]): Totals {
-  const t: Totals = { won: 0, due: 0, dueCompanies: 0, open: 0, openCompanies: 0, unreached: null };
-  const known = views.some((v) => v.people.some((p) => p.influence !== undefined));
-  if (known) t.unreached = [];
+  const t: Totals = { won: 0, due: 0, dueCompanies: 0, open: 0, openCompanies: 0, unreached: [], deciders: 0 };
   for (const v of views) {
     t.won += v.money.won;
     t.due += v.money.due;
     t.open += v.money.open;
     if (v.money.due > 0) t.dueCompanies++;
     if (v.money.open > 0) t.openCompanies++;
-    if (known && v.people.some((p) => p.influence === "karar_verici" && !p.last_touch_at)) t.unreached!.push(v.c.name);
+    t.deciders += v.people.filter((p) => p.influence === "karar_verici").length;
+    if (v.people.some((p) => p.influence === "karar_verici" && !p.last_touch_at)) t.unreached.push(v.c.name);
   }
   return t;
 }

@@ -1,10 +1,10 @@
-import { useMemo } from "react";
 import { remove, run } from "../../api/actions";
 import { useQuery } from "../../api/store";
-import type { Detail, Idea, OwnRow, Thread } from "../../api/types";
+import type { Detail, Idea, OwnProject, Thread } from "../../api/types";
+import { ratePct } from "../../lib/ideas";
 import { openSheet } from "../../app/ui";
 import { OWN_STATUS, OWN_STATUSES } from "../../lib/labels";
-import { EMPTY_STATS, ownStats, rateNote, rateText } from "../../lib/ownProjects";
+import { rateNote, rateText, setStage } from "../../lib/ownProjects";
 import { usePopover } from "../../lib/usePopover";
 import { BoardIcon } from "../boardIcons";
 import { Comments } from "../contact";
@@ -17,7 +17,7 @@ import { OwnLinks } from "./OwnLinks";
 type Related = { ideas: Idea[]; comments: Thread[] };
 
 /** Header menu: the things the board leaves out (edit form, delete) */
-function HeaderMenu({ p, onClose }: { p: OwnRow; onClose: () => void }) {
+function HeaderMenu({ p, onClose }: { p: OwnProject; onClose: () => void }) {
   const { open, setOpen, root } = usePopover();
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
@@ -34,8 +34,7 @@ function HeaderMenu({ p, onClose }: { p: OwnRow; onClose: () => void }) {
 }
 
 /** Left column: sellability, validation meter, links, comments, notes */
-function Aside({ p, ideas, threads }: { p: OwnRow; ideas: Idea[]; threads: Thread[] }) {
-  const stats = useMemo(() => ownStats(ideas).get(p.id) ?? EMPTY_STATS, [ideas, p.id]);
+function Aside({ p, threads }: { p: OwnProject; threads: Thread[] }) {
   return (
     <div className="opr-aside">
       <div className="opr-panel">
@@ -51,10 +50,10 @@ function Aside({ p, ideas, threads }: { p: OwnRow; ideas: Idea[]; threads: Threa
       <div className="opr-panel" data-gap="md">
         <span className="opr-label">Doğrulama</span>
         <div className="opr-rate">
-          <span className="opr-rate-value">{rateText(stats)}</span>
-          <span className="opr-rate-note">{rateNote(stats)}</span>
+          <span className="opr-rate-value">{rateText(p)}</span>
+          <span className="opr-rate-note">{rateNote(p)}</span>
         </div>
-        <Meter value={stats.rate ?? 0} size="lg" label="İlgi oranı" />
+        <Meter value={p.interest_share === null ? 0 : ratePct(p.interest_share)} size="lg" label="İlgi oranı" />
       </div>
       <OwnLinks id={p.id} />
       <div className="opr-panel">
@@ -69,13 +68,13 @@ function Aside({ p, ideas, threads }: { p: OwnRow; ideas: Idea[]; threads: Threa
 export function ProjectOverlay({ id, from, p, isFocus, onFocus, onClose }: {
   id: number | null;
   from: DOMRect | null;
-  p: OwnRow | undefined;
+  p: OwnProject | undefined;
   isFocus: boolean;
-  onFocus: (p: OwnRow) => void;
+  onFocus: (p: OwnProject) => void;
   onClose: () => void;
 }) {
   const key = id ? `/own-projects/${id}?with=ideas,comments` : null;
-  const d = useQuery<Detail<OwnRow, Related>>(key);
+  const d = useQuery<Detail<OwnProject, Related>>(key);
   const row = d.data?.row ?? p;
   const setStatus = (status: string) => row && status !== row.status && run("patch", `/own-projects/${row.id}`, { status }, { ok: `Durum: ${OWN_STATUS[status]}` }).catch(() => {});
 
@@ -109,7 +108,7 @@ export function ProjectOverlay({ id, from, p, isFocus, onFocus, onClose }: {
                 <button key={s} type="button" role="radio" aria-checked={row.status === s} onClick={() => setStatus(s)}>{OWN_STATUS[s]}</button>
               ))}
             </div>
-            <Journey stage={row.stage} variant="ex" />
+            <Journey stage={row.stage} variant="ex" onPick={(step) => void setStage(row, step)} />
           </div>
         </>
       ) : null}
@@ -117,7 +116,7 @@ export function ProjectOverlay({ id, from, p, isFocus, onFocus, onClose }: {
       {row ? (
         d.error && !d.data ? <ErrorBox error={d.error} retry={d.reload} /> : (
           <div className="opr-board">
-            {d.data ? <Aside p={row} ideas={d.data.related.ideas ?? []} threads={d.data.related.comments ?? []} /> : <Skeleton className="h-chart-height" />}
+            {d.data ? <Aside p={row} threads={d.data.related.comments ?? []} /> : <Skeleton className="h-chart-height" />}
             {d.data ? <ProjectIdeas key={row.id} projectId={row.id} ideas={d.data.related.ideas ?? []} detailKey={key!} /> : <Skeleton className="h-chart-height" />}
           </div>
         )

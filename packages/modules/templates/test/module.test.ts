@@ -96,6 +96,16 @@ describe("templates as a module", () => {
     const ranked = app.templates.comparison()[0].templates;
     expect(ranked.map((t) => t.name)).toEqual(["A", "B", "C"]);
     expect(ranked.find((t) => t.name === "C")).toMatchObject({ early: true, sent: 1 });
+    // the tip: the leader says so, a poor template with enough sends is flagged and names the better one, a small sample is not trusted, no sends yet means no measurement
+    const d = app.templates.create({ name: "D", channel: "email", body: "w" }).row;
+    expect(app.templates.get(a.id)).toMatchObject({ retire: false, tip: "Aynı tür ve kanalda en yüksek cevap oranı bu şablonda (%45)." });
+    expect(app.templates.get(b.id)).toMatchObject({ retire: true, tip: "Bu şablon 21 kez gitti, 2 cevap aldı. Aynı tür ve kanalda “A” %45 cevap alıyor. Bunu arşive kaldırmanı öneririm." });
+    expect(app.templates.get(c.id)).toMatchObject({ retire: false, tip: "Gönderimi az olduğu için oranı henüz güvenilir değil." });
+    expect(app.templates.get(d.id)).toMatchObject({ retire: false, tip: "Henüz ölçüm yok. Bir taslakta kullanıp gönderince cevap oranı burada görünür." });
+    // alone in its group a poor template has no better one to point at; a template in another channel is not compared with them
+    const dm = app.templates.create({ name: "DM", channel: "instagram", body: "v" }).row;
+    for (let i = 0; i < 20; i++) sentDraft(h, dm.id, `dm${i}@x.example`, false);
+    expect(app.templates.get(dm.id)).toMatchObject({ retire: true, tip: "Bu şablon 20 kez gitti, 0 cevap aldı. Bunu arşive kaldırmanı öneririm." });
   });
 
   it("the panel chat chip shows the stored text and, for a person, the text filled for them", () => {

@@ -1,4 +1,4 @@
-import { defineModule, MILESTONES, PROJECT_STAGES, type OpportunityWon } from "@fullfollow/core";
+import { defineModule, filesOf, MILESTONES, PROJECT_STAGES, type OpportunityWon } from "@fullfollow/core";
 import { projectsApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
@@ -69,6 +69,8 @@ export default defineModule({
       projects: { on: ["person"], load: (ctx, by, limit) => ctx.mod("projects")!.projects.list({ filter: by, limit }).rows.slice(0, limit) },
       // `get(project, id, with: ["payments"])`
       payments: { on: ["project"], load: (ctx, by, limit) => ctx.mod("projects")!.payments.list({ filter: by, limit }).rows.slice(0, limit) },
+      // `get(project, id, with: ["files"])`: the uploaded files
+      files: { on: ["project"], load: (ctx, by, limit) => filesOf(ctx, "project", by.project_id).slice(0, limit) },
     },
   },
   mcp,

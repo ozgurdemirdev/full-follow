@@ -9,10 +9,11 @@ export function countsBySource(ctx: Ctx): Map<number, number> {
   return new Map(keptRows<{ source_id: number; n: number }>(ctx, "SELECT source_id, COUNT(*) n FROM opportunities GROUP BY source_id").map((r) => [r.source_id, r.n]));
 }
 
-/** Open opportunities per company, through the company's people */
-export function openCountsByCompany(ctx: Ctx): Map<number, number> {
-  return new Map(keptRows<{ company_id: number; n: number }>(ctx, `SELECT p.company_id, COUNT(*) n FROM opportunities x JOIN people p ON p.id = x.person_id
-    WHERE p.company_id IS NOT NULL AND x.stage IN (${OPEN_SQL}) GROUP BY p.company_id`).map((r) => [r.company_id, r.n]));
+/** Open opportunities per company, through the company's people: how many and their estimated value */
+export function openByCompany(ctx: Ctx): Map<number, { count: number; value: number }> {
+  return new Map(keptRows<{ company_id: number; count: number; value: number }>(ctx, `SELECT p.company_id, COUNT(*) AS count, COALESCE(SUM(x.estimated_value), 0) AS value
+    FROM opportunities x JOIN people p ON p.id = x.person_id
+    WHERE p.company_id IS NOT NULL AND x.stage IN (${OPEN_SQL}) GROUP BY p.company_id`).map((r) => [r.company_id, { count: r.count, value: r.value }]));
 }
 
 /** Per person: opportunities, won ones, the won value and the value still open */
@@ -60,3 +61,10 @@ export const openOfferTimes = (ctx: Ctx): string[] =>
 /** Creation times of the offers made since the date */
 export const offerCreatedSince = (ctx: Ctx, since: string): string[] =>
   rows<{ created_at: string }>(ctx, "SELECT created_at FROM offers WHERE created_at >= ?", since).map((r) => r.created_at);
+
+/** Opportunities lost in a month (YYYY-MM, by the day they were closed): how many and the sum of their estimated values */
+export function lostIn(ctx: Ctx, ym: string): { count: number; budget: number } {
+  const r = keptRows<{ count: number; budget: number }>(ctx, `SELECT COUNT(*) AS count, COALESCE(SUM(estimated_value), 0) AS budget FROM opportunities
+    WHERE stage = 'kaybedildi' AND substr(closed_at, 1, 7) = ?`, ym)[0];
+  return { count: r?.count ?? 0, budget: r?.budget ?? 0 };
+}

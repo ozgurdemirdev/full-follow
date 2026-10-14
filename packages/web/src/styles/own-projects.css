@@ -58,6 +58,14 @@
   gap: var(--spacing-2);
   min-width: 0;
 }
+button.opr-jstep {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
 .opr-journey[data-v="hero"] .opr-jstep {
   gap: var(--spacing-3);
 }

@@ -6,7 +6,7 @@ import { opportunityPath, PATHS } from "../../app/routes";
 import { openSheet } from "../../app/ui";
 import { fmtDay, lira, todayIso } from "../../lib/format";
 import { STAGE, type OppStage } from "../../lib/labels";
-import { ageMeter, isLive, percentOf } from "../../lib/pipeline";
+import { ageMeter, isLive, percentOf, useStageRules } from "../../lib/pipeline";
 import { BoardIcon } from "../boardIcons";
 import { Meter } from "../ui";
 
@@ -33,7 +33,8 @@ export interface OppCardProps {
 export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, overlay, onToggle, onMove }: OppCardProps) {
   const [asked, setAsked] = useState(false);
   const live = isLive(o);
-  const age = live ? ageMeter(o) : null;
+  const rules = useStageRules();
+  const age = live ? ageMeter(o, rules) : null;
   const title = o.company_name ?? o.title;
   const sub = `${o.company_name ? `${o.title} · ` : ""}${o.person_name}`;
 
@@ -83,7 +84,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
         <div className="pipe-more">
           <span className="pipe-kv"><span>Kaynak</span><span>{o.source_name}</span></span>
           {o.source_url ? <a href={o.source_url} target="_blank" rel="noreferrer" draggable={false} className="truncate text-sm">İlan{o.source_date ? ` · ${fmtDay(o.source_date)}` : ""} ↗</a> : o.source_date ? <span className="pipe-kv"><span>İlan</span><span>{fmtDay(o.source_date)}</span></span> : null}
-          {live ? <span className="pipe-kv"><span>Kazanma ihtimali</span><span>{percentOf(o.stage)}</span></span> : null}
+          {live ? <span className="pipe-kv"><span>Kazanma ihtimali</span><span>{percentOf(o.stage, rules)}</span></span> : null}
           {hint ? <span className="pipe-hint">{hint}</span> : null}
           {mobile ? (
             <select className="inp h-control-height-sm w-auto" aria-label="Aşamayı değiştir" value={o.stage} onChange={(e) => onMove?.(o.id, e.target.value as OppStage)}>

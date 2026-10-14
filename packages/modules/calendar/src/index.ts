@@ -14,7 +14,7 @@ export default defineModule({
   key: "calendar",
   label: "Takvim",
   smoke: ["/api/tasks", "/api/goals", "/api/plan", "/api/calendar"],
-  uses: ["projects", "drafts"],
+  uses: ["projects", "drafts", "ideas"],
   api: calendarApi,
   entities,
   hooks: {
@@ -26,6 +26,7 @@ export default defineModule({
       } else if (type === "company") bin.unlink("tasks", "company_id", id);
       else if (type === "opportunity") bin.unlink("tasks", "opportunity_id", id);
       else if (type === "project") bin.unlink("tasks", "project_id", id);
+      else if (type === "idea") bin.unlink("tasks", "idea_id", id);
     },
   },
   contribute: {

@@ -15,12 +15,23 @@ export interface CompanyRecord {
   source_id: number | null;
   contact_status: ContactStatus;
   notes: string | null;
+  city: string | null;
   created_at: string;
   updated_at: string;
   created_by: "ozgur" | "claude";
 }
 
-/** A company as listed: the row plus its labels, people, last touch and open opportunities */
+/** What a company is to Özgür: a client (has a project), a partner (carries a partner tag) or a lead (everything else) */
+export type CompanySegment = "client" | "partner" | "lead";
+
+/** Money of a company in TL: paid on its projects, still due on them, and the value of its open opportunities */
+export interface CompanyMoney {
+  won: number;
+  due: number;
+  open: number;
+}
+
+/** A company as listed: the row plus its labels, people, last touch, open opportunities, segment and money (zeros without the projects and pipeline modules) */
 export interface CompanyRow extends CompanyRecord {
   source_name: string | null;
   tags: string[];
@@ -32,6 +43,8 @@ export interface CompanyRow extends CompanyRecord {
   last_touch_at: string | null;
   touch_count: number;
   open_opps: number;
+  segment: CompanySegment;
+  money: CompanyMoney;
 }
 
 /** Everything the company page shows, in one object (the touch parts are empty without the network module) */

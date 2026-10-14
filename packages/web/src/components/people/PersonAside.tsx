@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "wouter";
 import type { PersonCard, Person } from "../../api/types";
 import { PATHS, opportunityPath } from "../../app/routes";
+import { INFLUENCE_LABEL } from "../../lib/companies";
 import { fmtDay, lira } from "../../lib/format";
 import { CONTACT_STATUS, OPEN_STAGES, STAGE } from "../../lib/labels";
 import { agoText, channelsOf, warmth, WARMTH_NAME } from "../../lib/people";
@@ -99,6 +100,7 @@ function Facts({ p, card }: { p: Person; card?: PersonCard }) {
           : <span className="text-text-muted">Henüz kimseyi getirmedi</span>}
       </Fact>
       <Fact label="Temas durumu">{CONTACT_STATUS[p.contact_status] ?? p.contact_status}</Fact>
+      {p.influence ? <Fact label="Karar rolü">{INFLUENCE_LABEL[p.influence]}</Fact> : null}
       {p.tags.length || p.sectors.length ? (
         <div className="flex flex-wrap gap-2">
           {p.tags.map((t) => <span key={t} className="ppl-hash">#{t}</span>)}

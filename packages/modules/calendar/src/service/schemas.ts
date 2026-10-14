@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ASSIGNEES, CHANNELS, zodKit } from "@fullfollow/core";
-import { DEFAULT_TASK_KIND, GOAL_DAY_PRESETS, GOAL_METRICS, TASK_KINDS, TIME_RE } from "./constants";
+import { CHANNELS, zodKit } from "@fullfollow/core";
+import { DEFAULT_TASK_KIND, GOAL_DAY_PRESETS, GOAL_METRICS, TASK_ASSIGNEES, TASK_KINDS, TIME_RE } from "./constants";
 
 const { id, text, optText, date, patch } = zodKit;
 
@@ -9,7 +9,7 @@ const time = z.preprocess((v) => (v === "" ? null : v), z.string().regex(TIME_RE
 
 export const taskCreate = z.strictObject({
   title: text,
-  assignee: z.enum(ASSIGNEES).default("ozgur"),
+  assignee: z.enum(TASK_ASSIGNEES).default("ozgur"),
   due_date: date.optional(),
   due_time: time.optional(),
   kind: z.enum(TASK_KINDS).default(DEFAULT_TASK_KIND),
@@ -17,12 +17,13 @@ export const taskCreate = z.strictObject({
   company_id: id.nullish(),
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
+  idea_id: id.nullish(),
 });
 /** Calendar quick add: one line of text, the time and kind are read from it */
-export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(ASSIGNEES).default("ozgur") });
+export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(TASK_ASSIGNEES).default("ozgur") });
 export const taskUpdate = patch({
   title: text,
-  assignee: z.enum(ASSIGNEES),
+  assignee: z.enum(TASK_ASSIGNEES),
   due_date: date,
   due_time: time,
   kind: z.enum(TASK_KINDS),
@@ -30,6 +31,7 @@ export const taskUpdate = patch({
   company_id: id.nullable(),
   opportunity_id: id.nullable(),
   project_id: id.nullable(),
+  idea_id: id.nullable(),
   done: z.boolean(),
 });
 

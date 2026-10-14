@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, SETTING_KEYS, type Channel } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
 import { emit, FFError, parse, row, type Ctx } from "../context";
+import { id as idSchema } from "../schemas/kit";
 import { isIsoDate, resolveRelativeDate } from "../dates";
 import { settings } from "../db/schema";
 
@@ -35,6 +36,20 @@ const channelLimitsSchema = z.preprocess(
   z.partialRecord(z.enum(CHANNELS), z.preprocess((n) => (n === "" || n === null ? 0 : n), z.coerce.number().int().min(0).max(CHANNEL_LIMIT_MAX))),
 ).transform((o): ChannelLimits => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0)));
 
+/** The rules Claude learned from reject notes: short, no empty one, no duplicate, a bounded list */
+const draftRulesSchema = z.preprocess(
+  (v) => {
+    if (typeof v !== "string") return v;
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v;
+    }
+  },
+  z.array(z.string().trim().min(1).max(DRAFT_RULE_CHARS)).max(DRAFT_RULES_MAX)
+    .refine((a) => new Set(a).size === a.length, "kurallar birbirinden farklı olmalı"),
+);
+
 /** Date the email warmup ends (inclusive); empty = no warmup */
 const warmupUntilSchema = z.preprocess(
   (v) => (v === null || v === undefined ? "" : resolveRelativeDate(v)),
@@ -67,6 +82,15 @@ export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_t
   };
 }
 
+/** The own project Özgür works on first: the stored id while that project still exists, else null */
+function focusOwnProject(ctx: Ctx): number | null {
+  const id = Number(readSetting(ctx, "focus_own_project_id")) || null;
+  return id && row(ctx, "SELECT 1 x FROM own_projects WHERE id = ?", id) ? id : null;
+}
+
+/** Days after which a post without an interval of its own is due for a refresh */
+export const postRefreshDays = (ctx: Ctx): number => Number(readSetting(ctx, "post_refresh_days")) || POST_REFRESH_DEFAULT_DAYS;
+
 const num = (ctx: Ctx, key: string) => Number(readSetting(ctx, key) ?? 0) || 0;
 
 /** Tüm ayarlar (girilmemiş sayılar 0, şablon varsayılan) */
@@ -79,6 +103,8 @@ export function settingValues(ctx: Ctx) {
     tax_rate_percent: num(ctx, "tax_rate_percent"),
     payment_template: readTemplate(ctx),
     chat_pinned_notes: readSetting(ctx, "chat_pinned_notes") ?? "",
+    focus_own_project_id: focusOwnProject(ctx),
+    post_refresh_days: postRefreshDays(ctx),
   };
 }
 
@@ -109,6 +135,15 @@ export function settingsService(ctx: Ctx) {
       stored = parse(warmupUntilSchema, value);
     } else if (key === "chat_pinned_notes") {
       stored = parse(z.string().trim().max(CHAT_PINNED_MAX), value);
+    } else if (key === "focus_own_project_id") {
+      // empty or null clears the focus; an id must be an own project that exists
+      const id = value === null || value === "" ? null : parse(idSchema, value);
+      if (id !== null && !row(ctx, "SELECT 1 x FROM own_projects WHERE id = ?", id)) throw new FFError("not_found", `kendi projesi #${id} bulunamadı`);
+      stored = id === null ? "" : String(id);
+    } else if (key === "draft_rules") {
+      stored = JSON.stringify(parse(draftRulesSchema, value));
+    } else if (key === "post_refresh_days") {
+      stored = String(parse(z.coerce.number().int().min(1).max(POST_REFRESH_MAX_DAYS), value));
     } else if (key === "tax_rate_percent") {
       const n = parse(z.coerce.number().min(0).lt(100), value);
       stored = String(n);

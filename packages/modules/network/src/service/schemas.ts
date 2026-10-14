@@ -27,4 +27,10 @@ export const touchUpdate = patch({
   happened_at: dateTime,
   expects_reply: z.boolean(),
   idea_id: id.nullable(),
-});
+  /** a loose touch (only an address) moves to this person or company; one of the two */
+  person_id: id,
+  company_id: id,
+}).refine((d) => !(d.person_id && d.company_id), { message: "temas ya kişiye ya da firmaya bağlanır, ikisine birden değil", path: ["person_id"] });
+
+/** Which loose touches `adoptSuggested` moves: those written with this address as it stands on the touch (all with a suggestion when empty) */
+export const adoptInput = z.strictObject({ contact: optText });

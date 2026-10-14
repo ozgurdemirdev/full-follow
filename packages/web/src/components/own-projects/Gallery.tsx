@@ -1,13 +1,13 @@
 import { useRef } from "react";
-import type { OwnRow } from "../../api/types";
+import type { OwnProject } from "../../api/types";
 import { OWN_STATUS } from "../../lib/labels";
-import { rateText, STATUS_DOT, type OwnStats } from "../../lib/ownProjects";
+import { rateText, STATUS_DOT } from "../../lib/ownProjects";
 import { BoardIcon } from "../boardIcons";
 import { Masonry } from "../layout";
 import { order } from "../ui";
 import { Journey, SellChip } from "./Bits";
 
-function ProjectCard({ p, stats, i, onOpen }: { p: OwnRow; stats: OwnStats; i: number; onOpen: (from: DOMRect) => void }) {
+function ProjectCard({ p, i, onOpen }: { p: OwnProject; i: number; onOpen: (from: DOMRect) => void }) {
   const root = useRef<HTMLElement>(null);
   return (
     <section ref={root} aria-label={p.name} data-record={`own_project-${p.id}`} className="ff-card opr-card rise" style={order(i)}>
@@ -21,14 +21,14 @@ function ProjectCard({ p, stats, i, onOpen }: { p: OwnRow; stats: OwnStats; i: n
         {p.description ? <p className="opr-card-one">{p.description}</p> : null}
       </div>
       <Journey stage={p.stage} variant="card" />
-      {stats.next ? (
+      {p.next_idea ? (
         <div className="opr-card-next">
           <span>Sırada</span>
-          <span className="text-base">{stats.next.title}</span>
+          <span className="text-base">{p.next_idea.title}</span>
         </div>
       ) : null}
       <div className="opr-card-foot">
-        <span>{stats.told ? `İlgi ${rateText(stats)} · ${stats.told} kişi` : "Henüz anlatılmadı"}</span>
+        <span>{p.told ? `İlgi ${rateText(p)} · ${p.told} kişi` : "Henüz anlatılmadı"}</span>
         <button type="button" className="ff-more" aria-label={`${p.name} projesini aç`} onClick={() => root.current && onOpen(root.current.getBoundingClientRect())}>
           Aç
           <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
@@ -39,7 +39,7 @@ function ProjectCard({ p, stats, i, onOpen }: { p: OwnRow; stats: OwnStats; i: n
 }
 
 /** The other projects in work, in three masonry columns (two on tablets, one on phones) */
-export function Gallery({ rows, stats, empty, onOpen }: { rows: OwnRow[]; stats: Map<number, OwnStats>; empty: OwnStats; onOpen: (id: number, from: DOMRect) => void }) {
+export function Gallery({ rows, onOpen }: { rows: OwnProject[]; onOpen: (id: number, from: DOMRect) => void }) {
   if (!rows.length) return null;
   return (
     <div className="opr-sec">
@@ -48,7 +48,7 @@ export function Gallery({ rows, stats, empty, onOpen }: { rows: OwnRow[]; stats:
         <span>Odağı değiştirmek için projeyi aç</span>
       </div>
       <Masonry columns={3}>
-        {rows.map((p, i) => <ProjectCard key={p.id} p={p} stats={stats.get(p.id) ?? empty} i={i} onOpen={(from) => onOpen(p.id, from)} />)}
+        {rows.map((p, i) => <ProjectCard key={p.id} p={p} i={i} onOpen={(from) => onOpen(p.id, from)} />)}
       </Masonry>
     </div>
   );

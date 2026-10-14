@@ -1,6 +1,9 @@
 import type { OwnProjectStatus, Sellable } from "../constants";
 import type { ListOpts } from "../context";
 
+/** Where an own project stands on its journey, in order */
+export type OwnProjectStage = "fikir" | "dogrulama" | "demo" | "urun";
+
 /** An own project row as stored: a product Özgür builds for himself, not client work */
 export interface OwnProjectRecord {
   id: number;
@@ -11,16 +14,27 @@ export interface OwnProjectRecord {
   /** who could buy it and how */
   sellable_note: string | null;
   notes: string | null;
+  /** the journey step; null = not placed yet */
+  stage: OwnProjectStage | null;
   created_at: string;
   updated_at: string;
   created_by: "ozgur" | "claude";
 }
 
-/** An own project as listed: the row plus its open and done idea counts and sectors */
+/** An own project as listed: the row plus its idea counts, interest, next step and sectors */
 export interface OwnProjectStats extends OwnProjectRecord {
   open_ideas: number;
   done_ideas: number;
   sectors: { id: number; path: string }[];
+  /** distinct people told about any idea of the project, how many of them are interested in one, how many answered (interested or not) */
+  told: number;
+  interested: number;
+  answered: number;
+  /** interested / answered, 0 to 1; null while nobody has answered */
+  interest_share: number | null;
+  /** open high priority ideas, in order; the first is the next step */
+  top_ideas: { id: number; title: string }[];
+  next_idea: { id: number; title: string } | null;
 }
 
 /**

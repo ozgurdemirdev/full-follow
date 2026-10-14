@@ -1,5 +1,6 @@
 // REST yanıt tipleri (packages/core/src/services/queries.ts ile aynı alanlar)
-import type { Actor, OppStage, ProjectStage } from "../lib/labels";
+import type { Actor, OppStage, PostFormat, ProjectStage } from "../lib/labels";
+import type { OwnStage } from "./types-own";
 
 export interface List<T> {
   rows: T[];
@@ -54,8 +55,8 @@ export interface Person extends Base, Labeled {
   cooling: boolean;
   /** touches per ISO week, the last 12 weeks, oldest first */
   rhythm: number[];
-  /** not provided yet (plan gap G6): the role of the person inside the company */
-  influence?: "karar_verici" | "etkileyici" | "kullanici" | null;
+  /** role in a buying decision (null = not set) */
+  influence: "karar_verici" | "etkileyici" | "kullanici" | null;
 }
 /** Cevap bekleme: son gelen temastan sonra cevapsız giden temas */
 export interface Awaiting {
@@ -172,8 +173,12 @@ export interface Post extends Base {
   url: string | null;
   body: string | null;
   posted_at: string;
+  /** the post's own interval in days; null = the `post_refresh_days` setting decides */
   refresh_days: number | null;
+  /** the interval in force: own, else the setting */
+  refresh_every: number;
   refreshed_at: string | null;
+  format: PostFormat | null;
   idea_id: number | null;
   idea_title: string | null;
   notes: string | null;
@@ -181,7 +186,7 @@ export interface Post extends Base {
   opp_count: number;
   won: number;
   won_value: number;
-  next_refresh_at: string | null;
+  next_refresh_at: string;
   refresh_due: boolean;
 }
 export interface Template extends Base {
@@ -197,6 +202,10 @@ export interface Template extends Base {
   reply_rate: number | null;
   /** too few sends to trust the rate */
   early: boolean;
+  /** enough sends and a rate so low that the template should be retired */
+  retire: boolean;
+  /** one sentence about the template, written by the templates module; null when there is nothing to say */
+  tip: string | null;
   score?: number;
 }
 export interface TemplateSectorStat {
@@ -233,6 +242,15 @@ export interface Idea extends Base {
   interested: number;
   not_interested: number;
   interest_rate: number | null;
+  /** people who answered: interested or not */
+  answered: number;
+  /** interested / answered, 0 to 1; null while nobody has answered */
+  interest_share: number | null;
+  rate_tone: "strong" | "mixed" | "weak" | null;
+  /** the sentence under the interest ring, written by the ideas module */
+  verdict: string;
+  /** how the idea earns money, in a sentence */
+  money_note: string | null;
   touch_count: number;
   post_count: number;
   post_people: number;
@@ -260,6 +278,16 @@ export interface OwnProject extends Base {
   open_ideas: number;
   done_ideas: number;
   sectors: { id: number; path: string }[];
+  stage: OwnStage | null;
+  /** distinct people told about any idea of the project, interested in one, answered (interested or not) */
+  told: number;
+  interested: number;
+  answered: number;
+  /** interested / answered, 0 to 1; null while nobody has answered */
+  interest_share: number | null;
+  /** open high priority ideas in order; the first is the next step */
+  top_ideas: { id: number; title: string }[];
+  next_idea: { id: number; title: string } | null;
 }
 export interface Interest extends Base {
   idea_id: number;
@@ -297,8 +325,11 @@ export interface Company extends Base, Labeled {
   last_touch_at: string | null;
   touch_count: number;
   open_opps: number;
-  /** not provided yet (plan gap G5): the city of the company */
-  city?: string | null;
+  city: string | null;
+  /** client (has a project), partner (partner tag) or lead */
+  segment: "client" | "partner" | "lead";
+  /** TL: paid on its projects, still due on them, value of its open opportunities */
+  money: { won: number; due: number; open: number };
 }
 export interface CompanyCard {
   row: Company;
@@ -366,8 +397,13 @@ export interface Opportunity extends Base {
   closed_at: string | null;
   position: number;
   project_id: number | null;
-  /** when the opportunity entered its current stage (gap G9, not sent yet; the pipeline falls back to updated_at) */
-  stage_since?: string | null;
+  /** when the opportunity entered its current stage */
+  stage_since: string | null;
+}
+/** What the opportunity list adds: the stage rules and the stage to stage rates of the last 90 days */
+export interface PipelineMeta {
+  stages: { stage: OppStage; probability: number; stale_days: number }[];
+  stage_rates: { stage: OppStage; to_next: number | null }[];
 }
 export interface Project extends Base {
   name: string;
@@ -399,11 +435,15 @@ export interface Task extends Base {
   company_name: string | null;
   opportunity_title: string | null;
   project_name: string | null;
+  idea_id: number | null;
+  idea_title: string | null;
 }
 export interface Draft extends Base {
   person_id: number | null;
   person_name: string | null;
   company_id: number | null;
+  /** the company of the recipient: the draft's own or its person's; null when it has none */
+  company_name: string | null;
   contact: string | null;
   /** muhatabın görünen adı: kişi, firma ya da adres */
   to_name: string;
@@ -416,8 +456,8 @@ export interface Draft extends Base {
   reason: string | null;
   template_id: number | null;
   followup_step: number | null;
-  /** G11, not in core yet: email subject line */
-  subject?: string | null;
+  /** email subject line; null for the other channels */
+  subject: string | null;
 }
 export interface Payment extends Base {
   project_id: number;
@@ -452,7 +492,7 @@ export interface Touch extends Base {
   idea_id: number | null;
   idea_title: string | null;
   /** not provided yet (plan gap G8): the person or company an address-only touch most likely belongs to */
-  suggested_match?: { type: "person" | "company"; id: number; name: string } | null;
+  suggested_match: { type: "person" | "company"; id: number; name: string } | null;
 }
 export interface Comment extends Base {
   target_type: string;
@@ -460,8 +500,8 @@ export interface Comment extends Base {
   body: string;
   parent_id: number | null;
   resolved_at: string | null;
-  options?: string[] | null; // G13, not in the API yet: quick answer chips of a Claude question
-  read_at?: string | null; // G13, not in the API yet: when Özgür saw it, null while unread
+  options: string[] | null; // quick answer chips of a Claude question
+  read_at: string | null; // when Özgür opened the thread; set on Claude comments, null while unread
 }
 export interface Thread {
   id: number;
@@ -520,9 +560,11 @@ export interface PriceFloor {
   chat_pinned_notes: string;
   subtotal: number;
   floor: number;
-  /** days after which a post is due for a refresh; absent until core has the setting (hidden then) */
-  post_refresh_days?: number;
-  /** reject rules Claude learned; absent until core has them, deletable once present (PUT /settings {draft_rules}) */
+  /** days after which a post without an interval of its own is due for a refresh */
+  post_refresh_days: number;
+  /** the own project in focus; null when none was picked or it is gone */
+  focus_own_project_id: number | null;
+  /** reject rules Claude learned, oldest first (PUT /settings { draft_rules } keeps the ones left in the list); absent when the drafts module is not installed */
   draft_rules?: string[];
 }
 export * from "./types-report";
@@ -624,7 +666,6 @@ export interface Activity {
 }
 export type * from "./types-projects";
 export * from "./types-own";
-export type { PostRow } from "./types-posts";
 export type * from "./types-referrals";
 export type * from "./types-ideas";
 export type { RenderedTemplate } from "./types-templates";

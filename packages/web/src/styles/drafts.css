@@ -145,6 +145,22 @@
 .drf-subject > :first-child {
   color: var(--color-text-muted);
 }
+.drf-subject.is-edit {
+  align-items: center;
+}
+.drf-subject-edit {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  height: var(--spacing-drafts-input-height);
+  padding: 0 var(--spacing-6);
+  border-radius: var(--radius-inner-lg);
+  border: var(--bw-default) solid var(--color-border-strong);
+  background: var(--color-surface-inset);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  outline: none;
+}
 .drf-text {
   margin: 0;
   font-size: var(--text-lg);

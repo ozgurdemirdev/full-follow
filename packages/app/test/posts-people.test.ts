@@ -19,7 +19,8 @@ suite("Paylaşımlar ve kişiler", () => {
 
   it("14. paylaşım: yenileme hatırlatması, güncelledim düşürür, getirdiği kişi ve iş sayılır", () => {
     const post = ozgur.mod("posts")!.create({ platform: "r10", title: "Web sitesi yapıyorum", url: "https://r10.net/x", posted_at: "2026-10-01", refresh_days: 7 }).row;
-    ozgur.mod("posts")!.create({ platform: "linkedin", title: "Tanıtım", posted_at: "2026-09-01" });
+    // without an interval of its own a post follows the post_refresh_days setting (30 days): posted on the 5th it is not due yet
+    ozgur.mod("posts")!.create({ platform: "linkedin", title: "Tanıtım", posted_at: "2026-10-05" });
     expect(ozgur.today().posts_due.rows.map((p: any) => p.id)).toEqual([post.id]);
     const r = ozgur.save("post", { refreshed: true }, post.id);
     expect(r.effects.join(" ")).toContain("2026-10-16");
