@@ -696,3 +696,4 @@ export interface Activity {
   /** firms and people per contact status */
   status: Record<"people" | "companies", { status: string; count: number }[]>;
 }
+export type { PostRow } from "./types-posts";
