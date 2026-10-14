@@ -22,6 +22,8 @@
 @import "./comments.css";
 @import "./ideas.css";
 
+@import "./templates.css";
+
 
 @layer base {
   html {
