@@ -2,8 +2,9 @@ import {
   addDays, bool, has, keptRow, keptRows, OPEN_OPP_STAGES, OPP_STAGES, page, rows,
   type Ctx, type ListOpts, type OfferRecord, type OpportunityRef, type OpportunityRow,
 } from "@fullfollow/core";
+import { readItems, readPlan } from "./offers";
 
-const OPEN = OPEN_OPP_STAGES as readonly string[];
+const OPEN =OPEN_OPP_STAGES as readonly string[];
 /** The open stages as an SQL list (a constant of the code, so the statements that use it stay literal) */
 export const OPEN_SQL = OPEN_OPP_STAGES.map((s) => `'${s}'`).join(",");
 
@@ -62,7 +63,7 @@ export const countOf = (ctx: Ctx, personId: number): number =>
 
 const OFFER_SELECT = "SELECT x.*, op.title AS opportunity_title FROM offers x JOIN opportunities op ON op.id = x.opportunity_id";
 type OfferListRow = OfferRecord & { opportunity_title: string };
-const parseItems = (r: Omit<OfferListRow, "items"> & { items: string }): OfferListRow => ({ ...r, items: JSON.parse(r.items) });
+const parseItems = (r: Omit<OfferListRow, "items" | "plan"> & { items: string; plan: string | null }): OfferListRow => ({ ...r, items: readItems(r.items), plan: readPlan(r.plan) });
 
 /** Offer versions, newest first inside an opportunity; filter: {opportunity_id} */
 export function offerList(ctx: Ctx, o: ListOpts): { rows: OfferListRow[]; total: number } {

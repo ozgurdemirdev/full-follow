@@ -50,7 +50,7 @@ describe("pipeline as a module", () => {
     expect(r.effects).toEqual(["probe: proje yok", "müşteri etiketi eklendi"]);
     expect(seen).toEqual([{
       opportunity: { id: o.id, title: "Site", person_id: ada, company_id: null, estimated_value: 42000 },
-      offer: { id: offer.id, amount: 42000, items: [{ label: "paket", amount: 42000 }] },
+      offer: { id: offer.id, amount: 42000, items: [{ label: "paket", amount: 42000, qty: 1, line: 42000 }], plan: null },
       price: 42000,
     }]);
     expect(h.sqlite.prepare("SELECT COUNT(*) n FROM projects").get()).toEqual({ n: 0 });

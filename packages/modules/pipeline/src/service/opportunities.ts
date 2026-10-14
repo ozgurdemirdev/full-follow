@@ -3,6 +3,7 @@ import {
   addTagBySlug, announceTrashed, Bin, checkSource, eventLink as link, FFError, keptRow, label, OPEN_OPP_STAGES, parse, placeInGroup, requireRow, resolveRef, row, schema, stamp,
   writeEvent as emit, type Ctx, type OpportunityWon, type OppStage, type Q,
 } from "@fullfollow/core";
+import { readItems, readPlan } from "./offers";
 import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "./schemas";
 import { dropMember, upsertMember } from "./team";
 
@@ -43,11 +44,11 @@ export function applyStage(q: Q, ctx: Ctx, cur: Opp, stage: OppStage, o: { reaso
 
 /** What the projects module needs to open a project from a won opportunity: plain data, the accepted offer and the price included */
 function wonPayload(ctx: Ctx, opp: Opp): OpportunityWon {
-  const offer = keptRow<{ id: number; amount: number; items: string }>(ctx, "SELECT id, amount, items FROM offers WHERE opportunity_id = ? AND accepted_at IS NOT NULL", opp.id);
+  const offer = keptRow<{ id: number; amount: number; items: string; plan: string | null }>(ctx, "SELECT id, amount, items, plan FROM offers WHERE opportunity_id = ? AND accepted_at IS NOT NULL", opp.id);
   const companyId = keptRow<{ company_id: number | null }>(ctx, "SELECT company_id FROM people WHERE id = ?", opp.person_id)?.company_id ?? null;
   return {
     opportunity: { id: opp.id, title: opp.title, person_id: opp.person_id, company_id: companyId, estimated_value: opp.estimated_value },
-    offer: offer ? { id: offer.id, amount: offer.amount, items: JSON.parse(offer.items) } : null,
+    offer: offer ? { id: offer.id, amount: offer.amount, items: readItems(offer.items), plan: readPlan(offer.plan) } : null,
     price: offer?.amount ?? opp.estimated_value ?? 0,
   };
 }

@@ -50,7 +50,7 @@ export const mcp: McpDef = {
       },
       {
         at: 144.3,
-        text: "offer: {opportunity:'Pizza Z'|id,amount,offered_at?,items:[{label,amount}]?,note?} yeni sürüm açar (v1, v2...), id ile güncellenir; {accepted:true|false} + id teklifi kabul eder ya da kabulü geri alır (fırsatta tek kabul edilmiş teklif olur, kabul fırsat değerini teklif tutarına çeker; kazanınca proje fiyatı kabul edilen tekliften). ",
+        text: "offer: {opportunity:'Pizza Z'|id,amount,offered_at?,items:[{label,amount (birim fiyat),qty? (adet, 1)}] (kalem tutarı adet x birim),plan:[{key,label,pct}]? (ödeme planı: aşama anahtarı, yüzdeler 100 eder; kazanınca ödemeler bundan çıkar),note?} yeni sürüm açar (v1, v2...), id ile güncellenir; {accepted:true|false} + id teklifi kabul eder ya da kabulü geri alır (fırsatta tek kabul edilmiş teklif olur, kabul fırsat değerini teklif tutarına çeker; kazanınca proje fiyatı kabul edilen tekliften). ",
       },
     ],
     move: [{ at: 110, text: "Fırsat: bulundu|temas|cevap|gorusme|teklif|kazanildi|kaybedildi (kaybedildi için reason şart). " }],
