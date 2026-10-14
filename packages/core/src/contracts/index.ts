@@ -23,6 +23,7 @@
  */
 
 import type { CalendarApi } from "./calendar";
+import type { ChatApi } from "./chat";
 import type { CompaniesApi } from "./companies";
 import type { DraftsApi } from "./drafts";
 import type { IdeasApi } from "./ideas";
@@ -39,6 +40,7 @@ import type { TemplatesApi } from "./templates";
 import type { TimelineApi } from "./timeline";
 
 export type * from "./calendar";
+export type * from "./chat";
 export type * from "./companies";
 export type * from "./drafts";
 export type * from "./ideas";
@@ -57,6 +59,7 @@ export type * from "./timeline";
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
 export interface ModuleApis {
   calendar: CalendarApi;
+  chat: ChatApi;
   companies: CompaniesApi;
   drafts: DraftsApi;
   ideas: IdeasApi;

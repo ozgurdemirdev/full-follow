@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { BadRequestException } from "@nestjs/common";
-import { defaultDbPath, FILE_LIMITS, FILE_TYPES } from "@fullfollow/core";
+import { cleanName, defaultDbPath, FILE_LIMITS, FILE_TYPES, refuse, sniff } from "@fullfollow/core";
 import type { Core } from "./core.provider";
-import { cleanName, refuse, sniff } from "./upload";
 
 /** Uploaded record files live next to the database (data/files by default, so a throwaway FF_DB gets its own folder) */
 export const filesDir = () => path.join(path.dirname(defaultDbPath()), "files");

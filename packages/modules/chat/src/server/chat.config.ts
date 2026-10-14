@@ -1,9 +1,10 @@
 import path from "node:path";
 
-export { CHAT_ATTACHMENT_TYPES, CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, type ChatErrorCode } from "@fullfollow/core";
+export { CHAT_ATTACHMENT_TYPES } from "@fullfollow/core";
+export { CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, type ChatErrorCode } from "../constants";
 
-/** Repo root: this file compiles to packages/server/dist/chat/ */
-export const REPO_ROOT = path.resolve(__dirname, "../../../..");
+/** Repo root: this file compiles to packages/modules/chat/dist/server/ */
+export const REPO_ROOT = path.resolve(__dirname, "../../../../..");
 /** Runtime files of the chat (mcp.json, system.md); git ignored */
 export const CHAT_DATA_DIR = path.join(REPO_ROOT, "data", "chat");
 export const MCP_ENTRY = path.join(REPO_ROOT, "packages", "mcp", "dist", "index.js");

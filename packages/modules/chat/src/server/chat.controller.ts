@@ -2,8 +2,8 @@ import { Body, BadRequestException, Controller, Delete, Get, HttpCode, Inject, P
 import { FileInterceptor } from "@nestjs/platform-express";
 import fs from "node:fs";
 import type { Request, Response } from "express";
-import { CORE, type Core } from "../core.provider";
-import { intId } from "../http";
+import { APP_TOKEN, type Core } from "@fullfollow/core";
+import { intId } from "@fullfollow/core";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
 import { cardRecords } from "./chat-records";
@@ -22,7 +22,11 @@ const frame = (e: { seq: number; name: string; data: unknown }) => `id: ${e.seq}
 
 @Controller("api/chat")
 export class ChatController {
-  constructor(@Inject(CORE) private core: Core, private runner: ClaudeRunner, private hub: ChatHub) {}
+  constructor(@Inject(APP_TOKEN) private core: Core, private runner: ClaudeRunner, private hub: ChatHub) {}
+
+  private get chat() {
+    return this.core.mod("chat")!;
+  }
 
   @Get("meta")
   meta() {
@@ -38,22 +42,22 @@ export class ChatController {
 
   @Get("sessions")
   sessions(@Query() q: Record<string, unknown>) {
-    return this.core.chat.listSessions(q);
+    return this.chat.listSessions(q);
   }
 
   @Get("sessions/:id")
   one(@Param("id") id: string) {
-    return this.core.chat.getSession(intId(id));
+    return this.chat.getSession(intId(id));
   }
 
   @Post("sessions")
   create(@Body() b: unknown) {
-    return this.core.chat.createSession(b);
+    return this.chat.createSession(b);
   }
 
   @Patch("sessions/:id")
   update(@Param("id") id: string, @Body() b: unknown) {
-    const row = this.core.chat.updateSession(intId(id), b);
+    const row = this.chat.updateSession(intId(id), b);
     this.hub.emit(row.id, "session", row);
     return row;
   }
@@ -62,13 +66,13 @@ export class ChatController {
   remove(@Param("id") id: string) {
     const n = intId(id);
     this.runner.stop(n);
-    return this.core.chat.deleteSession(n);
+    return this.chat.deleteSession(n);
   }
 
   @Get("sessions/:id/messages")
   messages(@Param("id") id: string, @Query() q: Record<string, unknown>) {
     const n = intId(id);
-    return { ...this.core.chat.listMessages(n, q), running_message_id: this.runner.runningMessageId(n), stream_seq: this.hub.seq(n) };
+    return { ...this.chat.listMessages(n, q), running_message_id: this.runner.runningMessageId(n), stream_seq: this.hub.seq(n) };
   }
 
   @Post("sessions/:id/messages")
@@ -108,7 +112,7 @@ export class ChatController {
   @Get("sessions/:id/stream")
   stream(@Param("id") id: string, @Query("last_event_id") qLast: string | undefined, @Req() req: Request, @Res() res: Response) {
     const n = intId(id);
-    this.core.chat.getSession(n);
+    this.chat.getSession(n);
     res.writeHead(200, SSE_HEADERS);
     res.flushHeaders();
     res.write(`retry: ${CHAT_LIMITS.sseRetryMs}\n\n`);

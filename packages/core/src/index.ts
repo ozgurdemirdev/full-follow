@@ -13,7 +13,6 @@ import { sectorsService } from "./services/sectors";
 import { settingsService } from "./services/settings";
 import { resolveInput, resolveRef } from "./services/shared";
 import { todayService } from "./services/today";
-import { chatService } from "./services/chat";
 import { isCategory, isTrashType, restoreFromTrash, trashList, typeLabel } from "./services/trash";
 import { createRegistry, type ModuleRegistry } from "./modules/registry";
 import type { SaveResult } from "./modules/types";
@@ -41,6 +40,7 @@ export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLink
 export { marketingSettings, networkSettings, readSetting, readTemplate, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
+export { cleanName, HttpFailure, refuse, sniff, type Detected, type UploadType } from "./services/uploads";
 export { normalizeType, resolveId } from "./services/records";
 export { companyKeys, contactKey, personKeys } from "./keys";
 export * as schema from "./db/schema";
@@ -75,7 +75,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const settings = settingsService(ctx);
   const queries = queriesFor(ctx);
   const todayFn = todayService(ctx);
-  const chat = chatService(ctx);
 
   /** Kayıt oluştur ya da güncelle (id verilirse güncelle). Aşama değişikliği burada yapılmaz. */
   function save(type: string, data: Record<string, any>, id?: string | number): SaveResult {
@@ -151,7 +150,9 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
    * Kişi ve firmada mükerrer kontrolü yapılır (aynı e-posta bu arada başka kayda verildiyse geri gelmez).
    */
   function restore(type: string, id: string | number): SaveResult {
-    if (type === "chat_session") return chat.restoreSession(Number(id));
+    // records a module hides in place (a chat session) come back through that module
+    const hidden = ctx.contrib("softTrash").find((def) => def.type === type);
+    if (hidden) return hidden.restore(ctx, Number(id));
     const t = isTrashType(ctx, type) ? type : typeOf(type);
     if (isCategory(t)) {
       const nid = resolveId(ctx, t, id);
@@ -196,7 +197,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     // yazma servisleri (REST controller'ları ve testler kullanır)
     sources, tags, comments, settings, sectors, notes, links,
     files,
-    chat,
     // Paket 3: çöp kutusu
     trash: { list: () => trashList(ctx), restore },
     // okuma

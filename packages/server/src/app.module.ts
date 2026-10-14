@@ -9,19 +9,16 @@ import { SectorsController } from "./controllers/sectors.controller";
 import { MiscController } from "./controllers/misc.controller";
 import { SourcesController } from "./controllers/sources.controller";
 import { TagsController, TrashController } from "./controllers/tags.controller";
-import { ChatController } from "./chat/chat.controller";
-import { ChatHub } from "./chat/chat-hub";
-import { ClaudeRunner } from "./chat/claude-runner";
 import { claudeProvider, coreProvider } from "./core.provider";
 import { ErrorFilter } from "./http";
 import { JobHost } from "./jobs";
-import { moduleControllers } from "./modules.generated";
+import { moduleControllers, moduleProviders } from "./modules.generated";
 
 @Module({
   controllers: [
     AuthController, MiscController, SourcesController,
     CommentsController, SectorsController, NotesController, LinksController, FilesController,
-    TagsController, TrashController, ChatController,
+    TagsController, TrashController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,
   ],
@@ -29,8 +26,8 @@ import { moduleControllers } from "./modules.generated";
     coreProvider,
     claudeProvider,
     JobHost,
-    ChatHub,
-    ClaudeRunner,
+    // providers of the installed modules (the chat module's event hub and Claude runner)
+    ...moduleProviders,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: ErrorFilter },
   ],

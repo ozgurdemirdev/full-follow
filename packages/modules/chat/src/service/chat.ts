@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { CHAT_DEFAULTS, CHAT_NEW_TITLE, CHAT_TITLE_CHARS } from "../constants";
-import { emit, FFError, parse, stamp, type Ctx } from "../context";
-import { chat_attachments, chat_messages, chat_sessions } from "../db/schema";
-import { chatAttachmentCreate, chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "../schemas/chat";
+import { CHAT_NEW_TITLE, FFError, parse, schema, stamp, writeEvent as emit, type ChatApi, type Ctx } from "@fullfollow/core";
+import { CHAT_DEFAULTS, CHAT_TITLE_CHARS } from "../constants";
+import { chatAttachmentCreate, chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "./schemas";
+
+const { chat_attachments, chat_messages, chat_sessions } = schema;
 
 /** First user message → title: first CHAT_TITLE_CHARS chars, cut at a word boundary */
 function autoTitle(body: string): string {
@@ -21,7 +22,7 @@ function decodeCursor(c: string): { at: string; id: number } {
   return { at, id: Number(id) };
 }
 
-export function chatService(ctx: Ctx) {
+export function chatService(ctx: Ctx): ChatApi {
   const sessionRow = (id: number) => {
     const r = ctx.db.select().from(chat_sessions).where(and(eq(chat_sessions.id, id), isNull(chat_sessions.deleted_at))).get();
     if (!r) throw new FFError("not_found", `sohbet #${id} bulunamadı`);

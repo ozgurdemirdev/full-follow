@@ -1,7 +1,7 @@
 import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
-import { CORE, type Core } from "../core.provider";
+import { APP_TOKEN, type ChatSession, type Core } from "@fullfollow/core";
 import { ChatHub } from "./chat-hub";
 import { attachmentBlocks } from "./chat-uploads";
 import { notesVersion, readBrief, SYSTEM_RULES, writeRuntimeFiles } from "./chat-files";
@@ -55,14 +55,18 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private brief = "";
   private notes = "";
 
-  constructor(@Inject(CORE) private core: Core, private hub: ChatHub) {}
+  constructor(@Inject(APP_TOKEN) private core: Core, private hub: ChatHub) {}
+
+  private get chat() {
+    return this.core.mod("chat")!;
+  }
 
   onModuleInit() {
     this.pinned = this.core.settings.all().chat_pinned_notes;
     this.brief = readBrief();
     this.notes = this.combined();
     writeRuntimeFiles(this.pinned, this.brief);
-    const n = this.core.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
+    const n = this.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
     if (n) console.log(`  ${n} yarım kalan sohbet cevabı hataya çevrildi`);
   }
 
@@ -96,7 +100,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   }
 
   send(sessionId: number, input: { body: string; client_id: string; attachment_ids?: number[]; input_mode?: string }) {
-    const chat = this.core.chat;
+    const chat = this.chat;
     const prior = chat.findSend(sessionId, input.client_id);
     if (prior) return { user_message: prior.user, assistant_message: prior.reply };
     this.syncNotes();
@@ -129,10 +133,10 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
    * A resumed CLI session keeps its original system prompt, so changed pinned notes reach it as one extra hidden block
    * in its next user message. A chat that has not started yet gets the notes through system.md, so it only records the version.
    */
-  private notesBlock(session: ReturnType<Core["chat"]["getSession"]>): { type: "text"; text: string }[] {
+  private notesBlock(session: ChatSession): { type: "text"; text: string }[] {
     const v = notesVersion(this.notes);
     if (session.notes_version === v) return [];
-    this.core.chat.setNotesVersion(session.id, v);
+    this.chat.setNotesVersion(session.id, v);
     if (!session.cli_started) return [];
     return [{ type: "text", text: v ? NOTES_UPDATE + this.notes.trim() : NOTES_CLEARED }];
   }
@@ -153,7 +157,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     this.endGracefully(idle);
   }
 
-  private spawn(sessionId: number, session: ReturnType<Core["chat"]["getSession"]>): Slot {
+  private spawn(sessionId: number, session: ChatSession): Slot {
     const child = spawnClaude(resolveCli()!, session);
     const slot: Slot = { sessionId, child, model: session.model, effort: session.effort, stale: false, turn: null, lastUsed: Date.now(), stderr: "" };
     this.slots.set(sessionId, slot);
@@ -193,7 +197,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     switch (e.type) {
       case "ready":
         if (!e.mcp_ok) console.warn("  chat: full-follow MCP bağlanamadı");
-        this.core.chat.markCliStarted(sessionId);
+        this.chat.markCliStarted(sessionId);
         break;
       case "status":
         this.hub.emit(sessionId, "status", { message_id, state: e.state, tool: e.tool });
@@ -206,7 +210,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
         break;
       case "tools":
         turn.tools = e.tools;
-        this.core.chat.setAssistantTools(message_id, e.tools);
+        this.chat.setAssistantTools(message_id, e.tools);
         break;
       case "limits":
         this.hub.limits = { five_hour: e.five_hour, seven_day: e.seven_day, five_resets_at: e.five_resets_at, seven_resets_at: e.seven_resets_at, status: e.status, at: new Date().toISOString() };
@@ -268,7 +272,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     clearTimeout(turn.flushTimer);
     turn.flushTimer = undefined;
     if (!turn.pending) return;
-    this.core.chat.appendAssistantText(turn.messageId, turn.pending);
+    this.chat.appendAssistantText(turn.messageId, turn.pending);
     turn.pending = "";
   }
 
@@ -280,7 +284,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     clearTimeout(turn.timeoutTimer);
     this.releaseHead(slot.sessionId, turn);
     this.flush(turn);
-    const chat = this.core.chat;
+    const chat = this.chat;
     const row = chat.finishAssistantMessage(turn.messageId, {
       state: r.state, ack: turn.ack, error: r.code ? CHAT_ERROR_TEXT[r.code] : null, usage: r.usage, cost_usd: r.cost_usd, context_tokens: r.context_tokens,
     });

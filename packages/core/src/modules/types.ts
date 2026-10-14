@@ -125,6 +125,16 @@ export interface TimelineEventDef {
   row?: { key: string; table: string };
 }
 
+/** Records a module hides in place (a `deleted_at` column) instead of moving them to the trash table: the trash lists them and brings them back */
+export interface SoftTrashDef {
+  /** the type the trash row and the restore call carry */
+  type: string;
+  /** Turkish name of the type */
+  label: string;
+  list(ctx: Ctx): { id: number; label: string; deleted_at: string }[];
+  restore(ctx: Ctx, id: number): { label: string; effects: string[] };
+}
+
 /** What a module adds to the shared views. Each function returns only its own part; the host merges them. */
 export interface Contributions {
   /** sections of the Today view, by key; `limit` is the row cap per section */
@@ -151,6 +161,8 @@ export interface Contributions {
   sourceCounts?: (ctx: Ctx) => Record<string, Map<number, number>>;
   /** event type to how it shows in the timeline's global feed (events of a type nobody lists stay out of the feed) */
   timelineKinds?: Record<string, TimelineEventDef>;
+  /** records the module hides in place; they show in the trash and restore from it */
+  softTrash?: SoftTrashDef;
   /** scheduled work for the server host */
   jobs?: JobDef[];
 }

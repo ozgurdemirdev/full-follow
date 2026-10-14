@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { CHAT_EFFORT_IDS, CHAT_INPUT_MODES, CHAT_LIMITS, CHAT_MODEL_IDS } from "../constants";
+import { CHAT_INPUT_MODES } from "@fullfollow/core";
+import { CHAT_EFFORT_IDS, CHAT_LIMITS, CHAT_MODEL_IDS } from "../constants";
 
 const model = z.enum(CHAT_MODEL_IDS);
 const effort = z.enum(CHAT_EFFORT_IDS);

@@ -1,6 +1,5 @@
 import path from "node:path";
-import { HttpException } from "@nestjs/common";
-import { FILE_NAME_MAX } from "@fullfollow/core";
+import { FILE_NAME_MAX } from "../constants";
 
 const SNIFF_BYTES = 8_192;
 
@@ -15,7 +14,15 @@ export interface Detected {
   ext: string;
 }
 
-export const refuse = (message: string, status = 400, code = "attachment") => new HttpException({ message, code }, status);
+/** An upload the server refuses: the HTTP status and an app code go out as `{ error, code }` (the server's error filter turns it into the response) */
+export class HttpFailure extends Error {
+  constructor(message: string, public status: number, public code: string) {
+    super(message);
+    this.name = "HttpFailure";
+  }
+}
+
+export const refuse = (message: string, status = 400, code = "attachment") => new HttpFailure(message, status, code);
 const startsWith = (b: Buffer, sig: number[], at = 0) => sig.every((v, i) => b[at + i] === v);
 
 /**

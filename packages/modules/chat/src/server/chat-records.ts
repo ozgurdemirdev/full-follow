@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import type { Core } from "../core.provider";
+import type { Core } from "@fullfollow/core";
 
 /** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, opportunities, payments, drafts, templates, ...) */
 export const CORE_CARD_TYPES = ["comment"] as const;

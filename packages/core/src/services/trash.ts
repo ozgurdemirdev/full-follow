@@ -98,10 +98,11 @@ export function trashList(ctx: Ctx): TrashItem[] {
     rows(ctx, `SELECT id, name, deleted_at FROM ${table} WHERE deleted_at IS NOT NULL`).map((c) => ({
       type, id: c.id, label: c.name, what: TABLE_LABEL[table] ?? type, deleted_at: c.deleted_at, deleted_by: null, trash_id: null,
     })));
-  const chats = rows(ctx, "SELECT id, title, deleted_at FROM chat_sessions WHERE deleted_at IS NOT NULL").map((c) => ({
-    type: "chat_session", id: c.id, label: c.title, what: CORE_TYPE_LABEL.chat_session, deleted_at: c.deleted_at, deleted_by: null, trash_id: null,
-  }));
-  return [...recs, ...cats, ...chats].sort((a, b) => b.deleted_at.localeCompare(a.deleted_at));
+  // records a module hides in place (the chat sessions)
+  const hidden = ctx.contrib("softTrash").flatMap((def) => def.list(ctx).map((h) => ({
+    type: def.type, id: h.id, label: h.label, what: def.label, deleted_at: h.deleted_at, deleted_by: null, trash_id: null,
+  })));
+  return [...recs, ...cats, ...hidden].sort((a, b) => b.deleted_at.localeCompare(a.deleted_at));
 }
 
 /** Turkish names of the record types core owns; module types bring theirs through the registry (`typeLabel`) */
@@ -109,7 +110,7 @@ const CORE_TYPE_LABEL: Record<string, string> = {
   note: "not",
   comment: "yorum", link: "link",
   file: "dosya",
-  tag: "etiket", sector: "sektör", source: "kaynak", chat_session: "sohbet",
+  tag: "etiket", sector: "sektör", source: "kaynak",
 };
 
 /** Turkish name of a record type: core types, then the installed modules' types; the type itself when nobody names it */
