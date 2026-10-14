@@ -32,7 +32,13 @@ export class Bin {
     const list = rows(this.ctx, `SELECT * FROM ${table} WHERE ${where}`, ...params);
     if (list.length) {
       this.parts.push({ table, rows: list });
-      this.ctx.sqlite.prepare(`DELETE FROM ${table} WHERE ${where}`).run(...params);
+      try {
+        this.ctx.sqlite.prepare(`DELETE FROM ${table} WHERE ${where}`).run(...params);
+      } catch (e) {
+        // a row of a module that is not installed can still point at this one (nobody was there to clean it)
+        if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) throw new FFError("rule", `silinemedi: ${TABLE_LABEL[table] ?? table} kaydına bağlı başka kayıtlar var (ilgili modül kurulu değil)`);
+        throw e;
+      }
     }
     return list;
   }
@@ -53,6 +59,14 @@ export class Bin {
       keys: keys.length ? JSON.stringify(keys) : null,
     }).returning().get();
   }
+}
+
+/**
+ * Tells the installed modules that a record is going to the trash, so each cleans what points at it (tasks, touches, ...) into the same bin.
+ * Call it inside the delete transaction, after the owner's own sub-records and before the record's row is taken.
+ */
+export function announceTrashed(ctx: Ctx, bin: Bin, type: string, id: number): void {
+  ctx.emit("record.trashed", { type, id, bin });
 }
 
 /** Çöp kutusundaki anahtar eşleşmesi (mükerrer kontrolü) */
@@ -134,6 +148,7 @@ export function restoreFromTrash(ctx: Ctx, type: string, recordId: number, check
         type: `${type}.restored`, summary: `Geri yüklendi (${typeLabel(ctx, type)}): ${t.label}`,
         ...personLinkOf(type, parts),
       });
+      ctx.emit("record.restored", { type, id: recordId });
     });
   } catch (e) {
     if (e instanceof FFError) throw e;

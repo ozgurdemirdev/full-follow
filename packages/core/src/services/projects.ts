@@ -8,7 +8,7 @@ import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "../sc
 import { link, requireRow } from "./shared";
 import { acceptedAmount } from "./offers";
 import { readTemplate } from "./settings";
-import { Bin } from "./trash";
+import { announceTrashed, Bin } from "./trash";
 
 /** Şablondan ödeme planı üretir (zaten ödeme varsa ya da fiyat 0 ise üretmez). Üretilen sayıyı döner. */
 export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: number; started_at: string | null }): number {
@@ -119,7 +119,9 @@ export function projectsService(ctx: Ctx) {
       const bin = new Bin(ctx);
       bin.take("comments", "target_type = 'payment' AND target_id IN (SELECT id FROM payments WHERE project_id = ?)", id);
       bin.take("payments", "project_id = ?", id);
-      for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "project_id", id);
+      for (const t of ["touches", "drafts"]) bin.unlink(t, "project_id", id);
+      // the tasks that point at it are the calendar's to unlink
+      announceTrashed(ctx, bin, "project", id);
       bin.take("comments", "target_type = 'project' AND target_id = ?", id);
       bin.take("files", "target_type = 'project' AND target_id = ?", id);
       bin.take("links", "target_type = 'project' AND target_id = ?", id);

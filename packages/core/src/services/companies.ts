@@ -7,7 +7,7 @@ import { assignSectors, assignTags, checkSource } from "./categories";
 import { assertUnique, keyList } from "./dupes";
 import { adoptLoose, withSectorList } from "./people";
 import { requireRow } from "./shared";
-import { Bin } from "./trash";
+import { announceTrashed, Bin } from "./trash";
 
 const FIELD_NAMES: Record<string, string> = {
   name: "ad", website: "web sitesi", email: "e-posta", phone: "telefon", instagram: "Instagram", linkedin: "LinkedIn",
@@ -62,7 +62,8 @@ export function companiesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.unlink("people", "company_id", id);
-      bin.unlink("tasks", "company_id", id);
+      // the tasks that point at it are the calendar's to unlink
+      announceTrashed(ctx, bin, "company", id);
       bin.take("comments", "target_type = 'draft' AND target_id IN (SELECT id FROM drafts WHERE company_id = ?)", id);
       bin.take("touches", "company_id = ?", id);
       bin.take("drafts", "company_id = ?", id);

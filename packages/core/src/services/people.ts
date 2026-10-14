@@ -7,7 +7,7 @@ import { assignSectors, assignTags, checkSource } from "./categories";
 import { assertUnique, keyList } from "./dupes";
 import { requireRow } from "./shared";
 import { bumpStatus, statusOfTouch } from "./status";
-import { Bin } from "./trash";
+import { announceTrashed, Bin } from "./trash";
 
 /** Eski tek sektör girdisi (`sector: "Sağlık > Diş hekimi"`) çoklu sektör listesine çevrilir */
 export function withSectorList(input: unknown): unknown {
@@ -106,15 +106,14 @@ export function peopleService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.unlink("people", "referred_by_id", id);
-      for (const [type, table] of [["draft", "drafts"], ["task", "tasks"]] as const) {
-        bin.take("comments", `target_type = '${type}' AND target_id IN (SELECT id FROM ${table} WHERE person_id = ?)`, id);
-      }
+      bin.take("comments", "target_type = 'draft' AND target_id IN (SELECT id FROM drafts WHERE person_id = ?)", id);
       bin.take("idea_people", "person_id = ?", id);
       bin.take("opportunity_people", "person_id = ?", id);
       bin.take("touches", "person_id = ?", id);
+      // the tasks of the person (and the comments on them) are the calendar's to take
+      announceTrashed(ctx, bin, "person", id);
       bin.take("notes", "person_id = ?", id);
       bin.take("drafts", "person_id = ?", id);
-      bin.take("tasks", "person_id = ?", id);
       bin.take("comments", "target_type = 'person' AND target_id = ?", id);
       bin.take("person_tags", "person_id = ?", id);
       bin.take("person_sectors", "person_id = ?", id);

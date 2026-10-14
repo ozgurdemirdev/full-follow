@@ -52,6 +52,34 @@ describe("calendar as a module", () => {
     expect(app.mod("calendar")).toBeUndefined();
   });
 
+  it("tasks follow a person to the trash and back; the link from a company or opportunity is emptied and restored", () => {
+    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const sql = (q: string, ...a: unknown[]) => app.ctx.sqlite.prepare(q).all(...a) as any[];
+    const p = app.people.create({ name: "Ada" }).row;
+    const task = app.tasks.create({ title: "ara", person_id: p.id }).row;
+    app.save("comment", { target_type: "task", target_id: task.id, body: "not" });
+    app.remove("person", p.id);
+    expect(sql("SELECT COUNT(*) n FROM tasks")[0].n).toBe(0);
+    expect(sql("SELECT COUNT(*) n FROM comments")[0].n).toBe(0);
+    app.restore("person", p.id);
+    expect(sql("SELECT id FROM tasks").map((r) => r.id)).toEqual([task.id]);
+    expect(sql("SELECT COUNT(*) n FROM comments")[0].n).toBe(1);
+
+    const c = app.companies.create({ name: "ABC" }).row;
+    const ct = app.tasks.create({ title: "firma işi", company_id: c.id }).row;
+    app.remove("company", c.id);
+    expect(sql("SELECT company_id FROM tasks WHERE id = ?", ct.id)[0].company_id).toBeNull();
+    app.restore("company", c.id);
+    expect(sql("SELECT company_id FROM tasks WHERE id = ?", ct.id)[0].company_id).toBe(c.id);
+
+    const o = app.opportunities.create({ title: "Site", person_id: p.id, source_id: app.get("source", "R10").row.id }).row;
+    const ot = app.tasks.create({ title: "teklif", opportunity_id: o.id }).row;
+    app.remove("opportunity", o.id);
+    expect(sql("SELECT opportunity_id FROM tasks WHERE id = ?", ot.id)[0].opportunity_id).toBeNull();
+    app.restore("opportunity", o.id);
+    expect(sql("SELECT opportunity_id FROM tasks WHERE id = ?", ot.id)[0].opportunity_id).toBe(o.id);
+  });
+
   it("a project's next task comes from the module and is null without it", () => {
     const app = appFor(openDb(":memory:"), "ozgur", clock);
     const p = app.people.create({ name: "Ada" }).row;

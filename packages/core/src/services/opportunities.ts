@@ -8,7 +8,7 @@ import { addTagBySlug, checkSource } from "./categories";
 import { dropMember, upsertMember } from "./oppPeople";
 import { createProjectFromOpportunity } from "./projects";
 import { link, placeInGroup, requireRow, resolveRef } from "./shared";
-import { Bin } from "./trash";
+import { announceTrashed, Bin } from "./trash";
 
 const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
 
@@ -107,7 +107,9 @@ export function opportunitiesService(ctx: Ctx) {
     if (row(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", id)) throw new FFError("rule", `${cur.title} silinemez: projesi var`);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      for (const t of ["touches", "drafts", "tasks"]) bin.unlink(t, "opportunity_id", id);
+      for (const t of ["touches", "drafts"]) bin.unlink(t, "opportunity_id", id);
+      // the tasks that point at it are the calendar's to unlink
+      announceTrashed(ctx, bin, "opportunity", id);
       // offers point at files, so they go first
       bin.take("offers", "opportunity_id = ?", id);
       bin.take("files", "target_type = 'opportunity' AND target_id = ?", id);

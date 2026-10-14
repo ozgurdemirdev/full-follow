@@ -50,7 +50,7 @@ export type * from "./contracts";
 // ---- What a module's services and server code build on ("service kit") ----
 export { emit as writeEvent, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
 export { requireRow, truncate, link as eventLink } from "./services/shared";
-export { Bin } from "./services/trash";
+export { announceTrashed, Bin } from "./services/trash";
 export { bool, has } from "./services/directory";
 export { outgoingMessageCounts } from "./services/quota";
 export { paymentsDue, type DuePayment } from "./services/payments";

@@ -1,4 +1,4 @@
-import { defineModule } from "@fullfollow/core";
+import { defineModule, type RecordTrashed } from "@fullfollow/core";
 import { calendarApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
@@ -15,6 +15,17 @@ export default defineModule({
   uses: ["projects", "drafts"],
   api: calendarApi,
   entities,
+  hooks: {
+    // the tasks that hang on a record that goes to the trash: a person's go with it (and the comments on them), the link from a company, opportunity or project is emptied
+    "record.trashed": (_ctx, { type, id, bin }: RecordTrashed) => {
+      if (type === "person") {
+        bin.take("comments", "target_type = 'task' AND target_id IN (SELECT id FROM tasks WHERE person_id = ?)", id);
+        bin.take("tasks", "person_id = ?", id);
+      } else if (type === "company") bin.unlink("tasks", "company_id", id);
+      else if (type === "opportunity") bin.unlink("tasks", "opportunity_id", id);
+      else if (type === "project") bin.unlink("tasks", "project_id", id);
+    },
+  },
   contribute: {
     trashTypes: [{ type: "task", label: "görev" }, { type: "goal", label: "hedef" }],
     // the day plan and the tasks due today, on the Today view
