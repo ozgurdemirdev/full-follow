@@ -1,4 +1,4 @@
 export { createRegistry, defineModule, type ModuleRegistry } from "./registry";
 export type {
-  Contributions, EntityHandler, EntityRef, EventName, EventPayload, Hook, ModAccess, ModuleDef, ModuleRuntime, SaveResult, SearchHit, TrashTypeDef, TypeRegistry,
+  Contributions, DocFragment, EntityHandler, EntityRef, EventName, EventPayload, Hook, McpDef, McpEntityDoc, McpFormat, McpToolDef, ModAccess, ModuleDef, ModuleRuntime, RelationDef, SaveResult, SearchHit, TrashTypeDef, TypeRegistry,
 } from "./types";

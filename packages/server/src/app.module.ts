@@ -30,6 +30,7 @@ import { ChatHub } from "./chat/chat-hub";
 import { ClaudeRunner } from "./chat/claude-runner";
 import { coreProvider, followupsProvider } from "./core.provider";
 import { ErrorFilter } from "./http";
+import { moduleControllers } from "./modules.generated";
 
 @Module({
   controllers: [
@@ -37,6 +38,8 @@ import { ErrorFilter } from "./http";
     OpportunitiesController, ProjectsController, PaymentsController, TasksController, DraftsController,
     TouchesController, CommentsController, SectorsController, NotesController, LinksController, FilesController, OffersController, OpportunityPeopleController, GoalsController,
     PostsController, TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
+    // controllers of the installed feature modules (generated list)
+    ...moduleControllers,
   ],
   providers: [
     coreProvider,

@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import type { Ctx, ListOpts } from "../context";
 import type { ModuleApis, ModuleEvents } from "../contracts";
 
@@ -57,9 +58,21 @@ export interface TrashTypeDef {
   label: string;
 }
 
+/** A list the module loads for `get(type, id, with: [name])` (for example the tasks of a person); `by` is `{ <type>_id: id }` of the record asked for. */
+export interface RelationDef {
+  /** record types that accept this relation */
+  on: string[];
+  load(ctx: Ctx, by: Record<string, number>, limit: number): any[];
+}
+
 /** What a module adds to the shared views. Each function returns only its own part; the host merges them. */
 export interface Contributions {
-  today?: (ctx: Ctx) => Record<string, unknown>;
+  /** sections of the Today view, by key; `limit` is the row cap per section */
+  today?: (ctx: Ctx, opts: { limit: number }) => Record<string, unknown>;
+  /** relation name to its loader */
+  relations?: Record<string, RelationDef>;
+  /** lists and labels the web forms read from `/api/meta` */
+  meta?: Record<string, unknown>;
   report?: (ctx: Ctx, range: { from: string; to: string }) => Record<string, unknown>;
   review?: (ctx: Ctx, week: string) => Record<string, unknown>;
   search?: (ctx: Ctx, q: string, limit: number) => SearchHit[];
@@ -68,6 +81,67 @@ export interface Contributions {
   recordLabels?: Record<string, string>;
   /** event type to its Turkish timeline label */
   timelineLabels?: Record<string, string>;
+}
+
+/** Row of a record, as the MCP formatters receive it */
+type Row = Record<string, any>;
+
+/** Helpers the MCP host hands to a module's formatters, so modules format like the core types do */
+export interface McpFormat {
+  /** ISO date to dd.mm (dd.mm.yy for other years) */
+  d(iso?: string | null): string;
+  /** amount with the lira sign */
+  tl(n?: number | null): string;
+  cut(s: string | null | undefined, n?: number): string;
+  /** actor to its display name */
+  who(a?: string): string;
+  /** parts joined with " · ", empty ones dropped */
+  join(...parts: (string | number | null | undefined | false)[]): string;
+  label(key: string): string;
+  /** one line of any record type */
+  line(type: string, r: Row): string;
+  /** a titled list section of a today style view (empty text when the list is empty) */
+  section(title: string, type: string, res: { rows: Row[]; total: number }): string;
+}
+
+/** How one record type is written in MCP output */
+export interface McpEntityDoc {
+  /** short Turkish name used in confirmations ("görev") */
+  kind: string;
+  /** one line, as in lists and at the head of a get */
+  line(r: Row, f: McpFormat): string;
+  /** extra lines of a get, after the extra fields */
+  details?(r: Row, f: McpFormat): string[];
+  /** the type has a page in the panel (what `open` may show) */
+  openable?: boolean;
+}
+
+/** Text spliced into a generic tool's description; fragments are sorted by `at` (core's own are 100, 200, ...) and joined as they are */
+export interface DocFragment {
+  at: number;
+  text: string;
+}
+
+/** A tool only this module has */
+export interface McpToolDef {
+  name: string;
+  description: string;
+  input: Record<string, z.ZodType>;
+  run(ctx: Ctx, args: any, f: McpFormat): string;
+}
+
+/** What a module adds to the MCP server: its record types' output, its own tools, and its parts of the shared texts */
+export interface McpDef {
+  entities?: Record<string, McpEntityDoc>;
+  tools?: McpToolDef[];
+  /** tool name to the fragments added to its description */
+  docs?: Record<string, DocFragment[]>;
+  /** sections of the `today` text, sorted by `at` among core's (100, 200, ...) */
+  today?: { at: number; render(t: any, f: McpFormat): string }[];
+  /** lines of the marketing part of the `report` text, sorted by `at` */
+  marketing?: { at: number; render(m: any, f: McpFormat): string[] }[];
+  /** relation name (get with) to the record type its rows are written as */
+  relations?: Record<string, string>;
 }
 
 export interface ModuleDef {
@@ -83,6 +157,8 @@ export interface ModuleDef {
   /** event name to the hook run when that event is emitted */
   hooks?: Record<string, Hook>;
   contribute?: Contributions;
+  /** MCP side: formatters, tools and description fragments */
+  mcp?: McpDef;
 }
 
 /** What the installed modules say about record types; the generic dispatch (save, find, get, delete, restore, refs) reads it. */
@@ -108,4 +184,6 @@ export interface ModuleRuntime {
   mod: ModAccess;
   emit<N extends EventName>(name: N, payload: EventPayload<N>): string[];
   types: TypeRegistry;
+  /** the installed modules' contributions of one kind, in registration order */
+  contrib<K extends keyof Contributions>(key: K): NonNullable<Contributions[K]>[];
 }

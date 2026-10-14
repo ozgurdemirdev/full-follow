@@ -10,6 +10,7 @@ import { sectorIds } from "./sectors";
 
 import { trashList } from "./trash";
 import { entityHandler, isCoreType } from "./records";
+import type { RelationDef } from "../modules/types";
 import { requireRow, resolveRef } from "./shared";
 import { postStats } from "./posts";
 import { templateStats } from "./templates";
@@ -364,7 +365,12 @@ export function queriesService(ctx: Ctx) {
     if (!rowData) throw new FFError("not_found", `${type} #${id} bulunamadı`);
 
     const related: Record<string, any[]> = {};
-    const allowed = relatedFor[type] ?? ctx.types.entity(type)?.related ?? [];
+    // relations the installed modules load (for example the tasks of a person)
+    const moduleRelations: Record<string, RelationDef> = Object.assign({}, ...ctx.contrib("relations"));
+    const allowed = [
+      ...(relatedFor[type] ?? ctx.types.entity(type)?.related ?? []),
+      ...Object.entries(moduleRelations).filter(([, r]) => r.on.includes(type)).map(([name]) => name),
+    ];
     const n = Math.min(Math.max(1, relLimit), 200);
     const cap = (r: Rows) => r.rows.slice(0, n);
     for (const name of withRel) {
@@ -397,6 +403,7 @@ export function queriesService(ctx: Ctx) {
         case "notes": related.notes = cap(notes({ filter: { person_id: id }, limit: n })); break;
         case "channels": related.channels = type === "company" ? companyCard(id).channels : channelSummary(ctx, id, rowData.awaiting ? { awaiting: rowData.awaiting } as any : undefined); break;
         case "comments": related.comments = listThreads(ctx, { target_type: COMMENT_TYPES[type as keyof typeof COMMENT_TYPES], target_id: id, resolved: "all" }).slice(0, n); break;
+        default: related[name] = moduleRelations[name].load(ctx, by, n);
       }
     }
     // açık yorum konusu sayısı (Claude cevapsız yorumu fark etsin)

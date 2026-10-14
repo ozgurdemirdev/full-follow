@@ -89,7 +89,8 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
         }
         return effects;
       };
-      return { mod, emit, types };
+      const contrib: ModuleRuntime["contrib"] = (key) => installed.flatMap((def) => (def.contribute?.[key] === undefined ? [] : [def.contribute[key] as any]));
+      return { mod, emit, types, contrib };
     },
   };
 }

@@ -6,7 +6,8 @@ import type { Db, Q } from "./db/client";
 import { events } from "./db/schema";
 import type { ModuleRuntime } from "./modules/types";
 
-export type ErrorCode = "validation" | "not_found" | "rule" | "ambiguous" | "forbidden" | "duplicate";
+/** "http": a malformed request that is not about a record (a bad id in the URL) */
+export type ErrorCode = "validation" | "not_found" | "rule" | "ambiguous" | "forbidden" | "duplicate" | "http";
 
 /** Mükerrer kayıt: var olan kayıt (çöp kutusundaysa geri yüklenebilir) */
 export interface DuplicateHit {

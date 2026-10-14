@@ -50,6 +50,7 @@ export type { TrashItem } from "./services/trash";
 
 export * from "./modules";
 export type * from "./contracts";
+export { APP_TOKEN, intId, listOpts, withList } from "./http";
 
 /** Toplu kayıt sonucu: eklenenler, mükerrer diye atlananlar, hata verenler (sıra numarasıyla) */
 export interface BulkResult {
@@ -253,6 +254,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     actor,
     /** installed feature modules (key, label) */
     modules: { has: registry.has, list: registry.list },
+    /** what the installed modules put in `/api/meta` (lists and labels for the forms) */
+    moduleMeta: (): Record<string, unknown> => Object.assign({}, ...ctx.contrib("meta")),
     /** typed access to another module's API; undefined when that module is not installed */
     mod: ctx.mod,
     /** the context services run with (actor, clock, db): module tools (MCP) call their module's API through it */

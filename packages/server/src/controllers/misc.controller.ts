@@ -17,6 +17,12 @@ export class MiscController {
     return { ok: true };
   }
 
+  /** Installed feature modules: [{ key, label }] */
+  @Get("modules")
+  modules() {
+    return this.core.modules.list().map((m) => ({ key: m.key, label: m.label }));
+  }
+
   /** Formlar ve etiketler için sabit listeler */
   @Get("meta")
   meta() {
@@ -26,6 +32,7 @@ export class MiscController {
       touch_kinds: TOUCH_KINDS, connection_tags: CONNECTION_TAGS, network_defaults: NETWORK_DEFAULTS, draft_statuses: DRAFT_STATUSES, comment_targets: COMMENT_TARGETS, labels: LABELS,
       post_platforms: POST_PLATFORMS, template_kinds: TEMPLATE_KINDS, idea_stages: IDEA_STAGES, interest_levels: INTEREST_LEVELS, marketing_defaults: MARKETING_DEFAULTS,
       contact_statuses: CONTACT_STATUSES, tag_colors: TAG_COLORS,
+      ...this.core.moduleMeta(),
     };
   }
 

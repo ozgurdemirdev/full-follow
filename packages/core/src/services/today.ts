@@ -64,6 +64,8 @@ export function todayService(ctx: Ctx) {
       })(),
       // Claude'un MCP üzerinden yaptığı son işlem (bağlı mı, ne zaman çalıştı)
       claude_last_at: row<{ at: string | null }>(ctx, "SELECT MAX(created_at) AS at FROM events WHERE created_by = 'claude'")?.at ?? null,
+      // sections the installed modules add
+      ...Object.assign({}, ...ctx.contrib("today").map((section) => section(ctx, { limit }))),
     };
   };
 }

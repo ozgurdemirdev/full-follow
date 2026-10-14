@@ -1,7 +1,8 @@
 import { createApp, type App } from "@fullfollow/app";
-import { openDb } from "@fullfollow/core";
+import { APP_TOKEN, openDb } from "@fullfollow/core";
 
-export const CORE = Symbol("CORE");
+/** The composed app is injected under core's string token, so module packages can ask for it without importing the server */
+export const CORE = APP_TOKEN;
 export const FOLLOWUPS = Symbol("FOLLOWUPS");
 /** The composed app (core plus installed modules); controllers inject it under the CORE token. */
 export type Core = App;

@@ -1,5 +1,7 @@
-import { ArgumentsHost, BadRequestException, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { FFError } from "@fullfollow/core";
+
+export { intId, listOpts, withList } from "@fullfollow/core";
 
 const STATUS: Record<string, number> = {
   validation: HttpStatus.BAD_REQUEST,
@@ -8,6 +10,7 @@ const STATUS: Record<string, number> = {
   ambiguous: HttpStatus.CONFLICT,
   forbidden: HttpStatus.FORBIDDEN,
   duplicate: HttpStatus.CONFLICT,
+  http: HttpStatus.BAD_REQUEST,
 };
 
 /** Çekirdek hatalarını (FFError) anlamlı HTTP yanıtlarına çevirir: { error, code } */
@@ -26,24 +29,4 @@ export class ErrorFilter implements ExceptionFilter {
     console.error(e);
     return res.status(500).json({ error: "beklenmeyen hata", code: "internal" });
   }
-}
-
-/** ?q=&limit=&offset= dışındaki tüm sorgu alanları filter olur */
-export function listOpts(query: Record<string, any>) {
-  const { q, limit, offset, ...filter } = query ?? {};
-  return {
-    q: q as string | undefined,
-    limit: limit !== undefined ? Number(limit) : undefined,
-    offset: offset !== undefined ? Number(offset) : undefined,
-    filter,
-  };
-}
-
-/** ?with=touches,tasks */
-export const withList = (w?: string) => (w ? String(w).split(",").map((s) => s.trim()).filter(Boolean) : []);
-
-export function intId(v: string): number {
-  const n = Number(v);
-  if (!Number.isInteger(n) || n <= 0) throw new BadRequestException(`geçersiz id "${v}"`);
-  return n;
 }
