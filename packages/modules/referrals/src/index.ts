@@ -9,7 +9,7 @@ import { mcp } from "./mcp";
 export default defineModule({
   key: "referrals",
   label: "Referanslar",
-  uses: ["people", "pipeline", "projects"],
+  uses: ["people", "pipeline", "projects", "calendar", "drafts"],
   api: referralsApi,
   mcp,
 });

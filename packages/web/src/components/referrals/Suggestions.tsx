@@ -15,7 +15,7 @@ function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
     if (busy || done) return;
     setBusy(true);
     try {
-      await requestDraft(kind, s.person);
+      await requestDraft(kind, s);
     } catch {
       setBusy(false);
     }

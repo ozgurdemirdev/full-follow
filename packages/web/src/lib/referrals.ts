@@ -1,21 +1,10 @@
-// Referrals screen: KPI numbers, the referral tree and its layout, and the "Teşekkür zamanı" / "Kimden referans istenir" lists.
-// The two lists (gap G18) and the KPI numbers are derived here from lists the page already loads; they move into core
-// together with the referrals module, and this file then only maps the core answer.
+// Referrals screen: KPI numbers, the referral tree and its layout, and the requests for the two suggestion lists the API sends.
+// The KPI numbers and the tree are derived here from the people and opportunities the page already loads.
 import { run } from "../api/actions";
-import type { Draft, Opportunity, Payment, Person, Project, RefEdge, RefKpi, RefLayout, RefNode, RefNet, RefOwn, RefPlaced, RefSuggestion, RefTone, ReferralValue, Task } from "../api/types";
+import type { Opportunity, Person, RefEdge, RefKpi, RefLayout, RefNode, RefNet, RefOwn, RefPlaced, RefSuggestion, RefTone, ReferralValue } from "../api/types";
 import { layout as layoutTokens, space } from "../styles/tokens.json";
-import { daysFrom, lira, pct, todayIso } from "./format";
+import { lira, pct, todayIso } from "./format";
 import { OPEN_STAGES } from "./labels";
-
-// ------------------------------------------------------------ rule thresholds
-/** A won opportunity of a referred person counts as "recent" for the thank-you list up to this many days after it closed */
-export const THANKS_RECENT_DAYS = 30;
-/** A delivered project is asked for a referral up to this many days after delivery; later it is no longer the moment */
-export const ASK_RECENT_DAYS = 120;
-/** Rows of each suggestion list */
-export const SUGGESTIONS_SHOWN = 5;
-/** Project stages that mean the work is handed over */
-const DELIVERED_STAGES: readonly string[] = ["teslim", "bakim"];
 
 // ------------------------------------------------------------ tree geometry (percent of the tree width, px for the rows)
 const px = (v: string) => parseInt(v, 10);
@@ -143,85 +132,13 @@ export function nodeValue(p: RefPlaced): { text: string; tone: RefTone } {
   return { text: t === "won" ? lira(p.node.own.won) : t === "open" ? lira(p.node.own.open) : "iş yok", tone: t };
 }
 
-// ------------------------------------------------------------ suggestions (G18)
-const REQUEST_TITLE = {
-  thanks: (name: string) => `${name} için teşekkür mesajı taslağı hazırla`,
-  ask: (name: string) => `${name} için referans ricası taslağı hazırla`,
-};
-export type RequestKind = keyof typeof REQUEST_TITLE;
+// ------------------------------------------------------------ suggestion requests
+export type RequestKind = "thanks" | "ask";
 const REQUEST_OK: Record<RequestKind, string> = {
   thanks: "Claude teşekkür taslağını yazıyor, Taslaklar’a düşecek",
   ask: "Claude referans ricasını yazıyor, Taslaklar’a düşecek",
 };
 
-/** Ask Claude for the draft (a task for Claude; the draft lands in Taslaklar) */
-export const requestDraft = (kind: RequestKind, p: RefSuggestion["person"]) =>
-  run("post", "/tasks", { title: REQUEST_TITLE[kind](p.name), assignee: "claude", due_date: todayIso(), person_id: p.id }, { ok: REQUEST_OK[kind] });
-
-export interface SuggestionData {
-  people: readonly Person[];
-  opps: readonly Opportunity[];
-  projects: readonly Project[];
-  /** unpaid payments (the late ones are read from here) */
-  payments: readonly Payment[];
-  tasks: readonly Task[];
-  drafts: readonly Draft[];
-}
-
-const stateOf = (kind: RequestKind, p: RefSuggestion["person"], d: SuggestionData): RefSuggestion["state"] => {
-  if (d.drafts.some((x) => x.person_id === p.id && x.status === "bekliyor")) return "drafted";
-  const title = REQUEST_TITLE[kind](p.name);
-  return d.tasks.some((t) => t.assignee === "claude" && t.person_id === p.id && t.title === title) ? "asked" : "idle";
-};
-const daysAgo = (iso: string) => -daysFrom(iso);
-const agoText = (days: number) => (days <= 0 ? "bugün" : `${days} gün önce`);
-
-/** "Teşekkür zamanı": whoever introduced a person whose opportunity was won recently, newest first, once per introducer */
-export function thanksList(d: SuggestionData, today = todayIso()): RefSuggestion[] {
-  const byId = new Map(d.people.map((p) => [p.id, p]));
-  const won = d.opps
-    .filter((o) => o.stage === "kazanildi")
-    .map((o) => ({ o, at: (o.closed_at ?? o.updated_at).slice(0, 10) }))
-    .filter(({ at }) => daysFrom(at, today) >= -THANKS_RECENT_DAYS)
-    .sort((a, b) => b.at.localeCompare(a.at));
-  const out: RefSuggestion[] = [];
-  const seen = new Set<number>();
-  for (const { o } of won) {
-    const referrer = byId.get(byId.get(o.person_id)?.referred_by_id ?? 0);
-    if (!referrer || seen.has(referrer.id)) continue;
-    seen.add(referrer.id);
-    const person = { id: referrer.id, name: referrer.name };
-    out.push({ person, ready: true, state: stateOf("thanks", person, d), why: `Tanıttığı ${o.company_name ?? o.person_name} kazanıldı${o.estimated_value ? ` · ${lira(o.estimated_value)}` : ""}` });
-    if (out.length === SUGGESTIONS_SHOWN) break;
-  }
-  return out;
-}
-
-/** "Kimden referans istenir": delivered and paid up, nobody introduced yet; a late payment shows the person dimmed without a button */
-export function asksList(d: SuggestionData, today = todayIso()): RefSuggestion[] {
-  const byId = new Map(d.people.map((p) => [p.id, p]));
-  const late = new Map<number, Payment>();
-  for (const x of d.payments) if (x.status === "gecikmis" && !late.has(x.project_id)) late.set(x.project_id, x);
-  const delivered = d.projects
-    .filter((pr) => DELIVERED_STAGES.includes(pr.stage))
-    .map((pr) => ({ pr, at: (pr.delivered_at ?? pr.updated_at).slice(0, 10) }))
-    .filter(({ at }) => daysFrom(at, today) <= 0 && daysFrom(at, today) >= -ASK_RECENT_DAYS)
-    .sort((a, b) => b.at.localeCompare(a.at));
-  const rows: RefSuggestion[] = [];
-  const seen = new Set<number>();
-  for (const { pr, at } of delivered) {
-    const p = byId.get(pr.person_id);
-    if (!p || p.referral_count > 0 || seen.has(p.id)) continue;
-    const person = { id: p.id, name: p.name };
-    const owed = late.get(pr.id);
-    const target = pr.expected_total || pr.price;
-    if (owed) {
-      seen.add(p.id);
-      rows.push({ person, ready: false, state: "idle", why: `Şimdi değil: ${lira(owed.expected_amount - owed.paid_amount)} ödemesi gecikmede` });
-    } else if (pr.paid_total > 0 && pr.paid_total >= target) {
-      seen.add(p.id);
-      rows.push({ person, ready: true, state: stateOf("ask", person, d), why: `${pr.name} ${agoText(daysAgo(at))} teslim edildi, ödemesi tamam. Kimseyi tanıtmadı.` });
-    }
-  }
-  return [...rows.filter((r) => r.ready), ...rows.filter((r) => !r.ready)].slice(0, SUGGESTIONS_SHOWN);
-}
+/** Ask Claude for the draft (a task for Claude with the title the API sent; the draft lands in Taslaklar) */
+export const requestDraft = (kind: RequestKind, s: Pick<RefSuggestion, "person" | "request_title">) =>
+  run("post", "/tasks", { title: s.request_title, assignee: "claude", due_date: todayIso(), person_id: s.person.id }, { ok: REQUEST_OK[kind] });

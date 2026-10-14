@@ -1,5 +1,5 @@
-// Referrals screen: the tree, its layout and the two suggestion lists, all derived in the web from lists already loaded
-import type { Person } from "./types";
+// Referrals screen: the tree and its layout (derived in the web) and the shapes of the suggestion lists the API sends
+import type { Person, ReferralValue } from "./types";
 
 /** Opportunity value a person brought as the contact of the opportunity */
 export interface RefOwn {
@@ -57,4 +57,12 @@ export interface RefSuggestion {
   ready: boolean;
   /** "asked": a request for Claude is open; "drafted": a draft is waiting in Taslaklar */
   state: "idle" | "asked" | "drafted";
+  /** the title of the task that asks Claude for the draft */
+  request_title: string;
+}
+/** `GET /report/referrals`: the leaders and the two suggestion lists */
+export interface ReferralReport {
+  leaders: ReferralValue[];
+  thanks: RefSuggestion[];
+  asks: RefSuggestion[];
 }
