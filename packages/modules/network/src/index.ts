@@ -30,6 +30,7 @@ export default defineModule({
     // the events the timeline module shows in its global feed: a contact written (the touch row carries the company the event does not)
     timelineKinds: {
       "touch.created": { kind: "temas", row: { key: "touch_id", table: "touches" } },
+      // every other event of the network module that should show in the feed is listed here (event type to kind), never in the timeline module
     },
     trashTypes: [{ type: "touch", label: "temas" }],
     // who waits for an answer, who went cold, and this week's numbers, on the Today view
