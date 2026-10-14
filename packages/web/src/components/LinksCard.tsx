@@ -5,7 +5,7 @@ import type { LinkRow, List } from "../api/types";
 import { Empty } from "./ui";
 
 /** Labelled links on an opportunity, project or own project (roadmap, proposal deck, Figma, repo) */
-export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own_project"; id: number }) {
+export function LinksCard({ type, id, plain }: { type: "opportunity" | "project" | "own_project"; id: number; plain?: boolean }) {
   const links = useQuery<List<LinkRow>>(`/links?${type}_id=${id}&limit=200`);
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
@@ -27,8 +27,8 @@ export function LinksCard({ type, id }: { type: "opportunity" | "project" | "own
   };
   const rows = links.data?.rows ?? [];
   return (
-    <section className="card rise flex flex-col gap-5 p-8">
-      <span className="text-md font-semibold">Linkler</span>
+    <section className={plain ? "prj-sec" : "card rise flex flex-col gap-5 p-8"} data-gap={plain ? "loose" : undefined}>
+      <span className={plain ? "prj-sec-label" : "text-md font-semibold"}>Linkler</span>
       {links.data && !rows.length ? <Empty>Roadmap, teklif sunumu, Figma, repo gibi linkleri buraya ekle.</Empty> : null}
       {rows.map((l) => (
         <div key={l.id} className="flex items-center gap-3">

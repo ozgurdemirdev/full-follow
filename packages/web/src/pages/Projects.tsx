@@ -1,114 +1,66 @@
-import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { useProjects, useThreads } from "../api/keys";
-import type { Project } from "../api/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "wouter";
+import type { WaitKey } from "../api/types";
 import { Page } from "../app/Page";
-import { timelinePath } from "../app/routes";
 import { openSheet } from "../app/ui";
-import { Chip, Empty, ErrorBox, order, PageSkeleton, Segmented, Who } from "../components/ui";
-import { fmtDay, tl } from "../lib/format";
-import { MILESTONE, PROJECT_STAGE, PROJECT_STEPS } from "../lib/labels";
+import { BoardIcon } from "../components/boardIcons";
+import { ProjectRow } from "../components/projects/ProjectRow";
+import { WaitCards } from "../components/projects/WaitCards";
+import { ErrorBox, PageSkeleton, Segmented } from "../components/ui";
+import { hasClientTasks, TABS, type TabKey, useProjectViews } from "../lib/projects";
 
-const TABS = [
-  { label: "Aktif", test: (p: Project) => ["pesinat", "tasarim_onayi", "test_surumu", "yayin"].includes(p.stage) },
-  { label: "Bakımda", test: (p: Project) => p.stage === "bakim" },
-  { label: "Teslim edildi", test: (p: Project) => p.stage === "teslim" },
-  { label: "İptal", test: (p: Project) => p.stage === "iptal" },
-];
-
+/** Client projects: tabs, the waiting cards (filters), and one expandable row per project (/projeler/:id opens that one) */
 export default function Projects() {
-  const projects = useProjects();
-  const threads = useThreads();
-  const [tab, setTab] = useState(0);
+  const { views, ready, error, reload } = useProjectViews();
+  const params = useParams<{ id?: string }>();
+  const [tab, setTab] = useState<TabKey>("aktif");
+  const [who, setWho] = useState<WaitKey | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
+  const seeded = useRef<number | null>(null);
 
-  const counts = TABS.map((t) => projects.rows.filter(t.test).length);
-  const shown = projects.rows.filter(TABS[tab].test);
-  const unanswered = useMemo(
-    () => new Set(threads.rows.filter((t) => t.target_type === "project" && t.last_by === "ozgur").map((t) => t.target_id)),
-    [threads.rows],
-  );
-  const month = new Date().toISOString().slice(0, 7);
-  const expectedThisMonth = projects.rows.reduce((a, p) => (p.next_payment?.due_date?.startsWith(month) ? a + p.next_payment.remaining : a), 0);
-  const tabs = TABS.map((t, i) => `${t.label} (${counts[i]})`).filter((_, i) => i < 3 || counts[3] > 0);
+  // an address with an id (search, chat, dashboard links) lands on that project's tab with the row open
+  const deep = Number(params.id) || null;
+  useEffect(() => {
+    if (!deep || !ready || seeded.current === deep) return;
+    seeded.current = deep;
+    const v = views.find((x) => x.p.id === deep);
+    if (v) { setTab(v.tab); setOpen(v.p.id); }
+  }, [deep, ready, views]);
+
+  const tabs = useMemo(() => TABS.map((t) => ({ ...t, count: views.filter((v) => v.tab === t.key).length })).filter((t) => t.key !== "iptal" || t.count > 0), [views]);
+  const inTab = useMemo(() => views.filter((v) => v.tab === tab), [views, tab]);
+  const shown = who ? inTab.filter((v) => v.wait === who) : inTab;
+  const showClient = useMemo(() => hasClientTasks(views), [views]);
+  const toggle = useCallback((id: number) => setOpen((cur) => (cur === id ? null : id)), []);
+  const pick = (i: number) => { setTab(tabs[i].key); setWho(null); };
 
   return (
-    <Page title="Proje panosu" sub={projects.data ? `${counts[0]} aktif proje · bu ay beklenen ${tl(expectedThisMonth)}` : ""}
-      right={<button type="button" className="btn btn-pri" onClick={() => openSheet("project")}>Proje ekle</button>}>
-      {projects.error && !projects.data ? <ErrorBox error={projects.error} retry={projects.reload} /> : null}
-      {!projects.data ? (
-        !projects.error && <PageSkeleton />
+    <Page
+      title="Müşteri projeleri"
+      sub="Her aşama bir ödemeye bağlı: iş nerede duruyorsa para da orada"
+      right={
+        <div className="prj-tools">
+          <Segmented label="Proje durumu" size="lg" value={Math.max(0, tabs.findIndex((t) => t.key === tab))} onChange={pick}
+            items={tabs.map((t) => ({ label: t.label, count: t.count }))} />
+          <button type="button" className="dash-new" onClick={() => openSheet("project")}>
+            <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
+            Proje ekle
+          </button>
+        </div>
+      }
+    >
+      {error && !ready ? <ErrorBox error={error} retry={() => void reload()} /> : null}
+      {!ready ? (
+        !error && <PageSkeleton />
       ) : (
         <>
-          <Segmented label="Proje durumu" items={tabs} value={tab} onChange={setTab} />
-          {shown.length === 0 ? <div className="card"><Empty>Bu durumda proje yok. Kazanılan fırsatlar otomatik proje olur.</Empty></div> : null}
-          <div className="grid grid-cols-1 gap-7 desk:grid-cols-2">
-            {shown.map((p, i) => (
-              <ProjectCard key={p.id} p={p} i={i} unanswered={unanswered.has(p.id)} />
-            ))}
+          <WaitCards views={inTab} who={who} onPick={setWho} showClient={showClient} />
+          <div className="prj-list">
+            {shown.map((v) => <ProjectRow key={v.p.id} v={v} open={open === v.p.id} onToggle={toggle} />)}
+            {shown.length === 0 ? <p className="prj-empty">Bu süzgeçte proje yok.</p> : null}
           </div>
         </>
       )}
     </Page>
-  );
-}
-
-function ProjectCard({ p, i, unanswered }: { p: Project; i: number; unanswered: boolean }) {
-  const idx = PROJECT_STEPS.indexOf(p.stage);
-  const total = p.expected_total || p.price;
-  const paidPct = total ? Math.min(100, Math.round((p.paid_total / total) * 100)) : 0;
-  return (
-    <Link href={timelinePath("project", p.id)} data-record={`project-${p.id}`} className="card rise lift flex flex-col gap-7 p-9 text-text-primary hover:text-text-primary" style={order(i)}>
-      <div className="flex items-start gap-5">
-        <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-          <h2 className="m-0 text-lg font-semibold">{p.name}</h2>
-          <span className="text-base-sm text-text-secondary">{p.person_name}</span>
-        </div>
-        {unanswered ? <Chip tone="warning">Cevapsız yorum</Chip> : null}
-        <Who actor={p.created_by} />
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-baseline gap-3">
-          <span className="text-base-sm text-text-secondary">Aşama</span>
-          <span className="text-base font-medium text-accent-text-soft">{PROJECT_STAGE[p.stage]}</span>
-          {idx >= 0 ? <span className="text-sm text-text-muted">{idx + 1} / {PROJECT_STEPS.length}</span> : null}
-        </div>
-        <div className="grid grid-cols-6 gap-1">
-          {PROJECT_STEPS.map((s, k) => (
-            <div key={s} title={PROJECT_STAGE[s]} className={`h-bar-thin rounded-pill ${k < idx ? "bg-accent" : k === idx ? "step-now" : "bg-surface-track"}`} />
-          ))}
-        </div>
-        <div className="hidden grid-cols-6 gap-1 text-xs text-text-muted desk:grid">
-          {PROJECT_STEPS.map((s, k) => (
-            <span key={s} className={k === idx ? "font-medium text-accent-text-soft" : ""}>{PROJECT_STAGE[s]}</span>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-5">
-        <div className="inset flex min-w-0 flex-col gap-2 p-5">
-          <span className="text-sm text-text-secondary">Sıradaki görev</span>
-          <span className="text-base-sm leading-tight">{p.next_task?.title ?? "Görev yok"}</span>
-          {p.next_task ? <Who actor={p.next_task.created_by} className="self-start" /> : null}
-        </div>
-        <div className="inset flex min-w-0 flex-col gap-2 p-5">
-          <span className="text-sm text-text-secondary">Sıradaki ödeme</span>
-          <span className="text-base-sm leading-tight">
-            {p.next_payment ? `${MILESTONE[p.next_payment.milestone]}${p.next_payment.due_date ? ` · ${fmtDay(p.next_payment.due_date)}` : ""}` : "Ödeme tamam"}
-          </span>
-          {p.next_payment ? <span className="font-mono text-base-sm text-warning">{tl(p.next_payment.remaining)}</span> : null}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between text-sm text-text-secondary">
-          <span>Ödenen</span>
-          <span className="font-mono">{tl(p.paid_total)} / {tl(total)}</span>
-        </div>
-        <div className="track">
-          <i className="grow-x bg-entity-payment" style={{ width: `${paidPct}%` }} />
-        </div>
-      </div>
-    </Link>
   );
 }

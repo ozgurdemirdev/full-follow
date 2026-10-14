@@ -9,7 +9,7 @@ import { Empty } from "./ui";
 export const fileHref = (id: number) => `/api/files/${id}`;
 
 /** Files of an opportunity or project: upload, open, delete (into the trash) */
-export function FilesCard({ type, id, files }: { type: "opportunity" | "project"; id: number; files: FileRow[] }) {
+export function FilesCard({ type, id, files, plain }: { type: "opportunity" | "project"; id: number; files: FileRow[]; plain?: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const upload = async (file: File | undefined) => {
@@ -29,8 +29,8 @@ export function FilesCard({ type, id, files }: { type: "opportunity" | "project"
     }
   };
   return (
-    <section className="card rise flex flex-col gap-5 p-8">
-      <span className="text-md font-semibold">Dosyalar</span>
+    <section className={plain ? "prj-sec" : "card rise flex flex-col gap-5 p-8"} data-gap={plain ? "loose" : undefined}>
+      <span className={plain ? "prj-sec-label" : "text-md font-semibold"}>Dosyalar</span>
       {!files.length ? <Empty>Teklif PDF’i, sunum, sözleşme gibi dosyaları buraya ekle.</Empty> : null}
       {files.map((f) => (
         <div key={f.id} className="flex items-center gap-3">

@@ -6,6 +6,7 @@ import { PATHS } from "../../app/routes";
 import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "../../lib/dashboard";
 import { fmtDay, fmtNum, initials, lira, todayIso } from "../../lib/format";
 import { MILESTONE } from "../../lib/labels";
+import { requestReminder } from "../../lib/projects";
 import { NumberField } from "../NumberField";
 import { Card } from "../ui";
 import { useExpand } from "../ExpandOverlay";
@@ -59,8 +60,7 @@ export function PaymentsCard() {
   const sum = (g?: PaymentGroup) => withGroup.filter((x) => !g || x.g === g).reduce((s, x) => s + remaining(x.p), 0);
   const late = withGroup.filter((x) => x.g === "late");
   const shown = withGroup.filter((x) => !group || x.g === group).slice(0, SHOWN.payments);
-  const remind = (p: Payment) =>
-    run("post", "/tasks", { title: `${p.project_name} için ödeme hatırlatma taslağı hazırla`, assignee: "claude", due_date: today, project_id: p.project_id }, { ok: "Claude’a görev verildi, taslak onayına düşecek" }).catch(() => {});
+  const remind = (p: Payment) => requestReminder(p.project_id, p.project_name);
   const rows: ExRow[] = withGroup.map(({ p, g }) => ({
     key: p.id, lead: initials(p.project_name), title: p.project_name, sub: `${MILESTONE[p.milestone] ?? p.milestone} · ${dueText(p, today)}`, right: lira(remaining(p)),
     rightCls: g === "late" ? "text-danger-soft" : undefined, tag: PAYMENT_GROUPS.find((x) => x.key === g)!.label, dot: PAYMENT_GROUPS.find((x) => x.key === g)!.dot, href: `${PATHS.projects}/${p.project_id}`,
