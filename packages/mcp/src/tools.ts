@@ -98,7 +98,7 @@ export function registerTools(server: McpServer, core: Core) {
       [144, "tag: {name,color}. "],
       [144.2, "note: {person,body}. "],
       [144.4, "link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). "],
-      [146, "comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
+      [146, "comment: {target_type,target_id,body} ya da {reply_to,body}, soru sorarsan options:["Evet","Hayır"] (en çok 4 kısa cevap, Özgür tek tıkla seçer); id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
     ]),
     inputSchema: { type: z.string(), data: z.union([obj, z.array(obj)]), id: idOrName.optional() },
   }, ({ type, data, id }) => run(() => {

@@ -18,6 +18,9 @@ export const STICKY_CONTACT_STATUSES: readonly ContactStatus[] = ["olumsuz", "ta
 /** How far a status has come: a touch only moves a status forward (a negative rank is a hand set one) */
 export const CONTACT_STATUS_RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1, es_gecildi: -1, tanidik: -1, arkadas: -1 };
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
+/** Quick answers Claude can attach to a question: how many, and how long each may be */
+export const COMMENT_OPTIONS_MAX = 4;
+export const COMMENT_OPTION_CHARS = 40;
 export const CORE_TRASH_TYPES = ["note", "comment", "link", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 

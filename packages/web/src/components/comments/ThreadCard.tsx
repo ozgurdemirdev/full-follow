@@ -16,7 +16,7 @@ const messagesOf = (t: Thread) =>
 export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopened }: {
   t: Thread;
   state: CState;
-  /** the reply box was touched: an unread answer counts as seen */
+  /** the card was opened: an unread answer counts as seen */
   onSeen: (id: number) => void;
   /** the thread was reopened: show the tab it now belongs to */
   onReopened: (tab: CTab) => void;
@@ -35,6 +35,14 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
   const href = targetHref(t);
   const chip = STATE_CHIP[state];
   const quick = state === "you" ? optionsOf(t) : [];
+  // the first touch of an unread card tells the API once; a read card never asks
+  const marked = useRef(false);
+  const open = () => {
+    if (state !== "answered" || marked.current) return;
+    marked.current = true;
+    onSeen(t.id);
+    void run("post", `/comments/${t.id}/read`, undefined, { silent: true }).catch(() => {});
+  };
 
   const guard = async (job: () => Promise<unknown>) => {
     setBusy(true);
@@ -71,7 +79,7 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
   );
 
   return (
-    <article data-record={`comment-${t.id}`} data-s={state} className="cmt-card">
+    <article data-record={`comment-${t.id}`} data-s={state} className="cmt-card" onPointerDown={open} onFocus={open}>
       <div className="cmt-top">
         {href ? <Link href={href} className="cmt-rec">{recChip}</Link> : <span className="cmt-rec">{recChip}</span>}
         <span className="flex-grow" />
@@ -89,7 +97,7 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
         <div className="cmt-reply">
           <form className="cmt-field" onSubmit={send}>
             <textarea ref={area} rows={1} value={draft} aria-label="Cevap yaz" placeholder="Cevap yaz"
-              onChange={(e) => (setDraft(e.target.value), onSeen(t.id))}
+              onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send(e))} />
             <button type="submit" className="cmt-send" aria-label="Gönder" disabled={busy}>
               <BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} />

@@ -468,8 +468,8 @@ export interface Comment extends Base {
   body: string;
   parent_id: number | null;
   resolved_at: string | null;
-  options?: string[] | null; // G13, not in the API yet: quick answer chips of a Claude question
-  read_at?: string | null; // G13, not in the API yet: when Özgür saw it, null while unread
+  options: string[] | null; // quick answer chips of a Claude question
+  read_at: string | null; // when Özgür opened the thread; set on Claude comments, null while unread
 }
 export interface Thread {
   id: number;

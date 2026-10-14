@@ -46,21 +46,19 @@ export const targetHref = (t: Pick<Thread, "target_type" | "target_id">) => reco
 const FILTER_TAB: Record<string, CTab> = { open: "open", mine: "you", claude: "claude", all: "open" };
 export const tabFromQuery = (search: string): CTab => FILTER_TAB[new URLSearchParams(search).get("f") ?? ""] ?? "open";
 
-/** Quick answer chips of the last comment (G13: `comments.options`); none until the API provides them */
+/** Quick answer chips of the last comment (`comments.options`, set by Claude when it asks) */
 export const optionsOf = (t: Thread): string[] => t.comments?.at(-1)?.options ?? [];
 
 /**
  * Last word from Özgür: "Claude'da". Last word from Claude: "Sana soruldu" when it asked (chips, or Claude opened the
- * thread), otherwise a reply to Özgür's own question: "Yeni cevap" while unread, "Cevaplandı" after. The unread state
- * needs `read_at` (G13); while the API leaves it out every Claude reply stays "Sana soruldu", as the old page showed it.
- * `seen` holds threads whose reply box was touched in this session.
+ * thread), otherwise a reply to Özgür's own question: "Yeni cevap" while unread (`read_at`), "Cevaplandı" after.
+ * `seen` holds threads opened in this session whose read mark is still on its way.
  */
 export function stateOf(t: Thread, seen: ReadonlySet<number>): CState {
   if (t.resolved_at) return "closed";
   if (t.last_by === "ozgur") return "claude";
-  const readAt = t.comments?.at(-1)?.read_at;
-  if (optionsOf(t).length || t.comments?.[0]?.created_by === "claude" || readAt === undefined) return "you";
-  return readAt || seen.has(t.id) ? "answered_seen" : "answered";
+  if (optionsOf(t).length || t.comments?.[0]?.created_by === "claude") return "you";
+  return t.comments?.at(-1)?.read_at || seen.has(t.id) ? "answered_seen" : "answered";
 }
 
 const NONE_SEEN: ReadonlySet<number> = new Set();
