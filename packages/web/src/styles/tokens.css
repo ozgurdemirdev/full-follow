@@ -397,6 +397,7 @@
   --spacing-quick-list-max: 470px;
   --spacing-quick-tile: 34px;
   --spacing-quick-fab-clear: 80px;
+  --spacing-scrollbar-size: 8px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;

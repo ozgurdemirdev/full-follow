@@ -67,6 +67,28 @@
     font: inherit;
     color: inherit;
   }
+
+  /* thin themed scrollbars everywhere: the control border grey, no arrows, no white track. Rows that hide theirs
+     (scrollbar-width: none) keep winning: a layered rule loses to any unlayered one. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: var(--spacing-scrollbar-size);
+    height: var(--spacing-scrollbar-size);
+  }
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: var(--spacing-scrollbar-size);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-strong);
+  }
 }
 
 /* ---------- hareket ---------- */
