@@ -12,7 +12,7 @@ import { companiesList } from "./service/list";
 export default defineModule({
   key: "companies",
   label: "Firmalar",
-  uses: ["people", "network"],
+  uses: ["people", "network", "pipeline", "projects"],
   api: companiesApi,
   entities,
   contribute: {
