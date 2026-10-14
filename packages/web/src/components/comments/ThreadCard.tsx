@@ -1,4 +1,4 @@
-import { memo, useState, type FormEvent } from "react";
+import { memo, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { run } from "../../api/actions";
 import type { Thread } from "../../api/types";
@@ -23,6 +23,14 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
 }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const area = useRef<HTMLTextAreaElement>(null);
+  // grows with the text; the CSS height (one line) is kept while it is empty
+  useLayoutEffect(() => {
+    const a = area.current;
+    if (!a) return;
+    a.style.height = "";
+    if (a.value) a.style.height = `${a.scrollHeight}px`;
+  }, [draft]);
   const kind = kindOf(t.target_type);
   const href = targetHref(t);
   const chip = STATE_CHIP[state];
@@ -43,7 +51,7 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
       await run("post", "/comments", { reply_to: t.id, body }, { ok: "Cevap yazıldı" });
       setDraft("");
     });
-  const send = (e: FormEvent) => {
+  const send = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     const body = draft.trim();
     if (body && !busy) void reply(body);
@@ -80,8 +88,9 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
       {state !== "closed" ? (
         <div className="cmt-reply">
           <form className="cmt-field" onSubmit={send}>
-            <input type="text" value={draft} aria-label="Cevap yaz" placeholder="Cevap yaz"
-              onChange={(e) => (setDraft(e.target.value), onSeen(t.id))} />
+            <textarea ref={area} rows={1} value={draft} aria-label="Cevap yaz" placeholder="Cevap yaz"
+              onChange={(e) => (setDraft(e.target.value), onSeen(t.id))}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send(e))} />
             <button type="submit" className="cmt-send" aria-label="Gönder" disabled={busy}>
               <BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} />
             </button>
