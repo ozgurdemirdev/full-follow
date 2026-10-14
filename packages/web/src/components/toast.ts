@@ -8,7 +8,8 @@ export interface ToastAction {
 export interface ToastItem {
   id: number;
   text: string;
-  kind: "ok" | "error";
+  /** saved: a record was written, the toast carries the check mark and an "Aç" pill */
+  kind: "ok" | "error" | "saved";
   action?: ToastAction;
 }
 let items: ToastItem[] = [];
@@ -17,7 +18,7 @@ const subs = new Set<() => void>();
 const emit = () => subs.forEach((fn) => fn());
 
 /** Eylemli bildirim (Geri al, Kayda git) okumaya ve basmaya vakit kalsın diye daha uzun durur */
-const LIFE = { ok: 3500, error: 6000, action: 8000 };
+const LIFE = { ok: 3500, saved: 3500, error: 6000, action: 8000 };
 
 export function toast(text: string, kind: ToastItem["kind"] = "ok", action?: ToastAction) {
   const id = ++seq;

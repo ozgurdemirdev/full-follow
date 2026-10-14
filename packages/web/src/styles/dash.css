@@ -43,42 +43,6 @@
 .dash-round:hover {
   color: var(--color-text-primary);
 }
-.dash-new {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  height: var(--spacing-control-height-2xl);
-  padding: 0 var(--spacing-8) 0 var(--spacing-6);
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-accent-on);
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-medium);
-}
-.dash-menu {
-  position: absolute;
-  top: calc(100% + var(--spacing-3));
-  right: 0;
-  z-index: var(--z-sheet);
-  display: flex;
-  flex-direction: column;
-  width: var(--spacing-fab-menu-width);
-  padding: var(--spacing-3);
-  border-radius: var(--radius-card);
-  border: var(--bw-default) solid var(--color-border-menu);
-  background: var(--color-surface-menu);
-  box-shadow: var(--shadow-menu);
-  transform-origin: top right;
-  transition:
-    opacity var(--dur-sidebar) var(--ease-out),
-    transform var(--dur-sidebar) var(--ease-out);
-}
-.dash-menu[aria-hidden="true"] {
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(calc(var(--spacing-5) * -1)) scale(0.95);
-}
 
 /* ---------- goal strip ---------- */
 .dash-goals {

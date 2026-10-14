@@ -40,12 +40,31 @@ const AFFECTS: Record<string, string[]> = {
 };
 
 /** Mükerrer kaydın yeri: kişi ve firma kartı, kategoriler Ayarlar'da */
-const recordHref = (type: string, id: number) =>
+export const recordHref = (type: string, id: number) =>
   type === "person" ? `${PATHS.people}/${id}` : type === "company" ? `${PATHS.companies}/${id}` : PATHS.settings;
 
-function failure(e: unknown) {
+type DuplicateSink = (e: ApiError) => void;
+let duplicateSink: DuplicateSink | null = null;
+/** The open form sheet shows a duplicate as its own banner instead of a toast; returns the cleanup */
+export function setDuplicateSink(fn: DuplicateSink) {
+  duplicateSink = fn;
+  return () => {
+    if (duplicateSink === fn) duplicateSink = null;
+  };
+}
+
+/** Errors already shown, so a second report (the form's catch after run()) stays silent */
+const reported = new WeakSet<object>();
+
+/** Show a failed write once: a toast, or the form sheet's duplicate banner */
+export function report(e: unknown) {
+  if (typeof e === "object" && e) {
+    if (reported.has(e)) return;
+    reported.add(e);
+  }
   if (!(e instanceof ApiError)) return toast("Bir hata oldu", "error");
   const d = e.duplicate;
+  if (d && duplicateSink) return duplicateSink(e);
   if (!d) return toast(e.message, "error");
   const action: ToastAction = d.in_trash
     ? { label: "Geri yükle", run: () => void restore(d.type, d.id).catch(() => {}) }
@@ -57,17 +76,25 @@ export async function run<T = unknown>(
   method: "post" | "patch" | "put" | "del",
   path: string,
   body?: unknown,
-  opts: { ok?: string; silent?: boolean } = {},
+  opts: {
+    ok?: string;
+    silent?: boolean;
+    /** page of the saved record: the toast gets the check mark and an "Aç" pill */
+    open?: string | ((res: Mutation<T>) => string | undefined);
+  } = {},
 ): Promise<Mutation<T> & Record<string, unknown>> {
   try {
     const res = (await (method === "del" ? api.del(path) : api[method](path, body))) as Mutation<T> & Record<string, unknown>;
     const resource = path.split("/")[1];
     invalidate(...(AFFECTS[resource] ?? [`/${resource}`]));
     const effects = res?.effects?.filter(Boolean) ?? [];
-    if (!opts.silent && (opts.ok || effects.length)) toast([opts.ok, ...effects].filter(Boolean).join(" · "));
+    if (!opts.silent && (opts.ok || effects.length)) {
+      const href = typeof opts.open === "function" ? opts.open(res) : opts.open;
+      toast([opts.ok, ...effects].filter(Boolean).join(" · "), href ? "saved" : "ok", href ? { label: "Aç", href } : undefined);
+    }
     return res ?? {};
   } catch (e) {
-    if (!opts.silent) failure(e);
+    if (!opts.silent) report(e);
     throw e;
   }
 }
@@ -84,7 +111,7 @@ export const restore = (type: string, id: number) => run("post", "/trash/restore
  */
 export async function remove(path: string, label: string) {
   const r = await run<never>("del", path, undefined, { silent: true }).catch((e) => {
-    failure(e);
+    report(e);
     throw e;
   });
   const trash = r.trash as { type: string; id: number } | undefined;

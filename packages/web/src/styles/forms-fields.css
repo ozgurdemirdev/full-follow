@@ -1,0 +1,497 @@
+/* Field types of the form sheet board (second half of forms.css): textarea, chips, segmented, number, date, toggle, tags,
+   offer items, payment plan, template suggestions. */
+
+/* ---------- textarea ---------- */
+.form-area {
+  position: relative;
+  border-radius: var(--radius-inner);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border);
+}
+.form-area:focus-within {
+  border-color: var(--color-form-focus-border);
+}
+.form-area[data-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.form-area:has(.ff-mic-btn[aria-pressed="true"]) {
+  border-color: var(--color-listening-border);
+}
+.form-area textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--spacing-5) var(--spacing-form-area-pad-right) var(--spacing-5) var(--spacing-6);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-templates-text);
+  resize: vertical;
+}
+.form-area textarea::placeholder {
+  color: var(--color-text-muted);
+}
+.form-area .ff-mic-btn {
+  position: absolute;
+  right: var(--spacing-3);
+  bottom: var(--spacing-3);
+}
+.form-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.form-token {
+  height: var(--spacing-dash-pill-height);
+  padding: 0 var(--spacing-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-chip-payment-bg);
+  color: var(--color-warning);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* ---------- chips and segmented ---------- */
+.form-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+.form-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  height: var(--spacing-form-chip-height);
+  padding: 0 var(--spacing-form-chip-pad);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-base-sm);
+}
+.form-chip[aria-pressed="true"] {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+  color: var(--color-accent-on);
+}
+.form-chip i {
+  width: var(--spacing-dot-sm);
+  height: var(--spacing-dot-sm);
+  border-radius: var(--radius-pill);
+  background: var(--dot);
+}
+.form-seg {
+  display: flex;
+  align-self: flex-start;
+  gap: var(--spacing-0_5);
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: var(--spacing-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border);
+}
+.form-seg[data-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.form-seg button {
+  flex: none;
+  height: var(--spacing-form-chip-height);
+  padding: 0 var(--spacing-6);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-base-sm);
+  white-space: nowrap;
+}
+.form-seg button[aria-checked="true"] {
+  background: var(--color-text-primary);
+  color: var(--color-accent-on);
+}
+
+/* ---------- number ---------- */
+.form-num {
+  gap: var(--spacing-1);
+  padding: 0 var(--spacing-form-num-pad);
+}
+.form-step {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-form-step);
+  height: var(--spacing-form-step);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-form-step);
+  background: var(--color-form-tile);
+  color: var(--color-text-primary);
+  font-size: var(--text-xl);
+}
+.form-num-mid {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+.form-num-mid input {
+  flex-grow: 0;
+  width: 100%;
+  max-width: var(--spacing-form-num-input);
+  font-size: var(--text-lg);
+  text-align: center;
+}
+.form-num-mid .form-affix {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+.form-num-mid .form-affix[data-suffix] {
+  font-size: var(--text-base-sm);
+}
+
+/* ---------- date and quick chips ---------- */
+.form-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+.form-quick button {
+  height: var(--spacing-dash-pill-height);
+  padding: 0 var(--spacing-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-form-tile);
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-sm);
+}
+.form-quick button[aria-pressed="true"] {
+  background: var(--color-text-primary);
+  color: var(--color-accent-on);
+}
+
+/* ---------- toggle ---------- */
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-5);
+  padding: var(--spacing-5) var(--spacing-6);
+  border-radius: var(--radius-cell);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border);
+}
+.form-toggle-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+.form-toggle-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---------- tags ---------- */
+.form-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+  box-sizing: border-box;
+  min-height: var(--spacing-field-height);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-cell);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border);
+}
+.form-tags:focus-within {
+  border-color: var(--color-form-focus-border);
+}
+.form-tag {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  height: var(--spacing-form-tag-height);
+  padding: 0 var(--spacing-1) 0 var(--spacing-form-tag-pad);
+  border-radius: var(--radius-pill);
+  background: var(--color-form-tile);
+  color: var(--color-text-soft);
+  font-size: var(--text-sm);
+}
+.form-tag button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-settings-chip-remove);
+  height: var(--spacing-settings-chip-remove);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.form-tags input {
+  flex: 1 1 var(--spacing-form-tag-input-basis);
+  min-width: var(--spacing-form-tag-input-min);
+  height: var(--spacing-form-tag-height);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base-sm);
+}
+.form-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+.form-suggest button {
+  height: var(--spacing-form-suggest-height);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) dashed var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* ---------- offer items ---------- */
+.form-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+.form-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--spacing-form-item-qty-mobile);
+  gap: var(--spacing-2);
+  align-items: center;
+}
+@variant desk {
+  .form-item {
+    grid-template-columns: minmax(0, 1fr) var(--spacing-form-item-qty) var(--spacing-form-item-price) var(--spacing-form-item-remove);
+  }
+}
+.form-item-cell {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-form-item-height);
+  border-radius: var(--radius-event);
+  border: var(--bw-default) solid var(--color-border);
+  background: var(--color-surface-inset);
+}
+.form-item-cell:focus-within {
+  border-color: var(--color-form-focus-border);
+}
+.form-item-cell input {
+  flex-grow: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--spacing-5);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+.form-item-cell[data-price] {
+  gap: var(--spacing-1);
+  padding: 0 var(--spacing-4);
+}
+.form-item-cell[data-price] input {
+  padding: 0;
+  text-align: right;
+}
+.form-item-cell button {
+  width: var(--spacing-form-item-btn);
+  height: calc(var(--spacing-form-item-height) - var(--spacing-0_5));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-neutral-chip);
+}
+.form-item-qty {
+  flex-grow: 1;
+  text-align: center;
+  font-size: var(--text-base);
+}
+.form-item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-form-item-remove);
+  height: var(--spacing-form-item-height);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-event);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.form-items-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-1);
+}
+.form-add {
+  height: var(--spacing-form-add-height);
+  padding: 0 var(--spacing-6);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) dashed var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-base-sm);
+}
+.form-total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-3);
+}
+.form-total span:first-child {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.form-total span:last-child {
+  font-size: var(--text-currency);
+  letter-spacing: var(--tracking-title);
+}
+
+/* ---------- payment plan ---------- */
+.form-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4) var(--spacing-5);
+  border-radius: var(--radius-inner);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border);
+}
+.form-plan[data-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.form-plan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--spacing-form-plan-step) var(--spacing-form-plan-amount);
+  gap: var(--spacing-4);
+  align-items: center;
+}
+.form-plan-name {
+  font-size: var(--text-base);
+  color: var(--color-text-neutral-chip);
+}
+.form-plan-step {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-control-height-md);
+  border-radius: var(--radius-form-step);
+  background: var(--color-surface-2);
+}
+.form-plan-step button {
+  width: var(--spacing-form-plan-btn);
+  height: var(--spacing-control-height-md);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-neutral-chip);
+}
+.form-plan-step span {
+  flex-grow: 1;
+  text-align: center;
+  font-size: var(--text-base);
+}
+.form-plan-amount {
+  font-family: var(--font-mono);
+  font-size: var(--text-base-sm);
+  text-align: right;
+  color: var(--color-text-secondary);
+}
+.form-plan-bar {
+  display: flex;
+  height: var(--spacing-bar);
+  margin-top: var(--spacing-2);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+}
+.form-plan-bar span {
+  background: var(--seg);
+  transition: width var(--dur-form-plan) var(--ease-standard);
+}
+.form-plan-sum {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.form-plan-sum[data-invalid="true"] {
+  color: var(--color-danger-soft);
+}
+
+/* ---------- template suggestions ---------- */
+.form-sugg {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-3);
+}
+.form-sugg button {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-5);
+  border-radius: var(--radius-inner);
+  border: var(--bw-default) solid var(--color-border);
+  background: var(--color-surface-inset);
+  color: var(--color-text-primary);
+  font-size: var(--text-base-sm);
+  text-align: left;
+}
+.form-sugg button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+}
+.form-sugg-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.form-sugg-rate {
+  color: var(--rate);
+}
+
+/* ---------- plain note line (read only context in a form) ---------- */
+.form-note {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- live preview of a template text ---------- */
+.form-preview {
+  margin: 0;
+  padding: var(--spacing-5) var(--spacing-6);
+  border-radius: var(--radius-inner);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border-subtle);
+  font-size: var(--text-base-sm);
+  line-height: var(--leading-snug);
+  white-space: pre-line;
+}
+
+/* the focus of a field is the control's own border, not the global ring */
+.form-control input:focus-visible,
+.form-area textarea:focus-visible,
+.form-tags input:focus-visible,
+.form-item-cell input:focus-visible {
+  box-shadow: none;
+}

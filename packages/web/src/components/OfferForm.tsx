@@ -1,72 +1,86 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { run } from "../api/actions";
-import type { FileRow, Offer, OfferItem } from "../api/types";
+import { useOpps } from "../api/keys";
+import { useQuery } from "../api/store";
+import type { Detail, FileRow, Offer, OfferItem, Opportunity } from "../api/types";
+import { recordPath } from "../app/routes";
+import { Form } from "../components/forms/Form";
+import { AreaField, ChipsField, DateField, NumField } from "../components/forms/fields";
+import { ComboField, ItemsField, itemsTotal, newItemRow, type ItemRow } from "../components/forms/fields-rich";
+import type { Ref } from "../forms/helpers";
+import { errorsOf, useSubmit, type FormProps } from "../forms/shared";
 import { todayIso } from "../lib/format";
-import { NumberField } from "./NumberField";
-import { Field } from "./Sheet";
+import { STAGE } from "../lib/labels";
 
-/** Offer form (new version or edit): amount, date, price breakdown, note, and an optional offer file of the opportunity */
-export function OfferForm({ opportunityId, offer, files, onDone }: { opportunityId: number; offer?: Offer; files: FileRow[]; onDone: () => void }) {
-  const [amount, setAmount] = useState<number | null>(offer ? offer.amount : null);
-  const [date, setDate] = useState(offer?.offered_at ?? todayIso());
-  const [note, setNote] = useState(offer?.note ?? "");
-  const [items, setItems] = useState<{ label: string; amount: number | null }[]>((offer?.items ?? []).map((i) => ({ label: i.label, amount: i.amount })));
-  const [fileId, setFileId] = useState(offer?.file_id ? String(offer.file_id) : "");
-  const [busy, setBusy] = useState(false);
-  const setItem = (i: number, patch: Partial<{ label: string; amount: number | null }>) => setItems((list) => list.map((x, k) => (k === i ? { ...x, ...patch } : x)));
-  const save = async () => {
-    const body = {
-      amount: Number(amount), offered_at: date, note: note.trim() || null, file_id: fileId ? Number(fileId) : null,
-      items: items.filter((i) => i.label.trim()).map((i): OfferItem => ({ label: i.label.trim(), amount: Number(i.amount) || 0 })),
-    };
-    setBusy(true);
-    try {
-      if (offer) await run("patch", `/offers/${offer.id}`, body, { ok: "Teklif güncellendi" });
-      else await run("post", "/offers", { ...body, opportunity_id: opportunityId }, { ok: "Teklif eklendi" });
-      onDone();
-    } catch {
-      /* bildirim run() içinde */
-    } finally {
-      setBusy(false);
+const AMOUNT_STEP = 1000;
+type Related = { offers?: Offer[]; files?: FileRow[] };
+
+/**
+ * Offer form of the sheet (new version or edit): the opportunity, lines with quantity and unit price (or a plain amount),
+ * date, note, and an optional offer file of the opportunity. The offer lines keep a label and a line amount; quantity only
+ * multiplies the unit price on screen.
+ */
+export function OfferForm(p: FormProps) {
+  const pre = p.sheet.preset;
+  const editId = pre?.edit;
+  const opps = useOpps();
+  const [opp, setOpp] = useState<Ref>(() => ({ id: pre?.opportunity_id ?? null, text: "" }));
+  const oppOptions = useMemo(
+    () => opps.rows.filter((o) => !["kazanildi", "kaybedildi"].includes(o.stage) || o.id === opp.id).map((o) => ({ id: o.id, label: o.title, sub: `${o.company_name ?? o.person_name} · ${STAGE[o.stage]}` })),
+    [opps.rows, opp.id],
+  );
+  useEffect(() => {
+    if (opp.id && !opp.text) {
+      const o = opps.byId.get(opp.id);
+      if (o) setOpp({ id: o.id, text: o.title });
     }
-  };
+  }, [opps.byId, opp]);
+
+  const detail = useQuery<Detail<Opportunity, Related>>(opp.id ? `/opportunities/${opp.id}?with=offers,files` : null);
+  const files = detail.data?.related.files ?? [];
+  const offer = editId ? detail.data?.related.offers?.find((o) => o.id === editId) : undefined;
+
+  const [amount, setAmount] = useState<number | null>(null);
+  const [date, setDate] = useState(todayIso());
+  const [note, setNote] = useState("");
+  const [items, setItems] = useState<ItemRow[]>([]);
+  const [fileId, setFileId] = useState("");
+  useEffect(() => {
+    if (!offer) return;
+    setAmount(offer.amount);
+    setDate(offer.offered_at);
+    setNote(offer.note ?? "");
+    setItems(offer.items.map((i) => newItemRow({ label: i.label, unit: i.amount })));
+    setFileId(offer.file_id ? String(offer.file_id) : "");
+  }, [offer]);
+
+  const total = itemsTotal(items);
+  const value = total > 0 ? total : Number(amount);
+
+  const submit = useSubmit(
+    p,
+    async () => {
+      const body = {
+        amount: value, offered_at: date, note: note.trim() || null, file_id: fileId ? Number(fileId) : null,
+        items: items.filter((i) => i.label.trim()).map((i): OfferItem => ({ label: i.label.trim(), amount: i.qty * (i.unit ?? 0) })),
+      };
+      const open = recordPath("opportunity", Number(opp.id)) ?? undefined;
+      if (editId) await run("patch", `/offers/${editId}`, body, { ok: "Teklif güncellendi", open });
+      else await run("post", "/offers", { ...body, opportunity_id: opp.id }, { ok: "Teklif eklendi", open });
+    },
+    () => errorsOf({ opp: !opp.id && "Fırsatı seç", amount: !(value > 0) && "Tutar ya da en az bir kalem gerekli" }),
+  );
+
   return (
-    <div className="inset flex flex-col gap-5 p-5">
-      <div className="grid grid-cols-1 gap-4 desk:grid-cols-2">
-        <Field label="Tutar (₺, KDV hariç)" htmlFor="of-amount">
-          <NumberField id="of-amount" min={1} value={amount} onChange={setAmount} autoFocus />
-        </Field>
-        <Field label="Teklif tarihi" htmlFor="of-date">
-          <input id="of-date" className="inp" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-      </div>
-      <Field label="Kalemler (isteğe bağlı)">
-        <div className="flex flex-col gap-3">
-          {items.map((it, i) => (
-            <div key={i} className="flex gap-3">
-              <input className="inp min-w-0 flex-1" placeholder="Kalem (ör. Tasarım)" aria-label="Kalem adı" value={it.label} onChange={(e) => setItem(i, { label: e.target.value })} />
-              <NumberField className="inp inp-num w-amount-field" min={0} placeholder="₺" ariaLabel="Kalem tutarı" value={it.amount} onChange={(amount) => setItem(i, { amount })} />
-              <button type="button" className="btn btn-ghost btn-sm" aria-label="Kalemi kaldır" onClick={() => setItems((l) => l.filter((_, k) => k !== i))}>Kaldır</button>
-            </div>
-          ))}
-          <button type="button" className="btn btn-sec btn-sm self-start" onClick={() => setItems((l) => [...l, { label: "", amount: null }])}>Kalem ekle</button>
-        </div>
-      </Field>
-      <Field label="Not" htmlFor="of-note">
-        <textarea id="of-note" className="inp" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Örn. 3 sayfa, bakım dahil değil" />
-      </Field>
+    <Form id={p.formId} onSubmit={submit}>
+      <ComboField name="opp" label="Fırsat" req value={opp} onChange={setOpp} options={oppOptions} placeholder="Fırsat ara" />
+      <ItemsField name="amount" label="Kalemler" opt items={items} onChange={setItems} />
+      {total === 0 ? <NumField label="Tutar" hint="KDV hariç. Kalem eklersen toplam otomatik olur" half prefix="₺" step={AMOUNT_STEP} value={amount} onChange={setAmount} /> : null}
+      <DateField label="Teklif tarihi" half value={date} onChange={setDate} placeholder="Örn. 12 Ekim" />
+      <AreaField label="Not" opt value={note} onChange={setNote} placeholder="Örn. 3 sayfa, bakım dahil değil" rows={3} />
       {files.length ? (
-        <Field label="Teklif dosyası" htmlFor="of-file">
-          <select id="of-file" className="inp" value={fileId} onChange={(e) => setFileId(e.target.value)}>
-            <option value="">Yok</option>
-            {files.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-          </select>
-        </Field>
+        <ChipsField label="Teklif dosyası" opt clearable value={fileId} onChange={setFileId} options={files.map((f) => ({ value: String(f.id), label: f.name }))} />
       ) : null}
-      <div className="flex gap-3">
-        <button type="button" className="btn btn-pri" disabled={busy || !(Number(amount) > 0)} onClick={() => void save()}>{offer ? "Kaydet" : "Teklifi ekle"}</button>
-        <button type="button" className="btn btn-sec" onClick={onDone}>Vazgeç</button>
-      </div>
-    </div>
+    </Form>
   );
 }

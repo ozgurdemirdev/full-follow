@@ -47,6 +47,9 @@
   --text-templates-title: 17px;
   --text-report-hero: 56px;
   --text-settings-title: 20px;
+  --text-login-title: 52px;
+  --text-login-h1: 34px;
+  --text-form-title: 22px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
@@ -57,12 +60,14 @@
   --leading-posts-title: 1.3;
   --leading-templates-body: 1.7;
   --leading-templates-text: 1.55;
+  --leading-login-title: 1.05;
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
   --tracking-label: 0.06em;
   --tracking-label-wide: 0.08em;
   --tracking-logo: -0.04em;
+  --tracking-login-mask: 0.2em;
   --spacing-0: 0px;
   --spacing-1: 4px;
   --spacing-2: 6px;
@@ -319,6 +324,80 @@
   --spacing-report-bar-hatch-line: 6px;
   --spacing-report-bar-hatch-period: 9px;
   --spacing-report-pend-hatch-line: 3px;
+  --spacing-login-side-pad-y: 40px;
+  --spacing-login-side-pad-x: 48px;
+  --spacing-login-hatch-line: 2px;
+  --spacing-login-hatch-period: 9px;
+  --spacing-login-orb: 520px;
+  --spacing-login-orb-blur: 90px;
+  --spacing-login-orb-a-x: -120px;
+  --spacing-login-orb-a-y: -160px;
+  --spacing-login-orb-b-x: -200px;
+  --spacing-login-orb-b-y: -180px;
+  --spacing-login-float-x: 30px;
+  --spacing-login-float-y: -20px;
+  --spacing-login-logo-side: 36px;
+  --spacing-login-pitch-max: 520px;
+  --spacing-login-lead-max: 420px;
+  --spacing-login-top-mobile: 12vh;
+  --spacing-login-gap: 22px;
+  --spacing-login-card-max: 400px;
+  --spacing-login-logo-card: 44px;
+  --spacing-login-field: 52px;
+  --spacing-login-ring: 4px;
+  --spacing-login-eye: 40px;
+  --spacing-login-msg: 18px;
+  --spacing-login-shake-1: 2px;
+  --spacing-login-shake-2: 4px;
+  --spacing-login-shake-3: 6px;
+  --spacing-form-scrim-from: 40%;
+  --spacing-form-sheet-max-h: 88vh;
+  --spacing-form-sheet-width: 540px;
+  --spacing-form-slide-y: 60px;
+  --spacing-form-slide-x: 40px;
+  --spacing-form-grab-w: 44px;
+  --spacing-form-grab-h: 5px;
+  --spacing-form-head-pad-top: 22px;
+  --spacing-form-head-icon: 42px;
+  --spacing-form-close: 38px;
+  --spacing-form-dup-indent: 26px;
+  --spacing-form-icon-btn: 30px;
+  --spacing-form-opt-pad-y: 9px;
+  --spacing-form-opt-ini: 26px;
+  --spacing-form-area-pad-right: 54px;
+  --spacing-form-chip-height: 34px;
+  --spacing-form-chip-pad: 13px;
+  --spacing-form-num-pad: 5px;
+  --spacing-form-step: 36px;
+  --spacing-form-num-input: 120px;
+  --spacing-form-tag-height: 30px;
+  --spacing-form-tag-pad: 11px;
+  --spacing-form-tag-input-basis: 120px;
+  --spacing-form-tag-input-min: 100px;
+  --spacing-form-suggest-height: 26px;
+  --spacing-form-item-qty-mobile: 84px;
+  --spacing-form-item-qty: 92px;
+  --spacing-form-item-price: 112px;
+  --spacing-form-item-remove: 34px;
+  --spacing-form-item-height: 42px;
+  --spacing-form-item-btn: 30px;
+  --spacing-form-add-height: 34px;
+  --spacing-form-plan-step: 132px;
+  --spacing-form-plan-amount: 96px;
+  --spacing-form-plan-btn: 32px;
+  --spacing-form-drag-close: 120px;
+  --spacing-toast-action: 34px;
+  --spacing-toast-check: 22px;
+  --spacing-form-icon-13: 13px;
+  --spacing-form-icon-19: 19px;
+  --spacing-form-icon-10: 10px;
+  --spacing-quick-ring: 4px;
+  --spacing-quick-pop-width: 460px;
+  --spacing-quick-pop-rise: 6px;
+  --spacing-quick-list-max: 470px;
+  --spacing-quick-tile: 34px;
+  --spacing-quick-fab-clear: 80px;
+  --spacing-scrollbar-size: 8px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -347,6 +426,9 @@
   --radius-spark: 3px;
   --radius-report-bar: 12px;
   --radius-report-hero: 28px;
+  --radius-login-logo: 14px;
+  --radius-form-step: 10px;
+  --radius-quick-tile: 11px;
   --shadow-card-hover: 0 22px 48px rgba(0,0,0,.38);
   --shadow-fab: 0 10px 28px rgba(4,4,5,.55);
   --shadow-menu: 0 16px 40px rgba(4,4,5,.6);
@@ -358,10 +440,13 @@
   --shadow-drafts-card: 0 30px 80px rgba(0,0,0,.45);
   --shadow-own-glow-off: 0 0 0 0 rgba(212,242,90,0);
   --shadow-own-glow-on: 0 0 0 6px rgba(212,242,90,.16);
+  --shadow-form-list: 0 20px 50px rgba(0,0,0,.5);
+  --shadow-quick-pop: 0 30px 90px rgba(0,0,0,.6);
   --ease-out: cubic-bezier(.2,.8,.2,1);
   --ease-pop: cubic-bezier(.2,1.4,.4,1);
   --ease-standard: ease;
   --ease-leave: cubic-bezier(.4,0,.2,1);
+  --ease-shake: cubic-bezier(.36,.07,.19,.97);
 }
 
 @theme inline {
@@ -540,6 +625,16 @@
   --color-report-under: var(--palette-bone-300);
   --color-report-under-past: var(--palette-ink-550);
   --color-report-floor-line: var(--palette-ink-500);
+  --color-login-ring-error: var(--palette-coral-300-a12);
+  --color-spin-track: var(--palette-ink-900-a25);
+  --color-form-tile: var(--palette-ink-775);
+  --color-form-focus-border: var(--palette-ink-500);
+  --color-form-dup-bg: var(--palette-amber-980);
+  --color-form-dup-border: var(--palette-amber-850);
+  --color-form-dup-text: var(--palette-amber-100);
+  --color-form-error-text: var(--palette-coral-100);
+  --color-quick-ring: var(--palette-lime-400-a18);
+  --color-quick-key-bg: var(--palette-ink-900-a12);
 }
 
 :root {
@@ -606,6 +701,15 @@
   --palette-amber-975: #1A1710;
   --palette-sand-300: #C9B98A;
   --palette-ink-550: #4A4A50;
+  --palette-ink-900-a25: rgba(17,17,19,.25);
+  --palette-coral-300-a12: rgba(255,138,122,.12);
+  --palette-ink-775: #1E1E21;
+  --palette-amber-980: #1F1A10;
+  --palette-amber-850: #3A3220;
+  --palette-amber-100: #F5E0A8;
+  --palette-coral-100: #FFB3A8;
+  --palette-lime-400-a18: rgba(212,242,90,.18);
+  --palette-ink-900-a12: rgba(17,17,19,.12);
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
@@ -649,6 +753,14 @@
   --dur-edge-draw-delay: 150ms;
   --dur-node-stagger: 60ms;
   --dur-timeline-in: 350ms;
+  --dur-login-float: 14000ms;
+  --dur-login-shake: 420ms;
+  --dur-spin-btn: 700ms;
+  --dur-form-sheet: 420ms;
+  --dur-form-sheet-out: 300ms;
+  --dur-form-plan: 300ms;
+  --dur-quick-pop: 280ms;
+  --dur-quick-item: 150ms;
   --stagger: 50ms;
   --rise-distance: 14px;
   --press-scale: 0.97;
@@ -663,6 +775,7 @@
   --z-mascot: 45;
   --z-mascot-perch: 55;
   --z-overlay: 48;
+  --z-form-list: 5;
   --bw-default: 1px;
   --bw-check: 1.5px;
   --bw-strong: 2px;
@@ -673,6 +786,9 @@
   --opacity-outside: 0.35;
   --opacity-projects-pulse: 45%;
   --opacity-report-pending: 0.7;
+  --opacity-login-orb: 0.18;
+  --opacity-login-orb-soft: 0.10;
+  --opacity-login-busy: 0.75;
 }
 
 @utility dur-press {
@@ -847,6 +963,38 @@
   transition-duration: var(--dur-timeline-in);
 }
 
+@utility dur-login-float {
+  transition-duration: var(--dur-login-float);
+}
+
+@utility dur-login-shake {
+  transition-duration: var(--dur-login-shake);
+}
+
+@utility dur-spin-btn {
+  transition-duration: var(--dur-spin-btn);
+}
+
+@utility dur-form-sheet {
+  transition-duration: var(--dur-form-sheet);
+}
+
+@utility dur-form-sheet-out {
+  transition-duration: var(--dur-form-sheet-out);
+}
+
+@utility dur-form-plan {
+  transition-duration: var(--dur-form-plan);
+}
+
+@utility dur-quick-pop {
+  transition-duration: var(--dur-quick-pop);
+}
+
+@utility dur-quick-item {
+  transition-duration: var(--dur-quick-item);
+}
+
 @utility z-sidebar {
   z-index: var(--z-sidebar);
 }
@@ -873,6 +1021,10 @@
 
 @utility z-overlay {
   z-index: var(--z-overlay);
+}
+
+@utility z-form-list {
+  z-index: var(--z-form-list);
 }
 
 @utility bw-default {
@@ -913,4 +1065,16 @@
 
 @utility opacity-report-pending {
   opacity: var(--opacity-report-pending);
+}
+
+@utility opacity-login-orb {
+  opacity: var(--opacity-login-orb);
+}
+
+@utility opacity-login-orb-soft {
+  opacity: var(--opacity-login-orb-soft);
+}
+
+@utility opacity-login-busy {
+  opacity: var(--opacity-login-busy);
 }

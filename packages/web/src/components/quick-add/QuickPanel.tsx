@@ -1,0 +1,109 @@
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import type { SheetKind } from "../../app/ui";
+import { useIsDesktop } from "../../lib/media";
+import { norm } from "../../lib/format";
+import { FORM_ICON, PathIcon } from "../forms/icons";
+import { QUICK_GROUPS, type QuickItem } from "./items";
+import type { QuickHost } from "./store";
+
+const ALL_ITEMS = QUICK_GROUPS.flatMap((g) => g.items);
+
+/** An item matches by its name, its destination, or its letter */
+const matches = (it: QuickItem, q: string) => !q || norm(`${it.name} ${it.dest}`).includes(q) || norm(it.key) === q;
+
+/**
+ * The list of record types: search ("Ne eklemek istiyorsun?"), groups with a tinted tile, name, destination and letter.
+ * ↑ ↓ Enter pick, a single letter opens its item while the search is empty, Esc is handled by the host.
+ */
+export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: SheetKind) => void }) {
+  const desk = useIsDesktop();
+  const [text, setText] = useState("");
+  const [sel, setSel] = useState(0);
+  const list = useRef<HTMLDivElement>(null);
+  const q = norm(text.trim());
+
+  const groups = useMemo(() => QUICK_GROUPS.map((g) => ({ ...g, items: g.items.filter((it) => matches(it, q)) })).filter((g) => g.items.length), [q]);
+  const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+
+  useEffect(() => {
+    list.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [sel, flat]);
+
+  const key = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setSel((s) => Math.max(0, Math.min(flat.length - 1, s + (e.key === "ArrowDown" ? 1 : -1))));
+    } else if (e.key === "Enter" && flat[sel]) {
+      e.preventDefault();
+      onPick(flat[sel].kind);
+    } else if (e.key.length === 1 && !text) {
+      // the search is empty: a letter is a shortcut, not the start of a word
+      const hit = ALL_ITEMS.find((it) => it.key.toLowerCase() === e.key.toLowerCase());
+      if (hit) {
+        e.preventDefault();
+        onPick(hit.kind);
+      }
+    }
+  };
+
+  let index = -1;
+  return (
+    <div className="quick-pop" role="menu" aria-label="Yeni kayıt" data-host={host} onKeyDown={key}>
+      <span className="quick-grab" aria-hidden="true" />
+      <div className="quick-search">
+        <PathIcon d={FORM_ICON.search} className="size-icon-chip" />
+        <input
+          type="text"
+          value={text}
+          autoFocus={desk}
+          placeholder="Ne eklemek istiyorsun?"
+          aria-label="Kayıt türü ara"
+          onChange={(e) => {
+            setText(e.target.value);
+            setSel(0);
+          }}
+        />
+      </div>
+      <div className="quick-list" ref={list}>
+        {groups.map((g) => (
+          <div key={g.name} className="quick-group">
+            <span className="quick-group-name">{g.name}</span>
+            <div className="quick-items">
+              {g.items.map((it) => {
+                const mine = ++index;
+                return (
+                  <button
+                    key={it.kind}
+                    type="button"
+                    role="menuitem"
+                    className="quick-item"
+                    data-active={mine === sel}
+                    onPointerEnter={() => setSel(mine)}
+                    onClick={() => onPick(it.kind)}
+                  >
+                    <span className="quick-tile" data-tone={it.tone}>
+                      <PathIcon d={it.icon} className="size-icon-md" />
+                    </span>
+                    <span className="quick-text">
+                      <span className="quick-name">{it.name}</span>
+                      <span className="quick-dest">{it.dest}</span>
+                    </span>
+                    <span className="quick-badge">{it.key}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        {flat.length ? null : <p className="quick-empty">“{text.trim()}” diye bir kayıt türü yok.</p>}
+      </div>
+      <div className="quick-foot">
+        <span>↑ ↓ seç</span>
+        <span>Enter aç</span>
+        <span>Harfle doğrudan aç</span>
+        <span>Esc kapat</span>
+      </div>
+    </div>
+  );
+}

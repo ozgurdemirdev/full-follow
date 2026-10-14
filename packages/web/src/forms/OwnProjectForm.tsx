@@ -1,14 +1,17 @@
 // Own product form: what it does, status, could it be sold later, which sectors suit it
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { run } from "../api/actions";
 import { useQuery } from "../api/store";
 import type { Detail, OwnProject } from "../api/types";
 import { PATHS } from "../app/routes";
-import { SectorPicker } from "../components/SectorPicker";
-import { ChipRadio, Field } from "../components/Sheet";
+import { Form } from "../components/forms/Form";
+import { AreaField, ChipsField, SegField, TextField } from "../components/forms/fields";
 import { OWN_STATUS, OWN_STATUSES, SELLABLE, SELLABLES } from "../lib/labels";
-import { useSubmit, type FormProps } from "./QuickAdd";
+import { SectorTagsField } from "./pickers";
+import { errorsOf, saveRecord, useSubmit, type FormProps } from "./shared";
+
+const SELL_OPTIONS = SELLABLES.map((s) => ({ value: s, label: SELLABLE[s] }));
+const STATUS_OPTIONS = OWN_STATUSES.map((s) => ({ value: s, label: OWN_STATUS[s] }));
 
 export function OwnProjectForm(p: FormProps) {
   const editId = p.sheet.preset?.own_project_id;
@@ -34,40 +37,25 @@ export function OwnProjectForm(p: FormProps) {
     setNotes(row.notes ?? "");
   }, [row]);
 
-  const submit = useSubmit(p, async () => {
-    const data = { name: name.trim(), description, status, sellable, sellable_note: sellable === "hayir" ? "" : sellableNote, sectors, notes };
-    if (editId) await run("patch", `/own-projects/${editId}`, data, { ok: "Proje kaydedildi" });
-    else {
-      const res = await run<OwnProject>("post", "/own-projects", data, { ok: "Proje kaydedildi" });
-      if (res.row) navigate(`${PATHS.ownProjects}/${res.row.id}`);
-    }
-  });
+  const submit = useSubmit(
+    p,
+    async () => {
+      const data = { name: name.trim(), description, status, sellable, sellable_note: sellable === "hayir" ? "" : sellableNote, sectors, notes };
+      const res = await saveRecord<OwnProject>(p, editId, data);
+      if (!editId && res.row) navigate(`${PATHS.ownProjects}/${res.row.id}`);
+    },
+    () => errorsOf({ name: !name.trim() && "Proje adı gerekli" }),
+  );
 
   return (
-    <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
-      <Field label="Ad" htmlFor="op-name">
-        <input id="op-name" className="inp" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Full Follow" />
-      </Field>
-      <Field label="Ne yapıyor" htmlFor="op-desc">
-        <textarea id="op-desc" className="inp" value={description} onChange={(e) => setDescription(e.target.value)} />
-      </Field>
-      <Field label="Durum">
-        <ChipRadio label="Durum" items={OWN_STATUSES.map((s) => ({ value: s, label: OWN_STATUS[s] }))} value={status} onChange={setStatus} />
-      </Field>
-      <Field label="Satılabilir mi">
-        <ChipRadio label="Satılabilir mi" items={SELLABLES.map((s) => ({ value: s, label: SELLABLE[s] }))} value={sellable} onChange={setSellable} />
-      </Field>
-      {sellable !== "hayir" ? (
-        <Field label="Kime, nasıl satılabilir" htmlFor="op-sell">
-          <input id="op-sell" className="inp" value={sellableNote} onChange={(e) => setSellableNote(e.target.value)} placeholder="Örn. Freelancer ve küçük ajanslara kişisel CRM" />
-        </Field>
-      ) : null}
-      <Field label="Uygun sektörler" htmlFor="op-sector">
-        <SectorPicker id="op-sector" value={sectors} onChange={setSectors} />
-      </Field>
-      <Field label="Notlar" htmlFor="op-notes">
-        <textarea id="op-notes" className="inp" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </Field>
-    </form>
+    <Form id={p.formId} onSubmit={submit}>
+      <TextField name="name" label="Proje adı" req value={name} onChange={setName} placeholder="Örn. Full Follow" autoFocus />
+      <TextField label="Tek satırda" value={description} onChange={setDescription} placeholder="Ne işe yarar" />
+      <ChipsField label="Durum" value={status} onChange={(v) => v && setStatus(v)} options={STATUS_OPTIONS} />
+      <SegField label="Satılabilirlik" options={SELL_OPTIONS} value={sellable} onChange={setSellable} />
+      {sellable !== "hayir" ? <TextField label="Kime, nasıl satılabilir" opt value={sellableNote} onChange={setSellableNote} placeholder="Örn. Freelancer ve küçük ajanslara kişisel CRM" /> : null}
+      <SectorTagsField label="Uygun sektörler" value={sectors} onChange={setSectors} />
+      <AreaField label="Notlar" opt value={notes} onChange={setNotes} rows={3} />
+    </Form>
   );
 }

@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from "react";
 import type { OppStage } from "../lib/labels";
 
-export type SheetKind = "opportunity" | "person" | "company" | "touch" | "task" | "comment" | "draft" | "post" | "idea" | "template" | "project" | "goal" | "own_project";
+export type SheetKind = "opportunity" | "person" | "company" | "touch" | "task" | "comment" | "draft" | "post" | "idea" | "template" | "project" | "goal" | "own_project" | "offer";
 export interface SheetState {
   kind: SheetKind;
   /** forma önceden doldurulacak değerler */

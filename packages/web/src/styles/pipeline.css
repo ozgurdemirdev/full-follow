@@ -216,8 +216,6 @@
   gap: var(--spacing-5);
   align-items: flex-start;
   padding-bottom: var(--spacing-4);
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
 }
 .pipe-col {
   min-width: 0;
