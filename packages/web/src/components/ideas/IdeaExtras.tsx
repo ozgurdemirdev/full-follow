@@ -1,12 +1,12 @@
 import { Link } from "wouter";
-import type { IdeaRelated, IdeaRow } from "../../api/types";
+import type { IdeaRelated, Idea } from "../../api/types";
 import { PATHS } from "../../app/routes";
 import { ago } from "../../lib/format";
 import { PLATFORM } from "../../lib/labels";
 import { channelName } from "../../lib/network";
 
 /** What the board leaves out but the page had: notes, the touches that told this idea, the posts about it (blocks of the board's inner style) */
-export function IdeaExtras({ idea, related }: { idea: IdeaRow; related?: IdeaRelated }) {
+export function IdeaExtras({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
   const touches = related?.touches ?? [];
   const posts = related?.posts ?? [];
   return (

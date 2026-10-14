@@ -15,7 +15,7 @@ export const mcp: McpDef = {
           `${r.told} kişiye anlatıldı, ${r.interested} ilgilendi${r.interest_rate !== null ? ` (%${Math.round(r.interest_rate * 100)})` : ""}`,
           !!r.post_count && `${r.post_count} paylaşım`, r.problem && `sorun: ${f.cut(r.problem, 50)}`,
         )),
-      details: (r) => (r.problem ? [`sorun: ${r.problem}`] : []),
+      details: (r) => [...(r.problem ? [`sorun: ${r.problem}`] : []), ...(r.money_note ? [`para: ${r.money_note}`] : []), `karar: ${r.verdict}`],
     },
     interest: {
       kind: "fikir ilgisi",
@@ -39,7 +39,7 @@ export const mcp: McpDef = {
     ],
     get: [{ at: 420, text: "idea: people" }],
     save: [
-      { at: 201, text: "idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. " },
+      { at: 201, text: "idea: {title,problem,money_note (nasıl para kazandırır, bir cümle),stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. " },
       { at: 203, text: "interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. " },
     ],
     move: [{ at: 130, text: "Fikir: fikir|dogrulaniyor|demo|urun. " }],

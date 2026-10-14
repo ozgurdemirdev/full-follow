@@ -1,8 +1,9 @@
+import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { run } from "../../api/actions";
-import type { IdeaRelated, IdeaRow } from "../../api/types";
+import type { IdeaRelated, Idea } from "../../api/types";
 import { PATHS } from "../../app/routes";
-import { askPitch, IDEA_FLOW, rateOf, rateTone, ratePct, verdictOf } from "../../lib/ideas";
+import { askPitch, IDEA_FLOW, ratePct } from "../../lib/ideas";
 import { IDEA_STAGE } from "../../lib/labels";
 import { useDayMarks } from "../../lib/people";
 import { BoardIcon } from "../boardIcons";
@@ -12,11 +13,11 @@ import { IdeaMenu } from "./IdeaMenu";
 /** Ring geometry of the board: viewBox 36, r 15.9 so the circumference is 100 and the dash is the percent */
 const RING = { box: 36, mid: 18, r: 15.9, width: 3.2, full: 100 };
 
-function Ring({ idea }: { idea: IdeaRow }) {
-  const rate = rateOf(idea);
+function Ring({ idea }: { idea: Idea }) {
+  const rate = idea.interest_share;
   const pct = rate === null ? 0 : ratePct(rate);
   return (
-    <div className="ideas-ring" data-tone={rate === null ? undefined : rateTone(rate)}>
+    <div className="ideas-ring" data-tone={idea.rate_tone ?? undefined}>
       <svg viewBox={`0 0 ${RING.box} ${RING.box}`} aria-hidden="true">
         <circle className="ideas-ring-track" cx={RING.mid} cy={RING.mid} r={RING.r} fill="none" strokeWidth={RING.width} />
         <circle className="ideas-ring-fill" cx={RING.mid} cy={RING.mid} r={RING.r} fill="none" strokeWidth={RING.width} strokeLinecap="round" strokeDasharray={`${pct} ${RING.full}`} />
@@ -29,8 +30,37 @@ function Ring({ idea }: { idea: IdeaRow }) {
   );
 }
 
+/** The money note: click to write or edit it, it saves when the box loses focus */
+function MoneyNote({ idea }: { idea: Idea }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const cancelled = useRef(false);
+  const start = () => {
+    cancelled.current = false;
+    setDraft(idea.money_note ?? "");
+    setEditing(true);
+  };
+  const save = () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (cancelled.current || next === (idea.money_note ?? "")) return;
+    run("patch", `/ideas/${idea.id}`, { money_note: next }, { ok: "Para hesabı kaydedildi" }).catch(() => {});
+  };
+  return (
+    <div className="ideas-block">
+      <h3>Para hesabı</h3>
+      {editing ? (
+        <textarea className="inp" rows={2} autoFocus value={draft} aria-label="Para hesabı" placeholder="₺2.500 × 10 klinik = ₺25.000 / ay"
+          onChange={(e) => setDraft(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Escape" && ((cancelled.current = true), e.currentTarget.blur())} />
+      ) : (
+        <button type="button" className="ideas-note" data-empty={!idea.money_note} onClick={start}>{idea.money_note ?? "Nasıl para kazandırır? Yaz"}</button>
+      )}
+    </div>
+  );
+}
+
 /** Left panel: stage, stepper, problem, money note, interest ring with the verdict, the two actions */
-export function IdeaDetail({ idea, related }: { idea: IdeaRow; related?: IdeaRelated }) {
+export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
   const [, navigate] = useLocation();
   const [pitched, markPitched] = useDayMarks("pitched");
   const asked = pitched.has(idea.id);
@@ -67,18 +97,13 @@ export function IdeaDetail({ idea, related }: { idea: IdeaRow; related?: IdeaRel
           <h3>Çözdüğü sorun</h3>
           <span>{idea.problem ?? "Çözdüğü sorun yazılmadı"}</span>
         </div>
-        {idea.money_note ? (
-          <div className="ideas-block">
-            <h3>Para hesabı</h3>
-            <span>{idea.money_note}</span>
-          </div>
-        ) : null}
+        <MoneyNote key={idea.id} idea={idea} />
       </div>
       <div className="ideas-verdict">
         <Ring idea={idea} />
         <div className="ideas-verdict-text">
           <span>{idea.told} kişiye anlatıldı · {idea.interested} ilgilendi · {idea.not_interested} ilgilenmedi</span>
-          <p>{verdictOf(idea)}</p>
+          <p>{idea.verdict}</p>
         </div>
       </div>
       <div className="ideas-actions">

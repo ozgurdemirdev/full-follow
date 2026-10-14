@@ -17,6 +17,7 @@ export const taskCreate = z.strictObject({
   company_id: id.nullish(),
   opportunity_id: id.nullish(),
   project_id: id.nullish(),
+  idea_id: id.nullish(),
 });
 /** Calendar quick add: one line of text, the time and kind are read from it */
 export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(TASK_ASSIGNEES).default("ozgur") });
@@ -30,6 +31,7 @@ export const taskUpdate = patch({
   company_id: id.nullable(),
   opportunity_id: id.nullable(),
   project_id: id.nullable(),
+  idea_id: id.nullable(),
   done: z.boolean(),
 });
 

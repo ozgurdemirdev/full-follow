@@ -1,6 +1,6 @@
 import { beforeEach, expect, it } from "vitest";
 import { FFError, openDb, type Clock, type DbHandle } from "@fullfollow/core";
-import { appFor, suite, type TestApp } from "./helpers";
+import { appFor, appWithout, suite, type TestApp } from "./helpers";
 
 let today = "2026-10-14";
 const clock: Clock = { today: () => today, now: () => `${today}T10:00:00Z` };
@@ -35,6 +35,22 @@ suite("the data the second batch of screens reads", () => {
     today = "2026-10-16";
     app.comments.markRead(ask.id);
     expect(unread().map((c: any[]) => c[1])).toEqual(["2026-10-15T10:00:00Z", null, "2026-10-15T10:00:00Z"]);
+  });
+
+  it("a pitch task links an idea instead of free text, shows its title, takes one target only, loses the link with the idea and needs the ideas module", () => {
+    const idea = app.ideas.create({ title: "Klinik botu" }).row;
+    const ada = app.people.create({ name: "Ada" }).row;
+    const pitch = app.tasks.create({ title: "Kısa anlatım metni hazırla", assignee: "claude", idea_id: idea.id }).row;
+    expect(pitch.idea_id).toBe(idea.id);
+    expect(app.find("task", { filter: { idea_id: idea.id } }).rows).toMatchObject([{ id: pitch.id, idea_title: "Klinik botu" }]);
+    expect(app.find("task", { q: "klinik" }).total).toBe(1);
+    expect(() => app.tasks.create({ title: "x", idea_id: idea.id, person_id: ada.id })).toThrow(/en fazla bir kayda/);
+    expect(() => app.tasks.create({ title: "x", idea_id: 999 })).toThrow(/fikir #999 bulunamadı/);
+    app.ideas.remove(idea.id);
+    expect(app.get("task", pitch.id).row).toMatchObject({ idea_id: null, idea_title: null });
+    app.restore("idea", "Klinik botu");
+    expect(app.get("task", pitch.id).row.idea_id).toBe(idea.id);
+    expect(() => appWithout(["ideas"], h, "ozgur", clock).mod("calendar")!.tasks.create({ title: "x", idea_id: idea.id })).toThrow(/"ideas" modülü kurulu değil/);
   });
 
   it("the focus project is a setting that must name an own project; it clears itself when that project is deleted", () => {

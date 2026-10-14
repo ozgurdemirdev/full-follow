@@ -13,7 +13,7 @@ export { parseQuickTask, taskKindOf, type QuickTask } from "./service/quickAdd";
 export default defineModule({
   key: "calendar",
   label: "Takvim",
-  uses: ["projects", "drafts"],
+  uses: ["projects", "drafts", "ideas"],
   api: calendarApi,
   entities,
   hooks: {
@@ -25,6 +25,7 @@ export default defineModule({
       } else if (type === "company") bin.unlink("tasks", "company_id", id);
       else if (type === "opportunity") bin.unlink("tasks", "opportunity_id", id);
       else if (type === "project") bin.unlink("tasks", "project_id", id);
+      else if (type === "idea") bin.unlink("tasks", "idea_id", id);
     },
   },
   contribute: {

@@ -20,6 +20,8 @@ export interface TaskRecord {
   company_id: number | null;
   opportunity_id: number | null;
   project_id: number | null;
+  /** the idea a pitch task is about */
+  idea_id: number | null;
   created_at: string;
   updated_at: string;
   created_by: "ozgur" | "claude";
@@ -31,6 +33,7 @@ export interface TaskListRow extends TaskRecord {
   company_name: string | null;
   opportunity_title: string | null;
   project_name: string | null;
+  idea_title: string | null;
 }
 
 /** The next open task of a project (project boards show it) */

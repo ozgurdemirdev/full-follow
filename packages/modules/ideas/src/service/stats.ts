@@ -1,4 +1,5 @@
 import { IDEA_STAGES, keptRows, type Ctx, type IdeaStats, type InterestRow } from "@fullfollow/core";
+import { judge } from "./verdict";
 
 /**
  * Fikir listesi + ilgi ölçümü: kaç kişiye anlatıldı, kaçı ilgilendi, oran; hedef sektörler; temas ve paylaşım sayısı.
@@ -22,7 +23,7 @@ export function ideaStats(ctx: Ctx): IdeaStats[] {
     FROM ideas i ORDER BY i.updated_at DESC, i.id DESC`)
     .map((i): IdeaStats => {
       const s = secs.filter((x) => x.idea_id === i.id);
-      return { ...i, sectors: s.map((x) => ({ id: x.id, path: x.path })), interest_rate: i.told ? i.interested / i.told : null };
+      return { ...i, sectors: s.map((x) => ({ id: x.id, path: x.path })), interest_rate: i.told ? i.interested / i.told : null, ...judge(i) };
     })
     .sort((a, b) => IDEA_STAGES.indexOf(b.stage) - IDEA_STAGES.indexOf(a.stage) || b.updated_at.localeCompare(a.updated_at));
 }

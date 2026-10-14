@@ -234,6 +234,15 @@ export interface Idea extends Base {
   interested: number;
   not_interested: number;
   interest_rate: number | null;
+  /** people who answered: interested or not */
+  answered: number;
+  /** interested / answered, 0 to 1; null while nobody has answered */
+  interest_share: number | null;
+  rate_tone: "strong" | "mixed" | "weak" | null;
+  /** the sentence under the interest ring, written by the ideas module */
+  verdict: string;
+  /** how the idea earns money, in a sentence */
+  money_note: string | null;
   touch_count: number;
   post_count: number;
   post_people: number;
@@ -418,6 +427,8 @@ export interface Task extends Base {
   company_name: string | null;
   opportunity_title: string | null;
   project_name: string | null;
+  idea_id: number | null;
+  idea_title: string | null;
 }
 export interface Draft extends Base {
   person_id: number | null;

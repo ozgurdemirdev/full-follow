@@ -216,11 +216,13 @@ export function IdeaForm(p: FormProps) {
   const [chosen, setChosen] = useState<string[]>([]);
   const [sectorText, setSectorText] = useState("");
   const [notes, setNotes] = useState("");
+  const [moneyNote, setMoneyNote] = useState("");
 
   const row = existing.data?.row;
   useEffect(() => {
     if (!row) return;
     setTitle(row.title);
+    setMoneyNote(row.money_note ?? "");
     setProjectId(row.own_project_id ? String(row.own_project_id) : "");
     setPriority(row.priority);
     setParentId(row.parent_id ? String(row.parent_id) : "");
@@ -242,7 +244,7 @@ export function IdeaForm(p: FormProps) {
     // inside a project: priority only; general idea: stage, sectors and optional parent
     const data = projectId
       ? { title: title.trim(), problem, notes, own_project_id: Number(projectId), priority }
-      : { title: title.trim(), problem, stage, notes, sectors: all, parent_id: parentId ? Number(parentId) : null, ...(row?.own_project_id ? { own_project_id: null } : {}) };
+      : { title: title.trim(), problem, money_note: moneyNote, stage, notes, sectors: all, parent_id: parentId ? Number(parentId) : null, ...(row?.own_project_id ? { own_project_id: null } : {}) };
     if (editId) await run("patch", `/ideas/${editId}`, data, { ok: "Fikir güncellendi" });
     else await run("post", "/ideas", data, { ok: "Fikir eklendi" });
   });
@@ -275,6 +277,9 @@ export function IdeaForm(p: FormProps) {
       </Field>
       {projectId ? null : (
         <>
+          <Field label="Para hesabı" htmlFor="i-money">
+            <textarea id="i-money" className="inp" value={moneyNote} onChange={(e) => setMoneyNote(e.target.value)} placeholder="Nasıl para kazandırır: ₺2.500 × 10 klinik" />
+          </Field>
           <Field label="Aşama">
             <ChipRadio label="Aşama" items={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} value={stage} onChange={setStage} />
           </Field>

@@ -237,6 +237,20 @@
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
+.ideas-note {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  line-height: var(--leading-snug);
+  text-align: start;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.ideas-note[data-empty="true"] {
+  color: var(--color-text-disabled);
+}
 .ideas-block .is-meta {
   font-size: var(--text-base-sm);
   color: var(--color-text-secondary);
