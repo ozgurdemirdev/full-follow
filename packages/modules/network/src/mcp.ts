@@ -18,6 +18,9 @@ export const mcp: McpDef = {
     },
   },
   relations: { touches: "touch" },
+  relationLines: {
+    channels: (rows, f) => `kanallar: ${rows.map((c) => `${f.label(c.channel)} ${c.out_count}→/${c.in_count}← son ${f.d(c.last_at)}${c.awaiting ? " (cevap bekliyor)" : ""}`).join(" · ")}`,
+  },
   today: [
     // the week line comes first (before the daily quota of the drafts module)
     {

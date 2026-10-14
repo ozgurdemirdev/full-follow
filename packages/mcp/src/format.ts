@@ -33,12 +33,14 @@ const LINE: Record<string, (r: Row) => string> = {
 /** MCP output of the installed modules (set once by registerTools): record docs, relation names, today sections */
 let entityDocs: Record<string, McpEntityDoc> = {};
 let relationTypes: Record<string, string> = {};
+let relationLines: Record<string, (rows: Row[], f: McpFormat) => string> = {};
 let todaySections: { at: number; head?: boolean; render(t: any, f: McpFormat): string }[] = [];
 let marketingParts: { at: number; render(m: any, f: McpFormat): string[] }[] = [];
 
 export function useMcpDefs(defs: McpDef[]) {
   entityDocs = Object.assign({}, ...defs.map((d) => d.entities ?? {}));
   relationTypes = Object.assign({}, ...defs.map((d) => d.relations ?? {}));
+  relationLines = Object.assign({}, ...defs.map((d) => d.relationLines ?? {}));
   todaySections = defs.flatMap((d) => d.today ?? []);
   marketingParts = defs.flatMap((d) => d.marketing ?? []);
   skip = new Set([...CORE_SKIP, ...defs.flatMap((d) => d.skip ?? [])]);
@@ -53,7 +55,8 @@ export function line(type: string, r: Row): string {
 export const kindName = (type: string): string => KIND_NAME[type] ?? entityDocs[type]?.kind ?? type;
 
 /** What a module's formatters get to format like the core types do */
-export const mcpFormat: McpFormat = { d, tl, cut, who, join, label, line, section: (title, type, res) => sec(title, type, res), marketingParts: () => marketingParts, ok };
+const socials = (r: Row) => (r.instagram || r.linkedin ? [join(r.instagram && `instagram: ${r.instagram}`, r.linkedin && `linkedin: ${r.linkedin}`)] : []);
+export const mcpFormat: McpFormat = { d, tl, cut, who, join, label, line, socials, section: (title, type, res) => sec(title, type, res), marketingParts: () => marketingParts, ok };
 
 export function list(type: string, res: { rows: Row[]; total: number }, offset = 0): string {
   if (!res.rows.length) return "kayıt yok";
@@ -62,7 +65,7 @@ export function list(type: string, res: { rows: Row[]; total: number }, offset =
 }
 
 /** Row fields `get` does not repeat as extra lines (the line of the record, the module lists and shared ids and names carry them); the modules add theirs with `skip` */
-const CORE_SKIP = ["updated_at", "position", "tag_list", "created_at", "person_name", "source_name", "company_name", "project_name", "opportunity_title", "tags", "target_label", "comments", "last_id", "last_body", "last_by", "last_at", "count", "people_count", "opp_count", "id", "status_label", "title", "name", "stage", "price", "status", "channel", "email", "phone", "next_follow_up_at", "due_date", "milestone", "kind", "done_at", "website", "body", "notes", "direction", "summary", "happened_at", "outcome", "post_id", "idea_title", "idea_id", "template_id", "url", "refresh_due", "won", "won_value", "sent", "replied", "reply_rate", "problem", "told", "touch_count", "sectors", "interest", "note", "person_id", "tag_ids", "source_id", "contact_status", "deleted_at", "slug", "color", "company_count", "to_name", "contact", "company_id", "version", "amount", "file_id", "opportunity_id", "description", "own_project_id", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "last_summary", "days_since", "awaiting", "cooling", "rhythm", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"];
+const CORE_SKIP = ["updated_at", "position", "tag_list", "created_at", "person_name", "source_name", "company_name", "project_name", "opportunity_title", "tags", "target_label", "comments", "last_id", "last_body", "last_by", "last_at", "count", "people_count", "opp_count", "id", "status_label", "title", "name", "stage", "price", "status", "channel", "email", "phone", "next_follow_up_at", "due_date", "milestone", "kind", "done_at", "website", "body", "notes", "direction", "summary", "happened_at", "outcome", "post_id", "idea_title", "idea_id", "template_id", "url", "refresh_due", "won", "won_value", "sent", "replied", "reply_rate", "problem", "told", "touch_count", "sectors", "interest", "note", "person_id", "tag_ids", "source_id", "contact_status", "deleted_at", "slug", "color", "company_count", "to_name", "contact", "company_id", "version", "amount", "file_id", "opportunity_id", "description", "own_project_id", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "last_summary", "days_since", "awaiting", "cooling", "rhythm", "expects_reply", "path", "parent_name", "parent_id"];
 let skip = new Set<string>(CORE_SKIP);
 
 /** Tek kaydın tam hali + istenen ilişkili kayıtlar */
@@ -80,15 +83,14 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     .filter(([k, v]) => !skip.has(k) && v !== null && v !== "" && v !== undefined && typeof v !== "object")
     .map(([k, v]) => `${k}: ${typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? d(v) : v}`);
   if (extra.length) out.push(extra.join(" · "));
-  if (row.instagram || row.linkedin) out.push(join(row.instagram && `instagram: ${row.instagram}`, row.linkedin && `linkedin: ${row.linkedin}`));
   out.push(...(entityDocs[type]?.details?.(row, mcpFormat) ?? []));
   if (row.notes) out.push(`not: ${row.notes}`);
   if (row.body) out.push(`metin: ${row.body}`);
   if (res.comments_open) out.push(`açık yorum konusu: ${res.comments_open}`);
   for (const [name, rows] of Object.entries(related)) {
     if (!rows.length) { out.push(`${name}: yok`); continue; }
-    if (name === "channels") {
-      out.push(`kanallar: ${rows.map((c: Row) => `${label(c.channel)} ${c.out_count}→/${c.in_count}← son ${d(c.last_at)}${c.awaiting ? " (cevap bekliyor)" : ""}`).join(" · ")}`);
+    if (relationLines[name]) {
+      out.push(relationLines[name](rows, mcpFormat));
       continue;
     }
     // a module names its record type per relation, or per relation and record type ("people:idea": the people of an idea are interest rows)

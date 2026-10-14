@@ -12,6 +12,7 @@ import { openProjectForWonOpportunity } from "./service/projects";
 export default defineModule({
   key: "projects",
   label: "Projeler",
+  smoke: ["/api/projects", "/api/payments"],
   uses: ["pipeline", "calendar"],
   api: projectsApi,
   entities,
@@ -59,6 +60,8 @@ export default defineModule({
       },
     },
     meta: { project_stages: PROJECT_STAGES, milestones: MILESTONES },
+    // an event that names only the project also carries the opportunity and person it came from
+    recordLinks: { project_id: (ctx, id) => ctx.mod("projects")!.projects.ref(id) },
     // payments due in the next week, on the Today view
     today: (ctx, { limit }) => ({ payments: ctx.mod("projects")!.payments.list({ limit, filter: { due_within_days: 7 } }) }),
     relations: {

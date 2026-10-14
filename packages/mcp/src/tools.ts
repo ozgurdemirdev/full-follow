@@ -37,9 +37,8 @@ export function registerTools(server: McpServer, core: Core) {
     ]),
     inputSchema: { limit: z.number().optional() },
   }, ({ limit }) => run(() => {
-    // takip dizisi: zamanı gelenlere Claude adına taslak (tekrar çağrılırsa aynı adım için ikinci taslak açılmaz); drafts modülü kurulu değilse yok
-    const auto = core.mod("drafts")?.followups.generate().created.map((c) => `${c.name} ${c.step}. takip #${c.draft_id}`) ?? [];
-    return todayText({ ...core.today(limit ?? 10), auto });
+    // what the modules prepare for the day (the drafts module's follow-up drafts) goes into the view before it is written
+    return todayText({ ...core.today(limit ?? 10), ...Object.assign({}, ...defs.map((d) => d.todayData?.(core.mod) ?? {})) });
   }));
 
   server.registerTool("open", {

@@ -12,6 +12,7 @@ import { applyStage } from "./service/opportunities";
 export default defineModule({
   key: "pipeline",
   label: "Satış hunisi",
+  smoke: ["/api/opportunities", "/api/report/sources"],
   uses: ["people", "companies", "network", "projects"],
   api: pipelineApi,
   entities,
@@ -41,6 +42,8 @@ export default defineModule({
       "opp.created": { kind: "asama" },
       "opp.stage": { kind: "asama" },
     },
+    // an event that names only the opportunity also carries its person
+    recordLinks: { opportunity_id: (ctx, id) => ctx.mod("pipeline")!.opportunities.ref(id) },
     trashTypes: [{ type: "opportunity", label: "fırsat" }, { type: "offer", label: "teklif" }, { type: "opportunity_person", label: "ekip üyesi" }],
     // the opportunities whose follow-up is due (the people's part of `follow_ups` comes from the people module)
     today: (ctx, { limit }) => ({ follow_ups: { opportunities: ctx.mod("pipeline")!.opportunities.list({ limit, filter: { due: true } }) } }),

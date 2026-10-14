@@ -3,7 +3,7 @@ import type { McpDef } from "@fullfollow/core";
 /** How people read in MCP output; the fragments continue the generic tools' descriptions */
 export const mcp: McpDef = {
   /** row fields the lines above already show or that are not worth a line: `get` does not repeat them */
-  skip: ["referred_by_name", "handle", "post_title", "referral_count", "referral_value"],
+  skip: ["instagram", "linkedin", "referred_by_name", "handle", "post_title", "referral_count", "referral_value"],
   entities: {
     person: {
       kind: "kişi",
@@ -16,6 +16,7 @@ export const mcp: McpDef = {
       ),
       // what the people a person introduced brought (the referrals module's numbers), and the post the person came from
       details: (r, f) => [
+        ...f.socials(r),
         ...(r.referral_value ? [`referans değeri: ${r.referral_value.direct} tanıttı (ağ ${r.referral_value.network}) · ${r.referral_value.opps} fırsat · ${r.referral_value.won} kazanıldı ${f.tl(r.referral_value.won_value)}${r.referral_value.open_value ? ` · açık ${f.tl(r.referral_value.open_value)}` : ""}${r.referral_value.collected ? ` · tahsil ${f.tl(r.referral_value.collected)}` : ""}`] : []),
         ...(r.post_title ? [`kaynak paylaşım: #${r.post_id} ${r.post_title}`] : []),
       ],

@@ -135,6 +135,12 @@ export interface SoftTrashDef {
   restore(ctx: Ctx, id: number): { label: string; effects: string[] };
 }
 
+/** The ids a record leads to: what `link()` fills in on an event that names only the record */
+export interface LinkedIds {
+  person_id?: number | null;
+  opportunity_id?: number | null;
+}
+
 /** What a module adds to the shared views. Each function returns only its own part; the host merges them. */
 export interface Contributions {
   /** sections of the Today view, by key; `limit` is the row cap per section */
@@ -165,6 +171,8 @@ export interface Contributions {
   softTrash?: SoftTrashDef;
   /** scheduled work for the server host */
   jobs?: JobDef[];
+  /** what a project or an opportunity leads to (an event that names only the project also carries its opportunity and person); `link()` asks the installed module that serves the key */
+  recordLinks?: { project_id?: (ctx: Ctx, id: number) => LinkedIds | undefined; opportunity_id?: (ctx: Ctx, id: number) => LinkedIds | undefined };
 }
 
 /** Row of a record, as the MCP formatters receive it */
@@ -188,6 +196,8 @@ export interface McpFormat {
   section(title: string, type: string, res: { rows: Row[]; total: number }): string;
   /** the lines the installed modules contribute to the marketing part of the report (`marketing` in their MCP part), unsorted */
   marketingParts(): { at: number; render(m: any, f: McpFormat): string[] }[];
+  /** the Instagram and LinkedIn line of a person or company (empty when it has neither); a module that shows them adds both fields to its `skip` */
+  socials(r: Row): string[];
   /** the confirmation line of a write: `ok · <kind> #<id> <extra> · <effect> · ...` */
   ok(kind: string, id: number | undefined, effects?: string[], extra?: string): string;
 }
@@ -233,6 +243,10 @@ export interface McpDef {
   marketing?: { at: number; render(m: any, f: McpFormat): string[] }[];
   /** relation name (get with) to the record type its rows are written as */
   relations?: Record<string, string>;
+  /** relation name to the one line its rows make, for a relation whose rows are not records (the touch counts per channel) */
+  relationLines?: Record<string, (rows: Row[], f: McpFormat) => string>;
+  /** extra data the `today` tool adds to the Today view before its text is written (the follow-up drafts the drafts module prepares); runs on every call */
+  todayData?: (mod: ModAccess) => Record<string, unknown>;
 }
 
 export interface ModuleDef {
@@ -252,6 +266,8 @@ export interface ModuleDef {
   contribute?: Contributions;
   /** MCP side: formatters, tools and description fragments */
   mcp?: McpDef;
+  /** GET paths without parameters that must answer 200 while the module is installed (`npm run check:modules` requests them against a seeded database) */
+  smoke?: string[];
 }
 
 /** What the installed modules say about record types; the generic dispatch (save, find, get, delete, restore, refs) reads it. */

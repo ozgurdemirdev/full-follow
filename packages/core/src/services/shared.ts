@@ -46,20 +46,20 @@ export interface Link {
   project_id?: number | null;
 }
 
-/** Olay için ilgili kayıtları tamamlar: fırsat/projeden kişiyi, projeden fırsatı bulur (without the pipeline and projects modules it keeps what it was given) */
+/** Olay için ilgili kayıtları tamamlar: projeden fırsatı ve kişiyi, fırsattan kişiyi bulur (the modules that serve projects and opportunities say how; without them it keeps what it was given) */
 export function link(ctx: Ctx, l: Link): Required<Link> {
   let { person_id = null, opportunity_id = null, project_id = null } = l;
-  if (project_id) {
-    const p = ctx.mod("projects")?.projects.ref(project_id);
-    if (p) {
-      person_id ??= p.person_id;
-      opportunity_id ??= p.opportunity_id;
+  const follow = (key: "project_id" | "opportunity_id", id: number | null) => {
+    if (!id) return;
+    for (const c of ctx.contrib("recordLinks")) {
+      const found = c[key]?.(ctx, id);
+      if (!found) continue;
+      person_id ??= found.person_id ?? null;
+      opportunity_id ??= found.opportunity_id ?? null;
     }
-  }
-  if (opportunity_id) {
-    const o = ctx.mod("pipeline")?.opportunities.ref(opportunity_id);
-    if (o) person_id ??= o.person_id;
-  }
+  };
+  follow("project_id", project_id);
+  follow("opportunity_id", opportunity_id);
   return { person_id, opportunity_id, project_id };
 }
 

@@ -39,6 +39,8 @@ export const mcp: McpDef = {
     },
   },
   relations: { drafts: "draft" },
+  // follow-up drafts in Claude's name for the ones whose time has come (a second call does not open a second draft for the same step); the Today text below lists them
+  todayData: (mod) => ({ auto: mod("drafts")!.followups.generate().created.map((c) => `${c.name} ${c.step}. takip #${c.draft_id}`) }),
   today: [
     // the daily quota sits at the head of the text, after the week line
     { at: 1, head: true, render: (t, f) => quotaText(t.quota, f) },
