@@ -1,13 +1,14 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { K, useBoard, useThreads } from "../api/keys";
+import { useModules } from "../api/modules";
 import { useQuery } from "../api/store";
 import type { Today } from "../api/types";
 import { BoardIcon, type BoardIconName } from "../components/boardIcons";
 import { ago } from "../lib/format";
 import { OPEN_STAGES } from "../lib/labels";
 import { useIsDesktop } from "../lib/media";
-import { PATHS, preload, type PageKey } from "./routes";
+import { PAGE_MODULE, PATHS, preload, type PageKey } from "./routes";
 import { setUI, useUI } from "./ui";
 
 interface NavItem {
@@ -43,21 +44,22 @@ export function Sidebar() {
   const [path] = useLocation();
   const strip = useRef<HTMLDivElement>(null);
   const today = useQuery<Today>(K.today);
-  const board = useBoard();
+  const { has } = useModules();
+  const board = useBoard(has("pipeline"));
   const threads = useThreads();
   const openOpps = board.rows.filter((o) => OPEN_STAGES.includes(o.stage)).length;
 
   // Network first: who I wrote to, who answered; sales and projects come second
-  const groups: { label: string; items: NavItem[] }[] = [
+  const all: { label: string; items: NavItem[] }[] = [
     {
       label: "Network",
       items: [
         { key: "today", label: "Dashboard", icon: "grid" },
         { key: "calendar", label: "Takvim", icon: "calendar" },
-        { key: "people", label: "Kişiler", icon: "users", count: today.data?.network.awaiting.total },
+        { key: "people", label: "Kişiler", icon: "users", count: today.data?.network?.awaiting.total },
         { key: "companies", label: "Firmalar", icon: "building" },
         { key: "referrals", label: "Referanslar", icon: "link" },
-        { key: "drafts", label: "Taslaklar", icon: "pen", count: today.data?.drafts.total },
+        { key: "drafts", label: "Taslaklar", icon: "pen", count: today.data?.drafts?.total },
         { key: "comments", label: "Yorumlar", icon: "comment", count: threads.rows.length },
       ],
     },
@@ -81,6 +83,8 @@ export function Sidebar() {
       ],
     },
   ];
+  // a page whose module is not installed has no item, and a group without items no label
+  const groups = all.map((g) => ({ ...g, items: g.items.filter((it) => has(PAGE_MODULE[it.key])) })).filter((g) => g.items.length);
   const isActive = (k: PageKey) => (k === "today" ? path === "/" : path === PATHS[k] || path.startsWith(`${PATHS[k]}/`));
 
   // On the phone strip the current page scrolls into view

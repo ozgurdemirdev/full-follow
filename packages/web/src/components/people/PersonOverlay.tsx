@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { remove } from "../../api/actions";
 import { cardKey } from "../../api/keys";
+import { useModules } from "../../api/modules";
 import { useQuery } from "../../api/store";
 import type { Person, PersonCard } from "../../api/types";
 import { PATHS, timelinePath } from "../../app/routes";
@@ -21,6 +22,7 @@ import { buildStream, type StreamFilter } from "./streamItems";
 /** Menu of the header: the things the board leaves out (forms for touch and draft, editing the accounts, delete, timeline) */
 function HeaderMenu({ p, onClose }: { p: Person; onClose: () => void }) {
   const { open, setOpen, root } = usePopover();
+  const { has } = useModules();
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
@@ -31,7 +33,7 @@ function HeaderMenu({ p, onClose }: { p: Person; onClose: () => void }) {
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { person_id: p.id }))}>Temas ekle</button>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { person_id: p.id, channel: p.awaiting?.channel ?? p.last_channel ?? defaultChannel(p) }))}>Taslak yaz</button>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("person", { person_id: p.id }))}>Düzenle, hesaplar</button>
-        <Link href={timelinePath("person", p.id)} role="menuitem" className="ppl-pop-item">Tüm zaman çizelgesi</Link>
+        {has("timeline") ? <Link href={timelinePath("person", p.id)} role="menuitem" className="ppl-pop-item">Tüm zaman çizelgesi</Link> : null}
         <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/people/${p.id}`, p.name).then(onClose).catch(() => {}))}>Sil</button>
       </div>
     </div>

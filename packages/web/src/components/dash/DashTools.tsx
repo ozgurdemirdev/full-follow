@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useModules } from "../../api/modules";
 import { QuickMenuItems } from "../../app/Fab";
 import { PATHS } from "../../app/routes";
 import { GlobalSearch } from "../../app/Search";
@@ -31,12 +32,15 @@ function NewRecord() {
 
 /** Right side of the dashboard header: search, calendar, new record */
 export function DashTools() {
+  const { has } = useModules();
   return (
     <div className="dash-tools">
       <GlobalSearch board />
-      <Link href={PATHS.calendar} className="dash-round" aria-label="Takvim">
-        <BoardIcon name="calendar" />
-      </Link>
+      {has("calendar") ? (
+        <Link href={PATHS.calendar} className="dash-round" aria-label="Takvim">
+          <BoardIcon name="calendar" />
+        </Link>
+      ) : null}
       <NewRecord />
     </div>
   );

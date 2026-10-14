@@ -1,5 +1,6 @@
 // Timeline (Zaman çizelgesi): labels and icons of the screen, the day groups and the week strip numbers.
 // The rows themselves come from the timeline module (`GET /api/timeline`, see useTimelineFeed.ts); nothing is composed in the browser.
+import type { ModuleKey } from "../api/modules";
 import type { TlDayCount, TlPage, TlRow, TlType, TlWeek, TlWeekData } from "../api/types";
 import { BOARD_ICON } from "../components/boardIcons";
 import { lira, toDate } from "./format";
@@ -40,21 +41,28 @@ export const ACTOR_PILLS: { value: "all" | Actor; label: string }[] = [
 export interface RecKind {
   label: string;
   icon: string;
+  /** the module that owns the record: its chip focuses it only when that module is installed */
+  module?: ModuleKey;
   /** the chip focuses the record (and the address /zaman/:kind/:id opens it) */
   focus: boolean;
 }
 export const REC_KIND: Record<string, RecKind> = {
-  project: { label: "Proje", icon: BOARD_ICON.folder, focus: true },
-  person: { label: "Kişi", icon: PERSON_ICON, focus: true },
-  company: { label: "Firma", icon: BOARD_ICON.building, focus: true },
-  opportunity: { label: "Fırsat", icon: BOARD_ICON.funnel, focus: true },
-  own_project: { label: "Kendi projem", icon: BOARD_ICON.cube, focus: true },
+  project: { label: "Proje", icon: BOARD_ICON.folder, focus: true, module: "projects" },
+  person: { label: "Kişi", icon: PERSON_ICON, focus: true, module: "people" },
+  company: { label: "Firma", icon: BOARD_ICON.building, focus: true, module: "companies" },
+  opportunity: { label: "Fırsat", icon: BOARD_ICON.funnel, focus: true, module: "pipeline" },
+  own_project: { label: "Kendi projem", icon: BOARD_ICON.cube, focus: true, module: "own-projects" },
   idea: { label: "Fikir", icon: BOARD_ICON.bulb, focus: false },
   post: { label: "Paylaşım", icon: BOARD_ICON.megaphone, focus: false },
   template: { label: "Şablon", icon: BOARD_ICON.template, focus: false },
 };
 const OTHER_KIND: RecKind = { label: "Kayıt", icon: BOARD_ICON.note, focus: false };
 export const recKind = (kind: string) => REC_KIND[kind] ?? OTHER_KIND;
+/** Whether a chip of this kind can focus its record: the kind has a history view and its module is installed */
+export const canFocus = (kind: string, has: (key: ModuleKey) => boolean) => {
+  const k = recKind(kind);
+  return k.focus && !!k.module && has(k.module);
+};
 /** Colour key of a record kind (data-rec): the five focusable kinds have their own, the rest share one */
 export const recTone = (kind: string) => (REC_KIND[kind]?.focus ? kind : "other");
 /** Records that have a detail page and an event list behind the API: the focus view adds their side cards */

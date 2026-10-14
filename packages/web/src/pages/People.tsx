@@ -58,7 +58,7 @@ export default function People() {
     setFrom(el.getBoundingClientRect());
     navigate(`${PATHS.people}/${id}`, { replace: true });
   }, [navigate]);
-  const week = today.data ? today.data.week.sent + today.data.week.replies : null;
+  const week = today.data?.week ? today.data.week.sent + today.data.week.replies : null;
   const cold = people.rows.filter((p) => p.cooling).length;
   const sub = people.data ? `${people.rows.length} kişi${week === null ? "" : ` · bu hafta ${week} temas`} · ${cold} ilişki soğuyor` : "";
 

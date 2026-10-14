@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useParams } from "wouter";
 import { qs } from "../api/client";
 import { useCompanies, useOwnProjects } from "../api/keys";
+import { useModules } from "../api/modules";
 import { useQuery } from "../api/store";
 import type { Detail, List, Thread, TimelineEvent, TlPage, TlRec, TlType, TlWeekData, Touch } from "../api/types";
 import { Page } from "../app/Page";
@@ -16,7 +17,7 @@ import { detailKey, RecordAside, type AnyRow } from "../components/timeline/Reco
 import { WeekStrip } from "../components/timeline/WeekStrip";
 import { Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
 import type { Actor } from "../lib/labels";
-import { focusSummary, groupDays, isAsideKind, recKind, STAGE_EVENTS_LIMIT, TL_SEARCH_DEBOUNCE_MS, TL_TYPES, weekView } from "../lib/timeline";
+import { canFocus, focusSummary, groupDays, isAsideKind, STAGE_EVENTS_LIMIT, TL_SEARCH_DEBOUNCE_MS, TL_TYPES, weekView } from "../lib/timeline";
 import { useDebounced } from "../lib/useDebounced";
 import { useTimelineFeed } from "../lib/useTimelineFeed";
 
@@ -30,7 +31,8 @@ export default function Timeline() {
   const [, navigate] = useLocation();
   const kind = params.type;
   const id = Number(params.id) || 0;
-  const focusKey = kind && id && recKind(kind).focus ? `${kind}:${id}` : null;
+  const { has } = useModules();
+  const focusKey = kind && id && canFocus(kind, has) ? `${kind}:${id}` : null;
   const aside = focusKey && isAsideKind(kind) ? kind : null;
 
   const [q, setQ] = useState("");

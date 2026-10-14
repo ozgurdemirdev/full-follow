@@ -1,22 +1,25 @@
 import { useEffect, useRef, useState } from "react";
+import { useModules, type ModuleKey } from "../api/modules";
 import { Icon } from "../components/icons";
 import { openSheet, type SheetKind } from "./ui";
 
-const ITEMS: { kind: SheetKind; label: string; dot: string }[] = [
-  { kind: "opportunity", label: "Fırsat", dot: "bg-entity-opportunity" },
-  { kind: "person", label: "Kişi", dot: "bg-entity-person" },
-  { kind: "company", label: "Firma", dot: "bg-entity-company" },
-  { kind: "touch", label: "Temas", dot: "bg-entity-source" },
-  { kind: "draft", label: "Taslak", dot: "bg-claude" },
-  { kind: "post", label: "Paylaşım", dot: "bg-danger" },
-  { kind: "idea", label: "Fikir", dot: "bg-entity-payment" },
-  { kind: "task", label: "Görev", dot: "bg-entity-task" },
+/** `module`: the module that owns the record (the row is left out when it is not installed); none for what core owns */
+const ITEMS: { kind: SheetKind; label: string; dot: string; module?: ModuleKey }[] = [
+  { kind: "opportunity", label: "Fırsat", dot: "bg-entity-opportunity", module: "pipeline" },
+  { kind: "person", label: "Kişi", dot: "bg-entity-person", module: "people" },
+  { kind: "company", label: "Firma", dot: "bg-entity-company", module: "companies" },
+  { kind: "touch", label: "Temas", dot: "bg-entity-source", module: "network" },
+  { kind: "draft", label: "Taslak", dot: "bg-claude", module: "drafts" },
+  { kind: "post", label: "Paylaşım", dot: "bg-danger", module: "posts" },
+  { kind: "idea", label: "Fikir", dot: "bg-entity-payment", module: "ideas" },
+  { kind: "task", label: "Görev", dot: "bg-entity-task", module: "calendar" },
   { kind: "comment", label: "Yorum", dot: "bg-entity-comment" },
 ];
 
 /** Menu rows of the quick add menu (shared by the floating button and the dashboard header) */
 export function QuickMenuItems({ open, onPick }: { open: boolean; onPick: (kind: SheetKind) => void }) {
-  return ITEMS.map((it) => (
+  const { has } = useModules();
+  return ITEMS.filter((it) => has(it.module)).map((it) => (
     <button
       key={it.kind}
       type="button"

@@ -314,7 +314,8 @@ export interface Source extends Base {
   name: string;
   kind: string;
   notes: string | null;
-  opp_count: number;
+  /** pipeline module */
+  opp_count?: number;
   people_count: number;
   company_count: number;
   deleted_at: string | null;
@@ -487,27 +488,36 @@ export interface TimelineEvent {
   created_by: Actor;
   created_at: string;
 }
+/** `GET /api/today`: date, comments, window_end and claude_last_at always come; every other section is added by its module and is absent when that module is not installed */
 export interface Today {
   date: string;
-  /** day plan and tasks come from the calendar module: absent when it is not installed */
+  /** calendar module */
   plan?: Plan;
   comments: List<Thread>;
-  drafts: List<Draft>;
-  follow_ups: { people: List<Person>; opportunities: List<Opportunity> };
+  /** drafts module */
+  drafts?: List<Draft>;
+  /** the people module adds `people`, the pipeline module `opportunities` */
+  follow_ups?: { people?: List<Person>; opportunities?: List<Opportunity> };
+  /** calendar module */
   tasks?: List<Task>;
-  payments: List<Payment>;
+  /** projects module */
+  payments?: List<Payment>;
   window_end: string;
-  week: {
+  /** network module */
+  week?: {
     start: string; sent: number; sent_prev: number; replies: number; replies_prev: number; meetings: number; offers: number; offers_silent: number;
     new_people: number; by_channel: { channel: string; sent: number; replies: number }[];
   };
-  network: NetworkLists;
-  /** posts whose refresh day has come; absent when the posts module is not installed */
+  /** network module */
+  network?: NetworkLists;
+  /** posts whose refresh day has come; posts module */
   posts_due?: List<Post>;
-  followups: List<FollowupDue>;
-  quota: Quota;
-  /** weekly review of the current week; ready on Fridays */
-  review: { week: string; ready: boolean };
+  /** drafts module */
+  followups?: List<FollowupDue>;
+  /** drafts module */
+  quota?: Quota;
+  /** weekly review of the current week, ready on Fridays; reports module */
+  review?: { week: string; ready: boolean };
   claude_last_at: string | null;
 }
 export interface PriceFloor {

@@ -1,11 +1,13 @@
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Route, Switch } from "wouter";
 import { api, onAuthRequired } from "../api/client";
+import { loadModules, useModules } from "../api/modules";
 import { PageSkeleton } from "../components/ui";
 import { requestChatOpen } from "../lib/chatStore";
 import { Fab } from "./Fab";
 import { Login } from "./Login";
-import { pages, PATHS, preload } from "./routes";
+import { guarded } from "./guarded";
+import { PATHS, preload } from "./routes";
 import { Sidebar } from "./Sidebar";
 
 // Formlar ve bildirimler (Motion dahil) ilk boyamadan sonra ayrı parçalar halinde yüklenir
@@ -18,6 +20,8 @@ type Auth = "checking" | "in" | "out";
 
 export function App() {
   const [auth, setAuth] = useState<Auth>("checking");
+  const [modulesKnown, setModulesKnown] = useState(false);
+  const { has } = useModules();
 
   useEffect(() => {
     api
@@ -27,6 +31,11 @@ export function App() {
     return onAuthRequired(() => setAuth("out"));
   }, []);
 
+  // the installed modules are known before anything draws, so no screen asks for an endpoint that is not there
+  useEffect(() => {
+    if (auth === "in") void loadModules().then(() => setModulesKnown(true));
+  }, [auth]);
+
   useEffect(() => {
     if (auth !== "in") return;
     // boşta kalınca sık kullanılan sayfaları önceden indir
@@ -35,7 +44,7 @@ export function App() {
     return () => (id ? window.cancelIdleCallback(id) : undefined);
   }, [auth]);
 
-  if (auth === "checking") return null;
+  if (auth === "checking" || (auth === "in" && !modulesKnown)) return null;
   if (auth === "out") return <Login onDone={() => setAuth("in")} />;
   return (
     <>
@@ -44,31 +53,31 @@ export function App() {
         <Boundary>
           <Suspense fallback={<Fallback />}>
             <Switch>
-              <Route path={PATHS.today} component={pages.today} />
-              <Route path={PATHS.calendar} component={pages.calendar} />
-              <Route path={`${PATHS.pipeline}/:id?`} component={pages.pipeline} />
-              <Route path={`${PATHS.opportunity}/:id`} component={pages.opportunity} />
-              <Route path={`${PATHS.people}/:id?`} component={pages.people} />
-              <Route path={`${PATHS.companies}/:id?`} component={pages.companies} />
-              <Route path={PATHS.referrals} component={pages.referrals} />
-              <Route path={`${PATHS.projects}/:id?`} component={pages.projects} />
-              <Route path={`${PATHS.timeline}/:type?/:id?`} component={pages.timeline} />
-              <Route path={PATHS.report} component={pages.report} />
-              <Route path={PATHS.review} component={pages.review} />
-              <Route path={`${PATHS.drafts}/:id?`} component={pages.drafts} />
-              <Route path={`${PATHS.comments}/:id?`} component={pages.comments} />
-              <Route path={`${PATHS.posts}/:id?`} component={pages.posts} />
-              <Route path={`${PATHS.ideas}/:id?`} component={pages.ideas} />
-              <Route path={`${PATHS.ownProjects}/:id?`} component={pages.ownProjects} />
-              <Route path={`${PATHS.templates}/:id?`} component={pages.templates} />
-              <Route path={`${PATHS.settings}/:kategori?`} component={pages.settings} />
-              <Route component={pages.today} />
+              <Route path={PATHS.today} component={guarded.today} />
+              <Route path={PATHS.calendar} component={guarded.calendar} />
+              <Route path={`${PATHS.pipeline}/:id?`} component={guarded.pipeline} />
+              <Route path={`${PATHS.opportunity}/:id`} component={guarded.opportunity} />
+              <Route path={`${PATHS.people}/:id?`} component={guarded.people} />
+              <Route path={`${PATHS.companies}/:id?`} component={guarded.companies} />
+              <Route path={PATHS.referrals} component={guarded.referrals} />
+              <Route path={`${PATHS.projects}/:id?`} component={guarded.projects} />
+              <Route path={`${PATHS.timeline}/:type?/:id?`} component={guarded.timeline} />
+              <Route path={PATHS.report} component={guarded.report} />
+              <Route path={PATHS.review} component={guarded.review} />
+              <Route path={`${PATHS.drafts}/:id?`} component={guarded.drafts} />
+              <Route path={`${PATHS.comments}/:id?`} component={guarded.comments} />
+              <Route path={`${PATHS.posts}/:id?`} component={guarded.posts} />
+              <Route path={`${PATHS.ideas}/:id?`} component={guarded.ideas} />
+              <Route path={`${PATHS.ownProjects}/:id?`} component={guarded.ownProjects} />
+              <Route path={`${PATHS.templates}/:id?`} component={guarded.templates} />
+              <Route path={`${PATHS.settings}/:kategori?`} component={guarded.settings} />
+              <Route component={guarded.today} />
             </Switch>
           </Suspense>
         </Boundary>
       </div>
       <Suspense fallback={null}>
-        <ChatWidget />
+        {has("chat") ? <ChatWidget /> : null}
         <Mascot onActivate={requestChatOpen} />
       </Suspense>
       <Fab />

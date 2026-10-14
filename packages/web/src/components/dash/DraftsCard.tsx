@@ -1,4 +1,5 @@
 import { usePeople } from "../../api/keys";
+import { useModules } from "../../api/modules";
 import type { Draft, List } from "../../api/types";
 import { PATHS } from "../../app/routes";
 import { openSheet } from "../../app/ui";
@@ -44,7 +45,8 @@ function DraftItem({ d, company }: { d: Draft; company: string | null | undefine
 /** "Onay bekleyen taslaklar": the first drafts of the approval queue */
 export function DraftsCard({ list }: { list: List<Draft> }) {
   const ex = useExpand();
-  const people = usePeople();
+  const { has } = useModules();
+  const people = usePeople(has("people"));
   const company = (d: Draft) => (d.person_id ? people.byId.get(d.person_id)?.company_name : null);
   const rows: ExRow[] = list.rows.map((d) => ({
     key: d.id, lead: initials(d.to_name), title: d.to_name, sub: `${CHANNEL[d.channel] ?? d.channel} · ${d.body}`,

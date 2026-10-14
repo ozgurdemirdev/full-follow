@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { run } from "../../api/actions";
+import { isMissing } from "../../api/modules";
 import { useQuery } from "../../api/store";
 import type { List, Payment, Report } from "../../api/types";
 import { PATHS } from "../../app/routes";
@@ -54,6 +55,7 @@ export function PaymentsCard() {
   const report = useQuery<Report>("/report");
   const [group, setGroup] = useState<PaymentGroup | null>(null);
   const [paying, setPaying] = useState(false);
+  if (isMissing(payments.error)) return null;
   const today = todayIso();
   const all = payments.data?.rows ?? [];
   const withGroup = all.map((p) => ({ p, g: paymentGroup(p, today) }));

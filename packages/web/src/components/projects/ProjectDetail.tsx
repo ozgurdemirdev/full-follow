@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { run } from "../../api/actions";
+import { useModules } from "../../api/modules";
 import { PATHS, timelinePath } from "../../app/routes";
 import { lira } from "../../lib/format";
 import { MILESTONE } from "../../lib/labels";
@@ -15,6 +16,7 @@ const BY = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" } as const;
 /** Expanded project: tasks with owner, payments (Alındı), Claude's note with the reminder request, then links, files and admin */
 export function ProjectDetail({ v }: { v: ProjectView }) {
   const { p } = v;
+  const { has } = useModules();
   const toggle = (id: number, done: boolean) => void run("patch", `/tasks/${id}`, { done: !done }, { silent: true }).catch(() => {});
   return (
     <div className="prj-detail" id={`prj-detail-${p.id}`}>
@@ -62,7 +64,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
             {v.ask.label}
           </button>
           <Link href={PATHS.comments} className="prj-link">Yorumlar · {v.comments}</Link>
-          <Link href={timelinePath("project", p.id)} className="prj-link">Zaman çizelgesi</Link>
+          {has("timeline") ? <Link href={timelinePath("project", p.id)} className="prj-link">Zaman çizelgesi</Link> : null}
         </div>
       </div>
 

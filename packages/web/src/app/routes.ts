@@ -1,5 +1,6 @@
 // Sayfalar ayrı parçalar halinde yüklenir; menü öğesinin üzerine gelince önceden indirilir
 import { lazy, type ComponentType } from "react";
+import type { ModuleKey } from "../api/modules";
 
 const loaders = {
   today: () => import("../pages/Today"),
@@ -53,6 +54,28 @@ export const PATHS: Record<PageKey, string> = {
   ownProjects: "/projelerim",
   templates: "/sablonlar",
   settings: "/ayarlar",
+};
+
+/** The module behind each page (a page whose module is not installed is hidden); null for the pages core owns */
+export const PAGE_MODULE: Record<PageKey, ModuleKey | null> = {
+  today: null,
+  calendar: "calendar",
+  pipeline: "pipeline",
+  opportunity: "pipeline",
+  people: "people",
+  companies: "companies",
+  referrals: "referrals",
+  projects: "projects",
+  timeline: "timeline",
+  report: "reports",
+  review: "reports",
+  drafts: "drafts",
+  comments: null,
+  posts: "posts",
+  ideas: "ideas",
+  ownProjects: "own-projects",
+  templates: "templates",
+  settings: null,
 };
 
 export const settingsPath = (slug: string) => `${PATHS.settings}/${slug}`;

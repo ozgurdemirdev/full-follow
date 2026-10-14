@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isMissing } from "../../api/modules";
 import { useQuery } from "../../api/store";
 import type { Activity, ActivityBucket } from "../../api/types";
 import { ACTIVITY_DAYS } from "../../lib/dashboard";
@@ -25,6 +26,7 @@ export function ActivityCard() {
   const [metric, setMetric] = useState(0);
   const [pick, setPick] = useState(ACTIVITY_DAYS - 1);
   const q = useQuery<Activity>("/stats/activity?period=day");
+  if (isMissing(q.error)) return null;
   const m = METRICS[metric];
   const buckets = q.data?.buckets ?? [];
   const week = buckets.slice(-ACTIVITY_DAYS);

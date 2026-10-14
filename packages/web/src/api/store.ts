@@ -5,6 +5,7 @@
 // - abonesi kalmayan kayıtlar bir süre sonra silinir (bellek sınırlı kalır)
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { api, ApiError } from "./client";
+import { endpointOn } from "./modules";
 
 interface State<T> {
   data?: T;
@@ -28,6 +29,7 @@ const MAX_IDLE = 40;
 
 const cache = new Map<string, Entry>();
 const EMPTY: State<unknown> = { loading: true };
+const ABSENT: State<unknown> = { loading: false };
 
 function entry(key: string): Entry {
   let e = cache.get(key);
@@ -73,7 +75,9 @@ function evict() {
 }
 
 /** GET /api{key}. key null ise istek yapılmaz. */
-export function useQuery<T>(key: string | null): State<T> & { reload: () => Promise<void> } {
+export function useQuery<T>(wanted: string | null): State<T> & { reload: () => Promise<void> } {
+  // an endpoint whose module is not installed is never asked for: its answer is "nothing", settled
+  const key = wanted && endpointOn(wanted) ? wanted : null;
   const subscribe = useCallback(
     (fn: () => void) => {
       if (!key) return () => {};
@@ -87,7 +91,7 @@ export function useQuery<T>(key: string | null): State<T> & { reload: () => Prom
     },
     [key],
   );
-  const snap = useCallback(() => (key ? entry(key).state : EMPTY), [key]);
+  const snap = useCallback(() => (key ? entry(key).state : wanted ? ABSENT : EMPTY), [key, wanted]);
   const state = useSyncExternalStore(subscribe, snap) as State<T>;
 
   useEffect(() => {

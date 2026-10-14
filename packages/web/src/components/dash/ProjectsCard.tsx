@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useOwnProjects, useProjects } from "../../api/keys";
+import { isMissing, useModules } from "../../api/modules";
 import { PATHS } from "../../app/routes";
 import { ACTIVE_PROJECT_STAGES, PROJECT_SOON_DAYS, SHOWN } from "../../lib/dashboard";
 import { daysFrom, fmtDay } from "../../lib/format";
@@ -28,9 +29,15 @@ interface Row {
 /** "Projeler": client projects in progress and own projects in progress, with progress and the next step */
 export function ProjectsCard() {
   const ex = useExpand();
-  const [tab, setTab] = useState(0);
-  const projects = useProjects();
-  const own = useOwnProjects();
+  const [picked, setPicked] = useState(0);
+  const { has } = useModules();
+  const projects = useProjects(has("projects"));
+  const own = useOwnProjects(has("own-projects"));
+  // each half needs its module; with only one of them the tabs go and that half shows alone
+  const withClient = has("projects") && !isMissing(projects.error);
+  const withOwn = has("own-projects") && !isMissing(own.error);
+  const tab = withClient && withOwn ? picked : withClient ? 0 : 1;
+  if (!withClient && !withOwn) return null;
 
   const client: Row[] = projects.rows.filter((p) => ACTIVE_PROJECT_STAGES.includes(p.stage)).map((p) => {
     const dates = [p.next_payment?.due_date, p.next_task?.due_date].filter((d): d is string => !!d).sort();
@@ -55,9 +62,11 @@ export function ProjectsCard() {
   return (
     <>
       <Card title="Projeler" count={`${everything.length} proje`} onExpand={(r) => ex.show("projects", r)} className="dash-gap-6 rise">
-        <div className="dash-tabs" role="group" aria-label="Proje türü">
-          {TABS.map((t, i) => <button key={t} type="button" aria-pressed={tab === i} onClick={() => setTab(i)}>{t}</button>)}
-        </div>
+        {withClient && withOwn ? (
+          <div className="dash-tabs" role="group" aria-label="Proje türü">
+            {TABS.map((t, i) => <button key={t} type="button" aria-pressed={tab === i} onClick={() => setPicked(i)}>{t}</button>)}
+          </div>
+        ) : null}
         <div className="flex flex-col">
           {shown.length === 0 ? <p className="m-0 border-t border-border-subtle py-5 text-base-sm text-text-muted">{tab === 0 ? "Sürmekte olan müşteri projesi yok." : "Aktif kendi projen yok."}</p> : null}
           {shown.map((r) => (
@@ -76,7 +85,7 @@ export function ProjectsCard() {
         </div>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Projeler", sub: `${client.length} müşteri projesi, ${mine.length} kendi projen`, page: "Müşteri projeleri", href: PATHS.projects, foot: `Ortalama ilerleme %${avg}`, rows }} />
+        spec={{ title: "Projeler", sub: `${client.length} müşteri projesi, ${mine.length} kendi projen`, page: withClient ? "Müşteri projeleri" : "Kendi projelerim", href: withClient ? PATHS.projects : PATHS.ownProjects, foot: `Ortalama ilerleme %${avg}`, rows }} />
     </>
   );
 }

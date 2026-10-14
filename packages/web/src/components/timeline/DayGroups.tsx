@@ -1,12 +1,14 @@
 import { memo } from "react";
+import { useModules } from "../../api/modules";
 import type { TlRec, TlRow } from "../../api/types";
 import { lira } from "../../lib/format";
-import { fmtClock, recKind, recTone, TL_TYPE, type TlDay } from "../../lib/timeline";
+import { canFocus, fmtClock, recTone, TL_TYPE, type TlDay } from "../../lib/timeline";
 import { PathIcon } from "./PathIcon";
 
 const Row = memo(function Row({ e, onFocus }: { e: TlRow; onFocus: (r: TlRec) => void }) {
   const type = TL_TYPE[e.type];
   const rec = e.rec;
+  const { has } = useModules();
   return (
     <div className="tlx-ev" data-tlt={e.type}>
       <span className="tlx-ev-icon"><PathIcon d={type.icon} /></span>
@@ -19,7 +21,7 @@ const Row = memo(function Row({ e, onFocus }: { e: TlRow; onFocus: (r: TlRec) =>
         <span className="tlx-text">{e.text}</span>
         {rec || e.amount ? (
           <span className="tlx-chips">
-            {rec && recKind(rec.kind).focus ? (
+            {rec && canFocus(rec.kind, has) ? (
               <button type="button" className="tlx-chip" data-rec={recTone(rec.kind)} onClick={() => onFocus(rec)}>
                 <span className="tlx-dot" />{rec.name}
               </button>

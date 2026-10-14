@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { remove, run } from "../api/actions";
 import { qs } from "../api/client";
+import { useModules } from "../api/modules";
 import { useQuery } from "../api/store";
 import type { Detail, FileRow, List, Offer, OppPerson, Opportunity as Opp, Task } from "../api/types";
 import { Page } from "../app/Page";
@@ -32,6 +33,7 @@ export default function Opportunity() {
 
 function OpportunityPage({ id }: { id: number }) {
   const [, navigate] = useLocation();
+  const { has } = useModules();
   const detail = useQuery<Detail<Opp, Related>>(`/opportunities/${id}?with=people,offers,files`);
   const tasks = useQuery<List<Task>>(`/tasks${qs({ opportunity_id: id, limit: 50 })}`);
   const { events, items, commentById, openThread } = useFeed("opportunity", id);
@@ -88,7 +90,7 @@ function OpportunityPage({ id }: { id: number }) {
         <div className="flex flex-wrap gap-3">
           {o.project_id ? <Link href={`${PATHS.projects}/${o.project_id}`} className="dash-btn is-primary">Projeye git</Link> : null}
           <button type="button" className="dash-btn" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>Temas ekle</button>
-          <Link href={timelinePath("opportunity", id)} className="dash-btn is-ghost">Zaman çizelgesi</Link>
+          {has("timeline") ? <Link href={timelinePath("opportunity", id)} className="dash-btn is-ghost">Zaman çizelgesi</Link> : null}
         </div>
       </Card>
 

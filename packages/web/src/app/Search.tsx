@@ -1,11 +1,13 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useOpps, usePeople, useProjects } from "../api/keys";
+import { useModules } from "../api/modules";
 import { BoardIcon } from "../components/boardIcons";
 import { Icon } from "../components/icons";
 import { norm } from "../lib/format";
 import { STAGE, PROJECT_STAGE } from "../lib/labels";
-import { opportunityPath, timelinePath } from "./routes";
+import { useRecordHref } from "../lib/useRecordHref";
+import { opportunityPath } from "./routes";
 
 interface Hit {
   key: string;
@@ -26,9 +28,11 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
   const [, navigate] = useLocation();
   const dq = useDeferredValue(q);
 
-  const people = usePeople(armed);
-  const opps = useOpps(armed);
-  const projects = useProjects(armed);
+  const { has } = useModules();
+  const recordHref = useRecordHref();
+  const people = usePeople(armed && has("people"));
+  const opps = useOpps(armed && has("pipeline"));
+  const projects = useProjects(armed && has("projects"));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -50,7 +54,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
     const out: Hit[] = [];
     for (const p of people.rows) {
       if (norm(p.name).includes(n) || norm(p.company_name).includes(n) || norm(p.email).includes(n) || norm(p.handle).includes(n))
-        out.push({ key: `p${p.id}`, label: p.name, sub: p.company_name ?? "Kişi", href: timelinePath("person", p.id) });
+        out.push({ key: `p${p.id}`, label: p.name, sub: p.company_name ?? "Kişi", href: recordHref("person", p.id) });
     }
     for (const o of opps.rows) {
       if (norm(o.title).includes(n) || norm(o.person_name).includes(n))
@@ -58,10 +62,10 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
     }
     for (const p of projects.rows) {
       if (norm(p.name).includes(n) || norm(p.person_name).includes(n))
-        out.push({ key: `r${p.id}`, label: p.name, sub: `Proje · ${PROJECT_STAGE[p.stage]}`, href: timelinePath("project", p.id) });
+        out.push({ key: `r${p.id}`, label: p.name, sub: `Proje · ${PROJECT_STAGE[p.stage]}`, href: recordHref("project", p.id) });
     }
     return out.slice(0, 8);
-  }, [armed, dq, people.rows, opps.rows, projects.rows]);
+  }, [armed, dq, people.rows, opps.rows, projects.rows, recordHref]);
 
   const go = (h: Hit) => {
     navigate(h.href);
