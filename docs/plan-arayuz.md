@@ -202,12 +202,14 @@ Each gap lists the smallest core change; "derive" means a new core query with no
 | G22 | Weekly activity per day for drafts and offers | Extend the activity query | Touches only | Build |
 | G23 | Timeline week strip (Sen vs Claude, tahsilat, biten görev) | Derive from events | Drop the strip | Build |
 
-"Proposed" is the recommendation given to Özgür; his answer is recorded here before the first screen starts. Any gap he turns down is left out of the UI, not faked.
+Decision (2026-10-14): Özgür told the work to go on without stopping, so the "Proposed" column is the decision. "Build" gaps are built; "Alternative" and "drop" parts are left out of the UI, not faked.
 
 ## 5. Order and review
 
 1. Tokens.
 2. Shell and shared pieces.
 3. Screens in this order, one each: Dashboard, Calendar, People, Companies, Pipeline (with Opportunity page), Drafts, Comments, Projects, OwnProjects, Referrals, Posts, Ideas, Templates, Timeline, Report (with Haftalık inceleme), Settings.
+
+Screens follow each other without waiting for a review in between (Özgür, 2026-10-14). Each screen matches its board one to one: same layout, sections, order, spacing, sizes, type scale, colours, chips, empty states and interactions, with real data in place of the board's fake data. Where a board value has no token yet, the token is added; the board is never approximated.
 
 Accepted gaps are built in core first, inside the step of the first screen that needs them, as their own commit with migration and, where a core rule is involved, a test.
