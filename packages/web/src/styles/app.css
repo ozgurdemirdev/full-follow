@@ -10,6 +10,7 @@
 @import "./people.css";
 @import "./people-overlay.css";
 @import "./drafts.css";
+@import "./companies.css";
 @import "./settings.css";
 
 @layer base {

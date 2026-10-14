@@ -49,9 +49,9 @@ const AV = {
 const AVATAR_COLORS = 5;
 const hashName = (s: string) => [...s].reduce((h, c) => h + c.charCodeAt(0), 0);
 /** Initials on one of the five avatar colour pairs: picked by record id, by name when there is no id */
+export const avatarPair = (name: string, id?: number) => `avatar-${((id ?? hashName(name)) % AVATAR_COLORS) + 1}`;
 export function Avatar({ name, size = "md", id }: { name: string; size?: keyof typeof AV; id?: number }) {
-  const pair = ((id ?? hashName(name)) % AVATAR_COLORS) + 1;
-  return <span className={`avatar avatar-${pair} ${AV[size]}`} aria-hidden="true">{initials(name)}</span>;
+  return <span className={`avatar ${avatarPair(name, id)} ${AV[size]}`} aria-hidden="true">{initials(name)}</span>;
 }
 
 /** Kademeli giriş animasyonu için sıra numarası */

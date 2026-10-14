@@ -5,7 +5,7 @@ import type { Labeled, Thread, Touch } from "../api/types";
 import { openSheet } from "../app/ui";
 import { ago } from "../lib/format";
 import { CHANNEL_DOT } from "../lib/labels";
-import { channelName, profileUrl } from "../lib/network";
+import { channelName, profileUrl, webUrl } from "../lib/network";
 import { Chip, StatusChip, Tags, Who } from "./ui";
 
 export function Section({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
@@ -56,7 +56,7 @@ export function ContactList({ c }: { c: ContactFields }) {
   const items: { label: string; node: ReactNode }[] = [];
   if (c.email) items.push({ label: "E-posta", node: <a href={`mailto:${c.email}`}>{c.email}</a> });
   if (c.phone) items.push({ label: "Telefon", node: <a href={`tel:${c.phone}`}>{c.phone}</a> });
-  if (c.website) items.push({ label: "Web", node: <a href={/^https?:\/\//i.test(c.website) ? c.website : `https://${c.website}`} target="_blank" rel="noreferrer">{c.website}</a> });
+  if (c.website) items.push({ label: "Web", node: <a href={webUrl(c.website)} target="_blank" rel="noreferrer">{c.website}</a> });
   if (c.instagram) items.push({ label: "Instagram", node: <a href={profileUrl("instagram", c.instagram)} target="_blank" rel="noreferrer">{c.instagram}</a> });
   if (c.linkedin) items.push({ label: "LinkedIn", node: <a href={profileUrl("linkedin", c.linkedin)} target="_blank" rel="noreferrer">{c.linkedin}</a> });
   if (c.handle) items.push({ label: "Diğer", node: <span>{c.handle}</span> });

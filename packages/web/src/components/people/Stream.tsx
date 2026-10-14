@@ -11,12 +11,12 @@ import { matchesFilter, STREAM_FILTERS, type StreamFilter, type StreamItem, type
 const ICON: Record<StreamKind, BoardIconName> = { in: "dirIn", out: "dirOut", note: "note", claude: "claude" };
 const KIND_LABEL = { arama: "arama", gorusme: "görüşme" } as const;
 
-const stopWaiting = (id: number) => run("patch", `/touches/${id}`, { expects_reply: false }, { ok: "Beklemeden çıkarıldı" }).catch(() => {});
+export const stopWaiting = (id: number) => run("patch", `/touches/${id}`, { expects_reply: false }, { ok: "Beklemeden çıkarıldı" }).catch(() => {});
 const closeFollowUp = (p: Person) => run("patch", `/people/${p.id}`, { next_follow_up_at: null }, { ok: "Konu kapatıldı" }).catch(() => {});
-const resolve = (thread: number) => run("post", `/comments/${thread}/resolve`, { resolved: true }, { ok: "Konu kapatıldı" }).catch(() => {});
+export const resolve = (thread: number) => run("post", `/comments/${thread}/resolve`, { resolved: true }, { ok: "Konu kapatıldı" }).catch(() => {});
 
 /** Edit and delete of an entry, as quiet text buttons in its meta line */
-function Tools({ label, onEdit, onDelete }: { label: string; onEdit?: () => void; onDelete: () => void }) {
+export function Tools({ label, onEdit, onDelete }: { label: string; onEdit?: () => void; onDelete: () => void }) {
   return (
     <span className="ppl-tools-row">
       {onEdit ? <button type="button" className="ppl-tool" aria-label={`${label} düzenle`} onClick={onEdit}>Düzenle</button> : null}

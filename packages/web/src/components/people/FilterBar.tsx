@@ -7,7 +7,7 @@ export type StatusFilter = "all" | Exclude<PStatus, "ok">;
 const TONE_STATUS: Record<string, PStatus | undefined> = { all: undefined, due: "due", wait: "wait", cold: "cold", fresh: "fresh" };
 
 /** The tag, sector, source and status filters of the old page, behind one pill */
-function MoreFilters({ value, onChange }: { value: LabelFilter; onChange: (v: LabelFilter) => void }) {
+export function MoreFilters({ value, onChange }: { value: LabelFilter; onChange: (v: LabelFilter) => void }) {
   const { open, setOpen, root } = usePopover();
   const active = Object.values(value).filter(Boolean).length;
   return (

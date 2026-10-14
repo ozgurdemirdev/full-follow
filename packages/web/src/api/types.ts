@@ -54,6 +54,8 @@ export interface Person extends Base, Labeled {
   cooling: boolean;
   /** touches per ISO week, the last 12 weeks, oldest first */
   rhythm: number[];
+  /** not provided yet (plan gap G6): the role of the person inside the company */
+  influence?: "karar_verici" | "etkileyici" | "kullanici" | null;
 }
 /** Cevap bekleme: son gelen temastan sonra cevapsız giden temas */
 export interface Awaiting {
@@ -295,6 +297,8 @@ export interface Company extends Base, Labeled {
   last_touch_at: string | null;
   touch_count: number;
   open_opps: number;
+  /** not provided yet (plan gap G5): the city of the company */
+  city?: string | null;
 }
 export interface CompanyCard {
   row: Company;
@@ -445,6 +449,8 @@ export interface Touch extends Base {
   draft_id: number | null;
   idea_id: number | null;
   idea_title: string | null;
+  /** not provided yet (plan gap G8): the person or company an address-only touch most likely belongs to */
+  suggested_match?: { type: "person" | "company"; id: number; name: string } | null;
 }
 export interface Comment extends Base {
   target_type: string;
@@ -511,97 +517,7 @@ export interface PriceFloor {
   subtotal: number;
   floor: number;
 }
-export interface MonthReport {
-  month: string;
-  collected: number;
-  outstanding_due: number;
-  floor: number;
-  floor_detail: PriceFloor;
-  gap: number;
-}
-export interface SourceReport {
-  source_id: number;
-  source: string;
-  total: number;
-  won: number;
-  lost: number;
-  open: number;
-  won_value: number;
-  conversion: number | null;
-}
-export interface MarketingReport {
-  template_groups: TemplateGroup[];
-}
-/** Lead source funnel: found, written, replied, meeting, offer, won; rate = against the previous step */
-export interface FunnelStep {
-  key: string;
-  count: number;
-  rate: number | null;
-}
-export interface SourceFunnelRow {
-  source_id: number;
-  source: string;
-  steps: FunnelStep[];
-  reply_rate: number | null;
-  /** too few written messages for the reply rate to mean much */
-  early: boolean;
-  weak: boolean;
-}
-export interface SourceFunnel {
-  period: number | "all";
-  since: string | null;
-  sources: SourceFunnelRow[];
-}
-/** Weekly review (Friday summary) */
-export interface ReviewWeek {
-  sent: number;
-  replies: number;
-  meetings: number;
-  reply_rate: number | null;
-  new_people: number;
-  new_companies: number;
-  /** offers made that week */
-  offers: number;
-}
-export interface ReviewPick {
-  name: string;
-  reply_rate: number | null;
-}
-export interface ReviewTemplate {
-  kind: string;
-  channel: string | null;
-  leader: ReviewPick | null;
-  loser: ReviewPick | null;
-  /** templates with too few sends to rank */
-  early: number;
-}
-export interface ReviewSuggestion {
-  key: string;
-  text: string;
-  task_title: string;
-}
-export interface WeeklyReview {
-  week: string;
-  start: string;
-  end: string;
-  current: boolean;
-  prev_week: string;
-  next_week: string | null;
-  /** weekly outgoing message target, 0 = off */
-  target: number;
-  this_week: ReviewWeek;
-  last_week: ReviewWeek;
-  templates: ReviewTemplate[];
-  sources: { period: number | "all"; best: { source: string; reply_rate: number | null } | null; weakest: { source: string; reply_rate: number | null } | null };
-  quota: { channel: string; limit: number; over_days: number; max_sent: number }[];
-  suggestions: ReviewSuggestion[];
-  /** due date of the tasks made from suggestions */
-  next_monday: string;
-}
-export interface Report {
-  sources: SourceReport[];
-  month: MonthReport;
-}
+export * from "./types-report";
 export interface Detail<T, R = { [k: string]: unknown[] | undefined }> {
   type: string;
   id: number;
