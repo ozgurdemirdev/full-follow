@@ -134,6 +134,38 @@ describe("pipeline as a module", () => {
     ]);
   });
 
+  it("stage_since is set on create and on every stage change only; the stage rates count what left a stage in the last 90 days and moved forward", () => {
+    let now = "2026-10-14T10:00:00Z";
+    const moving: Clock = { today: () => now.slice(0, 10), now: () => now };
+    const h = openDb(":memory:");
+    const app = appFor(h, "ozgur", moving);
+    const ada = person(h);
+    const r10 = app.get("source", "R10").row.id;
+    const open = (title: string) => app.pipeline.opportunities.create({ title, person_id: ada, source_id: r10 }).row;
+    const [a, b, c, d] = ["A", "B", "C", "D"].map(open);
+    expect(app.get("opportunity", a.id).row.stage_since).toBe("2026-10-14T10:00:00Z");
+    now = "2026-10-20T09:00:00Z";
+    app.pipeline.opportunities.move(a.id, { stage: "temas" });
+    expect(app.get("opportunity", a.id).row.stage_since).toBe("2026-10-20T09:00:00Z");
+    now = "2026-10-25T09:00:00Z";
+    app.pipeline.opportunities.move(a.id, { stage: "temas", position: 0 });
+    app.pipeline.opportunities.update(a.id, { title: "A2" });
+    expect(app.get("opportunity", a.id).row.stage_since).toBe("2026-10-20T09:00:00Z");
+    // B and C move forward, D is lost, A goes on to the offer and one card steps back
+    app.pipeline.opportunities.move(b.id, { stage: "temas" });
+    app.pipeline.opportunities.move(c.id, { stage: "cevap" });
+    app.pipeline.opportunities.move(d.id, { stage: "kaybedildi", reason: "bütçe" });
+    app.pipeline.opportunities.move(a.id, { stage: "teklif" });
+    app.pipeline.opportunities.move(b.id, { stage: "bulundu" });
+    const rates = Object.fromEntries(app.pipeline.meta().stage_rates.map((r) => [r.stage, r.to_next]));
+    // left bulundu: a, b, c forward and d lost (the move back to bulundu is a later entry); left temas: a forward, b back; others none
+    expect(rates).toEqual({ bulundu: 0.75, temas: 0.5, cevap: null, gorusme: null, teklif: null });
+    expect(app.pipeline.meta().stages.find((s) => s.stage === "cevap")).toEqual({ stage: "cevap", probability: 0.25, stale_days: 5 });
+    // events older than 90 days no longer count
+    now = "2027-02-01T09:00:00Z";
+    expect(app.pipeline.meta().stage_rates.every((r) => r.to_next === null)).toBe(true);
+  });
+
   it("the funnel, the conversion per source and the numbers other modules read", () => {
     const h = openDb(":memory:");
     const app = appFor(h, "ozgur", clock);

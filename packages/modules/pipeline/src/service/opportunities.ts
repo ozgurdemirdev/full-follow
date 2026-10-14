@@ -21,6 +21,7 @@ export function applyStage(q: Q, ctx: Ctx, cur: Opp, stage: OppStage, o: { reaso
   const t = ctx.clock.now();
   q.update(opportunities).set({
     stage,
+    ...(changed ? { stage_since: t } : {}),
     closed_at: closed ? (changed || !cur.closed_at ? t : cur.closed_at) : null,
     lost_reason: stage === "kaybedildi" ? (o.reason ?? cur.lost_reason) : null,
     updated_at: t,
@@ -58,7 +59,7 @@ export function opportunitiesService(ctx: Ctx) {
       requireRow(ctx, "people", d.person_id);
       checkSource(ctx, d.source_id);
       const pos = (row(ctx, "SELECT COALESCE(MAX(position), -1) + 1 p FROM opportunities WHERE stage = ?", d.stage)?.p ?? 0) as number;
-      const r = tx.insert(opportunities).values({ ...d, position: pos, ...stamp(ctx) }).returning().get();
+      const r = tx.insert(opportunities).values({ ...d, position: pos, stage_since: ctx.clock.now(), ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "opp.created", ...link(ctx, { opportunity_id: r.id }), summary: `Fırsat açıldı: ${r.title}` });
       return { row: r, effects: [] as string[] };
     });
