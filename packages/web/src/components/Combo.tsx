@@ -1,4 +1,4 @@
-import { useDeferredValue, useId, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { norm } from "../lib/format";
 
 export interface Option {
@@ -21,6 +21,9 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const listId = useId();
+  /** closes the list shortly after blur so a click on a hit still lands */
+  const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(blurTimer.current), []);
   const q = useDeferredValue(value.text);
 
   const hits = useMemo(() => {
@@ -46,8 +49,13 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
         autoComplete="off"
         placeholder={placeholder}
         value={value.text}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onFocus={() => {
+          clearTimeout(blurTimer.current);
+          setOpen(true);
+        }}
+        onBlur={() => {
+          blurTimer.current = setTimeout(() => setOpen(false), 120);
+        }}
         onChange={(e) => {
           onChange({ id: null, text: e.target.value });
           setActive(0);
