@@ -1,10 +1,11 @@
 // npm run check:modules: the removal check (docs/plan-moduler.md section 3).
 // For every installed module, and for "all off", it switches the module off (FF_MODULES_OFF), regenerates the module lists and then:
-//   1. typechecks and builds the backend (tsc -b of every package) and the web,
+//   1. typechecks and builds the backend (tsc -b of core, the installed modules, app, server and MCP: the proof that removal compiles),
 //   2. runs the tests of every remaining package (any non zero exit fails the case),
 //   3. starts the server on a free port (3021..3029) against a seeded copy of the demo database, requests the core endpoints and
 //      the `smoke` paths of every installed module (a 5xx, a 404 or no answer fails), checks /api/modules lists exactly the installed keys,
-//      fetches the web page and its main bundle,
+//      fetches the web page and its main bundle (the web is built once, all on, at the start: it compiles every module until the web
+//      has module manifests, so a per case web build proves nothing yet; P4 adds the web check),
 //   4. starts the MCP host over stdio: initialize, tools/list (the tools of switched off modules are gone), today, find for every installed type.
 // One line per case: `pass <case>` or `FAIL <case>: <first error>`; exit 1 when any case failed. The cases are the module keys,
 // `all-off` and finally `all-on` (the baseline, so the build left behind is the normal one). Logs: $FF_CHECK_LOGS/<case>/ (default: the OS temp folder).
@@ -168,7 +169,6 @@ async function runCase(name, off, ctx) {
   ctx.distIsAllOn = !off.length;
   const installed = dumpModules(env);
   step(dir, "test", node, [script("test.mjs")], env);
-  npm(dir, "web", ["run", "build", "-w", "@fullfollow/web"], env);
   await checkServer(dir, env, installed);
   await checkMcp(dir, env, installed, ctx.allTools);
 }
@@ -196,6 +196,7 @@ async function main() {
     step(seedDir, "build", node, [script("build.mjs")], baseEnv());
     ctx.distIsAllOn = true;
     ctx.allTools = dumpModules(baseEnv()).flatMap((m) => m.tools);
+    npm(seedDir, "web", ["run", "build", "-w", "@fullfollow/web"], baseEnv());
     step(seedDir, "seed", node, [script("demo-seed.cjs")], baseEnv());
     copyFileSync(demo, ctx.seedDb);
     // `--only=a,b` runs just those cases (while fixing one)
