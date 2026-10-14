@@ -7,7 +7,7 @@ import { peopleList } from "./list";
  * Temas parçaları network modülünden gelir (yoksa boş), paylaşım posts modülünden.
  * The opportunities come from the pipeline module, the projects from the projects module (empty without them).
  * The waiting drafts come from the drafts module, the told ideas from the ideas module (empty without them).
- * TODO(modules): notes through its module once it is one (core query for now)
+ * The notes are core records (attachments), read with the core query.
  */
 export function personCard(ctx: Ctx, id: number): PersonCard {
   const q = queriesFor(ctx);

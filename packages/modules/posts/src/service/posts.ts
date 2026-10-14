@@ -16,7 +16,7 @@ export const nextRefresh = (p: { posted_at: string; refreshed_at: string | null;
 export function postStats(ctx: Ctx): PostStats[] {
   const today = ctx.clock.today();
   // opportunity numbers come from the pipeline module (zero without it); the people of a post travel as ids
-  // TODO(modules): people via ctx.mod("people") (raw table reads for now; the idea title is read from the ideas table the same way)
+  // the people and the idea title are direct table reads on purpose: tables always exist, so the list keeps working without those modules
   const pipeline = ctx.mod("pipeline")?.personStats();
   return rows(ctx, `
     SELECT p.*, i.title AS idea_title,

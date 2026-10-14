@@ -40,7 +40,7 @@ export function bySource(ctx: Ctx): SourceConversion[] {
 
 /** Follow-up dates of open opportunities in the range (`done`: an outgoing touch on or after the date) */
 export function followUpsDue(ctx: Ctx, from: string, to: string): OpportunityFollowUp[] {
-  // TODO(modules): the touch check through ctx.mod("network") (raw table read for now)
+  // the touch check reads the touches table directly on purpose: tables always exist, so `done` keeps working without the network module
   return rows<OpportunityFollowUp>(ctx, `SELECT 'opportunity' AS type, o.id, o.title AS name, substr(o.next_follow_up_at, 1, 10) AS date,
       EXISTS (SELECT 1 FROM touches t WHERE (t.opportunity_id = o.id OR t.person_id = o.person_id) AND t.direction = 'giden' AND substr(t.happened_at, 1, 10) >= substr(o.next_follow_up_at, 1, 10)) AS done
     FROM opportunities o WHERE o.stage IN (${OPEN_SQL}) AND substr(o.next_follow_up_at, 1, 10) BETWEEN ? AND ?`, from, to)

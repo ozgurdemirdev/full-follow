@@ -121,7 +121,7 @@ export function weekStats(ctx: Ctx, ref = ctx.clock.today()): WeekStats {
     }
   }
   // open offers come from the pipeline module (none without it)
-  // TODO(modules): new people and companies through ctx.mod("people") / ctx.mod("companies") (raw table reads for now)
+  // new people and companies: direct table reads on purpose (tables always exist, the numbers keep working without those modules)
   const newRecords = (table: "people" | "companies", from: string, to: string) =>
     rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, addDays(from, -1))
       .filter((p) => { const d = dayOf(p.created_at); return d >= from && d <= to; }).length;

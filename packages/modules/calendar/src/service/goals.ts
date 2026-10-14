@@ -15,7 +15,7 @@ const mondayOf = (date: string) => addDays(date, -(isoWeekday(date) - 1));
 const appliesOn = (g: GoalRow, date: string) => g.days.split(",").includes(String(isoWeekday(date))) && date >= g.created_at.slice(0, 10);
 
 /** New people and companies created per day (date → count); deleted records are gone from the tables, so they do not count */
-// TODO(modules): via ctx.mod("people") and ctx.mod("companies")
+// Reads the people and companies tables directly on purpose: tables always exist, so the count keeps working without those modules.
 function newRecordCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
   const list = rows<{ d: string; n: number }>(ctx, `SELECT d, SUM(n) AS n FROM (
       SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM people GROUP BY d

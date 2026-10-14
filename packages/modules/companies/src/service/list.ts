@@ -3,7 +3,7 @@ import { has, labelFields, labelFilter, page, rows, sectorsOf, stripKeys, tagsOf
 /**
  * Firma listesi: kişi sayısı, son temas (firmaya ya da çalışanlarına), açık fırsat sayısı. Filtreler: tag, sector, source, status.
  * The open opportunity count comes from the pipeline module (0 without it).
- * TODO(modules): the people and touch counts through ctx.mod("people") / ctx.mod("network") (raw table reads for now)
+ * The people and touch counts read those tables directly on purpose: tables always exist, so the list keeps its numbers without those modules.
  */
 export function companiesList(ctx: Ctx, o: ListOpts): { rows: CompanyRow[]; total: number } {
   const f = o.filter ?? {};

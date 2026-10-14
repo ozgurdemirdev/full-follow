@@ -18,7 +18,7 @@ export function parseFunnelPeriod(v: unknown): FunnelPeriod {
 
 /**
  * Per record kind: how its touches and opportunities are matched.
- * TODO(modules): the touches, people and companies through ctx.mod("network") / ctx.mod("people") / ctx.mod("companies") (raw table reads for now: one query per kind keeps it cheap). A company counts its own touches and its people's,
+ * Reads the touches, people and companies tables directly on purpose: tables always exist, so the funnel keeps working without those modules, and one query per kind keeps it cheap. A company counts its own touches and its people's,
  * the same way status.ts moves a company's status when one of its people is written to.
  */
 const KIND = {

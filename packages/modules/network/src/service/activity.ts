@@ -50,7 +50,7 @@ export function activity(ctx: Ctx, period: string = "week"): ActivityReport {
       channels.set(t.channel, c);
     }
   }
-  // TODO(modules): people and companies through ctx.mod (raw table reads for now)
+  // new people and companies: direct table reads on purpose (tables always exist, the numbers keep working without those modules)
   for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"]] as const) {
     for (const r of rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, since)) {
       const i = indexOf(dayOf(r.created_at));

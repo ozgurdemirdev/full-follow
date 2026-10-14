@@ -14,7 +14,7 @@ const FIELD_NAMES: Record<string, string> = {
 };
 
 export function peopleService(ctx: Ctx) {
-  // TODO(modules): the post through ctx.mod("posts") (raw table read for now)
+  // the post is checked with a direct table read on purpose: the table always exists, so a post_id stays valid without the posts module
   function checkRefs(f: { company_id?: number | null; referred_by_id?: number | null; post_id?: number | null }) {
     if (f.company_id) requireRow(ctx, "companies", f.company_id);
     if (f.referred_by_id) requireRow(ctx, "people", f.referred_by_id, "referans kişisi");
@@ -85,7 +85,7 @@ export function peopleService(ctx: Ctx) {
       bin.unlink("people", "referred_by_id", id);
       // touches, tasks (and the comments on them), drafts (and the comments on them), idea links and the opportunity team rows go through the modules that own them
       announceTrashed(ctx, bin, "person", id);
-      // TODO(modules): notes clean their own rows when they hear `record.trashed` (raw take for now)
+      // notes are core records (attachments): they go to the trash with the person
       bin.take("notes", "person_id = ?", id);
       bin.take("comments", "target_type = 'person' AND target_id = ?", id);
       bin.take("person_tags", "person_id = ?", id);

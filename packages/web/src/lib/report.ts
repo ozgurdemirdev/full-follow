@@ -157,7 +157,7 @@ const budgetNote = (l: { count: number; budget: number }) =>
 /**
  * Insight sentence under the hero (gap G20). Derived from the expected payments and the floor gap only; the lost clause is
  * written only when lost opportunities with a reason exist for that month.
- * TODO(modules): moves into core with the reports module (the sentence will come with the month report).
+ * The server sends the figures and the web writes the sentence.
  */
 export function insightOf(h: Hero, ym: string, now: boolean, expected: Expected, lost: { count: number; budget: number } | null): string {
   const under = h.gap > 0;
