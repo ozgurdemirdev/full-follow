@@ -3,7 +3,7 @@ import { remove, run } from "../api/actions";
 import type { FileRow } from "../api/types";
 import { fmtDay, fmtSize } from "../lib/format";
 import { FILE_ACCEPT } from "../lib/labels";
-import { Empty } from "./ui";
+import { Card, Empty } from "./ui";
 
 /** Download address of a stored file (images and PDF open in the tab) */
 export const fileHref = (id: number) => `/api/files/${id}`;
@@ -29,8 +29,7 @@ export function FilesCard({ type, id, files }: { type: "opportunity" | "project"
     }
   };
   return (
-    <section className="card rise flex flex-col gap-5 p-8">
-      <span className="text-md font-semibold">Dosyalar</span>
+    <Card title="Dosyalar" className="opp-side rise">
       {!files.length ? <Empty>Teklif PDF’i, sunum, sözleşme gibi dosyaları buraya ekle.</Empty> : null}
       {files.map((f) => (
         <div key={f.id} className="flex items-center gap-3">
@@ -41,6 +40,6 @@ export function FilesCard({ type, id, files }: { type: "opportunity" | "project"
       ))}
       <input ref={input} type="file" accept={FILE_ACCEPT} className="hidden" aria-label="Dosya seç" onChange={(e) => void upload(e.target.files?.[0])} />
       <button type="button" className="btn btn-sec self-start" disabled={busy} onClick={() => input.current?.click()}>{busy ? "Yükleniyor" : "Dosya ekle"}</button>
-    </section>
+    </Card>
   );
 }

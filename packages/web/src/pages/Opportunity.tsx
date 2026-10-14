@@ -15,8 +15,8 @@ import { LostReason } from "../components/LostReason";
 import { NextStep } from "../components/NextStep";
 import { OffersCard } from "../components/OffersCard";
 import { TeamCard } from "../components/TeamCard";
-import { Chip, ErrorBox, Filters, PageSkeleton, Who } from "../components/ui";
-import { fmtDay, tl } from "../lib/format";
+import { Card, Chip, ErrorBox, Filters, PageSkeleton, Who } from "../components/ui";
+import { fmtDay, lira, tl } from "../lib/format";
 import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "../lib/labels";
 
 type Related = { people?: OppPerson[]; offers?: Offer[]; files?: FileRow[] };
@@ -67,10 +67,10 @@ function OpportunityPage({ id }: { id: number }) {
       right={<EditDelete label={o.title} onEdit={() => openSheet("opportunity", { edit: id })} onDelete={o.project_id ? undefined : del} />}
       className="flex flex-col gap-7"
     >
-      <section className="card rise flex flex-col gap-6 p-8" aria-label="Fırsat özeti">
+      <Card label="Fırsat özeti" className="opp-summary rise">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex flex-col">
-            <span className="font-mono text-xl font-semibold">{tl(o.estimated_value)}</span>
+            <span className="text-cal-num leading-none tracking-kpi">{o.estimated_value ? lira(o.estimated_value) : tl(null)}</span>
             <span className="text-sm text-text-secondary">Tahmini değer, KDV hariç</span>
           </div>
           <Chip tone="source">{o.source_name}</Chip>
@@ -82,23 +82,15 @@ function OpportunityPage({ id }: { id: number }) {
             </span>
           ) : null}
         </div>
-        <div className="-mx-8 overflow-x-auto px-8" role="group" aria-label="Aşama">
-          <div className="flex w-max gap-2">
-            {BAR_STAGES.map((s) => (
-              <button key={s} type="button" className="fchip h-control-height-sm flex-none gap-3" aria-pressed={o.stage === s} disabled={busy || o.stage === s}
-                onClick={() => (s === "kaybedildi" ? setLostAsk(true) : void move(s))}>
-                <span className={`dot ${STAGE_BG[s]}`} />{STAGE[s]}
-              </button>
-            ))}
-          </div>
-        </div>
-        {o.lost_reason ? <p className="m-0 text-base-sm text-danger">Neden: {o.lost_reason}</p> : null}
+        <Filters label="Aşama" value={o.stage} onChange={(s) => !busy && (s === "kaybedildi" ? setLostAsk(true) : void move(s))}
+          items={BAR_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: STAGE_BG[s] }))} />
+        {o.lost_reason ? <p className="m-0 text-base-sm text-danger-soft">Neden: {o.lost_reason}</p> : null}
         <div className="flex flex-wrap gap-3">
-          {o.project_id ? <Link href={`${PATHS.projects}/${o.project_id}`} className="btn btn-pri">Projeye git</Link> : null}
-          <button type="button" className="btn btn-sec" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>Temas ekle</button>
-          <Link href={timelinePath("opportunity", id)} className="btn btn-ghost">Zaman çizelgesi</Link>
+          {o.project_id ? <Link href={`${PATHS.projects}/${o.project_id}`} className="dash-btn is-primary">Projeye git</Link> : null}
+          <button type="button" className="dash-btn" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>Temas ekle</button>
+          <Link href={timelinePath("opportunity", id)} className="dash-btn is-ghost">Zaman çizelgesi</Link>
         </div>
-      </section>
+      </Card>
 
       {/* telefonda tek sütun ve order ile sıralanır (sıradaki adım, teklifler, ekip, dosyalar, linkler, akış); masaüstünde iki sütun */}
       <div className="grid grid-cols-1 gap-7 desk:grid-cols-[minmax(0,1fr)_var(--spacing-aside-panel)] desk:items-start">
@@ -130,6 +122,7 @@ function OpportunityPage({ id }: { id: number }) {
 
       <LostReason
         open={lostAsk}
+        name={o.company_name ?? o.title}
         onCancel={() => setLostAsk(false)}
         onSave={(reason) => {
           setLostAsk(false);

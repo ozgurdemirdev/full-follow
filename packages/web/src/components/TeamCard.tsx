@@ -7,7 +7,7 @@ import { PATHS } from "../app/routes";
 import { emptyRef, type Ref } from "../forms/helpers";
 import { OPP_ROLE, OPP_ROLES } from "../lib/labels";
 import { Combo } from "./Combo";
-import { Avatar, Chip } from "./ui";
+import { Avatar, Card, Chip } from "./ui";
 
 /** The people on an opportunity: the main contact first, then the team with a role each */
 export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] }) {
@@ -29,8 +29,7 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
     }
   };
   return (
-    <section className="card rise flex flex-col gap-5 p-8">
-      <span className="text-md font-semibold">Ekip</span>
+    <Card title="Ekip" className="opp-side rise">
       <div className="flex items-center gap-4">
         <Avatar name={opp.person_name} />
         <Link href={`${PATHS.people}/${opp.person_id}`} className="min-w-0 flex-grow truncate text-base">{opp.person_name}</Link>
@@ -64,6 +63,6 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
           <button type="button" className="btn btn-sec" disabled={!person.id} onClick={() => void add()}>Ekle</button>
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
