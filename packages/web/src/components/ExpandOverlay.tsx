@@ -49,7 +49,7 @@ export function ExpandLink({ href, children }: { href: string; children: ReactNo
  * Esc and a click on the backdrop close it; focus stays inside and returns to where it was.
  * With reduced motion it only fades.
  */
-export function ExpandOverlay({ open, from, title, sub, toolbar, footer, onClose, children }: {
+export function ExpandOverlay({ open, from, title, sub, toolbar, footer, header, bodyClassName, onClose, children }: {
   open: boolean;
   /** rect of the card it grows from */
   from: DOMRect | null;
@@ -58,25 +58,31 @@ export function ExpandOverlay({ open, from, title, sub, toolbar, footer, onClose
   /** row under the title (a search field, pills) */
   toolbar?: ReactNode;
   footer?: ReactNode;
+  /** own header instead of the title row (a record: avatar, name, actions); it must hold a [data-close] button */
+  header?: ReactNode;
+  /** class of the scrolling body (replaces the list padding) */
+  bodyClassName?: string;
   onClose: () => void;
   children: ReactNode;
 }) {
   return createPortal(
     <MotionScope>
       <AnimatePresence>
-        {open && from ? <Panel key="panel" from={fromRect(from)} title={title} sub={sub} toolbar={toolbar} footer={footer} onClose={onClose}>{children}</Panel> : null}
+        {open && from ? <Panel key="panel" from={fromRect(from)} title={title} sub={sub} toolbar={toolbar} footer={footer} header={header} bodyClassName={bodyClassName} onClose={onClose}>{children}</Panel> : null}
       </AnimatePresence>
     </MotionScope>,
     document.body,
   );
 }
 
-function Panel({ from, title, sub, toolbar, footer, onClose, children }: {
+function Panel({ from, title, sub, toolbar, footer, header, bodyClassName, onClose, children }: {
   from: Box;
   title: string;
   sub?: ReactNode;
   toolbar?: ReactNode;
   footer?: ReactNode;
+  header?: ReactNode;
+  bodyClassName?: string;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -146,19 +152,23 @@ function Panel({ from, title, sub, toolbar, footer, onClose, children }: {
         exit={reduce ? { opacity: 0 } : { ...from, borderRadius: radius.card }}
         transition={reduce ? { duration: dur.fade } : grow}
       >
-        <div className="ff-ex-top">
-          <div className="ff-ex-title">
-            <div className="ff-ex-titles">
-              <h2>{title}</h2>
-              {sub ? <m.span className="ff-ex-sub" {...body(dur["overlay-body-delay"])}>{sub}</m.span> : null}
+        {header ? (
+          <div className="ff-ex-rec">{header}</div>
+        ) : (
+          <div className="ff-ex-top">
+            <div className="ff-ex-title">
+              <div className="ff-ex-titles">
+                <h2>{title}</h2>
+                {sub ? <m.span className="ff-ex-sub" {...body(dur["overlay-body-delay"])}>{sub}</m.span> : null}
+              </div>
+              <button type="button" className="ff-ex-close" data-close aria-label="Küçült" onClick={onClose}>
+                <BoardIcon name="shrink" className="size-icon-btn" stroke={2.2} />
+              </button>
             </div>
-            <button type="button" className="ff-ex-close" data-close aria-label="Küçült" onClick={onClose}>
-              <BoardIcon name="shrink" className="size-icon-btn" stroke={2.2} />
-            </button>
+            {toolbar ? <m.div {...body(dur["overlay-body-delay"])}>{toolbar}</m.div> : null}
           </div>
-          {toolbar ? <m.div {...body(dur["overlay-body-delay"])}>{toolbar}</m.div> : null}
-        </div>
-        <m.div className="ff-ex-list" {...body(dur["overlay-slide-delay"], overlayRise)}>{children}</m.div>
+        )}
+        <m.div className={bodyClassName ?? "ff-ex-list"} {...body(dur["overlay-slide-delay"], overlayRise)}>{children}</m.div>
         {footer ? <m.div className="ff-ex-foot" {...body(dur["overlay-body-delay"])}>{footer}</m.div> : null}
       </m.section>
     </div>

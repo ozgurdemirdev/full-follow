@@ -50,10 +50,10 @@ function QuickAdd({ date }: { date: string }) {
   };
   return (
     <>
-      <form className="cal-add" onSubmit={(ev) => void submit(ev)}>
+      <form className="ff-field" onSubmit={(ev) => void submit(ev)}>
         <input type="text" value={text} aria-label="Bu güne ekle" placeholder="Bu güne ekle: 14:00 Elif ile görüşme" onChange={(ev) => setText(ev.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
-        <button type="submit" className="cal-add-go" aria-label="Ekle"><BoardIcon name="plus" className="size-icon-chip" stroke={2.4} /></button>
+        <button type="submit" className="ff-field-go" aria-label="Ekle"><BoardIcon name="plus" className="size-icon-chip" stroke={2.4} /></button>
       </form>
       <div className="flex flex-wrap items-center justify-between gap-3 pl-7">
         <span className="text-sm text-text-muted">Saati yazarsan o saate yerleşir, türünü Claude anlar.</span>

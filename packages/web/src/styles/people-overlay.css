@@ -1,0 +1,284 @@
+/* Person overlay of the People screen (People.dc.html): header, the two columns, composer and stream. */
+
+/* ---------- person overlay ---------- */
+.ff-ex-rec {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--spacing-7);
+  padding: var(--spacing-10) var(--spacing-11) var(--spacing-8);
+  border-bottom: var(--bw-default) solid var(--color-border-subtle);
+}
+.ppl-hchip {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-dash-chip-height-lg);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-track-alt);
+  color: var(--tone);
+  font-size: var(--text-sm);
+}
+.ppl-ask {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  height: var(--spacing-control-height-lg);
+  padding: 0 var(--spacing-7) 0 var(--spacing-5);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-claude-bg);
+  color: var(--color-claude-soft);
+  font-size: var(--text-base-sm);
+  line-height: normal;
+}
+.ppl-round {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-control-height-lg);
+  height: var(--spacing-control-height-lg);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+.ppl-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-10);
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--spacing-people-body-pad-top) var(--spacing-11) var(--spacing-11);
+}
+@variant desk {
+  .ppl-body {
+    grid-template-columns: var(--spacing-aside-panel) minmax(0, 1fr);
+  }
+}
+.ppl-body::-webkit-scrollbar {
+  width: var(--spacing-scrollbar);
+}
+.ppl-body::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+.ppl-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  min-width: 0;
+}
+.ppl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-row);
+  background: var(--color-surface-2);
+}
+.ppl-panel.is-list {
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-8);
+}
+.ppl-panel.is-compact {
+  gap: var(--spacing-4);
+  padding: var(--spacing-6);
+}
+.ppl-tone {
+  color: var(--tone);
+}
+.ppl-warmtext {
+  color: var(--warm);
+}
+.ppl-chrow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-5);
+  padding: var(--spacing-4) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  text-align: left;
+  line-height: normal;
+}
+.ppl-chic {
+  display: flex;
+  padding: 0;
+  border: 0;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-control-height-2xs);
+  height: var(--spacing-control-height-2xs);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-neutral-chip);
+}
+.ppl-hash {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-control-height-sm);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-sm);
+}
+.ppl-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-1);
+}
+.ppl-mode,
+.ppl-sf {
+  height: var(--spacing-control-height-sm);
+  padding: 0 var(--spacing-6);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-base-sm);
+  line-height: normal;
+}
+.ppl-sf {
+  height: var(--spacing-control-height-2xs);
+  padding: 0 var(--spacing-5);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+.ppl-mode[aria-checked="true"],
+.ppl-sf[aria-checked="true"] {
+  background: var(--color-text-primary);
+  color: var(--color-accent-on);
+}
+.ppl-dirpill {
+  height: var(--spacing-control-height-sm);
+  padding: 0 var(--spacing-5);
+  border: var(--bw-default) solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: normal;
+}
+.ppl-dirpill[aria-checked="true"] {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+.ppl-stream > * {
+  animation: ppl-fade var(--dur-lift) var(--ease-out) backwards;
+}
+@keyframes ppl-fade {
+  from {
+    opacity: 0;
+    transform: translateY(var(--spacing-3));
+  }
+}
+.ppl-item {
+  display: flex;
+  gap: var(--spacing-6);
+  padding: var(--spacing-6) 0;
+  border-top: var(--bw-default) solid var(--color-border-subtle);
+}
+.ppl-kind {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-avatar-sm);
+  height: var(--spacing-avatar-sm);
+  border-radius: var(--radius-pill);
+  background: var(--k-bg);
+  color: var(--k-fg);
+}
+.ppl-item[data-k="in"] {
+  --k-bg: var(--color-accent-soft-bg);
+  --k-fg: var(--color-accent);
+}
+.ppl-item[data-k="out"] {
+  --k-bg: var(--color-surface-track-alt);
+  --k-fg: var(--color-text-neutral-chip);
+}
+.ppl-item[data-k="note"] {
+  --k-bg: var(--color-chip-payment-bg);
+  --k-fg: var(--color-warning);
+}
+.ppl-item[data-k="claude"] {
+  --k-bg: var(--color-claude-bg);
+  --k-fg: var(--color-claude-soft);
+}
+.ppl-small {
+  height: var(--spacing-control-height-2xs);
+  padding: 0 var(--spacing-5);
+  border: var(--bw-default) solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-sm);
+  line-height: normal;
+}
+.ppl-small.is-soft {
+  border: 0;
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-primary);
+}
+.ppl-small.is-accent {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+}
+
+/* the overlay sits outside the shell: its buttons get the same press and hover motion */
+.ff-ex-rec :where(button),
+.ppl-body :where(button) {
+  transition:
+    transform var(--dur-press) var(--ease-standard),
+    filter var(--dur-hover) var(--ease-standard),
+    background-color var(--dur-hover) var(--ease-standard);
+}
+.ff-ex-rec :where(button):hover,
+.ppl-body :where(button):hover {
+  filter: brightness(1.12);
+}
+.ff-ex-rec :where(button):active,
+.ppl-body :where(button):active {
+  transform: scale(var(--press-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ppl-stream > * {
+    animation: none;
+  }
+}
+.ppl-kc {
+  color: var(--k-fg);
+}
+.ppl-chic[data-on="true"] {
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent);
+}
+.ppl-tools-row {
+  display: flex;
+  gap: var(--spacing-5);
+  margin-left: auto;
+}
+.ppl-tool {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: normal;
+}
+.ppl-tool:hover {
+  color: var(--color-text-primary);
+}
+.ppl-tool.is-danger:hover {
+  color: var(--color-danger);
+}

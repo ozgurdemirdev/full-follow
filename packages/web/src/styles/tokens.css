@@ -36,6 +36,7 @@
   --text-brand: 17px;
   --text-display: 40px;
   --text-currency: 22px;
+  --text-section: 22px;
   --text-cal-num: 26px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
@@ -193,7 +194,23 @@
   --spacing-dash-ask-pulse: 7px;
   --spacing-cal-day-col: 170px;
   --spacing-cal-month-cell-min: 92px;
-  --spacing-cal-add-height: 46px;
+  --spacing-field-height: 46px;
+  --spacing-people-search-width: 300px;
+  --spacing-people-col-name-min: 220px;
+  --spacing-people-col-name-min-medium: 200px;
+  --spacing-people-col-rhythm: 132px;
+  --spacing-people-col-next-min: 170px;
+  --spacing-people-body-pad-top: 22px;
+  --spacing-warm-dot: 11px;
+  --spacing-dir-badge: 24px;
+  --spacing-spark-bar: 7px;
+  --spacing-spark-h-0: 4px;
+  --spacing-spark-h-1: 12px;
+  --spacing-spark-h-2: 20px;
+  --spacing-spark-lg-h: 40px;
+  --spacing-spark-lg-h-0: 6px;
+  --spacing-spark-lg-h-1: 22px;
+  --spacing-control-height-2xs: 30px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -217,6 +234,7 @@
   --radius-row: 20px;
   --radius-cell: 14px;
   --radius-event: 12px;
+  --radius-spark: 3px;
   --shadow-card-hover: 0 22px 48px rgba(0,0,0,.38);
   --shadow-fab: 0 10px 28px rgba(4,4,5,.55);
   --shadow-menu: 0 16px 40px rgba(4,4,5,.6);
@@ -257,6 +275,7 @@
   --color-text-disabled: var(--palette-stone-600);
   --color-text-neutral-chip: var(--palette-bone-300);
   --color-text-body: var(--palette-bone-100);
+  --color-text-soft: var(--palette-bone-200);
   --color-accent: var(--palette-lime-400);
   --color-accent-on: var(--palette-ink-900);
   --color-accent-text: var(--palette-lime-400);

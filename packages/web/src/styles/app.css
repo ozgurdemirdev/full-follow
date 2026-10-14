@@ -7,6 +7,8 @@
 @import "./parts.css";
 @import "./dash.css";
 @import "./calendar.css";
+@import "./people.css";
+@import "./people-overlay.css";
 @import "./settings.css";
 
 @layer base {

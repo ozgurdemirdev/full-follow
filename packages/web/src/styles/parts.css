@@ -215,6 +215,44 @@
   text-align: center;
 }
 
+/* ---------- pill field (a text input with dictation and a send button) ---------- */
+.ff-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  box-sizing: content-box;
+  height: var(--spacing-field-height);
+  padding: 0 var(--spacing-1) 0 var(--spacing-7);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: var(--color-surface-inset);
+}
+.ff-field:has(.ff-mic-btn[aria-pressed="true"]) {
+  border-color: var(--color-listening-border);
+}
+.ff-field input {
+  flex-grow: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+.ff-field-go {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-touch-target-min);
+  height: var(--spacing-touch-target-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+}
+
 /* ---------- dictation button ---------- */
 .ff-mic-btn {
   display: flex;

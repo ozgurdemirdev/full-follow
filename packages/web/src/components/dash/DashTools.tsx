@@ -1,28 +1,14 @@
-import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { QuickMenuItems } from "../../app/Fab";
 import { PATHS } from "../../app/routes";
 import { GlobalSearch } from "../../app/Search";
 import { openSheet } from "../../app/ui";
+import { usePopover } from "../../lib/usePopover";
 import { BoardIcon } from "../boardIcons";
 
 /** "Yeni kayıt" button with the quick add menu (the same items as the floating button) */
 function NewRecord() {
-  const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: Event) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener("keydown", close);
-    window.addEventListener("pointerdown", close);
-    return () => {
-      window.removeEventListener("keydown", close);
-      window.removeEventListener("pointerdown", close);
-    };
-  }, [open]);
+  const { open, setOpen, root } = usePopover();
 
   return (
     <div ref={root} className="relative">

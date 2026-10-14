@@ -30,6 +30,17 @@ export const BOARD_ICON = {
   chevronLeft: "M15 6l-6 6 6 6",
   chevronRight: "M9 6l6 6-6 6",
   mic: "M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3",
+  close: "M6 6l12 12M18 6 6 18",
+  // people: touch direction, stream kinds, channels
+  dirIn: "M19 5 5 19M5 9v10h10",
+  dirOut: "M5 19 19 5M9 5h10v10",
+  note: "M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4",
+  claude: "M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4",
+  linkedin: "M4 9h3v11H4zM5.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM10 9h3v1.6c.6-1 1.8-1.8 3.4-1.8 2.6 0 3.6 1.7 3.6 4.4V20h-3v-6c0-1.5-.5-2.4-1.8-2.4S13 12.6 13 14v6h-3z",
+  mail: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 7l9 6 9-6",
+  phone: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z",
+  instagram: "M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM17.5 6.5v.01",
+  dots: "M5 12h.01M12 12h.01M19 12h.01",
 } as const;
 
 export type BoardIconName = keyof typeof BOARD_ICON;

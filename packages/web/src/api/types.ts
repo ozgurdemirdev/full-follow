@@ -48,9 +48,12 @@ export interface Person extends Base, Labeled {
   last_touch_at: string | null;
   last_channel: string | null;
   last_direction: "giden" | "gelen" | null;
+  last_summary: string | null;
   days_since: number;
   awaiting: Awaiting | null;
   cooling: boolean;
+  /** touches per ISO week, the last 12 weeks, oldest first */
+  rhythm: number[];
 }
 /** Cevap bekleme: son gelen temastan sonra cevapsız giden temas */
 export interface Awaiting {
