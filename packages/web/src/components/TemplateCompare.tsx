@@ -8,7 +8,8 @@ import { dur, ease } from "../lib/motion";
 import { channelName } from "../lib/network";
 import { Icon } from "./icons";
 import { MotionScope } from "./MotionScope";
-import { CardHead, Chip, Empty, order } from "./ui";
+import { SectionHead } from "./report/SectionHead";
+import { Card, Chip, Empty, order } from "./ui";
 
 /** Reply rate with a thin bar; early rows use the muted bar */
 function RateBar({ rate, early, leader }: { rate: number | null; early: boolean; leader?: boolean }) {
@@ -28,7 +29,7 @@ const Counts = ({ s }: { s: { sent: number; replied: number } }) => (
 
 function SectorRows({ list }: { list: TemplateSectorStat[] }) {
   return (
-    <div className="flex flex-col gap-3 bg-surface-inset px-9 py-5">
+    <div className="flex flex-col gap-3 bg-surface-inset px-10 py-5">
       {list.map((s) => (
         <div key={s.sector_path} className="flex flex-wrap items-center gap-x-5 gap-y-2 text-base-sm">
           <span className="min-w-0 flex-grow basis-full truncate desk:basis-0">{s.sector_path}</span>
@@ -48,7 +49,7 @@ function TemplateRow({ t }: { t: TemplateRank }) {
   return (
     <div className="row">
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
-        className="flex w-full flex-wrap items-center gap-x-5 gap-y-3 border-0 bg-transparent px-9 py-5 text-left text-base text-text-primary">
+        className="flex w-full flex-wrap items-center gap-x-5 gap-y-3 border-0 bg-transparent px-10 py-5 text-left text-base text-text-primary">
         <Icon name="chevron" className={`size-icon-sm flex-none transition-transform dur-fade ${open ? "rotate-90" : ""}`} stroke={1.8} />
         <span className="min-w-0 flex-grow basis-0 truncate">{t.name}</span>
         {t.leader ? <Chip tone="success">önde</Chip> : null}
@@ -79,20 +80,20 @@ function TemplateRow({ t }: { t: TemplateRank }) {
 export function TemplateCompare({ groups }: { groups: TemplateGroup[] }) {
   return (
     <MotionScope>
-      <section className="card rise overflow-hidden" style={order(5)} aria-label="Şablon kıyası">
-        <CardHead title="Şablon kıyası">
+      <Card label="Şablon kıyası" className="rep-card rep-flush rise" style={order(6)}>
+        <SectionHead title="Şablon kıyası">
           <span className="text-sm text-text-secondary">cevap gelen / gönderilen</span>
-        </CardHead>
+        </SectionHead>
         {groups.length ? groups.map((g) => (
           <div key={`${g.kind}/${g.channel}`} className="border-b border-border-subtle last:border-b-0">
-            <h3 className="m-0 px-9 pb-1 pt-6 text-sm font-medium text-text-secondary">
+            <h3 className="m-0 px-10 pb-1 pt-6 text-sm font-medium text-text-secondary">
               {TEMPLATE_KIND[g.kind] ?? g.kind} · {g.channel ? channelName(g.channel) : "Tüm kanallar"}
             </h3>
             {g.templates.map((t) => <TemplateRow key={t.id} t={t} />)}
           </div>
         )) : <Empty>Henüz gönderilen şablonlu mesaj yok.</Empty>}
-        <p className="m-0 px-9 py-5 text-sm text-text-muted">Gönderimi az olan şablon “erken” sayılır, oranı henüz güvenilir değil. “Önde”: aynı tür ve kanalda, yeterli örneği olan en az iki şablon arasında en yüksek cevap oranı.</p>
-      </section>
+        <p className="rep-foot">Gönderimi az olan şablon “erken” sayılır, oranı henüz güvenilir değil. “Önde”: aynı tür ve kanalda, yeterli örneği olan en az iki şablon arasında en yüksek cevap oranı.</p>
+      </Card>
     </MotionScope>
   );
 }
