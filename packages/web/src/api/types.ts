@@ -442,6 +442,8 @@ export interface Draft extends Base {
   person_id: number | null;
   person_name: string | null;
   company_id: number | null;
+  /** the company of the recipient: the draft's own or its person's; null when it has none */
+  company_name: string | null;
   contact: string | null;
   /** muhatabın görünen adı: kişi, firma ya da adres */
   to_name: string;
@@ -454,8 +456,8 @@ export interface Draft extends Base {
   reason: string | null;
   template_id: number | null;
   followup_step: number | null;
-  /** G11, not in core yet: email subject line */
-  subject?: string | null;
+  /** email subject line; null for the other channels */
+  subject: string | null;
 }
 export interface Payment extends Base {
   project_id: number;
@@ -562,7 +564,7 @@ export interface PriceFloor {
   post_refresh_days: number;
   /** the own project in focus; null when none was picked or it is gone */
   focus_own_project_id: number | null;
-  /** reject rules Claude learned; absent until core has them, deletable once present (PUT /settings {draft_rules}) */
+  /** reject rules Claude learned, oldest first (PUT /settings { draft_rules } keeps the ones left in the list); absent when the drafts module is not installed */
   draft_rules?: string[];
 }
 export * from "./types-report";

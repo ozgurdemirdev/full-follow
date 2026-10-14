@@ -5,7 +5,7 @@ import { drafts as T } from "../styles/tokens.json";
 import { daysFrom } from "./format";
 import { CHANNELS as PERSON_CHANNELS } from "./people";
 
-/** G12, not in core yet: the part of GET /settings the screen reads (learned rules from reject notes) */
+/** The part of GET /settings the screen reads (learned rules from reject notes) */
 export interface DraftRules {
   draft_rules?: string[];
 }
@@ -48,6 +48,14 @@ export const draftKind = (d: Draft) => (d.followup_step ? `${d.followup_step}. t
 export const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 export const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
 export const wordsLabel = (text: string) => `${wordCount(text)} kelime`;
+
+/** The company shown next to the recipient: none when the recipient is the company itself */
+export const companyOf = (d: Draft) => (d.company_name && d.company_name !== d.to_name ? d.company_name : null);
+
+/** What "Kopyala" puts on the clipboard: the subject line above the text when the draft has one */
+export const copyTextOf = (subject: string, text: string) => (subject.trim() ? `Konu: ${subject.trim()}\n\n${text}` : text);
+/** Only an email has a subject line: its field shows while editing (any draft that already has a subject keeps it) */
+export const SUBJECT_CHANNEL = "email";
 
 /** Up to this many days an age reads in days, up to the next limit in weeks, then in months */
 const WEEKS_FROM_DAYS = 14;

@@ -1,9 +1,9 @@
-import { usePeople } from "../../api/keys";
 import type { Draft, List } from "../../api/types";
 import { PATHS } from "../../app/routes";
 import { openSheet } from "../../app/ui";
 import { CHANNEL } from "../../lib/labels";
 import { SHOWN } from "../../lib/dashboard";
+import { companyOf } from "../../lib/drafts";
 import { initials } from "../../lib/format";
 import { BoardIcon } from "../boardIcons";
 import { useDraftEdit } from "../drafts/useDraftEdit";
@@ -12,14 +12,14 @@ import { useExpand } from "../ExpandOverlay";
 import { DashOverlay, type ExRow } from "./DashOverlay";
 
 /** One draft waiting for approval: approve and send, or edit the text in place */
-function DraftItem({ d, company }: { d: Draft; company: string | null | undefined }) {
+function DraftItem({ d }: { d: Draft }) {
   const { editing, setEditing, text, setText, busy, save, send } = useDraftEdit(d, "Temas olarak kaydedildi");
 
   return (
     <article className="flex flex-col gap-5 rounded-inner-lg border border-border-subtle bg-surface-2 p-8">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-base font-medium">{d.to_name}</span>
-        {company ? <span className="text-sm text-text-secondary">{company}</span> : null}
+        {companyOf(d) ? <span className="text-sm text-text-secondary">{companyOf(d)}</span> : null}
         <span className="flex-grow" />
         {d.followup_step ? <span className="dash-chip is-lg bg-claude-bg text-claude-soft">{d.followup_step}. takip</span> : null}
         <span className="dash-chip is-lg bg-chip-neutral-bg text-text-neutral-chip">{CHANNEL[d.channel] ?? d.channel}</span>
@@ -44,8 +44,6 @@ function DraftItem({ d, company }: { d: Draft; company: string | null | undefine
 /** "Onay bekleyen taslaklar": the first drafts of the approval queue */
 export function DraftsCard({ list }: { list: List<Draft> }) {
   const ex = useExpand();
-  const people = usePeople();
-  const company = (d: Draft) => (d.person_id ? people.byId.get(d.person_id)?.company_name : null);
   const rows: ExRow[] = list.rows.map((d) => ({
     key: d.id, lead: initials(d.to_name), title: d.to_name, sub: `${CHANNEL[d.channel] ?? d.channel} · ${d.body}`,
     tag: d.followup_step ? `${d.followup_step}. takip` : "Yeni", dot: d.followup_step ? "bg-claude" : "bg-entity-later", href: PATHS.drafts,
@@ -58,7 +56,7 @@ export function DraftsCard({ list }: { list: List<Draft> }) {
         actions={<button type="button" className="dash-btn is-ghost" onClick={() => openSheet("draft")}>Taslak yaz</button>}>
         {list.rows.length === 0 ? <p className="m-0 text-base-sm text-text-muted">Onay bekleyen taslak yok.</p> : null}
         <div className="flex flex-col gap-6">
-          {list.rows.slice(0, SHOWN.drafts).map((d) => <DraftItem key={d.id} d={d} company={company(d)} />)}
+          {list.rows.slice(0, SHOWN.drafts).map((d) => <DraftItem key={d.id} d={d} />)}
         </div>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}

@@ -4,7 +4,7 @@ import type { Draft, Person } from "../../api/types";
 import { toast } from "../../components/toast";
 import { dur, ease } from "../../lib/motion";
 import { CHANNEL } from "../../lib/labels";
-import { channelIcon, draftKind, firstName, handleOf, STACK, wordsLabel, type DraftResult } from "../../lib/drafts";
+import { channelIcon, companyOf, copyTextOf, draftKind, firstName, handleOf, STACK, SUBJECT_CHANNEL, wordsLabel, type DraftResult } from "../../lib/drafts";
 import { BoardIcon } from "../boardIcons";
 import { Avatar } from "../ui";
 import { RejectPanel } from "./RejectPanel";
@@ -28,11 +28,10 @@ const VARIANTS = {
 /** The draft on top of the stack: recipient, subject, text with the edit, copy, reject and approve actions */
 export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; onResult: (r: DraftResult) => void }) {
   const first = firstName(d.to_name);
-  const { editing, setEditing, text, setText, busy, save, send, reject } = useDraftEdit(d, `Gönderildi, ${first} için temas kaydedildi`);
+  const { editing, setEditing, text, setText, subject, setSubject, busy, save, send, reject } = useDraftEdit(d, `Gönderildi, ${first} için temas kaydedildi`);
   const [rejecting, setRejecting] = useState(false);
   const [copied, setCopied] = useState(false);
   const handle = handleOf(d, person);
-  const company = person?.company_name;
 
   const approve = async () => {
     if (await send()) onResult("sent");
@@ -42,7 +41,7 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
   };
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(copyTextOf(subject, text));
       setCopied(true);
       toast("Metin kopyalandı");
     } catch {
@@ -55,7 +54,7 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
       <div className="drf-who">
         <Avatar name={d.to_name} id={d.person_id ?? undefined} size="tile" />
         <span className="drf-who-text">
-          <span className="drf-to">{company ? `${d.to_name} · ${company}` : d.to_name}</span>
+          <span className="drf-to">{companyOf(d) ? `${d.to_name} · ${companyOf(d)}` : d.to_name}</span>
           <span className="drf-channel">
             <BoardIcon name={channelIcon(d.channel)} className="size-drafts-channel-icon" stroke={1.8} />
             {CHANNEL[d.channel] ?? d.channel}{handle ? ` · ${handle}` : ""}
@@ -63,7 +62,12 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
         </span>
         <span className="drf-kind">{draftKind(d)}</span>
       </div>
-      {d.subject ? <div className="drf-subject"><span>Konu</span><span>{d.subject}</span></div> : null}
+      {editing && d.channel === SUBJECT_CHANNEL ? (
+        <label className="drf-subject is-edit">
+          <span>Konu</span>
+          <input className="drf-subject-edit" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} aria-label="E-posta konusu" />
+        </label>
+      ) : subject.trim() ? <div className="drf-subject"><span>Konu</span><span>{subject}</span></div> : null}
       {editing ? (
         <textarea className="drf-edit" value={text} onChange={(e) => setText(e.target.value)} aria-label="Taslak metni" rows={8} autoFocus />
       ) : (

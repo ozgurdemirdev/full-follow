@@ -6,6 +6,7 @@ import type { Draft } from "../../api/types";
 export function useDraftEdit(d: Draft, sendOk: string) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(d.body);
+  const [subject, setSubject] = useState(d.subject ?? "");
   const [busy, setBusy] = useState(false);
 
   const act = async (fn: () => Promise<unknown>) => {
@@ -19,17 +20,18 @@ export function useDraftEdit(d: Draft, sendOk: string) {
       setBusy(false);
     }
   };
-  const patch = (opts: { ok?: string; silent?: boolean }) => run("patch", `/drafts/${d.id}`, { body: text }, opts);
+  const changed = text !== d.body || subject.trim() !== (d.subject ?? "");
+  const patch = (opts: { ok?: string; silent?: boolean }) => run("patch", `/drafts/${d.id}`, { body: text, subject }, opts);
 
   const save = () => act(async () => {
-    if (text !== d.body) await patch({ ok: "Taslak güncellendi" });
+    if (changed) await patch({ ok: "Taslak güncellendi" });
     setEditing(false);
   });
   const send = () => act(async () => {
-    if (text !== d.body) await patch({ silent: true });
+    if (changed) await patch({ silent: true });
     await run("post", `/drafts/${d.id}/send`, undefined, { ok: sendOk });
   });
   const reject = (note: string, ok: string) => act(() => run("post", `/drafts/${d.id}/reject`, { note }, { ok }));
 
-  return { editing, setEditing, text, setText, busy, save, send, reject };
+  return { editing, setEditing, text, setText, subject, setSubject, busy, save, send, reject };
 }
