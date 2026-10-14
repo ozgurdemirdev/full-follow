@@ -1,0 +1,266 @@
+/* Templates from the design board (Templates.dc.html): the tiles and the template overlay. */
+
+/* ---------- tile ---------- */
+.tpl-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  padding: var(--spacing-9);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-1);
+  border: var(--bw-default) solid var(--color-border-subtle);
+  transition:
+    transform var(--dur-lift) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-standard);
+}
+.tpl-tile:hover {
+  transform: var(--card-lift);
+  border-color: var(--color-border-strong);
+}
+.tpl-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  line-height: normal;
+  text-align: left;
+}
+.tpl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+}
+.tpl-kind {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-dash-chip-height);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-chip-neutral-bg);
+  color: var(--color-chip-neutral-fg);
+  font-size: var(--text-xs);
+}
+.tpl-meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.tpl-flag {
+  color: var(--color-danger-soft);
+  font-size: var(--text-xs);
+}
+.tpl-title {
+  font-size: var(--text-templates-title);
+  letter-spacing: var(--tracking-subtitle);
+}
+.tpl-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base-sm);
+  line-height: var(--leading-templates-text);
+  white-space: pre-line;
+}
+.tpl-rate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--spacing-5);
+  align-items: center;
+  width: 100%;
+}
+.tpl-pct {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* ---------- overlay ---------- */
+.tpl-dhead {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+.tpl-dhead > span {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.tpl-dialog {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-10);
+  align-items: start;
+  align-content: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--spacing-people-body-pad-top) var(--spacing-11) var(--spacing-11);
+}
+.tpl-dialog::-webkit-scrollbar {
+  width: var(--spacing-scrollbar);
+}
+.tpl-dialog::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+@variant wide {
+  .tpl-dialog {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+}
+.tpl-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-7);
+  min-width: 0;
+}
+.tpl-side {
+  gap: var(--spacing-5);
+}
+.tpl-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+.tpl-who-label {
+  margin-right: var(--spacing-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.tpl-pill {
+  height: var(--spacing-control-height-2xs);
+  padding: 0 var(--spacing-5);
+  border: var(--bw-default) solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-chip-neutral-fg);
+  font-size: var(--text-sm);
+  line-height: normal;
+}
+.tpl-pill[aria-pressed="true"] {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+  color: var(--color-accent-on);
+}
+.tpl-body-text {
+  margin: 0;
+  padding: var(--spacing-9);
+  border-radius: var(--radius-inner-lg);
+  background: var(--color-surface-2);
+  color: var(--color-text-body);
+  font-size: var(--text-lg);
+  line-height: var(--leading-templates-body);
+  white-space: pre-line;
+}
+.tpl-filled,
+.tpl-open-ph {
+  padding: 0 var(--spacing-1);
+  border-radius: var(--radius-sm);
+}
+.tpl-filled {
+  background: var(--color-accent-soft-bg);
+  color: var(--color-accent);
+}
+.tpl-open-ph {
+  background: var(--color-chip-payment-bg);
+  color: var(--color-warning);
+}
+.tpl-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+.tpl-copy,
+.tpl-use {
+  height: var(--spacing-control-height-2xl);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  line-height: normal;
+}
+.tpl-copy {
+  padding: 0 var(--spacing-8);
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-primary);
+}
+.tpl-use {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: 0 var(--spacing-2) 0 var(--spacing-8);
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+  font-weight: var(--font-weight-medium);
+}
+.tpl-use span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-avatar-sm);
+  height: var(--spacing-avatar-sm);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-on);
+  color: var(--color-accent);
+}
+.tpl-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-4);
+}
+.tpl-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-0_5);
+  padding: var(--spacing-6);
+  border-radius: var(--radius-inner);
+  background: var(--color-surface-2);
+}
+.tpl-stats > div > span:first-child {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+.tpl-stats > div > span:last-child {
+  font-size: var(--text-section);
+  letter-spacing: var(--tracking-title);
+}
+.tpl-tip {
+  display: flex;
+  gap: var(--spacing-4);
+  margin: 0;
+  padding: var(--spacing-5) var(--spacing-6);
+  border-radius: var(--radius-inner);
+  background: var(--color-templates-tip-bg);
+  color: var(--color-templates-tip-fg);
+  font-size: var(--text-base-sm);
+  line-height: var(--leading-snug);
+}
+.tpl-tip i {
+  flex: none;
+  width: var(--spacing-dot-sm);
+  height: var(--spacing-dot-sm);
+  margin-top: var(--spacing-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-claude);
+}
+
+/* the overlay sits outside the shell: its buttons get the same press and hover motion */
+.tpl-dialog :where(button) {
+  transition:
+    transform var(--dur-press) var(--ease-standard),
+    filter var(--dur-hover) var(--ease-standard),
+    background-color var(--dur-hover) var(--ease-standard);
+}
+.tpl-dialog :where(button):hover {
+  filter: brightness(1.12);
+}
+.tpl-dialog :where(button):active {
+  transform: scale(var(--press-scale));
+}

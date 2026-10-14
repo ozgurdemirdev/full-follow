@@ -1,0 +1,190 @@
+// Report screen: floor maths, chart scale, expected payments and the insight sentence under the hero
+import type { MonthReport, Opportunity, Payment, PriceFloor, SourceReport } from "../api/types";
+import { daysFrom, fmtDay, fmtMonth, lira, norm, toDate } from "./format";
+import { MILESTONE } from "./labels";
+import { PAYMENT_SOON_DAYS, paymentGroup, remaining, type PaymentGroup } from "./dashboard";
+
+/** Months in the bar chart (the current month is the last bar) */
+export const REPORT_MONTHS = 6;
+/** Bars and the hero meter leave this much room above the tallest value so the floor line never sits at the top edge */
+export const SCALE_HEADROOM = 1.12;
+/** The cost inputs are saved this long after the last keystroke */
+export const SAVE_DELAY_MS = 700;
+/** Highest tax rate the report accepts (percent) */
+export const TAX_MAX_PERCENT = 60;
+/** A lost opportunity whose reason contains this (after norm) counts as lost on budget */
+const BUDGET_REASON = "butce";
+
+export const COST_FIELDS = [
+  { key: "bagkur_monthly", label: "Bağkur", prefix: "₺", dot: "bg-info" },
+  { key: "accounting_monthly", label: "Muhasebe", prefix: "₺", dot: "bg-entity-source" },
+  { key: "other_fixed_monthly", label: "Diğer sabit giderler", prefix: "₺", dot: "bg-entity-comment" },
+  { key: "target_net_monthly", label: "Hedeflenen net gelir", prefix: "₺", dot: "bg-accent" },
+  { key: "tax_rate_percent", label: "Vergi oranı", prefix: "%", dot: "bg-warning" },
+] as const;
+export type CostKey = (typeof COST_FIELDS)[number]["key"];
+export type Costs = Pick<PriceFloor, CostKey>;
+
+/** Same rule as the core: (sum of costs and target net) divided by what is left after tax, rounded up */
+export function floorOf(c: Costs) {
+  const subtotal = c.bagkur_monthly + c.accounting_monthly + c.other_fixed_monthly + c.target_net_monthly;
+  const rate = Math.min(TAX_MAX_PERCENT, Math.max(0, c.tax_rate_percent)) / 100;
+  return { subtotal, floor: Math.ceil(subtotal / (1 - rate)) };
+}
+
+/** The stacked bar under the cost inputs: each part's share of the floor, tax is what the floor adds to the subtotal */
+export function stackOf(c: Costs) {
+  const { subtotal, floor } = floorOf(c);
+  const share = (v: number) => (floor > 0 ? (v / floor) * 100 : 0);
+  return COST_FIELDS.map((f) => ({
+    key: f.key,
+    label: f.label,
+    dot: f.dot,
+    width: share(f.key === "tax_rate_percent" ? floor - subtotal : c[f.key]),
+  }));
+}
+
+const SUFFIX: Record<number, string> = { 0: "ı", 1: "i", 2: "si", 3: "ü", 4: "ü", 5: "i", 6: "sı", 7: "si", 8: "i", 9: "u" };
+/** "Son 5 ayın 3’ü tabanın üstünde" needs the Turkish possessive of the number */
+export const possessive = (n: number) => `${n}’${SUFFIX[n % 10]}`;
+
+export const monthName = (ym: string) => fmtMonth(ym).split(" ")[0];
+/** "₺52B" for 52.000 */
+export const shortLira = (n: number) => `₺${(n / 1000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })}B`;
+
+export interface Incoming {
+  id: number;
+  projectId: number;
+  name: string;
+  group: PaymentGroup;
+  when: string;
+  amount: number;
+}
+
+const weekday = new Intl.DateTimeFormat("tr-TR", { weekday: "long" });
+/** Colour classes of an expected payment: its dot and its date text */
+export const INCOMING_COLOR: Record<PaymentGroup, { dot: string; text: string }> = {
+  late: { dot: "bg-danger", text: "text-danger" },
+  soon: { dot: "bg-warning", text: "text-warning" },
+  later: { dot: "bg-info", text: "text-info" },
+};
+
+function whenText(p: Payment, today: string): string {
+  const d = daysFrom(p.due_date!, today);
+  if (d < 0) return `${-d} gün gecikti`;
+  if (d === 0) return "bugün";
+  return d <= PAYMENT_SOON_DAYS ? weekday.format(toDate(p.due_date!)).toLocaleLowerCase("tr-TR") : fmtDay(p.due_date);
+}
+
+/** Unpaid payments that are due this month or are already late, oldest due date first (what "bu ay gelmesi beklenen" means) */
+export function incomingOf(payments: Payment[], today: string): Incoming[] {
+  const ym = today.slice(0, 7);
+  return payments
+    .filter((p) => p.due_date && p.due_date.slice(0, 7) <= ym && remaining(p) > 0)
+    .sort((a, b) => a.due_date!.localeCompare(b.due_date!) || a.id - b.id)
+    .map((p) => ({
+      id: p.id,
+      projectId: p.project_id,
+      name: `${p.project_name} ${(MILESTONE[p.milestone] ?? p.milestone).toLocaleLowerCase("tr-TR")}`,
+      group: paymentGroup(p, today),
+      when: whenText(p, today),
+      amount: remaining(p),
+    }));
+}
+
+export interface Expected {
+  count: number;
+  total: number;
+  lateCount: number;
+  lateTotal: number;
+}
+export function expectedOf(list: Incoming[]): Expected {
+  const late = list.filter((x) => x.group === "late");
+  return {
+    count: list.length,
+    total: list.reduce((a, x) => a + x.amount, 0),
+    lateCount: late.length,
+    lateTotal: late.reduce((a, x) => a + x.amount, 0),
+  };
+}
+
+export interface Hero {
+  /** "Ekim (13 gün geçti)" */
+  label: string;
+  collected: number;
+  floor: number;
+  /** floor minus collected: positive means still short */
+  gap: number;
+  /** percent of the meter, all on the same scale (the floor marker sits at floorX) */
+  fill: number;
+  pending: number;
+  floorX: number;
+  /** pending lira (only the current month has any) */
+  pendingAmount: number;
+}
+
+/** Everything is measured against the tallest bar (or the floor) plus the headroom, so the hero meter and the bars share one scale */
+export function scaleTop(months: MonthReport[], floor: number, pendingNow: number, now: string): number {
+  const tallest = Math.max(floor, ...months.map((m) => m.collected + (m.month === now ? pendingNow : 0)));
+  return tallest * SCALE_HEADROOM || 1;
+}
+
+export function heroOf(m: MonthReport, floor: number, pendingNow: number, top: number, today: string): Hero {
+  const now = m.month === today.slice(0, 7);
+  const pendingAmount = now ? pendingNow : 0;
+  const fill = Math.min(100, (m.collected / top) * 100);
+  return {
+    label: `${monthName(m.month)}${now ? ` (${Number(today.slice(8, 10))} gün geçti)` : ""}`,
+    collected: m.collected,
+    floor,
+    gap: floor - m.collected,
+    fill,
+    pending: Math.min(100 - fill, (pendingAmount / top) * 100),
+    floorX: (floor / top) * 100,
+    pendingAmount,
+  };
+}
+
+/** Lost opportunities closed in a month and how many of them were lost on budget (reason text) */
+export function lostIn(opps: Opportunity[], ym: string) {
+  const list = opps.filter((o) => o.closed_at?.slice(0, 7) === ym);
+  return { count: list.length, budget: list.filter((o) => norm(o.lost_reason).includes(BUDGET_REASON)).length };
+}
+
+const budgetNote = (l: { count: number; budget: number }) =>
+  !l.budget ? "" : l.budget === l.count ? (l.count > 1 ? ", hepsi bütçe yüzünden" : ", bütçe yüzünden") : `, ${l.budget} tanesi bütçe yüzünden`;
+
+/**
+ * Insight sentence under the hero (gap G20). Derived from the expected payments and the floor gap only; the lost clause is
+ * written only when lost opportunities with a reason exist for that month.
+ * TODO(modules): moves into core with the reports module (the sentence will come with the month report).
+ */
+export function insightOf(h: Hero, ym: string, now: boolean, expected: Expected, lost: { count: number; budget: number } | null): string {
+  const under = h.gap > 0;
+  if (!now) {
+    if (!under) return `${monthName(ym)} tabanın üstünde kapandı.`;
+    if (!lost?.count) return `${monthName(ym)} tabanın altında kaldı.`;
+    return `${monthName(ym)} tabanın altında kaldı. O ay ${lost.count} fırsat kaybedilmişti${budgetNote(lost)}.`;
+  }
+  if (!under) return "Bu ay taban kapandı. Gelen fazlayı vergi ve boş ay yedeği için ayırmak iyi olur.";
+  if (!expected.count) return `Bu ay beklenen ödeme yok, tabana ${lira(h.gap)} kaldı.`;
+  const late = expected.lateCount ? `, ${expected.lateCount} tanesi gecikmede (${lira(expected.lateTotal)})` : "";
+  const head = `Bu ay beklenen ${expected.count} ödeme toplam ${lira(expected.total)}${late}.`;
+  const left = h.gap - expected.total;
+  return left <= 0
+    ? `${head} Hepsi gelirse taban kapanır ve ${lira(-left)} artı kalır.`
+    : `${head} Hepsi gelse bile tabana ${lira(left)} eksik kalır.`;
+}
+
+/** Hint line under the floor: what the floor means in average won projects (only when won opportunities have a value and the floor is at least one such project) */
+export function floorHint(floor: number, sources: SourceReport[]): string | null {
+  const won = sources.reduce((a, s) => a + s.won, 0);
+  const value = sources.reduce((a, s) => a + s.won_value, 0);
+  if (!won || !value || !floor) return null;
+  const avg = value / won;
+  if (floor < avg) return null;
+  return `Ayda ortalama ${(floor / avg).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} proje demek (kazanılan işlerin ortalaması ${lira(Math.round(avg))}).`;
+}
+
+/** How many of the earlier months reached the floor */
+export const monthsAbove = (months: MonthReport[], floor: number, now: string) => months.filter((m) => m.month !== now && m.collected >= floor).length;

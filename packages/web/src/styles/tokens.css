@@ -43,6 +43,9 @@
   --text-own-title-lg: 36px;
   --text-own-title-md: 32px;
   --text-own-h3: 20px;
+  --text-posts-stat: 20px;
+  --text-templates-title: 17px;
+  --text-report-hero: 56px;
   --leading-tight: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
@@ -50,6 +53,9 @@
   --leading-heading: 1.15;
   --leading-snug: 1.45;
   --leading-drafts-text: 1.65;
+  --leading-posts-title: 1.3;
+  --leading-templates-body: 1.7;
+  --leading-templates-text: 1.55;
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
@@ -116,6 +122,7 @@
   --spacing-fab-menu-width: 208px;
   --spacing-chart-height: 200px;
   --spacing-chart-height-mobile: 170px;
+  --spacing-ideas-ring: 92px;
   --spacing-rail: 2px;
   --spacing-tl-node: 32px;
   --spacing-comment-who: 54px;
@@ -268,6 +275,37 @@
   --spacing-own-chip-height: 26px;
   --spacing-own-done-tick: 10px;
   --spacing-own-card-pad: 22px;
+  --spacing-posts-chip-height: 26px;
+  --spacing-posts-avatar: 28px;
+  --spacing-posts-avatar-overlap: 7px;
+  --spacing-referrals-node-h: 64px;
+  --spacing-referrals-pitch: 80px;
+  --spacing-referrals-rank-w: 14px;
+  --spacing-referrals-bar-indent: 26px;
+  --spacing-referrals-indent: 22px;
+  --spacing-referrals-col-min: 220px;
+  --spacing-timeline-search-width: 320px;
+  --spacing-timeline-strip-lead-min: 220px;
+  --spacing-timeline-focus-icon: 46px;
+  --spacing-timeline-event-icon: 34px;
+  --spacing-timeline-split-bar: 10px;
+  --spacing-timeline-actor-chip-height: 20px;
+  --spacing-timeline-chip-height: 26px;
+  --spacing-timeline-rec-dot: 6px;
+  --spacing-report-hero-pad: 26px;
+  --spacing-report-chart-height: 220px;
+  --spacing-report-bar-height: 160px;
+  --spacing-report-bar-max: 56px;
+  --spacing-report-axis-pad: 26px;
+  --spacing-report-amount-col: 72px;
+  --spacing-report-src-count: 70px;
+  --spacing-report-src-won: 90px;
+  --spacing-report-src-value: 110px;
+  --spacing-report-src-count-mobile: 44px;
+  --spacing-report-pct-col: 36px;
+  --spacing-report-bar-hatch-line: 6px;
+  --spacing-report-bar-hatch-period: 9px;
+  --spacing-report-pend-hatch-line: 3px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -289,10 +327,13 @@
   --radius-pipeline-col: 22px;
   --radius-bar: 2px;
   --radius-chart-bar: 14px;
+  --radius-ideas-lane: 22px;
   --radius-row: 20px;
   --radius-cell: 14px;
   --radius-event: 12px;
   --radius-spark: 3px;
+  --radius-report-bar: 12px;
+  --radius-report-hero: 28px;
   --shadow-card-hover: 0 22px 48px rgba(0,0,0,.38);
   --shadow-fab: 0 10px 28px rgba(4,4,5,.55);
   --shadow-menu: 0 16px 40px rgba(4,4,5,.6);
@@ -353,8 +394,8 @@
   --color-claude-bg: var(--palette-orange-950);
   --color-claude-border: var(--palette-orange-900);
   --color-claude-outline: var(--palette-orange-800);
-  --color-claude-hint-bg: var(--palette-orange-990);
-  --color-claude-hint-fg: var(--palette-peach-100);
+  --color-claude-hint-bg: var(--palette-orange-975);
+  --color-claude-hint-fg: var(--palette-orange-200);
   --color-claude-wash: var(--palette-orange-975);
   --color-claude-wash-fg: var(--palette-peach-200);
   --color-warning: var(--palette-amber-300);
@@ -451,6 +492,12 @@
   --color-listening-bg: var(--palette-rec-950);
   --color-listening-fg: var(--palette-coral-200);
   --color-listening-border: var(--palette-rec-800);
+  --color-ideas-verdict: var(--palette-orange-200);
+  --color-ideas-step-off: var(--palette-ink-700);
+  --color-ideas-yes-bg: var(--palette-lime-950);
+  --color-ideas-yes-border: var(--palette-lime-850);
+  --color-ideas-no-bg: var(--palette-rec-950);
+  --color-ideas-no-border: var(--palette-coral-950);
   --color-danger-soft: var(--palette-coral-200);
   --color-drafts-reject-bg: var(--palette-wine-950);
   --color-drafts-reject-border: var(--palette-wine-900);
@@ -460,10 +507,26 @@
   --color-kind-pay: var(--palette-gold-400);
   --color-kind-task: var(--palette-green-400);
   --color-comments-claude-bubble: var(--palette-orange-975);
-  --color-projects-note-bg: var(--palette-ember-975);
-  --color-projects-note-fg: var(--palette-ember-200);
+  --color-projects-note-bg: var(--palette-orange-975);
+  --color-projects-note-fg: var(--palette-orange-200);
   --color-projects-late-border: var(--palette-rose-950);
   --color-projects-late-bg: var(--palette-rec-950);
+  --color-posts-r10-bg: var(--palette-amber-950);
+  --color-posts-r10-fg: var(--palette-amber-300);
+  --color-posts-linkedin-bg: var(--palette-sky-950);
+  --color-posts-linkedin-fg: var(--palette-sky-300);
+  --color-posts-instagram-bg: var(--palette-rose-950);
+  --color-posts-instagram-fg: var(--palette-pink-300);
+  --color-posts-diger-bg: var(--palette-ink-700);
+  --color-posts-diger-fg: var(--palette-bone-300);
+  --color-posts-stale-bg: var(--palette-amber-975);
+  --color-posts-stale-note: var(--palette-sand-300);
+  --color-posts-flow: var(--palette-ink-500);
+  --color-templates-tip-bg: var(--palette-orange-975);
+  --color-templates-tip-fg: var(--palette-orange-200);
+  --color-report-under: var(--palette-bone-300);
+  --color-report-under-past: var(--palette-ink-550);
+  --color-report-floor-line: var(--palette-ink-500);
 }
 
 :root {
@@ -508,6 +571,7 @@
   --palette-mint-300: #9EE0B0;
   --palette-rose-950: #3A1F2A;
   --palette-bone-200: #D8D8D4;
+  --palette-orange-200: #F2C3AE;
   --palette-coral-200: #FF9A8C;
   --palette-rec-950: #2A1512;
   --palette-rec-800: #5A2A24;
@@ -523,13 +587,12 @@
   --palette-lime-850: #2E3A1A;
   --palette-wine-950: #1F1416;
   --palette-wine-900: #3A2226;
-  --palette-orange-990: #1F1712;
-  --palette-peach-100: #F2C3AE;
   --palette-orange-975: #1F1712;
   --palette-ink-950-a95: rgba(11,11,12,.95);
   --palette-ink-950-a0: rgba(11,11,12,0);
-  --palette-ember-975: #1F1712;
-  --palette-ember-200: #F2C3AE;
+  --palette-amber-975: #1A1710;
+  --palette-sand-300: #C9B98A;
+  --palette-ink-550: #4A4A50;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
@@ -567,6 +630,11 @@
   --dur-drafts-fade: 350ms;
   --dur-projects-pulse: 1600ms;
   --dur-own-glow: 2200ms;
+  --dur-posts-lift: 250ms;
+  --dur-edge-draw: 900ms;
+  --dur-edge-draw-delay: 150ms;
+  --dur-node-stagger: 60ms;
+  --dur-timeline-in: 350ms;
   --stagger: 50ms;
   --rise-distance: 14px;
   --press-scale: 0.97;
@@ -590,6 +658,7 @@
   --opacity-off: 0.3;
   --opacity-outside: 0.35;
   --opacity-projects-pulse: 45%;
+  --opacity-report-pending: 0.7;
 }
 
 @utility dur-press {
@@ -740,6 +809,26 @@
   transition-duration: var(--dur-own-glow);
 }
 
+@utility dur-posts-lift {
+  transition-duration: var(--dur-posts-lift);
+}
+
+@utility dur-edge-draw {
+  transition-duration: var(--dur-edge-draw);
+}
+
+@utility dur-edge-draw-delay {
+  transition-duration: var(--dur-edge-draw-delay);
+}
+
+@utility dur-node-stagger {
+  transition-duration: var(--dur-node-stagger);
+}
+
+@utility dur-timeline-in {
+  transition-duration: var(--dur-timeline-in);
+}
+
 @utility z-sidebar {
   z-index: var(--z-sidebar);
 }
@@ -802,4 +891,8 @@
 
 @utility opacity-projects-pulse {
   opacity: var(--opacity-projects-pulse);
+}
+
+@utility opacity-report-pending {
+  opacity: var(--opacity-report-pending);
 }

@@ -1,47 +1,64 @@
-import { Link } from "wouter";
-import { K } from "../api/keys";
+import { useMemo, useState } from "react";
+import { K, useOpenTasks, useOpps, usePeople, useProjects } from "../api/keys";
 import { useQuery } from "../api/store";
-import type { ReferralValue } from "../api/types";
+import type { Draft, List, Payment, ReferralValue } from "../api/types";
 import { Page } from "../app/Page";
-import { PATHS } from "../app/routes";
-import { Avatar, Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
-import { tl } from "../lib/format";
+import { Kpis } from "../components/referrals/Kpis";
+import { Leaders } from "../components/referrals/Leaders";
+import { Suggestions } from "../components/referrals/Suggestions";
+import { TreeCard } from "../components/referrals/TreeCard";
+import { Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
+import { asksList, buildTree, layoutTree, ownValues, referralKpis, thanksList } from "../lib/referrals";
 
-// Kim kimi tanıttı ve tanıttıklarından (alt ağ dahil) ne iş çıktı
+/** Unpaid payments, shared with the dashboard's collection card; the late ones decide who is not asked yet */
+const UNPAID = "/payments?unpaid=true&limit=1000";
+
+/** Referrals: who introduced whom, what their network brought, whom to thank and whom to ask next */
 export default function Referrals() {
-  const q = useQuery<ReferralValue[]>(K.referrals);
-  const list = q.data ?? [];
-  const total = list.reduce((a, r) => ({ won: a.won + r.won_value, people: a.people + r.direct }), { won: 0, people: 0 });
+  const report = useQuery<ReferralValue[]>(K.referrals);
+  const people = usePeople();
+  const opps = useOpps();
+  const projects = useProjects();
+  const tasks = useOpenTasks();
+  const drafts = useQuery<List<Draft>>(K.drafts);
+  const unpaid = useQuery<List<Payment>>(UNPAID);
+  const [picked, setPicked] = useState<number | null>(null);
+
+  const leaders = report.data ?? [];
+  const selected = leaders.find((r) => r.person_id === picked) ?? leaders[0];
+  const own = useMemo(() => ownValues(opps.rows), [opps.rows]);
+  const kpis = useMemo(() => referralKpis(people.rows, opps.rows, leaders), [people.rows, opps.rows, leaders]);
+  const tree = useMemo(() => {
+    const root = selected ? buildTree(selected.person_id, people.rows, own) : null;
+    return root ? layoutTree(root) : null;
+  }, [selected, people.rows, own]);
+  const lists = useMemo(() => {
+    if (!people.data || !opps.data || !projects.data || !tasks.data || !drafts.data || !unpaid.data) return null;
+    const d = { people: people.rows, opps: opps.rows, projects: projects.rows, payments: unpaid.data.rows, tasks: tasks.rows, drafts: drafts.data.rows };
+    return { thanks: thanksList(d), asks: asksList(d) };
+  }, [people.data, people.rows, opps.data, opps.rows, projects.data, projects.rows, tasks.data, tasks.rows, drafts.data, unpaid.data]);
+
+  const ready = !!(report.data && people.data && opps.data);
+  const error = report.error ?? people.error ?? opps.error;
 
   return (
-    <Page title="Referanslar" sub={q.data ? `${list.length} kişi ${total.people} kişiyi tanıttı · kazanılan ${tl(total.won)}` : ""} className="flex flex-col gap-7">
-      {q.error && !q.data ? <ErrorBox error={q.error} retry={q.reload} /> : null}
-      {!q.data ? (
-        !q.error && <PageSkeleton />
+    <Page title="Referanslar" sub="Kim kimi tanıttı, tanıştırdıklarından ve onların ağından ne iş çıktı" className="flex flex-col gap-10">
+      {error && !ready ? <ErrorBox error={error} retry={() => { report.reload(); people.reload(); opps.reload(); }} /> : null}
+      {!ready ? (
+        !error && <PageSkeleton />
       ) : (
-        <section className="card rise overflow-hidden" style={order(1)} aria-label="Referans değeri">
-          {list.length === 0 ? <Empty>Henüz kimse kimseyi tanıtmadı. Kişi eklerken “Tanıtan” alanını doldurunca burada görünür.</Empty> : null}
-          {list.map((r, i) => (
-            <Link key={r.person_id} href={`${PATHS.people}/${r.person_id}`} className="row cv-auto flex items-center gap-5 px-9 py-6 text-text-primary hover:text-text-primary">
-              <span className="w-6 flex-none text-right font-mono text-sm text-text-muted">{i + 1}</span>
-              <Avatar name={r.name} />
-              <div className="flex min-w-0 flex-grow flex-col gap-0.5">
-                <span className="truncate text-base font-medium">
-                  {r.name} {r.company_name ? <span className="font-normal text-text-secondary">· {r.company_name}</span> : null}
-                </span>
-                <span className="text-base-sm text-text-secondary">
-                  {r.direct} kişi tanıttı{r.network > r.direct ? ` · ağıyla ${r.network}` : ""}
-                  {r.opps ? ` · ${r.opps} fırsat` : ""}{r.won ? `, ${r.won} kazanıldı` : ""}
-                  {r.projects ? ` · ${r.projects} proje` : ""}
-                </span>
-              </div>
-              <div className="flex flex-none flex-col items-end gap-0.5">
-                <span className="font-mono text-base">{tl(r.won_value)}</span>
-                {r.open_value ? <span className="text-sm text-text-secondary">açıkta {tl(r.open_value)}</span> : r.collected ? <span className="text-sm text-text-secondary">tahsil {tl(r.collected)}</span> : null}
-              </div>
-            </Link>
-          ))}
-        </section>
+        <>
+          <Kpis items={kpis} />
+          {leaders.length === 0 || !selected || !tree ? (
+            <Empty>Henüz kimse kimseyi tanıtmadı. Kişi eklerken “Tanıtan” alanını doldurunca burada görünür.</Empty>
+          ) : (
+            <div className="ref-grid rise" style={order(2)}>
+              <Leaders rows={leaders} selected={selected.person_id} onPick={setPicked} />
+              <TreeCard title={`${selected.name} ağı`} tree={tree} />
+            </div>
+          )}
+          {lists ? <Suggestions thanks={lists.thanks} asks={lists.asks} /> : null}
+        </>
       )}
     </Page>
   );
