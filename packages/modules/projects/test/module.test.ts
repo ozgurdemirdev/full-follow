@@ -58,6 +58,17 @@ describe("projects as a module", () => {
     expect(() => app.remove("payment", dep.id)).toThrow(/Ödeme alınmış/);
   });
 
+  it("a project's get loads its uploaded files, and a project waits on nobody without payments or tasks", () => {
+    const h = openDb(":memory:");
+    const app = appFor(h, "ozgur", clock);
+    const p = app.projects.projects.create({ name: "Site", person_id: person(h) }).row;
+    expect(app.get("project", p.id, ["files"]).related.files).toEqual([]);
+    h.sqlite.prepare("INSERT INTO files (target_type, target_id, name, mime, size, stored_name, created_at, updated_at, created_by) VALUES ('project', ?, 'brief.pdf', 'application/pdf', 10, 'x1', ?, ?, 'ozgur')")
+      .run(p.id, clock.now(), clock.now());
+    expect(app.get("project", p.id, ["files"]).related.files).toMatchObject([{ name: "brief.pdf", target_id: p.id }]);
+    expect(app.get("project", p.id).row).toMatchObject({ waiting: null, waiting_amount: 0 });
+  });
+
   it("the Today view and the comment targets carry the module's payments and records", () => {
     const h = openDb(":memory:");
     const app = appFor(h, "ozgur", clock);
