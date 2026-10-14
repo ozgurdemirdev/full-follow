@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { Actor } from "../constants";
 import type { Ctx, ListOpts } from "../context";
 import type { ModuleApis, ModuleEvents } from "../contracts";
 
@@ -88,6 +89,27 @@ export interface CommentTargetDef {
 /** What the panel chat shows on a record chip of this type: a small plain object (title and a few fields); `personId` is the `@person` of a template key */
 export type ChatCard = (ctx: Ctx, id: number, personId?: number) => Record<string, any>;
 
+/**
+ * Work a module wants done on a schedule while the server runs. The server host starts it, stops it on shutdown and never runs one job twice at the same time
+ * (a run that is still going makes the next tick skip). `app` is the app acting as Claude, because scheduled work is Claude's, never a typed-in identity.
+ */
+/** What a job gets: the app acting as Claude, reduced to what scheduled work needs (the composed app satisfies it) */
+export interface JobApp {
+  actor: Actor;
+  mod: ModAccess;
+  ctx: Ctx;
+}
+
+export interface JobDef {
+  name: string;
+  everyMs: number;
+  /** delay before the first run (default: everyMs) */
+  firstRunMs?: number;
+  /** the job is left out when this returns false (a switch in the environment); default: always on */
+  enabled?(): boolean;
+  run(app: JobApp): void | Promise<void>;
+}
+
 /** What a module adds to the shared views. Each function returns only its own part; the host merges them. */
 export interface Contributions {
   /** sections of the Today view, by key; `limit` is the row cap per section */
@@ -108,6 +130,8 @@ export interface Contributions {
   commentTargets?: Record<string, CommentTargetDef>;
   /** record types the panel chat can show as a chip (`<type>:<id>` keys) */
   chatCards?: Record<string, ChatCard>;
+  /** scheduled work for the server host */
+  jobs?: JobDef[];
 }
 
 /** Row of a record, as the MCP formatters receive it */

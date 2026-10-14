@@ -15,6 +15,7 @@ import { ChatHub } from "./chat/chat-hub";
 import { ClaudeRunner } from "./chat/claude-runner";
 import { claudeProvider, coreProvider } from "./core.provider";
 import { ErrorFilter } from "./http";
+import { JobHost } from "./jobs";
 import { moduleControllers } from "./modules.generated";
 
 @Module({
@@ -28,6 +29,7 @@ import { moduleControllers } from "./modules.generated";
   providers: [
     coreProvider,
     claudeProvider,
+    JobHost,
     ChatHub,
     ClaudeRunner,
     { provide: APP_GUARD, useClass: AuthGuard },

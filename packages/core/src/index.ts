@@ -191,6 +191,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     modules: { has: registry.has, list: registry.list },
     /** what the installed modules put in `/api/meta` (lists and labels for the forms) */
     moduleMeta: (): Record<string, unknown> => Object.assign({}, ...ctx.contrib("meta")),
+    /** scheduled work of the installed modules (the server host runs it with `startJobs`) */
+    jobs: () => ctx.contrib("jobs").flat(),
     /** typed access to another module's API; undefined when that module is not installed */
     mod: ctx.mod,
     /** record types comments can hang on: core's and the installed modules' */

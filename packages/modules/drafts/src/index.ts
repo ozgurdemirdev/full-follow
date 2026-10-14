@@ -5,6 +5,10 @@ import { entities } from "./entities";
 import { mcp } from "./mcp";
 import { sendWarnings } from "./service/quota";
 
+/** The follow-up sequence runs once after start and then every hour; FF_AUTO_FOLLOWUP=0 switches it off */
+const FOLLOWUP_FIRST_RUN_MS = 3000;
+const FOLLOWUP_EVERY_MS = 60 * 60 * 1000;
+
 /**
  * Drafts: drafts Claude (or Özgür) leaves for approval, the follow-up sequence (unanswered messages become follow-up drafts), the daily
  * send limits per channel, the email warmup and the warnings when one is passed. Only Özgür approves, rejects and marks "sent";
@@ -67,6 +71,21 @@ export default defineModule({
       },
     },
     meta: { draft_statuses: DRAFT_STATUSES, marketing_defaults: MARKETING_DEFAULTS },
+    // follow-up drafts for the unanswered messages, written as Claude ("Claude taslağı"); a run in between creates nothing twice
+    jobs: [{
+      name: "followups",
+      firstRunMs: FOLLOWUP_FIRST_RUN_MS,
+      everyMs: FOLLOWUP_EVERY_MS,
+      enabled: () => process.env.FF_AUTO_FOLLOWUP !== "0",
+      run: (app) => {
+        try {
+          const r = app.mod("drafts")?.followups.generate();
+          if (r?.created.length) console.log(`  Takip taslağı hazırlandı: ${r.effects.join(", ")}`);
+        } catch (e) {
+          console.warn("  Takip taslakları hazırlanamadı:", e instanceof Error ? e.message : e);
+        }
+      },
+    }],
   },
   mcp,
 });

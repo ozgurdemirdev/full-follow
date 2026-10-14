@@ -41,7 +41,8 @@ packages/modules/<key>/
   - `entities`: record types for the generic `save` / `find` / `get` / `delete` / `move` / `restore`; `aliases`, `ref` (name lookup, `<type>` input key), `refKeys` (more input keys, `referred_by`),
     `related`, `prepare` (rewrites the input of `save`), `bulk` (duplicate keys of a list save).
   - `contribute`: `trashTypes`, `recordLabels`, `today` sections (a section is a record or a plain value under its own key), `relations` (what `get(..., with)` can load on other types; `load(ctx, by, limit, row)`; one name can be served by several modules for different types), `meta` (for `/api/meta`),
-    `commentTargets` (record types comments hang on), `chatCards` (what a record chip of the panel chat shows).
+    `commentTargets` (record types comments hang on), `chatCards` (what a record chip of the panel chat shows),
+    `jobs` (scheduled work for the server host: `{ name, everyMs, firstRunMs?, enabled?, run(app) }`; `app` acts as Claude, a job never overlaps itself, the host stops them on shutdown).
   - `mcp`: `entities` (line, details, kind, openable), `tools`, `docs` (fragments sorted by `at`, core's are 100, 200, ...), `today` sections (`head: true` puts the text before the sections, after the week line), `marketing` lines, `relations` (relation name to the record type its rows are written as; `"people:idea"` names the type for one record type).
   - `hookOrder`: see events above.
 - Anything the module still needs from a feature that is not a module yet is marked `// TODO(modules): via ctx.mod("<future module>")`.
