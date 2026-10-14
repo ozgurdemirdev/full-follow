@@ -125,6 +125,10 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
 };
 
 /** Günlük iş planı: hafta günü kısa adları (ISO sırası, pazartesi önde) ve hazır tekrarlar */
+/** Task kinds for the task form */
+export const TASK_KIND_ITEMS: { value: "gorusme" | "takip" | "gorev"; label: string }[] = [
+  { value: "gorev", label: "Görev" }, { value: "gorusme", label: "Görüşme" }, { value: "takip", label: "Takip" },
+];
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 export const GOAL_PRESETS: { value: string; label: string; days: number[] }[] = [
   { value: "her_gun", label: "Her gün", days: [1, 2, 3, 4, 5, 6, 7] },

@@ -6,6 +6,7 @@
 @import "./shell.css";
 @import "./parts.css";
 @import "./dash.css";
+@import "./calendar.css";
 @import "./settings.css";
 
 @layer base {

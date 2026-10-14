@@ -3,6 +3,7 @@ import type { GoalDay, Plan, PlanTask } from "../../api/types";
 import { openSheet } from "../../app/ui";
 import { PATHS } from "../../app/routes";
 import { fmtDay, fmtToday } from "../../lib/format";
+import { KIND, OF_TASK_KIND } from "../../lib/calendar";
 import { goalAutoNote } from "../../lib/goals";
 import { BoardIcon } from "../boardIcons";
 import { toast } from "../toast";
@@ -10,7 +11,7 @@ import { Card, Meter } from "../ui";
 import { useExpand } from "../ExpandOverlay";
 import { DashOverlay, type ExRow } from "./DashOverlay";
 
-/** Time column of a task row: tasks carry no time yet */
+/** Time column of a task row without a time */
 const ANYTIME = "Gün içi";
 
 interface Item {
@@ -34,10 +35,10 @@ function items(plan: Plan): Item[] {
   const task = (t: PlanTask): Item => ({
     key: `t${t.id}`,
     done: !!t.done_at,
-    time: ANYTIME,
+    time: t.due_time ?? ANYTIME,
     title: t.title,
-    kind: t.due_date && t.due_date < plan.date && !t.done_at ? `Görev · ${fmtDay(t.due_date)} tarihliydi` : "Görev",
-    dot: "bg-entity-task",
+    kind: `${KIND[OF_TASK_KIND[t.kind]].label}${t.due_date && t.due_date < plan.date && !t.done_at ? ` · ${fmtDay(t.due_date)} tarihliydi` : ""}`,
+    dot: KIND[OF_TASK_KIND[t.kind]].dot,
     toggle: () => void run("patch", `/tasks/${t.id}`, { done: !t.done_at }, { silent: true }).catch(() => {}),
   });
   const goal = (g: GoalDay): Item => ({

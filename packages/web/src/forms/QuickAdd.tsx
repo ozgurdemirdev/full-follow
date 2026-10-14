@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { run } from "../api/actions";
 import { pickable, useCompanies, useOpps, usePeople, useProjects, useSources } from "../api/keys";
 import { useQuery } from "../api/store";
-import type { Detail, Opportunity, Source, Task } from "../api/types";
+import type { Detail, Opportunity, Source, Task, TaskKind } from "../api/types";
 import { closeSheet, useUI, type SheetState } from "../app/ui";
 import { PATHS } from "../app/routes";
 import { Combo, type Option } from "../components/Combo";
@@ -13,7 +13,7 @@ import { NumberField } from "../components/NumberField";
 import { ChipRadio, Field, Sheet } from "../components/Sheet";
 import { addDaysIso, todayIso } from "../lib/format";
 import { dur, ease, riseY } from "../lib/motion";
-import { OPEN_STAGES, STAGE, type OppStage } from "../lib/labels";
+import { OPEN_STAGES, STAGE, TASK_KIND_ITEMS, type OppStage } from "../lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "./helpers";
 
 const TITLES: Record<SheetState["kind"], string> = {
@@ -361,6 +361,8 @@ function TaskForm(p: FormProps) {
   const existing = useQuery<Detail<Task>>(editId ? `/tasks/${editId}` : null);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState(pre?.date ?? todayIso());
+  const [time, setTime] = useState("");
+  const [kind, setKind] = useState<TaskKind>("gorev");
   const [target, setTarget] = useState<Ref>(emptyRef);
   const row = existing.data?.row;
   /** The record the task is already tied to (edit) or was opened from (preset) */
@@ -371,6 +373,8 @@ function TaskForm(p: FormProps) {
     if (row) {
       setTitle(row.title);
       setDue(row.due_date ?? "");
+      setTime(row.due_time ?? "");
+      setKind(row.kind);
     }
     const hit = options.find((o) => linked[o.type] === o.tid);
     if (hit) setTarget({ id: hit.id, text: hit.label });
@@ -381,8 +385,8 @@ function TaskForm(p: FormProps) {
   const submit = useSubmit(p, async () => {
     const t = options.find((o) => o.id === target.id);
     const link = { person_id: null, company_id: null, opportunity_id: null, project_id: null, ...(t ? { [`${t.type}_id`]: t.tid } : {}) };
-    if (editId) await run<Task>("patch", `/tasks/${editId}`, { title: title.trim(), due_date: due || null, ...link }, { ok: "Görev güncellendi" });
-    else await run<Task>("post", "/tasks", { title: title.trim(), assignee: "ozgur", due_date: due || undefined, ...link }, { ok: "Görev eklendi" });
+    if (editId) await run<Task>("patch", `/tasks/${editId}`, { title: title.trim(), due_date: due || null, due_time: time || null, kind, ...link }, { ok: "Görev güncellendi" });
+    else await run<Task>("post", "/tasks", { title: title.trim(), assignee: "ozgur", due_date: due || undefined, due_time: time || undefined, kind, ...link }, { ok: "Görev eklendi" });
   });
 
   return (
@@ -392,6 +396,12 @@ function TaskForm(p: FormProps) {
       </Field>
       <Field label="Tarih" htmlFor="k-due">
         <input id="k-due" className="inp" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+      </Field>
+      <Field label="Saat (isteğe bağlı)" htmlFor="k-time">
+        <input id="k-time" className="inp" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      </Field>
+      <Field label="Tür">
+        <ChipRadio label="Tür" items={TASK_KIND_ITEMS} value={kind} onChange={setKind} />
       </Field>
       <Field label="Neyle ilgili (isteğe bağlı)" htmlFor="k-target">
         <Combo id="k-target" value={target} onChange={setTarget} options={options} placeholder="Kişi, firma, fırsat ya da proje ara" allowNew={false} />

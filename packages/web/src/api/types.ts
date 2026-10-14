@@ -379,6 +379,8 @@ export interface Task extends Base {
   title: string;
   assignee: Actor;
   due_date: string | null;
+  due_time: string | null;
+  kind: TaskKind;
   done_at: string | null;
   person_id: number | null;
   company_id: number | null;
@@ -618,12 +620,33 @@ export interface GoalDay {
   note: string | null;
   goal_note: string | null;
 }
+export type TaskKind = "gorusme" | "takip" | "gorev";
 export interface PlanTask {
   id: number;
   title: string;
   assignee: Actor;
   due_date: string | null;
+  /** "HH:MM" or null (sometime that day) */
+  due_time: string | null;
+  kind: TaskKind;
   done_at: string | null;
+}
+/** A payment due on a calendar day */
+export interface DuePayment {
+  id: number;
+  project_id: number;
+  project_name: string;
+  milestone: string;
+  expected_amount: number;
+  paid_amount: number;
+  done: boolean;
+}
+/** A follow-up date of a person or an open opportunity */
+export interface DueFollowUp {
+  type: "person" | "opportunity";
+  id: number;
+  name: string;
+  done: boolean;
 }
 export interface Plan {
   date: string;
@@ -636,8 +659,10 @@ export interface Plan {
 export interface CalendarDay {
   date: string;
   goals: GoalDay[];
-  tasks: PlanTask[];
+  tasks: Omit<PlanTask, "assignee">[];
   ratio: number | null;
+  payments: DuePayment[];
+  follow_ups: DueFollowUp[];
 }
 export interface Goal extends Base {
   title: string;

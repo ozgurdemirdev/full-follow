@@ -1,91 +1,120 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "../api/store";
-import type { CalendarDay, Plan } from "../api/types";
+import type { CalendarDay } from "../api/types";
 import { Page } from "../app/Page";
-import { DayPlan } from "../components/DayPlan";
-import { Icon } from "../components/icons";
-import { CardHead, ErrorBox, PageSkeleton } from "../components/ui";
-import { addDaysIso, fmtDayLong, fmtMonth, pct, todayIso, toDate } from "../lib/format";
-import { WEEKDAY_SHORT } from "../lib/labels";
+import { BoardIcon } from "../components/boardIcons";
+import { MonthGrid } from "../components/calendar/MonthGrid";
+import { DayPanel } from "../components/calendar/DayPanel";
+import { EndOfDay, WeeklyGoals, type WeekGoal } from "../components/calendar/SideCards";
+import { KindPills, WeekSummary, type WeekStats } from "../components/calendar/Summary";
+import { useDay } from "../components/calendar/useDay";
+import { WeekList } from "../components/calendar/WeekList";
+import { ErrorBox, Filters, PageSkeleton } from "../components/ui";
+import { dayTitle, GOAL_BEHIND, isoWeek, itemsByDate, KINDS, mondayOf, rangeOf, type Kind, type View } from "../lib/calendar";
+import { addDaysIso, fmtDay, fmtMonth, todayIso, toDate } from "../lib/format";
 
-type View = "week" | "month";
+const DAYS_IN_WEEK = 7;
+const VIEWS: { value: View; label: string }[] = [{ value: "week", label: "Hafta" }, { value: "month", label: "Ay" }];
+const monthName = new Intl.DateTimeFormat("tr-TR", { month: "long" });
 
-/** Monday on or before the date */
-const mondayOf = (iso: string) => addDaysIso(iso, -((toDate(iso).getDay() + 6) % 7));
+const datesOf = (from: string, to: string) => {
+  const list: string[] = [];
+  for (let d = from; d <= to; d = addDaysIso(d, 1)) list.push(d);
+  return list;
+};
 
-/** The visible day range: the week, or whole weeks covering the month */
-function rangeOf(view: View, anchor: string): { from: string; to: string } {
-  if (view === "week") {
-    const from = mondayOf(anchor);
-    return { from, to: addDaysIso(from, 6) };
-  }
-  const first = `${anchor.slice(0, 7)}-01`;
-  const last = addDaysIso(`${addDaysIso(first, 31).slice(0, 7)}-01`, -1);
-  return { from: mondayOf(first), to: addDaysIso(mondayOf(last), 6) };
+/** "12 – 18 Ekim 2026 · 42. hafta" (both months when the week crosses one) */
+function weekLabel(from: string, to: string) {
+  const a = toDate(from);
+  const b = toDate(to);
+  const first = a.getMonth() === b.getMonth() ? `${a.getDate()}` : `${a.getDate()} ${monthName.format(a)}`;
+  return `${first} – ${b.getDate()} ${monthName.format(b)} ${b.getFullYear()} · ${isoWeek(from)}. hafta`;
 }
 
-function Cell({ c, selected, dim, onPick }: { c: CalendarDay; selected: boolean; dim: boolean; onPick: () => void }) {
-  const open = c.tasks.filter((t) => !t.done_at).length;
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      aria-label={`${fmtDayLong(c.date)}, hedef ${pct(c.ratio)}, ${c.tasks.length} görev`}
-      onClick={onPick}
-      className={`flex min-h-cell-min flex-col gap-2 rounded-inner border p-4 text-left transition-colors dur-hover ${
-        selected ? "border-accent-soft-border bg-accent-soft-bg" : "border-border-subtle bg-surface-1 hover:border-border-strong"
-      } ${dim ? "opacity-50" : ""}`}
-    >
-      <span className={`text-base-sm font-medium ${c.date === todayIso() ? "text-accent-text" : ""}`}>{Number(c.date.slice(8))}</span>
-      {c.ratio !== null ? (
-        <span className="flex flex-col gap-1">
-          <span className="track"><i className={`grow-x ${c.ratio >= 1 ? "bg-success" : "bg-entity-payment"}`} style={{ width: `${Math.min(100, c.ratio * 100)}%` }} /></span>
-          <span className="text-xs text-text-secondary">{pct(c.ratio)}</span>
-        </span>
-      ) : null}
-      {c.tasks.length ? <span className={`text-xs ${open ? "text-text-secondary" : "text-text-disabled"}`}>{open ? `${open} görev` : "görevler bitti"}</span> : null}
-    </button>
-  );
+/** Weekly figures from the feed days of the week: items, goal totals (a day counts up to its target) */
+function weekOf(days: CalendarDay[]) {
+  const goals = new Map<number, WeekGoal>();
+  for (const d of days) {
+    for (const g of d.goals) {
+      const cur = goals.get(g.id) ?? { id: g.id, title: g.title, done: 0, target: 0 };
+      goals.set(g.id, { ...cur, done: cur.done + Math.min(g.done, g.target), target: cur.target + g.target });
+    }
+  }
+  return [...goals.values()];
 }
 
 export default function Calendar() {
+  const today = todayIso();
   const [view, setView] = useState<View>("week");
-  const [anchor, setAnchor] = useState(todayIso());
-  const [picked, setPicked] = useState(todayIso());
+  const [anchor, setAnchor] = useState(today);
+  const [picked, setPicked] = useState(today);
+  const [hidden, setHidden] = useState<ReadonlySet<Kind>>(new Set());
   const { from, to } = rangeOf(view, anchor);
   const cal = useQuery<CalendarDay[]>(`/calendar?from=${from}&to=${to}`);
-  const plan = useQuery<Plan>(`/plan?date=${picked}`);
-  const step = (dir: 1 | -1) => setAnchor(view === "week" ? addDaysIso(anchor, dir * 7) : addDaysIso(`${anchor.slice(0, 7)}-15`, dir * 30));
-  const title = view === "week" ? `${fmtDayLong(from)} – ${fmtDayLong(to)}` : fmtMonth(anchor.slice(0, 7));
+  const day = useDay(picked);
+  const now = useDay(today);
+
+  const byDate = useMemo(() => itemsByDate(cal.data ?? [], today), [cal.data, today]);
+  const weekStart = mondayOf(picked);
+  const weekDates = datesOf(weekStart, addDaysIso(weekStart, DAYS_IN_WEEK - 1));
+  const weekItems = weekDates.flatMap((d) => byDate.get(d) ?? []);
+  const goals = weekOf((cal.data ?? []).filter((d) => weekDates.includes(d.date)));
+  const target = goals.reduce((s, g) => s + g.target, 0);
+  const filled = goals.reduce((s, g) => s + g.done, 0);
+  const behind = goals.filter((g) => g.done / g.target < GOAL_BEHIND).sort((a, b) => a.done / a.target - b.done / b.target)[0] ?? null;
+  const stats: WeekStats = {
+    done: weekItems.filter((e) => e.done).length,
+    total: weekItems.length,
+    left: (now.items ?? []).filter((e) => !e.done).length,
+    goalFill: target ? filled / target : null,
+    behind,
+  };
+  const counts = Object.fromEntries(KINDS.map((k) => [k.key, weekItems.filter((e) => e.kind === k.key).length])) as Record<Kind, number>;
+
+  const toggle = (k: Kind) => setHidden((cur) => { const next = new Set(cur); if (!next.delete(k)) next.add(k); return next; });
+  const goToday = () => { setView("week"); setAnchor(today); setPicked(today); };
+  const step = (dir: 1 | -1) => {
+    const next = view === "week" ? addDaysIso(anchor, dir * DAYS_IN_WEEK) : addDaysIso(`${anchor.slice(0, 7)}-15`, dir * 30);
+    const range = rangeOf(view, next);
+    setAnchor(next);
+    setPicked(today >= range.from && today <= range.to && (view === "week" || today.slice(0, 7) === next.slice(0, 7)) ? today : view === "week" ? addDaysIso(picked, dir * DAYS_IN_WEEK) : `${next.slice(0, 7)}-01`);
+  };
+  /** A day of the week of today opens the week view, as on the board */
+  const pick = (date: string) => {
+    setPicked(date);
+    if (view === "month" && mondayOf(date) === mondayOf(today)) { setView("week"); setAnchor(date); }
+  };
+  const sub = view === "week" ? weekLabel(from, to) : fmtMonth(anchor.slice(0, 7));
 
   return (
-    <Page title="Takvim" sub="Hedef doluluğu ve görevler gün gün" className="flex flex-col gap-7 desk:gap-9">
-      <section className="card rise overflow-hidden" aria-label="Takvim">
-        <CardHead title={title}>
-          <span className="flex items-center gap-3">
-            {(["week", "month"] as const).map((v) => (
-              <button key={v} type="button" aria-pressed={view === v} className="fchip h-control-height-xs" onClick={() => setView(v)}>{v === "week" ? "Hafta" : "Ay"}</button>
-            ))}
-            <button type="button" className="ibtn" aria-label="Önceki" onClick={() => step(-1)}><Icon name="arrow" className="size-icon-lg rotate-180" /></button>
-            <button type="button" className="btn btn-sec btn-sm" onClick={() => { setAnchor(todayIso()); setPicked(todayIso()); }}>Bugün</button>
-            <button type="button" className="ibtn" aria-label="Sonraki" onClick={() => step(1)}><Icon name="arrow" className="size-icon-lg" /></button>
-          </span>
-        </CardHead>
-        <div className="grid grid-cols-7 gap-2 px-4 pt-3 text-center text-xs text-text-muted">
-          {WEEKDAY_SHORT.map((d) => <span key={d}>{d}</span>)}
+    <Page title="Takvim" sub={sub} gap="tight" className="flex flex-col gap-9"
+      right={
+        <div className="cal-tools">
+          <Filters label="Görünüm" size="md" items={VIEWS} value={view} onChange={setView} />
+          <button type="button" className="cal-nav" aria-label="Önceki" onClick={() => step(-1)}><BoardIcon name="chevronLeft" className="size-icon-md" stroke={2} /></button>
+          <button type="button" className="cal-today" onClick={goToday}>Bugün</button>
+          <button type="button" className="cal-nav" aria-label="Sonraki" onClick={() => step(1)}><BoardIcon name="chevronRight" className="size-icon-md" stroke={2} /></button>
         </div>
-        {cal.error && !cal.data ? <ErrorBox error={cal.error} retry={cal.reload} /> : null}
-        {!cal.data ? (
-          !cal.error && <PageSkeleton />
-        ) : (
-          <div className="grid grid-cols-7 gap-2 p-4">
-            {cal.data.map((c) => (
-              <Cell key={c.date} c={c} selected={c.date === picked} dim={view === "month" && c.date.slice(0, 7) !== anchor.slice(0, 7)} onPick={() => setPicked(c.date)} />
-            ))}
+      }>
+      {cal.error && !cal.data ? <ErrorBox error={cal.error} retry={cal.reload} /> : null}
+      {!cal.data ? (
+        !cal.error && <PageSkeleton />
+      ) : (
+        <>
+          <WeekSummary s={stats} />
+          <KindPills counts={counts} hidden={hidden} onToggle={toggle} />
+          {view === "week"
+            ? <WeekList dates={datesOf(from, to)} items={byDate} hidden={hidden} picked={picked} today={today} onPick={pick} />
+            : <MonthGrid dates={datesOf(from, to)} month={anchor.slice(0, 7)} items={byDate} hidden={hidden} picked={picked} today={today} onPick={pick} />}
+          <div className="cal-below">
+            {day.items ? <DayPanel title={dayTitle(picked, today)} date={picked} items={day.items} hidden={hidden} /> : null}
+            <div className="flex min-w-0 flex-col gap-9">
+              <EndOfDay items={now.items ?? []} />
+              <WeeklyGoals goals={goals} dayGoals={day.plan?.goals ?? []} date={picked} dayLabel={fmtDay(picked)} streak={now.plan?.streak ?? 0} />
+            </div>
           </div>
-        )}
-      </section>
-      {plan.data ? <DayPlan plan={plan.data} title={fmtDayLong(picked)} /> : null}
+        </>
+      )}
     </Page>
   );
 }
