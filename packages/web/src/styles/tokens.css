@@ -211,6 +211,12 @@
   --spacing-spark-lg-h-0: 6px;
   --spacing-spark-lg-h-1: 22px;
   --spacing-control-height-2xs: 30px;
+  --spacing-referrals-node-h: 64px;
+  --spacing-referrals-pitch: 80px;
+  --spacing-referrals-rank-w: 14px;
+  --spacing-referrals-bar-indent: 26px;
+  --spacing-referrals-indent: 22px;
+  --spacing-referrals-col-min: 220px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -475,6 +481,9 @@
   --dur-mic: 800ms;
   --dur-mic-step: 150ms;
   --dur-icon-pop: 250ms;
+  --dur-edge-draw: 900ms;
+  --dur-edge-draw-delay: 150ms;
+  --dur-node-stagger: 60ms;
   --stagger: 50ms;
   --rise-distance: 14px;
   --press-scale: 0.97;
@@ -617,6 +626,18 @@
 
 @utility dur-icon-pop {
   transition-duration: var(--dur-icon-pop);
+}
+
+@utility dur-edge-draw {
+  transition-duration: var(--dur-edge-draw);
+}
+
+@utility dur-edge-draw-delay {
+  transition-duration: var(--dur-edge-draw-delay);
+}
+
+@utility dur-node-stagger {
+  transition-duration: var(--dur-node-stagger);
 }
 
 @utility z-sidebar {
