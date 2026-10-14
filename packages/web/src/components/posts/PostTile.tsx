@@ -1,7 +1,7 @@
 import { memo, type KeyboardEvent } from "react";
-import type { Person } from "../../api/types";
-import type { PostRow } from "../../api/types-posts";
+import type { Person, Post } from "../../api/types";
 import { lira } from "../../lib/format";
+import { POST_FORMAT } from "../../lib/labels";
 import { ageText, peopleLine, TILE_AVATARS } from "../../lib/posts";
 import { BoardIcon } from "../boardIcons";
 import { Avatar } from "../ui";
@@ -19,7 +19,7 @@ function Stat({ n, label, tone }: { n: number; label: string; tone?: string }) {
 const Arrow = () => <span className="posts-flow-arrow"><BoardIcon name="chevronRight" className="size-icon-sm" stroke={2.2} /></span>;
 
 /** One post: platform, age, title, excerpt, people to opportunities to won, avatars and the value; a click opens the post */
-export const PostTile = memo(function PostTile({ p, people, onOpen }: { p: PostRow; people: Person[]; onOpen: (id: number, el: HTMLElement) => void }) {
+export const PostTile = memo(function PostTile({ p, people, onOpen }: { p: Post; people: Person[]; onOpen: (id: number, el: HTMLElement) => void }) {
   const wonTone = p.won ? "posts-won" : "posts-none";
   const key = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -40,7 +40,7 @@ export const PostTile = memo(function PostTile({ p, people, onOpen }: { p: PostR
     >
       <div className="posts-tile-top">
         <PlatformPill platform={p.platform} />
-        <span className="posts-tile-meta">{p.format ? `${p.format} · ` : ""}{ageText(p)}</span>
+        <span className="posts-tile-meta">{p.format ? `${POST_FORMAT[p.format]} · ` : ""}{ageText(p)}</span>
       </div>
       <div className="posts-tile-body">
         <span className="posts-tile-title">{p.title}</span>

@@ -1,5 +1,5 @@
 // REST yanıt tipleri (packages/core/src/services/queries.ts ile aynı alanlar)
-import type { Actor, OppStage, ProjectStage } from "../lib/labels";
+import type { Actor, OppStage, PostFormat, ProjectStage } from "../lib/labels";
 import type { OwnStage } from "./types-own";
 
 export interface List<T> {
@@ -173,8 +173,12 @@ export interface Post extends Base {
   url: string | null;
   body: string | null;
   posted_at: string;
+  /** the post's own interval in days; null = the `post_refresh_days` setting decides */
   refresh_days: number | null;
+  /** the interval in force: own, else the setting */
+  refresh_every: number;
   refreshed_at: string | null;
+  format: PostFormat | null;
   idea_id: number | null;
   idea_title: string | null;
   notes: string | null;
@@ -182,7 +186,7 @@ export interface Post extends Base {
   opp_count: number;
   won: number;
   won_value: number;
-  next_refresh_at: string | null;
+  next_refresh_at: string;
   refresh_due: boolean;
 }
 export interface Template extends Base {
@@ -656,7 +660,6 @@ export interface Activity {
 }
 export type * from "./types-projects";
 export * from "./types-own";
-export type { PostRow } from "./types-posts";
 export type * from "./types-referrals";
 export type * from "./types-ideas";
 export type { RenderedTemplate } from "./types-templates";

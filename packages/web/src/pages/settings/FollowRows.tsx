@@ -72,14 +72,14 @@ const Warmup = () => (
   </WithNetwork>
 );
 
-/** Days after which a post is due for a refresh; only when the API sends it */
+/** Days after which a post without an interval of its own is due for a refresh */
 function PostRefresh() {
   const s = useSettings();
-  if (s.data?.post_refresh_days === undefined) return null;
+  if (!s.data) return null;
   return <AutoNumber server={s.data.post_refresh_days} save={(n) => putSettings({ post_refresh_days: n })} settle={s.reload} label="Paylaşım güncelleme" min={1} suffix={DAY_SUFFIX} />;
 }
 
-export function followRows(hasPostRefresh: boolean): SettingRow[] {
+export function followRows(): SettingRow[] {
   return [
     {
       id: "reply_wait_days",
@@ -102,15 +102,13 @@ export function followRows(hasPostRefresh: boolean): SettingRow[] {
       keywords: ["takip", "taslak", "hatırlatma"],
       control: <FollowupDays />,
     },
-    ...(hasPostRefresh
-      ? [{
-        id: "post_refresh_days",
-        name: "Paylaşım güncelleme",
-        hint: "Paylaşım bu kadar gün eskiyince uyarı",
-        keywords: ["ilan", "r10", "paylaşım", "yenileme"],
-        control: <PostRefresh />,
-      }]
-      : []),
+    {
+      id: "post_refresh_days",
+      name: "Paylaşım güncelleme",
+      hint: "Kendi aralığı olmayan paylaşım bu kadar gün eskiyince uyarı",
+      keywords: ["ilan", "r10", "paylaşım", "yenileme"],
+      control: <PostRefresh />,
+    },
     ...QUOTA_CHANNELS.map((c, i) => ({
       id: `limit-${c}`,
       name: `${channelName(c)} günlük limit`,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zodKit } from "@fullfollow/core";
-import { POST_PLATFORMS } from "./constants";
+import { POST_FORMATS, POST_PLATFORMS } from "./constants";
 
 const { id, text, optText, date, patch } = zodKit;
 
@@ -13,6 +13,7 @@ export const postCreate = z.strictObject({
   body: optText,
   posted_at: date.optional(),
   refresh_days: days.nullish(),
+  format: z.enum(POST_FORMATS).nullish(),
   idea_id: id.nullish(),
   notes: optText,
 });
@@ -23,6 +24,7 @@ export const postUpdate = patch({
   body: optText,
   posted_at: date,
   refresh_days: days.nullable(),
+  format: z.enum(POST_FORMATS).nullable(),
   idea_id: id.nullable(),
   notes: optText,
   /** true: "güncelledim" (yenileme tarihi bugün olur) */

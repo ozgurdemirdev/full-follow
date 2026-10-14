@@ -9,7 +9,8 @@ import { Combo } from "../components/Combo";
 import { ChipRadio, Field } from "../components/Sheet";
 import { Chip } from "../components/ui";
 import { todayIso } from "../lib/format";
-import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PRIORITIES, PRIORITY, PLATFORMS, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
+import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PRIORITIES, PRIORITY, PLATFORMS, POST_FORMAT, POST_FORMATS, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
+import { useSettings } from "../lib/settings";
 import { SubmitGuard, useSubmit, usePersonOptions, type FormProps } from "./QuickAdd";
 import { emptyRef, ensureCompany, ensurePerson, type Ref } from "./helpers";
 
@@ -134,7 +135,9 @@ export function PostForm(p: FormProps) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [postedAt, setPostedAt] = useState(todayIso());
-  const [refresh, setRefresh] = useState("7");
+  const [refresh, setRefresh] = useState("");
+  const [format, setFormat] = useState("");
+  const defaultDays = useSettings().data?.post_refresh_days;
   const [ideaId, setIdeaId] = useState(p.sheet.preset?.idea_id ? String(p.sheet.preset.idea_id) : "");
   const [body, setBody] = useState("");
   const [notes, setNotes] = useState("");
@@ -147,6 +150,7 @@ export function PostForm(p: FormProps) {
     setUrl(row.url ?? "");
     setPostedAt(row.posted_at.slice(0, 10));
     setRefresh(row.refresh_days ? String(row.refresh_days) : "");
+    setFormat(row.format ?? "");
     setIdeaId(row.idea_id ? String(row.idea_id) : "");
     setBody(row.body ?? "");
     setNotes(row.notes ?? "");
@@ -155,7 +159,7 @@ export function PostForm(p: FormProps) {
   const submit = useSubmit(p, async () => {
     const data = {
       platform, title: title.trim(), url, posted_at: postedAt || undefined, body, notes,
-      refresh_days: refresh ? Math.max(1, Math.round(Number(refresh))) : null,
+      refresh_days: refresh ? Math.max(1, Math.round(Number(refresh))) : null, format: format || null,
       idea_id: ideaId ? Number(ideaId) : null,
     };
     if (editId) await run("patch", `/posts/${editId}`, data, { ok: "Paylaşım güncellendi" });
@@ -165,8 +169,10 @@ export function PostForm(p: FormProps) {
   return (
     <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
       <Field label="Platform">
-        <ChipRadio label="Platform" items={PLATFORMS.map((x) => ({ value: x, label: PLATFORM[x] }))} value={platform}
-          onChange={(v) => { setPlatform(v); if (!editId && !refresh && v === "r10") setRefresh("7"); }} />
+        <ChipRadio label="Platform" items={PLATFORMS.map((x) => ({ value: x, label: PLATFORM[x] }))} value={platform} onChange={setPlatform} />
+      </Field>
+      <Field label="Biçim">
+        <ChipRadio label="Biçim" items={[{ value: "", label: "Belirsiz" }, ...POST_FORMATS.map((x) => ({ value: x, label: POST_FORMAT[x] }))]} value={format} onChange={setFormat} />
       </Field>
       <Field label="Başlık" htmlFor="po-title">
         <input id="po-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. Kurumsal web sitesi yapıyorum" />
@@ -179,7 +185,7 @@ export function PostForm(p: FormProps) {
           <input id="po-date" className="inp" type="date" value={postedAt} onChange={(e) => setPostedAt(e.target.value)} />
         </Field>
         <Field label="Kaç günde bir güncellensin" htmlFor="po-refresh">
-          <input id="po-refresh" className="inp font-mono" inputMode="numeric" value={refresh} onChange={(e) => setRefresh(e.target.value.replace(/\D/g, ""))} placeholder="boş = hatırlatma yok" />
+          <input id="po-refresh" className="inp font-mono" inputMode="numeric" value={refresh} onChange={(e) => setRefresh(e.target.value.replace(/\D/g, ""))} placeholder={defaultDays ? `boş = varsayılan (${defaultDays} gün)` : "boş = varsayılan"} />
         </Field>
       </div>
       {ideas.rows.length ? (
