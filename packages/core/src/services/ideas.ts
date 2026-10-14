@@ -6,7 +6,7 @@ import { idea_people, idea_sectors, ideas } from "../db/schema";
 import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "../schemas";
 import { sectorInput, setSectorLinks } from "./sectors";
 import { placeInGroup, renumberGroup, requireRow, truncate } from "./shared";
-import { Bin } from "./trash";
+import { announceTrashed, Bin } from "./trash";
 
 /**
  * Kişiyi fikre bağlar (yoksa "anlatıldı" olarak). Fikir hakkındaki temas da bunu çağırır.
@@ -72,7 +72,8 @@ export function ideaPeople(ctx: Ctx, ideaId?: number, personId?: number) {
 export function trashIdea(tx: Q, ctx: Ctx, id: number) {
   const cur = requireRow(ctx, "ideas", id);
   const bin = new Bin(ctx);
-  bin.unlink("touches", "idea_id", id);
+  // touches about the idea are the network module's to unlink
+  announceTrashed(ctx, bin, "idea", id);
   bin.unlink("posts", "idea_id", id);
   bin.unlink("ideas", "parent_id", id);
   bin.take("idea_people", "idea_id = ?", id);

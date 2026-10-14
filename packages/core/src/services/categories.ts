@@ -204,3 +204,21 @@ export function sourcesService(ctx: Ctx) {
     restore: (id: number) => restoreCategory(ctx, "source", id),
   };
 }
+
+/** Liste satırındaki etiket ve sektör alanları (web etiketi id ile, MCP adla gösterir) */
+export function labelFields(
+  tags: { id: number; name: string }[] | undefined,
+  sectors: { id: number; path: string }[] | undefined,
+) {
+  return {
+    tags: (tags ?? []).map((t) => t.name), tag_ids: (tags ?? []).map((t) => t.id),
+    sectors: sectors ?? [], sector_path: sectors?.length ? sectors.map((x) => x.path).join(", ") : null,
+  };
+}
+
+/** Eski tek sektör girdisi (`sector: "Sağlık > Diş hekimi"`) çoklu sektör listesine çevrilir */
+export function withSectorList(input: unknown): unknown {
+  if (!input || typeof input !== "object" || !("sector" in input)) return input;
+  const { sector, ...rest } = input as Record<string, any>;
+  return rest.sectors !== undefined ? rest : { ...rest, sectors: sector === null || sector === "" ? [] : [sector] };
+}

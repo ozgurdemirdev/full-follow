@@ -119,8 +119,8 @@ export function projectsService(ctx: Ctx) {
       const bin = new Bin(ctx);
       bin.take("comments", "target_type = 'payment' AND target_id IN (SELECT id FROM payments WHERE project_id = ?)", id);
       bin.take("payments", "project_id = ?", id);
-      for (const t of ["touches", "drafts"]) bin.unlink(t, "project_id", id);
-      // the tasks that point at it are the calendar's to unlink
+      bin.unlink("drafts", "project_id", id);
+      // touches and tasks that point at it are the modules' to clean (network, calendar)
       announceTrashed(ctx, bin, "project", id);
       bin.take("comments", "target_type = 'project' AND target_id = ?", id);
       bin.take("files", "target_type = 'project' AND target_id = ?", id);

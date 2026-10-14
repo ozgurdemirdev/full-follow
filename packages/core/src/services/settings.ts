@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, SETTING_KEYS, type Channel } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, SETTING_KEYS, type Channel } from "../constants";
 import { emit, FFError, parse, row, type Ctx } from "../context";
 import { isIsoDate, resolveRelativeDate } from "../dates";
 import { settings } from "../db/schema";
@@ -131,4 +131,13 @@ export function settingsService(ctx: Ctx) {
   }
 
   return { all, priceFloor, set, setMany };
+}
+
+/** Network settings: the days an answer is awaited and a connection takes to cool, plus the marketing settings */
+export function networkSettings(ctx: Ctx) {
+  const n = (k: keyof typeof NETWORK_DEFAULTS) => {
+    const v = readSetting(ctx, k);
+    return v === undefined ? NETWORK_DEFAULTS[k] : Number(v) || NETWORK_DEFAULTS[k];
+  };
+  return { reply_wait_days: n("reply_wait_days"), cooling_days: n("cooling_days"), ...marketingSettings(ctx) };
 }

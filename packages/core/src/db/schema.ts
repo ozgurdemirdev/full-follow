@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey, uniqueIndex, index, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   ACTORS, SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS,
-  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, COMMENT_TARGETS, LINK_TARGETS,
+  DRAFT_STATUSES, PROJECT_STAGES, MILESTONES, ASSIGNEES, LINK_TARGETS,
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES, FILE_TARGETS,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
@@ -252,7 +252,8 @@ export const tasks = sqliteTable("tasks", {
 /** Kayıtlara yorum: kök yorum + cevaplar (parent_id = kök). Özgür ve Claude yazar. */
 export const comments = sqliteTable("comments", {
   ...common(),
-  target_type: text("target_type", { enum: COMMENT_TARGETS }).notNull(),
+  /** record type of the target; core and the modules each own some (the registry knows which exist) */
+  target_type: text("target_type").notNull(),
   target_id: integer("target_id").notNull(),
   body: text("body").notNull(),
   parent_id: integer("parent_id").references((): AnySQLiteColumn => comments.id),

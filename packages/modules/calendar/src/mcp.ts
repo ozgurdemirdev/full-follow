@@ -60,8 +60,8 @@ export const mcp: McpDef = {
       { at: 450, text: "task; " },
     ],
     get: [
-      { at: 150, text: "|tasks" },
-      { at: 350, text: ",tasks" },
+      { at: 150, text: "tasks|" },
+      { at: 350, text: "tasks," },
     ],
     save: [{
       at: 250,

@@ -59,8 +59,8 @@ describe("registry driven record types", () => {
     const core = makeCore([widgets().def], ["widgets"]);
     expect(() => core.normalizeType("widget")).toThrow(/bilinmeyen tür "widget"/);
     expect(() => core.save("widget", { name: "x" })).toThrow(FFError);
-    expect(core.save("person", { name: "Ada Lovelace" }).row.id).toBe(1);
-    expect(core.find("kisi", { q: "ada" }).total).toBe(1);
+    expect(core.save("sector", { name: "Sağlık" }).row.id).toBe(1);
+    expect(core.find("sektör", { q: "sağ" }).total).toBe(1);
   });
 
   it("a type without a handler for the operation says so", () => {

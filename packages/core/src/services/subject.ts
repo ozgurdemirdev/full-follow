@@ -1,4 +1,5 @@
 // Temas ve taslağın muhatabı: kişi, firma ya da sadece adres/hesap (soğuk e-postadaki info@firma.com gibi).
+// TODO(modules): shared by network (touches) and drafts; it moves with drafts when that becomes a module.
 import { FFError, row, rows, type Ctx } from "../context";
 import { contactKey } from "../keys";
 import { requireRow } from "./shared";
@@ -74,3 +75,15 @@ export function subjectWhere(s: ResolvedSubject | Subject, alias = ""): [string,
   if (s.company_id) return [`${a}company_id = ? AND ${a}person_id IS NULL`, [s.company_id]];
   return [`${a}person_id IS NULL AND ${a}company_id IS NULL AND ${a}contact = ?`, [s.contact]];
 }
+
+/** The record's own person, a colleague at the same company, or that company itself (e.g. a reply sent "as Pizza Z") */
+export function sameSide(ctx: Ctx, ownerId: number, s: { person_id?: number | null; company_id?: number | null }) {
+  if (s.person_id === ownerId) return true;
+  const own = rows<{ company_id: number | null }>(ctx, "SELECT company_id FROM people WHERE id = ?", ownerId)[0]?.company_id;
+  if (!own) return false;
+  if (s.person_id) return rows(ctx, "SELECT 1 FROM people WHERE id = ? AND company_id = ?", s.person_id, own).length > 0;
+  return s.company_id === own;
+}
+
+/** SQL for the touches of a company: written to the company itself or to one of its people (touch alias `t`, the company id twice) */
+export const COMPANY_TOUCHES = "(t.company_id = ? OR t.person_id IN (SELECT id FROM people WHERE company_id = ?))";

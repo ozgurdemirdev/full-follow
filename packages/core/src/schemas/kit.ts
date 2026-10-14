@@ -19,3 +19,25 @@ export const dateTime = z.preprocess(
 
 /** create şemasını güncellemeye çevirir: alanlar opsiyonel */
 export const patch = <T extends z.ZodRawShape>(shape: T) => z.strictObject(shape).partial();
+
+/** Etiket ya da sektör: id, ad ("Sıcak") ya da sektör yolu ("Sağlık > Diş hekimi") */
+export const refList = z.array(z.union([z.number().int().positive(), z.string().trim().min(1)]));
+/** Kişi ve firmada ortak: etiketler (tags tümünü değiştirir, add_tags/remove_tags ekler/çıkarır) ve sektörler */
+export const tagLabels = {
+  tags: refList.optional(),
+  add_tags: refList.optional(),
+  remove_tags: refList.optional(),
+  sectors: refList.optional(),
+};
+
+/**
+ * Temas ve taslağın muhatabı: kişi, firma ya da sadece adres/hesap (info@firma.com, @hesap).
+ * Biri yeterli; kişi verilirse firma ve adres yok sayılır, firma verilirse adres yok sayılır.
+ */
+export const subjectShape = {
+  person_id: id.nullish(),
+  company_id: id.nullish(),
+  contact: optText,
+};
+export const needSubject = (d: { person_id?: number | null; company_id?: number | null; contact?: string | null }) => !!(d.person_id || d.company_id || d.contact);
+export const subjectMsg = { message: "kişi, firma ya da adres (contact) gerekli", path: ["person_id"] };

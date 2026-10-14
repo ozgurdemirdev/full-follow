@@ -3,15 +3,13 @@ import { FFError, norm, rows, systemClock, type Clock, type Ctx, type DuplicateH
 import type { DbHandle } from "./db/client";
 import { sourcesService, tagsService } from "./services/categories";
 import { commentsService } from "./services/comments";
-import { companiesService } from "./services/companies";
 import { assertKeysFree, recordSkipped } from "./services/dupes";
 import { draftsService } from "./services/drafts";
 import { opportunitiesService } from "./services/opportunities";
 import { paymentsService } from "./services/payments";
-import { peopleService } from "./services/people";
 import { projectsService } from "./services/projects";
-import { queriesService } from "./services/queries";
-import { networkLists } from "./services/network";
+import { queriesFor } from "./services/queries";
+import { coreHooks } from "./services/coreHooks";
 import { linksService } from "./services/links";
 import { filesService } from "./services/files";
 import { offersService } from "./services/offers";
@@ -21,9 +19,8 @@ import { entityHandler, isCoreType, normalizeType, resolveId } from "./services/
 import { sectorsService } from "./services/sectors";
 import { reportsService } from "./services/reports";
 import { settingsService } from "./services/settings";
-import { resolveInput, resolveRef } from "./services/shared";
+import { resolveInput, resolveRef, TARGET_TABLE } from "./services/shared";
 import { todayService } from "./services/today";
-import { touchesService } from "./services/touches";
 import { templatesService } from "./services/templates";
 import { ideasService } from "./services/ideas";
 import { ownProjectsService } from "./services/ownProjects";
@@ -49,9 +46,18 @@ export type * from "./contracts";
 
 // ---- What a module's services and server code build on ("service kit") ----
 export { emit as writeEvent, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
-export { requireRow, truncate, link as eventLink } from "./services/shared";
+export { requireRow, resolveRef, truncate, link as eventLink } from "./services/shared";
 export { announceTrashed, Bin } from "./services/trash";
-export { bool, has } from "./services/directory";
+export { bool, has, labelFilter, stripKeys } from "./services/directory";
+export { assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
+export { assertUnique, keyList } from "./services/dupes";
+export { COMPANY_TOUCHES, resolveSubject, sameSide, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
+export { isColdEmail } from "./services/quota";
+export { networkSettings, readSetting } from "./services/settings";
+export { queriesFor } from "./services/queries";
+export { ideaPeople } from "./services/ideas";
+export { listThreads } from "./services/comments";
+export { companyKeys, contactKey, personKeys } from "./keys";
 export { outgoingMessageCounts } from "./services/quota";
 export { paymentsDue, type DuePayment } from "./services/payments";
 export { followUpsDue, type DueFollowUp } from "./services/followups";
@@ -73,16 +79,13 @@ export interface BulkResult {
  */
 export function createCore(handle: DbHandle, actor: Actor, clock: Clock = systemClock, registry: ModuleRegistry = createRegistry()) {
   const ctx = { db: handle.db, sqlite: handle.sqlite, actor, clock } as Ctx;
-  Object.assign(ctx, registry.bind(ctx));
+  Object.assign(ctx, registry.bind(ctx, coreHooks));
   /** alias or name to the canonical record type; core types and the installed modules' types */
   const typeOf = (type: string) => normalizeType(ctx, type);
 
-  const companies = companiesService(ctx);
-  const people = peopleService(ctx);
   const sources = sourcesService(ctx);
   const tags = tagsService(ctx);
   const opportunities = opportunitiesService(ctx);
-  const touches = touchesService(ctx);
   const drafts = draftsService(ctx);
   const projects = projectsService(ctx);
   const payments = paymentsService(ctx);
@@ -94,7 +97,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const offers = offersService(ctx);
   const files = filesService(ctx);
   const settings = settingsService(ctx);
-  const queries = queriesService(ctx);
+  const queries = queriesFor(ctx);
   const reports = reportsService(ctx);
   const todayFn = todayService(ctx);
   const templates = templatesService(ctx);
@@ -102,37 +105,19 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   const ownProjects = ownProjectsService(ctx);
   const chat = chatService(ctx);
 
-  /**
-   * Kişinin firması adla verilip (`company: "ABC Ltd"`) bulunamazsa firma açılır: toplu listede firmalar ayrıca eklenmesin.
-   * Firma çöp kutusundaysa mükerrer hatası döner.
-   */
-  function withCompany(t: string, data: Record<string, any>): Record<string, any> {
-    if (t !== "person" || typeof data.company !== "string" || !data.company.trim() || data.company_id !== undefined) return data;
-    const { company, ...rest } = data;
-    try {
-      return { ...rest, company_id: resolveRef(ctx, "company", company) };
-    } catch (e) {
-      if (!(e instanceof FFError) || e.code !== "not_found") throw e;
-      return { ...rest, company_id: companies.create({ name: company }).row.id };
-    }
-  }
-
   /** Kayıt oluştur ya da güncelle (id verilirse güncelle). Aşama değişikliği burada yapılmaz. */
   function save(type: string, data: Record<string, any>, id?: string | number): SaveResult {
     const t = typeOf(type);
-    const d = resolveInput(ctx, withCompany(t, data ?? {}));
+    const d = resolveInput(ctx, ctx.types.entity(t)?.prepare?.(ctx, data ?? {}) ?? data ?? {});
     const nid = id === undefined || id === null || id === "" ? undefined : resolveId(ctx, t, id);
     if (!isCoreType(t)) return entityHandler(ctx, t, "save")(ctx, d, nid);
     switch (t) {
-      case "person": return nid ? people.update(nid, d) : people.create(d);
-      case "company": return nid ? companies.update(nid, d) : companies.create(d);
       case "source": return nid ? sources.update(nid, d) : sources.create(d);
       case "tag": return nid ? tags.update(nid, d) : tags.create(d);
       case "opportunity": return nid ? opportunities.update(nid, d) : opportunities.create(d);
       case "project": return nid ? projects.update(nid, d) : projects.create(d);
       case "payment": return nid ? payments.update(nid, d) : payments.create(d);
       case "draft": return nid ? drafts.update(nid, d) : drafts.create(d);
-      case "touch": return nid ? touches.update(nid, d) : touches.create(d);
       case "sector": return nid ? sectors.update(nid, d) : sectors.create(d);
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
       case "link": return nid ? links.update(nid, d) : links.create(d);
@@ -166,7 +151,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
           else out.failed.push({ index, label: labelOf(item), error: e instanceof Error ? e.message : String(e) });
         }
       });
-      if (t === "person" || t === "company") recordSkipped(ctx, t, out.skipped.map((s) => items[s.index]));
+      const bulk = ctx.types.entity(t)?.bulk;
+      if (bulk) recordSkipped(ctx, t, bulk.label, out.skipped.flatMap((s) => bulk.keys(items[s.index])), out.skipped.length);
     })();
     return out;
   }
@@ -188,8 +174,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     const nid = resolveId(ctx, t, id);
     if (!isCoreType(t)) return entityHandler(ctx, t, "delete")(ctx, nid);
     switch (t) {
-      case "person": return people.remove(nid);
-      case "company": return companies.remove(nid);
       case "source": return { ...sources.remove(nid), trash: { type: "source", id: nid } };
       case "tag": return { ...tags.remove(nid), trash: { type: "tag", id: nid } };
       case "sector": return { ...sectors.remove(nid), trash: { type: "sector", id: nid } };
@@ -197,7 +181,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "project": return projects.remove(nid);
       case "payment": return payments.remove(nid);
       case "draft": return drafts.remove(nid);
-      case "touch": return touches.remove(nid);
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
@@ -255,12 +238,14 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     moduleMeta: (): Record<string, unknown> => Object.assign({}, ...ctx.contrib("meta")),
     /** typed access to another module's API; undefined when that module is not installed */
     mod: ctx.mod,
+    /** record types comments can hang on: core's and the installed modules' */
+    commentTargets: (): string[] => [...Object.keys(TARGET_TABLE), ...ctx.types.commentTargets()],
     /** the context services run with (actor, clock, db): module tools (MCP) call their module's API through it */
     ctx,
     /** alias or name to the canonical record type; unknown types and types of modules that are not installed are a clear error */
     normalizeType: typeOf,
     // yazma servisleri (REST controller'ları ve testler kullanır)
-    companies, people, sources, tags, opportunities, touches, drafts, projects, payments, comments, settings, sectors, notes, links,
+    sources, tags, opportunities, drafts, projects, payments, comments, settings, sectors, notes, links,
     oppPeople, offers, files,
     templates, ideas, ownProjects, chat,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
@@ -272,9 +257,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     trash: { list: () => trashList(ctx), restore },
     // okuma
     queries, reports, today: todayFn,
-    network: (limit = 50) => networkLists(ctx, limit),
-    personCard: (id: string | number) => queries.personCard(resolveId(ctx, "person", id)),
-    companyCard: (id: string | number) => queries.companyCard(resolveId(ctx, "company", id)),
     // genel giriş (MCP araçları)
     find, get, save, saveMany, move, remove, restore, timeline,
     resolveRef: (type: string, ref: string | number) => resolveRef(ctx, type, ref),

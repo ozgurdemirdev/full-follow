@@ -1,4 +1,4 @@
-import { defineModule } from "@fullfollow/core";
+import { defineModule, row } from "@fullfollow/core";
 import { postsApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
@@ -16,6 +16,16 @@ export default defineModule({
   entities,
   contribute: {
     trashTypes: [{ type: "post", label: "paylaşım" }],
+    commentTargets: {
+      post: { table: "posts", label: (ctx, id) => row(ctx, "SELECT title FROM posts WHERE id = ?", id)?.title ?? `#${id}` },
+    },
+    chatCards: {
+      post: (ctx, id) => {
+        const r = ctx.mod("posts")!.get(id);
+        if (!r) throw new Error("post not found");
+        return { title: r.title, platform: r.platform };
+      },
+    },
     // posts whose refresh day has come, on the Today view
     today: (ctx, { limit }) => ({ posts_due: ctx.mod("posts")!.list({ limit, filter: { refresh_due: true } }) }),
     // `get(idea, id, with: ["posts"])`

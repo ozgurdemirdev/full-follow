@@ -14,9 +14,9 @@ describe("createApp", () => {
   it("with no modules it behaves like core: save, find and a hook-free event", () => {
     if (modules.length) return;
     const app = createApp(openDb(":memory:"), "claude");
-    const saved = app.save("person", { name: "Ada Lovelace" });
+    const saved = app.save("sector", { name: "Sağlık" });
     expect(saved.row.created_by).toBe("claude");
-    expect(app.find("person", { q: "ada" }).rows).toHaveLength(1);
+    expect(app.find("sector", { q: "sağ" }).rows).toHaveLength(1);
   });
 
   it("the generated list is well formed", () => {

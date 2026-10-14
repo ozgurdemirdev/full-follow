@@ -3,9 +3,8 @@ import { assertOzgur, emit, FFError, parse, stamp, type Ctx } from "../context";
 import { drafts } from "../db/schema";
 import { draftCreate, draftUpdate } from "../schemas";
 import { z } from "zod";
-import { insertTouch, sameSide } from "./touches";
 import { link, requireRow, truncate } from "./shared";
-import { resolveSubject } from "./subject";
+import { resolveSubject, sameSide } from "./subject";
 import { renderTemplate } from "./templates";
 import { Bin } from "./trash";
 
@@ -66,19 +65,20 @@ export function draftsService(ctx: Ctx) {
     return { row: requireRow(ctx, "drafts", id), effects: [] as string[] };
   }
 
-  /** "Gönderdim": taslak gonderildi olur, giden temas oluşur, fırsat aşaması kuralı çalışır */
+  /** "Gönderdim": taslak gonderildi olur, giden temas oluşur, fırsat aşaması kuralı çalışır (temas network modülü kuruluysa) */
   function markSent(id: number) {
     assertOzgur(ctx, "Taslak gönderildi işareti");
     return ctx.db.transaction((tx) => {
       const cur = requireRow(ctx, "drafts", id);
       if (cur.status !== "bekliyor" && cur.status !== "onaylandi") throw new FFError("rule", `Taslak zaten ${cur.status}`);
       tx.update(drafts).set({ status: "gonderildi", updated_at: ctx.clock.now() }).where(eq(drafts.id, id)).run();
-      const t = insertTouch(tx, ctx, {
+      // TODO(modules): drafts becomes a module and emits `draft.sent`; network subscribes and records the touch
+      const t = ctx.mod("network")?.touches.insert(tx, {
         person_id: cur.person_id, company_id: cur.company_id, contact: cur.contact, opportunity_id: cur.opportunity_id, project_id: cur.project_id,
         channel: cur.channel, direction: "giden", kind: "mesaj", summary: cur.body, outcome: null, draft_id: id,
       });
-      emit(tx, ctx, { type: "draft.sent", ...link(ctx, cur), summary: `Taslak gönderildi (${cur.channel})`, data: { draft_id: id, touch_id: t.row.id } });
-      return { row: requireRow(ctx, "drafts", id), touch: t.row, effects: [`temas #${t.row.id} oluştu`, ...t.effects] };
+      emit(tx, ctx, { type: "draft.sent", ...link(ctx, cur), summary: `Taslak gönderildi (${cur.channel})`, data: { draft_id: id, touch_id: t?.row.id } });
+      return { row: requireRow(ctx, "drafts", id), touch: t?.row, effects: t ? [`temas #${t.row.id} oluştu`, ...t.effects] : [] };
     });
   }
 

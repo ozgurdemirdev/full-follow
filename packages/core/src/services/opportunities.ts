@@ -107,8 +107,8 @@ export function opportunitiesService(ctx: Ctx) {
     if (row(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", id)) throw new FFError("rule", `${cur.title} silinemez: projesi var`);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      for (const t of ["touches", "drafts"]) bin.unlink(t, "opportunity_id", id);
-      // the tasks that point at it are the calendar's to unlink
+      bin.unlink("drafts", "opportunity_id", id);
+      // touches and tasks that point at it are the modules' to clean (network, calendar)
       announceTrashed(ctx, bin, "opportunity", id);
       // offers point at files, so they go first
       bin.take("offers", "opportunity_id = ?", id);

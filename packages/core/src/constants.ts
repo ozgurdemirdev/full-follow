@@ -10,8 +10,12 @@ export const TAG_COLORS = ["aday", "musteri", "ajans", "is_ortagi", "network", "
 /** Firma ve kişinin temas durumu: temaslarla ileri gider, geri gitmez; "olumsuz", "tanidik" ve "arkadas" sadece elle */
 export const CONTACT_STATUSES = ["yazilmadi", "yazildi", "cevap_geldi", "gorusuldu", "olumsuz", "es_gecildi", "tanidik", "arkadas"] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
+/** Set by hand; touches never move these */
+export const STICKY_CONTACT_STATUSES: readonly ContactStatus[] = ["olumsuz", "tanidik", "arkadas"];
+/** How far a status has come: a touch only moves a status forward (a negative rank is a hand set one) */
+export const CONTACT_STATUS_RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1, es_gecildi: -1, tanidik: -1, arkadas: -1 };
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
-export const CORE_TRASH_TYPES = ["person", "company", "opportunity", "project", "touch", "note", "template", "idea", "draft", "payment", "comment", "interest", "link", "own_project", "opportunity_person", "offer", "file"] as const;
+export const CORE_TRASH_TYPES = ["opportunity", "project", "note", "template", "idea", "draft", "payment", "comment", "interest", "link", "own_project", "opportunity_person", "offer", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -30,8 +34,8 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number];
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
 export const ASSIGNEES = ACTORS;
-export const COMMENT_TARGETS = ["person", "company", "opportunity", "project", "task", "draft", "payment", "post", "idea", "own_project"] as const;
-export type CommentTarget = (typeof COMMENT_TARGETS)[number];
+/** A comment target type: a record type core owns (`TARGET_TABLE` in services/shared.ts) or one a module adds (`commentTargets` contribution) */
+export type CommentTarget = string;
 /** Role of an extra person on an opportunity (the main contact is opportunities.person_id and has no role) */
 export const OPP_ROLES = ["karar_verici", "teknik", "ortak", "diger"] as const;
 export type OppRole = (typeof OPP_ROLES)[number];
@@ -42,10 +46,10 @@ export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 /** Record types that belong to a feature module, and the module key that owns each: names the missing module in the error when it is not installed */
-export const MODULE_TYPE_OWNER = { task: "calendar", goal: "calendar", goal_log: "calendar", post: "posts" } as const;
+export const MODULE_TYPE_OWNER = { task: "calendar", goal: "calendar", goal_log: "calendar", post: "posts", person: "people", company: "companies", touch: "network" } as const;
 
 export const RECORD_TYPES = [
-  "person", "company", "opportunity", "project", "draft", "payment", "source", "comment", "touch", "setting",
+  "opportunity", "project", "draft", "payment", "source", "comment", "setting",
   "sector", "note", "tag", "trash", "link", "offer",
   // Paket 2: pazarlama
   "template", "idea", "interest",
@@ -56,15 +60,14 @@ export type RecordType = (typeof RECORD_TYPES)[number];
 
 export const TYPE_ALIASES: Record<string, RecordType> = {
   opp: "opportunity", fırsat: "opportunity", firsat: "opportunity",
-  kisi: "person", kişi: "person", people: "person",
-  firma: "company", proje: "project",
+  proje: "project",
   taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
-  yorum: "comment", temas: "touch", ayar: "setting", settings: "setting",
+  yorum: "comment", ayar: "setting", settings: "setting",
   sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
   sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   own: "own_project", own_projects: "own_project", kendi_proje: "own_project", "kendi projem": "own_project", projelerim: "own_project", urunum: "own_project",
-  etiket: "tag", tags: "tag", companies: "company", firmalar: "company", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
+  etiket: "tag", tags: "tag", cop: "trash", "çöp": "trash", "çöp kutusu": "trash",
 };
 
 // ---- Paket 2: pazarlama ----

@@ -40,15 +40,14 @@ export function assertUnique(ctx: Ctx, keys: KeyCols, self?: { type: "person" | 
 
 /**
  * Duplicates skipped by one bulk save (people and companies) become a single event: the skipped count and the keys of the
- * skipped records. The daily goal row reads its "duplicates skipped" count from here. Called inside the bulk save transaction.
+ * skipped records (`label` is the Turkish name of the type, `keys` the duplicate keys of the skipped items). The daily goal row reads its "duplicates skipped" count from here. Called inside the bulk save transaction.
  */
-export function recordSkipped(ctx: Ctx, type: "person" | "company", items: Record<string, any>[]) {
-  if (!items.length) return;
-  const keys = items.flatMap((i) => keyList(type === "person" ? personKeys(i) : companyKeys(i)));
+export function recordSkipped(ctx: Ctx, type: string, label: string, keys: string[], count: number) {
+  if (!count) return;
   emit(ctx.db, ctx, {
     type: BULK_SKIPPED_EVENT,
-    summary: `Toplu eklemede ${items.length} mükerrer ${type === "person" ? "kişi" : "firma"} atlandı`,
-    data: { record_type: type, count: items.length, keys },
+    summary: `Toplu eklemede ${count} mükerrer ${label} atlandı`,
+    data: { record_type: type, count, keys },
   });
 }
 

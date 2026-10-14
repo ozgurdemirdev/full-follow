@@ -1,7 +1,7 @@
 import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, WEEK_DAYS } from "../constants";
 import { addDays, dayOf, daysBetween, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
 import { FFError, rows, type Ctx } from "../context";
-import { weekStats } from "./network";
+import type { WeekStats } from "../contracts";
 import { quotaOverDays } from "./quota";
 import { marketingSettings } from "./settings";
 import { sourceFunnel } from "./sourceFunnel";
@@ -51,11 +51,19 @@ function sourceHighlights(ctx: Ctx) {
   return { period: f.period, best: pick(settled[0]), weakest: pick(weak) };
 }
 
+/** The week's touch numbers; zero when the network module is not installed */
+const NO_WEEK: WeekStats = {
+  week_start: "",
+  this_week: { sent: 0, replies: 0, meetings: 0, reply_rate: null, new_people: 0, new_companies: 0 },
+  last_week: { sent: 0, replies: 0, meetings: 0, reply_rate: null, new_people: 0, new_companies: 0 },
+  by_channel: [], open_offers: 0, silent_offers: 0,
+};
+
 type Facts = ReturnType<typeof buildFacts>;
 
 /** Facts the suggestions are built from */
 function buildFacts(ctx: Ctx, ws: string) {
-  const w = weekStats(ctx, ws);
+  const w = ctx.mod("network")?.weekStats(ws) ?? { ...NO_WEEK, week_start: ws };
   const until = addDays(ws, 6);
   const prev = addDays(ws, -7);
   return {

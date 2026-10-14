@@ -19,20 +19,12 @@ export const join = (...p: (string | number | null | undefined | false)[]) => p.
 type Row = Record<string, any>;
 
 const LINE: Record<string, (r: Row) => string> = {
-  person: (r) => join(
-    `#${r.id} ${r.name}`, r.tags?.join(","), r.sector_path, r.role, r.company_name, r.contact_status && r.contact_status !== "yazilmadi" && label(r.contact_status),
-    r.source_name && `kaynak ${r.source_name}`,
-    r.awaiting ? `CEVAP BEKLİYOR ${r.awaiting.days}g ${label(r.awaiting.channel)}${r.awaiting.attempts > 1 ? ` ${r.awaiting.attempts} deneme` : ""}` : r.last_touch_at && `son ${label(r.last_channel)} ${r.days_since}g önce`,
-    r.cooling && "SOĞUYOR", r.next_follow_up_at && `takip ${d(r.next_follow_up_at)}`, r.handle, r.email, r.phone,
-  ),
   sector: (r) => join(`#${r.id} ${r.path}`, `${r.people_count ?? 0} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
   opp_person: (r) => join(`#${r.id} ${r.person_name}`, label(r.role), r.company_name, r.note && cut(r.note, 60)),
   offer: (r) => join(`#${r.id} v${r.version}`, d(r.offered_at), tl(r.amount), r.accepted_at && "kabul edildi", r.opportunity_title, !!r.items?.length && `${r.items.length} kalem`, r.note && cut(r.note, 60), r.file_id && `dosya #${r.file_id}`),
   file: (r) => join(`#${r.id} ${r.name}`, `${Math.max(1, Math.round(r.size / 1024))} KB`, d(r.created_at)),
   link: (r) => join(`#${r.id} ${r.label}`, r.url, r.from && `(${r.from})`),
   note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, 80)),
-  company: (r) => join(`#${r.id} ${r.name}`, label(r.contact_status), r.tags?.join(","), r.sector_path, r.source_name && `kaynak ${r.source_name}`,
-    r.people_count ? `${r.people_count} kişi` : "", !!r.open_opps && `${r.open_opps} açık fırsat`, r.last_touch_at && `son temas ${d(r.last_touch_at)}`, r.website, r.email),
   tag: (r) => join(`#${r.id} ${r.name}`, `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
   trash: (r) => join(`${r.type} #${r.id} ${r.label}`, `${r.what} · silindi ${d(r.deleted_at)}`),
   source: (r) => join(`#${r.id} ${r.name}`, r.kind, `${r.opp_count ?? 0} fırsat`, !!r.people_count && `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
@@ -44,7 +36,6 @@ const LINE: Record<string, (r: Row) => string> = {
   ),
   draft: (r) => join(`#${r.id} ${r.to_name ?? r.person_name}`, label(r.channel), label(r.status), !!r.followup_step && `${r.followup_step}. takip`, `"${cut(r.body, 60)}"`, r.reject_note && `ret: ${cut(r.reject_note, 40)}`),
   payment: (r) => join(`#${r.id} ${r.project_name}`, label(r.milestone), `${tl(r.paid_amount)}/${tl(r.expected_amount)}`, r.due_date && `vade ${d(r.due_date)}`, r.status !== "bekliyor" && label(r.status === "odendi" ? "ödendi" : r.status === "kismi" ? "kısmi" : "gecikmiş")),
-  touch: (r) => join(`#${r.id} ${d(r.happened_at)} ${r.direction} ${label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && "firma", cut(r.summary, 60), r.outcome && `→ ${cut(r.outcome, 30)}`, r.expects_reply && "cevap bekler"),
   comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, 60)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, 60)}"`, r.count > 1 && `${r.count} yorum`, r.last_by === "ozgur" && !r.resolved_at && "CEVAPSIZ", r.resolved_at && "kapalı"),
   setting: (r) => `${r.key}=${r.value}`,
   template: (r) => join(`#${r.id} ${r.name}`, label(r.kind), r.channel ? label(r.channel) : "tüm kanallar", r.sector_path ?? "tüm sektörler",
@@ -74,14 +65,15 @@ export function useMcpDefs(defs: McpDef[]) {
 }
 
 export function line(type: string, r: Row): string {
-  return (LINE[type] ?? ((x: Row) => entityDocs[type].line(x, mcpFormat)))(r);
+  // a type whose module is not installed (a list of records that still exist): the name or title is all there is
+  return (LINE[type] ?? ((x: Row) => entityDocs[type]?.line(x, mcpFormat) ?? join(`#${x.id}`, x.name ?? x.title)))(r);
 }
 
 /** Short Turkish name of a record type in confirmations ("görev") */
 export const kindName = (type: string): string => KIND_NAME[type] ?? entityDocs[type]?.kind ?? type;
 
 /** What a module's formatters get to format like the core types do */
-export const mcpFormat: McpFormat = { d, tl, cut, who, join, label, line, section: (title, type, res) => sec(title, type, res) };
+export const mcpFormat: McpFormat = { d, tl, cut, who, join, label, line, section: (title, type, res) => sec(title, type, res), ok };
 
 export function list(type: string, res: { rows: Row[]; total: number }, offset = 0): string {
   if (!res.rows.length) return "kayıt yok";
@@ -136,7 +128,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     }
     const t = name === "people" && type === "idea" ? "interest"
       : name === "people" && type === "opportunity" ? "opp_person"
-      : ({ ...relationTypes, links: "link", notes: "note", touches: "touch", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", people: "person", referrals: "person", comments: "comment", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
+      : ({ ...relationTypes, links: "link", notes: "note", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", comments: "comment", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -166,13 +158,10 @@ export function todayText(t: any): string {
   // core's sections are numbered 100, 200, ...; a module's section has its own number and lands between them
   const core: { at: number; text: string }[] = [
     { at: 100, text: sec("Cevapsız yorum", "comment", t.comments) },
-    { at: 200, text: sec("Cevap bekleyen", "person", t.network.awaiting) },
     { at: 300, text: t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "" },
     { at: 400, text: sec("Onay bekleyen taslak", "draft", t.drafts) },
     { at: 500, text: sec("Takip zamanı (taslak yok)", "followup", t.followups ?? { rows: [], total: 0 }) },
-    { at: 600, text: sec("Takip: kişi", "person", t.follow_ups.people) },
     { at: 700, text: sec("Takip: fırsat", "opportunity", t.follow_ups.opportunities) },
-    { at: 800, text: sec("Soğuyan bağlantı", "person", t.network.cooling) },
     { at: 900, text: sec("Ödeme (7 gün)", "payment", t.payments) },
   ];
   const parts = [...core, ...todaySections.map((s) => ({ at: s.at, text: s.render(t, mcpFormat) }))]
@@ -252,9 +241,9 @@ export function reviewText(r: any): string {
 }
 
 export const KIND_NAME: Record<string, string> = {
-  person: "kişi", company: "firma", source: "kaynak", opportunity: "fırsat", project: "proje", task: "görev",
-  draft: "taslak", payment: "ödeme", touch: "temas", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", offer: "teklif",
-  post: "paylaşım", template: "şablon", idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu", goal: "hedef", goal_log: "ilerleme",
+  source: "kaynak", opportunity: "fırsat", project: "proje",
+  draft: "taslak", payment: "ödeme", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", offer: "teklif",
+  template: "şablon", idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu",
 };
 
 /** Toplu kayıt özeti: eklenen sayısı, mükerrer diye atlananlar (hangi kayıtla çakıştı), hatalılar */
@@ -263,7 +252,7 @@ export function bulkText(kind: string, r: { created: { id: number; label: string
   const eff = r.created.flatMap((c) => c.effects);
   if (eff.length) out.push(`etki: ${eff.join(" · ")}`);
   if (r.skipped.length) {
-    out.push(`atlandı (mükerrer) ${r.skipped.length}:`, ...r.skipped.map((s) => `  [${s.index}] ${s.label} → ${KIND_NAME[s.existing.type] ?? s.existing.type} #${s.existing.id} ${s.existing.label} (${s.existing.field}${s.existing.in_trash ? ", çöp kutusunda" : ""})`));
+    out.push(`atlandı (mükerrer) ${r.skipped.length}:`, ...r.skipped.map((s) => `  [${s.index}] ${s.label} → ${kindName(s.existing.type)} #${s.existing.id} ${s.existing.label} (${s.existing.field}${s.existing.in_trash ? ", çöp kutusunda" : ""})`));
   }
   if (r.failed.length) out.push(`hata ${r.failed.length}:`, ...r.failed.map((f) => `  [${f.index}] ${f.label}: ${f.error}`));
   return out.join("\n");

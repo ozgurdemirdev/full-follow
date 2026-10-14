@@ -1,9 +1,7 @@
 import { monthOf } from "../dates";
 import { rows, type Ctx } from "../context";
-import { referralValues, weekStats } from "./network";
 import { collectedIn } from "./payments";
 import { settingsService } from "./settings";
-import { activity } from "./activity";
 import { sourceFunnel } from "./sourceFunnel";
 
 export function reportsService(ctx: Ctx) {
@@ -46,5 +44,6 @@ export function reportsService(ctx: Ctx) {
     return { sources: bySource(), month: month(m) };
   }
 
-  return { bySource, sourceFunnel: (period?: unknown) => sourceFunnel(ctx, period), month, months, report, referrals: () => referralValues(ctx), week: () => weekStats(ctx), activity: (period?: string) => activity(ctx, period) };
+  // TODO(modules): the referral report becomes the referrals module; until then it reads the people module's referral tree
+  return { bySource, sourceFunnel: (period?: unknown) => sourceFunnel(ctx, period), month, months, report, referrals: () => ctx.mod("people")?.referralValues() ?? [] };
 }

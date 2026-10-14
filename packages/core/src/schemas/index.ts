@@ -1,69 +1,12 @@
 import { z } from "zod";
 import {
-  SOURCE_KINDS, OPP_STAGES, CHANNELS, DIRECTIONS, TOUCH_KINDS, PROJECT_STAGES, MILESTONES,
-  COMMENT_TARGETS, LINK_TARGETS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CONTACT_STATUSES, TAG_COLORS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
+  SOURCE_KINDS, OPP_STAGES, CHANNELS, PROJECT_STAGES, MILESTONES,
+  LINK_TARGETS, TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
+  TAG_COLORS, OPP_ROLES, FILE_TARGETS, FILE_NAME_MAX, OFFER_ITEMS_MAX,
 } from "../constants";
 import * as zodKit from "./kit";
 
 const { id, text, optText, tl, date, dateTime, patch } = zodKit;
-
-/** Etiket ya da sektör: id, ad ("Sıcak") ya da sektör yolu ("Sağlık > Diş hekimi") */
-const refList = z.array(z.union([z.number().int().positive(), z.string().trim().min(1)]));
-/** Kişi ve firmada ortak: etiketler (tags tümünü değiştirir, add_tags/remove_tags ekler/çıkarır) ve sektörler */
-const labels = {
-  tags: refList.optional(),
-  add_tags: refList.optional(),
-  remove_tags: refList.optional(),
-  sectors: refList.optional(),
-};
-
-const companyShape = {
-  name: text,
-  website: optText,
-  email: optText,
-  phone: optText,
-  instagram: optText,
-  linkedin: optText,
-  source_id: id.nullable(),
-  contact_status: z.enum(CONTACT_STATUSES),
-  notes: optText,
-};
-export const companyCreate = z.strictObject({
-  ...companyShape,
-  source_id: companyShape.source_id.optional(),
-  contact_status: companyShape.contact_status.optional(),
-  ...labels,
-});
-export const companyUpdate = patch(companyShape).extend(labels);
-
-const personShape = {
-  name: text,
-  company_id: id.nullable(),
-  role: optText,
-  email: optText,
-  phone: optText,
-  instagram: optText,
-  linkedin: optText,
-  handle: optText,
-  referred_by_id: id.nullable(),
-  post_id: id.nullable(),
-  source_id: id.nullable(),
-  contact_status: z.enum(CONTACT_STATUSES),
-  next_follow_up_at: date,
-  notes: optText,
-};
-export const personCreate = z.strictObject({
-  ...personShape,
-  company_id: personShape.company_id.optional(),
-  referred_by_id: personShape.referred_by_id.optional(),
-  post_id: personShape.post_id.optional(),
-  source_id: personShape.source_id.optional(),
-  contact_status: personShape.contact_status.optional(),
-  next_follow_up_at: personShape.next_follow_up_at.optional(),
-  ...labels,
-});
-export const personUpdate = patch(personShape).extend(labels);
 
 export const tagCreate = z.strictObject({ name: text, color: z.enum(TAG_COLORS).optional() });
 export const tagUpdate = patch({ name: text, color: z.enum(TAG_COLORS) });
@@ -146,42 +89,7 @@ export const projectUpdate = patch({
   maintenance_fee: tl.nullable(),
 });
 
-/**
- * Temas ve taslağın muhatabı: kişi, firma ya da sadece adres/hesap (info@firma.com, @hesap).
- * Biri yeterli; kişi verilirse firma ve adres yok sayılır, firma verilirse adres yok sayılır.
- */
-const subject = {
-  person_id: id.nullish(),
-  company_id: id.nullish(),
-  contact: optText,
-};
-const needSubject = (d: { person_id?: number | null; company_id?: number | null; contact?: string | null }) => !!(d.person_id || d.company_id || d.contact);
-const subjectMsg = { message: "kişi, firma ya da adres (contact) gerekli", path: ["person_id"] };
-
-export const touchCreate = z.strictObject({
-  ...subject,
-  opportunity_id: id.nullish(),
-  project_id: id.nullish(),
-  channel: z.enum(CHANNELS),
-  direction: z.enum(DIRECTIONS),
-  kind: z.enum(TOUCH_KINDS).default("mesaj"),
-  summary: text,
-  outcome: optText,
-  happened_at: dateTime.optional(),
-  /** verilmezse: giden mesaj → evet, diğerleri → hayır */
-  expects_reply: z.boolean().optional(),
-  /** Paket 2: temas bir fikir hakkındaysa kişi fikre "anlatıldı" olarak bağlanır */
-  idea_id: id.nullish(),
-}).refine(needSubject, subjectMsg);
-export const touchUpdate = patch({
-  channel: z.enum(CHANNELS),
-  kind: z.enum(TOUCH_KINDS),
-  summary: text,
-  outcome: optText,
-  happened_at: dateTime,
-  expects_reply: z.boolean(),
-  idea_id: id.nullable(),
-});
+const { subjectShape: subject, needSubject, subjectMsg } = zodKit;
 
 export const sectorCreate = z.strictObject({ name: text, parent_id: id.nullish() });
 export const sectorUpdate = patch({ name: text, parent_id: id.nullable() });
@@ -290,7 +198,8 @@ export const paymentUpdate = patch({
 });
 
 export const commentCreate = z.strictObject({
-  target_type: z.enum(COMMENT_TARGETS).optional(),
+  /** a record type core or an installed module owns; the comment service checks it against the registry */
+  target_type: z.string().trim().min(1).optional(),
   target_id: id.optional(),
   reply_to: id.optional(),
   body: text,

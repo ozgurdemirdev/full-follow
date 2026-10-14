@@ -1,5 +1,5 @@
 import { FFError, type Ctx } from "../context";
-import type { EntityHandler, EntityRef, EventName, EventPayload, ModAccess, ModuleDef, ModuleRuntime, TrashTypeDef, TypeRegistry } from "./types";
+import type { ChatCard, CommentTargetDef, EntityHandler, EventName, EventPayload, Hook, ModAccess, ModuleDef, ModuleRuntime, TrashTypeDef, TypeRegistry } from "./types";
 
 /** Identity helper: gives a module definition its type and checks the key shape. */
 export function defineModule<const D extends ModuleDef>(def: D): D {
@@ -13,7 +13,8 @@ export interface ModuleRegistry {
   list(): ModuleDef[];
   /** module keys given in the off list (known or not), sorted */
   off(): string[];
-  bind(ctx: Ctx): ModuleRuntime;
+  /** `coreHooks`: listeners for rules whose feature is not a module yet; they run after the modules' hooks of the same event */
+  bind(ctx: Ctx, coreHooks?: Record<string, Hook>): ModuleRuntime;
 }
 
 /**
@@ -27,6 +28,8 @@ function buildTypes(installed: ModuleDef[]): TypeRegistry {
   const names = new Map<string, string>();
   const labels = new Map<string, string>();
   const trash: TrashTypeDef[] = [];
+  const targets = new Map<string, CommentTargetDef>();
+  const cards = new Map<string, ChatCard>();
   for (const def of installed) {
     for (const [type, handler] of Object.entries(def.entities ?? {})) {
       for (const name of [type, ...(handler.aliases ?? [])]) {
@@ -40,8 +43,10 @@ function buildTypes(installed: ModuleDef[]): TypeRegistry {
       labels.set(t.type, t.label);
       trash.push(t);
     }
+    for (const [type, t] of Object.entries(def.contribute?.commentTargets ?? {})) targets.set(type, t);
+    for (const [type, c] of Object.entries(def.contribute?.chatCards ?? {})) cards.set(type, c);
   }
-  const refs = [...entities].flatMap(([type, h]) => (h.ref ? [[type, h.ref] as [string, EntityRef]] : []));
+  const inputRefs = [...entities].flatMap(([type, h]) => (h.ref ? [[type, `${type}_id`, type] as [string, string, string], ...Object.entries(h.refKeys ?? {}).map(([key, idKey]): [string, string, string] => [key, idKey, type])] : []));
   return {
     entity: (type) => entities.get(type),
     canonical: (name) => names.get(name),
@@ -49,7 +54,11 @@ function buildTypes(installed: ModuleDef[]): TypeRegistry {
     label: (type) => labels.get(type),
     trashTypes: () => [...trash],
     ref: (type) => entities.get(type)?.ref,
-    refs: () => refs,
+    inputRefs: () => inputRefs,
+    commentTarget: (type) => targets.get(type),
+    commentTargets: () => [...targets.keys()],
+    chatCard: (type) => cards.get(type),
+    chatCardTypes: () => [...cards.keys()],
   };
 }
 
@@ -75,7 +84,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
     has: (key) => byKey.has(key),
     list: () => [...installed],
     off: () => [...offSet].sort(),
-    bind(ctx) {
+    bind(ctx, coreHooks = {}) {
       const apis = new Map<string, object>();
       const mod: ModAccess = (key) => {
         const def = byKey.get(key);
@@ -94,6 +103,8 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
           const out = def.hooks?.[name]?.(ctx, payload);
           if (out) effects.push(...out);
         }
+        const own = coreHooks[name]?.(ctx, payload);
+        if (own) effects.push(...own);
         return effects;
       };
       return { mod, emit, types, contrib };

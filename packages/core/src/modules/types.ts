@@ -34,6 +34,8 @@ export interface EntityRef {
  * restore, `name or id` references) treats it. The key under `ModuleDef.entities` is the canonical type name.
  */
 export interface EntityHandler {
+  /** runs on the input of `save` before names are resolved to ids (a person saved with a company name opens the company) */
+  prepare?(ctx: Ctx, data: Record<string, any>): Record<string, any>;
   save?(ctx: Ctx, data: Record<string, any>, id?: number): SaveResult;
   /** the record's row (same shape as its list rows), or undefined when it does not exist */
   get?(ctx: Ctx, id: number): Record<string, any> | undefined;
@@ -43,6 +45,10 @@ export interface EntityHandler {
   aliases?: string[];
   /** set when records of this type can be given by name */
   ref?: EntityRef;
+  /** other input keys that name a record of this type: key to the id column it becomes (`referred_by` to `referred_by_id`) */
+  refKeys?: Record<string, string>;
+  /** set when `save` accepts lists: the label in the "duplicates skipped" event and the duplicate keys of one input item */
+  bulk?: { label: string; keys(item: Record<string, any>): string[] };
   /** relation names `get(..., with)` accepts for this type */
   related?: string[];
 }
@@ -58,12 +64,27 @@ export interface TrashTypeDef {
   label: string;
 }
 
-/** A list the module loads for `get(type, id, with: [name])` (for example the tasks of a person); `by` is `{ <type>_id: id }` of the record asked for. */
+/**
+ * A list the module loads for `get(type, id, with: [name])` (for example the tasks of a person); `by` is `{ <type>_id: id }` of the record asked for
+ * and `rec` is that record's own row.
+ */
 export interface RelationDef {
   /** record types that accept this relation */
   on: string[];
-  load(ctx: Ctx, by: Record<string, number>, limit: number): any[];
+  load(ctx: Ctx, by: Record<string, number>, limit: number, rec: Record<string, any>): any[];
 }
+
+/** A record type comments can hang on: its table, how its label reads in a thread, and the person, opportunity or project its events link to */
+export interface CommentTargetDef {
+  table: string;
+  /** thread title of one record (`#id` when the record is gone) */
+  label(ctx: Ctx, id: number): string;
+  /** event links of one record (defaults to none) */
+  link?(ctx: Ctx, id: number): { person_id?: number | null; opportunity_id?: number | null; project_id?: number | null };
+}
+
+/** What the panel chat shows on a record chip of this type: a small plain object (title and a few fields); `personId` is the `@person` of a template key */
+export type ChatCard = (ctx: Ctx, id: number, personId?: number) => Record<string, any>;
 
 /** What a module adds to the shared views. Each function returns only its own part; the host merges them. */
 export interface Contributions {
@@ -81,6 +102,10 @@ export interface Contributions {
   recordLabels?: Record<string, string>;
   /** event type to its Turkish timeline label */
   timelineLabels?: Record<string, string>;
+  /** record types comments can hang on (`target_type` of a comment) */
+  commentTargets?: Record<string, CommentTargetDef>;
+  /** record types the panel chat can show as a chip (`<type>:<id>` keys) */
+  chatCards?: Record<string, ChatCard>;
 }
 
 /** Row of a record, as the MCP formatters receive it */
@@ -102,6 +127,8 @@ export interface McpFormat {
   line(type: string, r: Row): string;
   /** a titled list section of a today style view (empty text when the list is empty) */
   section(title: string, type: string, res: { rows: Row[]; total: number }): string;
+  /** the confirmation line of a write: `ok · <kind> #<id> <extra> · <effect> · ...` */
+  ok(kind: string, id: number | undefined, effects?: string[], extra?: string): string;
 }
 
 /** How one record type is written in MCP output */
@@ -175,8 +202,16 @@ export interface TypeRegistry {
   trashTypes(): TrashTypeDef[];
   /** how a module-owned type is looked up by name */
   ref(type: string): EntityRef | undefined;
-  /** every module-owned reference: input key (the type name) and its ref */
-  refs(): [string, EntityRef][];
+  /** every module-owned input key that names a record: the key, the id column it becomes and the type it looks up */
+  inputRefs(): [key: string, idKey: string, type: string][];
+  /** comment target of a module-owned type */
+  commentTarget(type: string): CommentTargetDef | undefined;
+  /** module-owned record types comments can hang on, in registration order */
+  commentTargets(): string[];
+  /** chip data of a module-owned type for the panel chat */
+  chatCard(type: string): ChatCard | undefined;
+  /** module-owned record types the chat can show as a chip, in registration order */
+  chatCardTypes(): string[];
 }
 
 /** A registry bound to one context: what services use as `ctx.mod`, `ctx.emit` and `ctx.types`. */

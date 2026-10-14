@@ -1,0 +1,103 @@
+import type { ContactStatus } from "../constants";
+import type { ListOpts } from "../context";
+import type { TouchDirection } from "./network";
+
+/** A person row as stored (the duplicate keys are left out; they never leave the module) */
+export interface PersonRecord {
+  id: number;
+  name: string;
+  company_id: number | null;
+  /** job title at the company (CEO, design); sectors describe the business, not the person */
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  instagram: string | null;
+  linkedin: string | null;
+  handle: string | null;
+  /** who introduced this person; the referral tree hangs on it */
+  referred_by_id: number | null;
+  /** the post this person came from */
+  post_id: number | null;
+  /** where the person was found (the lead source list) */
+  source_id: number | null;
+  contact_status: ContactStatus;
+  next_follow_up_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: "ozgur" | "claude";
+}
+
+/** A person as listed: the row plus names, labels and the touch state (the touch parts are empty when the network module is missing) */
+export interface PersonRow extends PersonRecord {
+  company_name: string | null;
+  referred_by_name: string | null;
+  source_name: string | null;
+  post_title: string | null;
+  referral_count: number;
+  tags: string[];
+  tag_ids: number[];
+  sectors: { id: number; parent_id: number | null; path: string }[];
+  sector_path: string | null;
+  last_touch_at: string | null;
+  last_channel: string | null;
+  last_direction: TouchDirection | null;
+  last_summary: string | null;
+  days_since: number;
+  awaiting: { since: string; channel: string; days: number; attempts: number; late: boolean } | null;
+  cooling: boolean;
+  /** touches per ISO week of the last weeks, oldest first, the current week last */
+  rhythm: number[];
+}
+
+/** What the people a person introduced brought: opportunities, wins, projects and money, over the whole referral tree below */
+export interface ReferralValue {
+  person_id: number;
+  name: string;
+  company_name: string | null;
+  direct: number;
+  network: number;
+  opps: number;
+  won: number;
+  won_value: number;
+  open_value: number;
+  projects: number;
+  collected: number;
+}
+
+/** Everything the person page shows, in one object */
+export interface PersonCard {
+  row: PersonRow;
+  /** touch counts per channel (empty without the network module) */
+  channels: any[];
+  touches: { rows: any[]; total: number };
+  notes: any[];
+  threads: any[];
+  referrer: { id: number; name: string | null } | null;
+  referrals: any[];
+  referral_value: ReferralValue | null;
+  opportunities: any[];
+  projects: any[];
+  drafts: any[];
+  post: any | null;
+  ideas: any[];
+}
+
+/**
+ * Public API of the people module (`ctx.mod("people")`): people, their tags and sectors, contact status, the referral tree
+ * and the person card. The inputs are the JSON the web and MCP send; they are validated inside.
+ */
+export interface PeopleApi {
+  create(input: unknown): { row: PersonRecord; effects: string[] };
+  update(id: number, input: unknown): { row: PersonRecord; effects: string[] };
+  /** the person goes to the trash with its notes, drafts, comments, touches and tasks; a person with opportunities or projects stays */
+  remove(id: number): { effects: string[]; trash: { type: string; id: number } };
+  /** filters: tag, sector, source, status, awaiting, cooling, channel, company_id, referred_by_id, post_id, follow_up_due */
+  list(opts: ListOpts): { rows: PersonRow[]; total: number };
+  get(id: number): PersonRow | undefined;
+  card(id: number): PersonCard;
+  /** moves the person's contact status (and its company's) forward, never back; returns what changed */
+  bumpStatus(id: number, next: ContactStatus): string[];
+  /** per introducer: what the people below brought (the referral report reads it) */
+  referralValues(): ReferralValue[];
+}

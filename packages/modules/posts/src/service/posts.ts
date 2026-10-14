@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { addDays, Bin, bool, has, page, parse, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
+import { addDays, announceTrashed, Bin, bool, has, page, parse, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
 import { PLATFORM_LABEL } from "./constants";
 import { postCreate, postUpdate } from "./schemas";
 
@@ -65,12 +65,12 @@ export function postsService(ctx: Ctx) {
     });
   }
 
-  /** Kişiler kalır, sadece kaynak bağı kopar */
+  /** Kişiler kalır, sadece kaynak bağı kopar (bağı people modülü boşaltır: `record.trashed`) */
   function remove(id: number) {
     const cur = requireRow(ctx, "posts", id);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      bin.unlink("people", "post_id", id);
+      announceTrashed(ctx, bin, "post", id);
       bin.take("comments", "target_type = 'post' AND target_id = ?", id);
       bin.take("posts", "id = ?", id);
       bin.commit(tx, "post", id, cur.title);

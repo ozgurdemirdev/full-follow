@@ -2,13 +2,16 @@ import { eq } from "drizzle-orm";
 import { FFError, norm, row, rows, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { ideas, opportunities } from "../db/schema";
-import type { CommentTarget } from "../constants";
+import { MODULE_TYPE_OWNER, type CommentTarget } from "../constants";
 import type { EntityRef } from "../modules/types";
 
-export const TARGET_TABLE: Record<CommentTarget, string> = {
-  person: "people", company: "companies", opportunity: "opportunities", project: "projects",
-  task: "tasks", draft: "drafts", payment: "payments", post: "posts", idea: "ideas", own_project: "own_projects",
+/** Tables of the comment targets core owns; the modules' targets come from the registry (`targetTable`) */
+export const TARGET_TABLE: Record<string, string> = {
+  opportunity: "opportunities", project: "projects", draft: "drafts", payment: "payments", idea: "ideas", own_project: "own_projects",
 };
+
+/** Table of a comment target type: core's, else the installed module's; undefined for an unknown type or one whose module is not installed */
+export const targetTable = (ctx: Ctx, type: string): string | undefined => TARGET_TABLE[type] ?? ctx.types.commentTarget(type)?.table;
 
 export const TABLE_LABEL: Record<string, string> = {
   people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
@@ -45,35 +48,29 @@ export function link(ctx: Ctx, l: Link): Required<Link> {
   return { person_id, opportunity_id, project_id };
 }
 
-/** Bir yorum hedefinin olay bağlantıları */
+/** Bir yorum hedefinin olay bağlantıları (modül hedefleri kendi bağlantısını verir) */
 export function targetLink(ctx: Ctx, type: CommentTarget, id: number): Required<Link> {
   switch (type) {
-    case "person": return link(ctx, { person_id: id });
     case "opportunity": return link(ctx, { opportunity_id: id });
     case "project": return link(ctx, { project_id: id });
-    case "company":
-    case "post":
     case "idea":
     case "own_project": return link(ctx, {});
     case "payment": {
       const p = row(ctx, "SELECT project_id FROM payments WHERE id = ?", id);
       return link(ctx, { project_id: p?.project_id });
     }
-    case "task":
     case "draft": {
-      const r = row(ctx, `SELECT person_id, opportunity_id, project_id FROM ${TARGET_TABLE[type]} WHERE id = ?`, id);
+      const r = row(ctx, "SELECT person_id, opportunity_id, project_id FROM drafts WHERE id = ?", id);
       return link(ctx, r ?? {});
     }
+    default: return link(ctx, ctx.types.commentTarget(type)?.link?.(ctx, id) ?? {});
   }
 }
 
 export function targetLabel(ctx: Ctx, type: CommentTarget, id: number): string {
   switch (type) {
-    case "person": return row(ctx, "SELECT name FROM people WHERE id = ?", id)?.name ?? `#${id}`;
-    case "company": return row(ctx, "SELECT name FROM companies WHERE id = ?", id)?.name ?? `#${id}`;
     case "opportunity": return row(ctx, "SELECT title FROM opportunities WHERE id = ?", id)?.title ?? `#${id}`;
     case "project": return row(ctx, "SELECT name FROM projects WHERE id = ?", id)?.name ?? `#${id}`;
-    case "task": return row(ctx, "SELECT title FROM tasks WHERE id = ?", id)?.title ?? `#${id}`;
     case "draft": {
       const d = row(ctx, "SELECT p.name FROM drafts d JOIN people p ON p.id = d.person_id WHERE d.id = ?", id);
       return `taslak #${id}${d ? ` (${d.name})` : ""}`;
@@ -82,9 +79,9 @@ export function targetLabel(ctx: Ctx, type: CommentTarget, id: number): string {
       const p = row(ctx, "SELECT milestone, project_id FROM payments WHERE id = ?", id);
       return p ? `ödeme #${id} (${p.milestone})` : `ödeme #${id}`;
     }
-    case "post": return row(ctx, "SELECT title FROM posts WHERE id = ?", id)?.title ?? `#${id}`;
     case "idea": return row(ctx, "SELECT title FROM ideas WHERE id = ?", id)?.title ?? `#${id}`;
     case "own_project": return row(ctx, "SELECT name FROM own_projects WHERE id = ?", id)?.name ?? `#${id}`;
+    default: return ctx.types.commentTarget(type)?.label(ctx, id) ?? `#${id}`;
   }
 }
 
@@ -96,8 +93,6 @@ export const truncate = (s: string | null | undefined, n: number) => {
 // ---- İsimle referans ----
 
 const CORE_REFS = {
-  person: { table: "people", col: "name", label: "kişi" },
-  company: { table: "companies", col: "name", label: "firma" },
   opportunity: { table: "opportunities", col: "title", label: "fırsat" },
   project: { table: "projects", col: "name", label: "proje" },
   source: { table: "sources", col: "name", label: "kaynak" },
@@ -116,7 +111,10 @@ export const isRefType = (ctx: Ctx, t: string): boolean => !!refOf(ctx, t);
 /** id (12, "12", "#12") ya da isim → id. İsim birden fazla kaydı eşliyorsa 'ambiguous' hatası kısa liste verir. */
 export function resolveRef(ctx: Ctx, type: string, ref: string | number): number {
   const t = refOf(ctx, type);
-  if (!t) throw new FFError("validation", `${type} isimle verilemez`);
+  if (!t) {
+    const owner = (MODULE_TYPE_OWNER as Record<string, string>)[type];
+    throw new FFError("validation", owner ? `"${type}" türü için "${owner}" modülü kurulu değil` : `${type} isimle verilemez`);
+  }
   const s = String(ref).trim();
   const m = /^#?(\d+)$/.exec(s);
   if (m) {
@@ -135,16 +133,16 @@ export function resolveRef(ctx: Ctx, type: string, ref: string | number): number
 }
 
 const CORE_INPUT_REFS: Record<string, [string, string]> = {
-  person: ["person_id", "person"], company: ["company_id", "company"], source: ["source_id", "source"],
+  source: ["source_id", "source"],
   opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
-  project: ["project_id", "project"], referred_by: ["referred_by_id", "person"],
+  project: ["project_id", "project"],
   idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
 };
 
-/** Girdideki isim alanlarını (person, company, source, opp, project, referred_by, post, idea, template ve kurulu modüllerin türleri) *_id'ye çevirir */
+/** Girdideki isim alanlarını (source, opp, project, idea, template ve kurulu modüllerin türleri: person, company, post, referred_by...) *_id'ye çevirir */
 export function resolveInput<T extends Record<string, any>>(ctx: Ctx, data: T): Record<string, any> {
   const out: Record<string, any> = { ...data };
-  const moduleRefs = ctx.types.refs().map(([type]): [string, [string, string]] => [type, [`${type}_id`, type]]);
+  const moduleRefs = ctx.types.inputRefs().map(([key, idKey, type]): [string, [string, string]] => [key, [idKey, type]]);
   for (const [key, [idKey, type]] of [...Object.entries(CORE_INPUT_REFS), ...moduleRefs]) {
     if (out[key] === undefined) continue;
     const v = out[key];
