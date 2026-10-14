@@ -75,6 +75,17 @@ describe("people as a module", () => {
     expect(JSON.parse(ev[0].data)).toEqual({ record_type: "person", count: 1, keys: ["email:a@x.example"] });
   });
 
+  it("influence is one of the three buying roles, set and cleared on save, and listed on the row", () => {
+    const app = appFor(openDb(":memory:"), "claude", clock);
+    const ada = app.save("person", { name: "Ada", influence: "karar_verici" }).row;
+    expect(app.get("person", ada.id).row.influence).toBe("karar_verici");
+    expect(app.find("person").rows[0].influence).toBe("karar_verici");
+    expect(app.save("person", { influence: "kullanici" }, ada.id).row.influence).toBe("kullanici");
+    expect(() => app.save("person", { influence: "patron" }, ada.id)).toThrow(FFError);
+    expect(app.save("person", { influence: null }, ada.id).row.influence).toBeNull();
+    expect(app.save("person", { name: "Bob" }).row.influence).toBeNull();
+  });
+
   it("comments hang on a person and read its name; the module's record label and chat card exist", () => {
     const app = appFor(openDb(":memory:"), "ozgur", clock);
     const p = app.people.create({ name: "Ada" }).row;

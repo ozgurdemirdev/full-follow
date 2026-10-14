@@ -7,7 +7,7 @@ export const mcp: McpDef = {
       kind: "kişi",
       openable: true,
       line: (r, f) => f.join(
-        `#${r.id} ${r.name}`, r.tags?.join(","), r.sector_path, r.role, r.company_name, r.contact_status && r.contact_status !== "yazilmadi" && f.label(r.contact_status),
+        `#${r.id} ${r.name}`, r.tags?.join(","), r.sector_path, r.role, r.influence && `rol ${r.influence}`, r.company_name, r.contact_status && r.contact_status !== "yazilmadi" && f.label(r.contact_status),
         r.source_name && `kaynak ${r.source_name}`,
         r.awaiting ? `CEVAP BEKLİYOR ${r.awaiting.days}g ${f.label(r.awaiting.channel)}${r.awaiting.attempts > 1 ? ` ${r.awaiting.attempts} deneme` : ""}` : r.last_touch_at && `son ${f.label(r.last_channel)} ${r.days_since}g önce`,
         r.cooling && "SOĞUYOR", r.next_follow_up_at && `takip ${f.d(r.next_follow_up_at)}`, r.handle, r.email, r.phone,
@@ -30,7 +30,7 @@ export const mcp: McpDef = {
       { at: 110, text: "person/" },
       {
         at: 142,
-        text: "person: role (CEO, tasarım; sektör değil). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. ",
+        text: "person: role (CEO, tasarım; sektör değil), influence:'karar_verici|etkileyici|kullanici' (satın alma kararındaki rolü; null temizler). person/company: tags/add_tags/remove_tags ['Sıcak','R10'], sectors ['Sağlık > Diş hekimi'], source:'LinkedIn' (nereden buldum), contact_status:'olumsuz|es_gecildi|tanidik|arkadas'. ",
       },
     ],
   },
