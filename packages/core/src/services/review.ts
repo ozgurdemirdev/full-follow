@@ -1,10 +1,9 @@
-import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, WEEK_DAYS } from "../constants";
-import { addDays, dayOf, daysBetween, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
-import { FFError, rows, type Ctx } from "../context";
+import { label, REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, SOURCE_FUNNEL_DEFAULT_PERIOD, WEEK_DAYS } from "../constants";
+import { addDays, daysBetween, isIsoDate, isoWeekOf, isoWeekStart, weekStart } from "../dates";
+import { FFError, type Ctx } from "../context";
 import type { WeekStats } from "../contracts";
 import { quotaOverDays } from "./quota";
 import { marketingSettings } from "./settings";
-import { sourceFunnel } from "./sourceFunnel";
 import { templateComparison } from "./templates";
 
 export interface Suggestion {
@@ -24,12 +23,6 @@ function weekStartOf(ctx: Ctx, week?: string): string {
   return monday;
 }
 
-/** Offers made in from..to: opportunities that moved to the offer stage (counted from the stage events, so a later loss still counts) */
-function offersMade(ctx: Ctx, from: string, to: string): number {
-  return rows<{ created_at: string }>(ctx, "SELECT created_at FROM events WHERE type = 'opp.stage' AND json_extract(data, '$.to') = 'teklif' AND created_at >= ?", addDays(from, -1))
-    .filter((e) => { const d = dayOf(e.created_at); return d >= from && d <= to; }).length;
-}
-
 /** Template groups that have a clear leader or early (small sample) templates; the loser is the weakest template with enough sample */
 function templateHighlights(ctx: Ctx) {
   return templateComparison(ctx).flatMap((g) => {
@@ -42,9 +35,9 @@ function templateHighlights(ctx: Ctx) {
   });
 }
 
-/** Best and weakest source of the default funnel period (best only among sources with enough sample) */
+/** Best and weakest source of the default funnel period (best only among sources with enough sample); empty without the pipeline module */
 function sourceHighlights(ctx: Ctx) {
-  const f = sourceFunnel(ctx);
+  const f = ctx.mod("pipeline")?.funnel() ?? { period: SOURCE_FUNNEL_DEFAULT_PERIOD, sources: [] };
   const settled = f.sources.filter((s) => !s.early).sort((a, b) => b.reply_rate! - a.reply_rate!);
   const weak = settled.filter((s) => s.weak).at(-1);
   const pick = (s?: (typeof settled)[number]) => (s ? { source: s.source, reply_rate: s.reply_rate } : null);
@@ -71,7 +64,7 @@ function buildFacts(ctx: Ctx, ws: string) {
     /** days of the week already lived: 7 for a finished week */
     days: Math.min(WEEK_DAYS, daysBetween(ws, ctx.clock.today()) + 1),
     target: marketingSettings(ctx).weekly_target,
-    offers: { this_week: offersMade(ctx, ws, until), last_week: offersMade(ctx, prev, addDays(ws, -1)) },
+    offers: { this_week: ctx.mod("pipeline")?.offersMade(ws, until) ?? 0, last_week: ctx.mod("pipeline")?.offersMade(prev, addDays(ws, -1)) ?? 0 },
     templates: templateHighlights(ctx),
     sources: sourceHighlights(ctx),
     quota: quotaOverDays(ctx, ws, until),

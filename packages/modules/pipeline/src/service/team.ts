@@ -1,17 +1,16 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
-import type { Q } from "../db/client";
-import { opportunities, opportunityPeople } from "../db/schema";
-import { label, type OppRole } from "../constants";
-import { teamAdd, teamUpdate } from "../schemas";
-import { link, requireRow } from "./shared";
-import { Bin } from "./trash";
+import {
+  Bin, eventLink as link, FFError, label, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
+  type Ctx, type OppRole, type Q, type TeamMemberRow,
+} from "@fullfollow/core";
+import { teamAdd, teamUpdate } from "./schemas";
 
-type Opp = Pick<typeof opportunities.$inferSelect, "id" | "person_id" | "title">;
+const { opportunityPeople } = schema;
+type Opp = { id: number; person_id: number; title: string };
 
 /** Extra people of an opportunity with their names (the main contact is opportunities.person_id and is not listed here) */
-export function teamOf(ctx: Ctx, opportunityId: number) {
-  return rows(ctx, `SELECT x.*, p.name AS person_name, c.name AS company_name FROM opportunity_people x
+export function teamOf(ctx: Ctx, opportunityId: number): TeamMemberRow[] {
+  return rows<TeamMemberRow>(ctx, `SELECT x.*, p.name AS person_name, c.name AS company_name FROM opportunity_people x
     JOIN people p ON p.id = x.person_id LEFT JOIN companies c ON c.id = p.company_id WHERE x.opportunity_id = ? ORDER BY x.id`, opportunityId);
 }
 
@@ -47,7 +46,7 @@ export function dropMember(q: Q, ctx: Ctx, opp: Opp, personId: number): string {
 }
 
 /** Team REST surface: add (or change) a member, change role or note by membership id, remove */
-export function oppPeopleService(ctx: Ctx) {
+export function teamService(ctx: Ctx) {
   function add(opportunityId: number, input: unknown) {
     const d = parse(teamAdd, input);
     return ctx.db.transaction((tx) => {

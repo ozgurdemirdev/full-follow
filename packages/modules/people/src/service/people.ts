@@ -73,21 +73,20 @@ export function peopleService(ctx: Ctx) {
 
   /**
    * Çöp kutusuna: kişi + temasları, notları, taslakları, görevleri, yorumları; fırsatı ya da projesi varsa silinmez.
-   * Temaslar ve görevler kendi modüllerinin işi (`record.trashed`); notlar, taslaklar, fikir ve fırsat ekip bağları henüz modül değil.
+   * Temaslar ve görevler kendi modüllerinin işi (`record.trashed`); notlar, taslaklar ve fikir bağları henüz modül değil.
+   * The opportunity team rows go through the pipeline module (`record.trashed`) too.
    */
   function remove(id: number) {
     const cur = requireRow(ctx, "people", id);
-    const n = (sql: string) => row(ctx, sql, id)?.n ?? 0;
-    if (n("SELECT COUNT(*) n FROM opportunities WHERE person_id = ?")) throw new FFError("rule", `${cur.name} silinemez: fırsatları var, önce onları sil`);
-    if (n("SELECT COUNT(*) n FROM projects WHERE person_id = ?")) throw new FFError("rule", `${cur.name} silinemez: projesi var`);
+    if (ctx.mod("pipeline")?.opportunities.countOf(id)) throw new FFError("rule", `${cur.name} silinemez: fırsatları var, önce onları sil`);
+    if (ctx.mod("projects")?.projects.countOf(id)) throw new FFError("rule", `${cur.name} silinemez: projesi var`);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.unlink("people", "referred_by_id", id);
-      // TODO(modules): drafts, ideas, pipeline and notes clean their own rows when they hear `record.trashed` (raw takes for now)
+      // TODO(modules): drafts, ideas and notes clean their own rows when they hear `record.trashed` (raw takes for now)
       bin.take("comments", "target_type = 'draft' AND target_id IN (SELECT id FROM drafts WHERE person_id = ?)", id);
       bin.take("idea_people", "person_id = ?", id);
-      bin.take("opportunity_people", "person_id = ?", id);
-      // touches, tasks (and the comments on them) go through the modules that own them
+      // touches, tasks (and the comments on them) and the opportunity team rows go through the modules that own them
       announceTrashed(ctx, bin, "person", id);
       bin.take("notes", "person_id = ?", id);
       bin.take("drafts", "person_id = ?", id);

@@ -15,18 +15,23 @@ export const nextRefresh = (p: { posted_at: string; refreshed_at: string | null;
  */
 export function postStats(ctx: Ctx): PostStats[] {
   const today = ctx.clock.today();
-  // TODO(modules): people, opportunities via ctx.mod("pipeline") and ideas via ctx.mod("ideas") (raw table reads for now)
+  // opportunity numbers come from the pipeline module (zero without it); the people of a post travel as ids
+  // TODO(modules): people via ctx.mod("people") and ideas via ctx.mod("ideas") (raw table reads for now)
+  const pipeline = ctx.mod("pipeline")?.personStats();
   return rows(ctx, `
     SELECT p.*, i.title AS idea_title,
       (SELECT COUNT(*) FROM people x WHERE x.post_id = p.id) AS people_count,
-      (SELECT COUNT(*) FROM opportunities o JOIN people x ON x.id = o.person_id WHERE x.post_id = p.id) AS opp_count,
-      (SELECT COUNT(*) FROM opportunities o JOIN people x ON x.id = o.person_id WHERE x.post_id = p.id AND o.stage = 'kazanildi') AS won,
-      (SELECT COALESCE(SUM(o.estimated_value), 0) FROM opportunities o JOIN people x ON x.id = o.person_id WHERE x.post_id = p.id AND o.stage = 'kazanildi') AS won_value
+      (SELECT json_group_array(x.id) FROM people x WHERE x.post_id = p.id) AS person_ids
     FROM posts p LEFT JOIN ideas i ON i.id = p.idea_id
     ORDER BY p.posted_at DESC, p.id DESC`)
-    .map((p) => {
+    .map(({ person_ids, ...p }) => {
       const next = nextRefresh(p);
-      return { ...p, next_refresh_at: next, refresh_due: !!next && next <= today };
+      const brought = { opp_count: 0, won: 0, won_value: 0 };
+      for (const personId of JSON.parse(person_ids) as number[]) {
+        const s = pipeline?.get(personId);
+        if (s) { brought.opp_count += s.opps; brought.won += s.won; brought.won_value += s.won_value; }
+      }
+      return { ...p, ...brought, next_refresh_at: next, refresh_due: !!next && next <= today };
     });
 }
 

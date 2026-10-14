@@ -120,11 +120,12 @@ export function weekStats(ctx: Ctx, ref = ctx.clock.today()): WeekStats {
       by.set(t.channel, c);
     }
   }
-  // TODO(modules): new people and companies through ctx.mod("people") / ctx.mod("companies"), offers through ctx.mod("pipeline") (raw table reads for now)
+  // open offers come from the pipeline module (none without it)
+  // TODO(modules): new people and companies through ctx.mod("people") / ctx.mod("companies") (raw table reads for now)
   const newRecords = (table: "people" | "companies", from: string, to: string) =>
     rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, addDays(from, -1))
       .filter((p) => { const d = dayOf(p.created_at); return d >= from && d <= to; }).length;
-  const offers = rows<{ updated_at: string }>(ctx, "SELECT updated_at FROM opportunities WHERE stage = 'teklif'");
+  const offers = (ctx.mod("pipeline")?.openOfferTimes() ?? []).map((updated_at) => ({ updated_at }));
   const rate = (b: { sent: number; replies: number }) => (b.sent ? b.replies / b.sent : null);
   return {
     week_start: ws,
@@ -148,13 +149,13 @@ export function weekToday(ctx: Ctx) {
       SUM(direction = 'gelen' AND substr(happened_at, 1, 10) >= ?) AS replies,
       SUM(kind = 'gorusme' AND substr(happened_at, 1, 10) >= ?) AS meetings
     FROM touches WHERE substr(happened_at, 1, 10) >= ?`, start, start, start, start, prev)[0];
-  // TODO(modules): open offers through ctx.mod("pipeline")
-  const o = rows<{ offers: number; silent: number }>(ctx, `SELECT COUNT(*) AS offers,
-      SUM(substr(updated_at, 1, 10) <= ?) AS silent FROM opportunities WHERE stage = 'teklif'`, addDays(date, -3))[0];
+  // open offers come from the pipeline module (none without it); a silent one was last touched three days ago or earlier
+  const offerTimes = ctx.mod("pipeline")?.openOfferTimes() ?? [];
+  const silentBefore = addDays(date, -3);
   const w = weekStats(ctx);
   return {
     start, sent: t?.sent ?? 0, sent_prev: t?.sent_prev ?? 0, replies: t?.replies ?? 0, meetings: t?.meetings ?? 0,
-    offers: o?.offers ?? 0, offers_silent: o?.silent ?? 0,
+    offers: offerTimes.length, offers_silent: offerTimes.filter((t) => t.slice(0, 10) <= silentBefore).length,
     replies_prev: w.last_week.replies, new_people: w.this_week.new_people, by_channel: w.by_channel,
   };
 }

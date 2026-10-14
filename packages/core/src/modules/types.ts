@@ -41,6 +41,8 @@ export interface EntityHandler {
   get?(ctx: Ctx, id: number): Record<string, any> | undefined;
   find?(ctx: Ctx, opts: ListOpts): { rows: any[]; total: number };
   delete?(ctx: Ctx, id: number): SaveResult;
+  /** a stage change (`move` of the MCP, the board): `input` is `{ stage, reason?, position? }` */
+  move?(ctx: Ctx, id: number, input: { stage: string; reason?: string; position?: number }): SaveResult;
   /** other names for this type, lower case (Turkish names, plurals) */
   aliases?: string[];
   /** set when records of this type can be given by name */

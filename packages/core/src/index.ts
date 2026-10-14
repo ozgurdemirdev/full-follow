@@ -5,15 +5,10 @@ import { sourcesService, tagsService } from "./services/categories";
 import { commentsService } from "./services/comments";
 import { assertKeysFree, recordSkipped } from "./services/dupes";
 import { draftsService } from "./services/drafts";
-import { opportunitiesService } from "./services/opportunities";
-import { paymentsService } from "./services/payments";
-import { projectsService } from "./services/projects";
 import { queriesFor } from "./services/queries";
 import { coreHooks } from "./services/coreHooks";
 import { linksService } from "./services/links";
 import { filesService } from "./services/files";
-import { offersService } from "./services/offers";
-import { oppPeopleService } from "./services/oppPeople";
 import { notesService } from "./services/notes";
 import { entityHandler, isCoreType, normalizeType, resolveId } from "./services/records";
 import { sectorsService } from "./services/sectors";
@@ -37,7 +32,6 @@ export * from "./constants";
 export * from "./dates";
 export { openDb, defaultDbPath, loadRootEnv, backupDb, type DbHandle, type Db } from "./db/client";
 export { FFError, systemClock, type Clock, type ListOpts, type ErrorCode, type DuplicateHit } from "./context";
-export { paymentStatus } from "./services/payments";
 export type { Thread } from "./services/comments";
 export type { TrashItem } from "./services/trash";
 
@@ -45,21 +39,22 @@ export * from "./modules";
 export type * from "./contracts";
 
 // ---- What a module's services and server code build on ("service kit") ----
-export { emit as writeEvent, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
-export { requireRow, resolveRef, truncate, link as eventLink } from "./services/shared";
+export { emit as writeEvent, keptRow, keptRows, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
+export { placeInGroup, requireRow, requireTarget, resolveRef, truncate, link as eventLink } from "./services/shared";
+export { filesOf } from "./services/files";
+export { REPLIED_AFTER } from "./services/templates";
 export { announceTrashed, Bin } from "./services/trash";
 export { bool, has, labelFilter, stripKeys } from "./services/directory";
-export { assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
+export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, resolveSubject, sameSide, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
 export { isColdEmail } from "./services/quota";
-export { networkSettings, readSetting } from "./services/settings";
+export { networkSettings, readSetting, readTemplate } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { ideaPeople } from "./services/ideas";
 export { listThreads } from "./services/comments";
 export { companyKeys, contactKey, personKeys } from "./keys";
 export { outgoingMessageCounts } from "./services/quota";
-export { paymentsDue, type DuePayment } from "./services/payments";
 export { followUpsDue, type DueFollowUp } from "./services/followups";
 export * as schema from "./db/schema";
 export * as zodKit from "./schemas/kit";
@@ -85,16 +80,11 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
 
   const sources = sourcesService(ctx);
   const tags = tagsService(ctx);
-  const opportunities = opportunitiesService(ctx);
   const drafts = draftsService(ctx);
-  const projects = projectsService(ctx);
-  const payments = paymentsService(ctx);
   const comments = commentsService(ctx);
   const sectors = sectorsService(ctx);
   const notes = notesService(ctx);
   const links = linksService(ctx);
-  const oppPeople = oppPeopleService(ctx);
-  const offers = offersService(ctx);
   const files = filesService(ctx);
   const settings = settingsService(ctx);
   const queries = queriesFor(ctx);
@@ -114,14 +104,10 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     switch (t) {
       case "source": return nid ? sources.update(nid, d) : sources.create(d);
       case "tag": return nid ? tags.update(nid, d) : tags.create(d);
-      case "opportunity": return nid ? opportunities.update(nid, d) : opportunities.create(d);
-      case "project": return nid ? projects.update(nid, d) : projects.create(d);
-      case "payment": return nid ? payments.update(nid, d) : payments.create(d);
       case "draft": return nid ? drafts.update(nid, d) : drafts.create(d);
       case "sector": return nid ? sectors.update(nid, d) : sectors.create(d);
       case "note": return nid ? notes.update(nid, d) : notes.create(d);
       case "link": return nid ? links.update(nid, d) : links.create(d);
-      case "offer": return nid ? offers.update(nid, d) : offers.create(d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
       case "template": return nid ? templates.update(nid, d) : templates.create(d);
@@ -157,14 +143,14 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     return out;
   }
 
-  /** Fırsat ya da proje aşaması */
+  /** Stage change: opportunities and projects (the owning module's `move` handler), ideas and own projects */
   function move(type: string, id: string | number, stage: string, reason?: string, position?: number): SaveResult {
     const t = typeOf(type);
     const nid = resolveId(ctx, t, id);
-    if (t === "opportunity") return opportunities.move(nid, { stage, reason, position });
-    if (t === "project") return projects.move(nid, { stage });
     if (t === "idea") return ideas.move(nid, stage);
     if (t === "own_project") return ownProjects.move(nid, stage);
+    const moveStage = ctx.types.entity(t)?.move;
+    if (moveStage) return moveStage(ctx, nid, { stage, reason, position });
     throw new FFError("validation", "move sadece opportunity, project, idea ve own_project için");
   }
 
@@ -177,14 +163,10 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "source": return { ...sources.remove(nid), trash: { type: "source", id: nid } };
       case "tag": return { ...tags.remove(nid), trash: { type: "tag", id: nid } };
       case "sector": return { ...sectors.remove(nid), trash: { type: "sector", id: nid } };
-      case "opportunity": return opportunities.remove(nid);
-      case "project": return projects.remove(nid);
-      case "payment": return payments.remove(nid);
       case "draft": return drafts.remove(nid);
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
-      case "offer": return offers.remove(nid);
       case "template": return templates.remove(nid);
       case "idea": return ideas.remove(nid);
       case "own_project": return ownProjects.remove(nid);
@@ -245,8 +227,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     /** alias or name to the canonical record type; unknown types and types of modules that are not installed are a clear error */
     normalizeType: typeOf,
     // yazma servisleri (REST controller'ları ve testler kullanır)
-    sources, tags, opportunities, drafts, projects, payments, comments, settings, sectors, notes, links,
-    oppPeople, offers, files,
+    sources, tags, drafts, comments, settings, sectors, notes, links,
+    files,
     templates, ideas, ownProjects, chat,
     // Paket 2: takip dizisi (zamanı gelenler, taslak üretimi) ve pazarlama özeti
     followups: { due: () => followupsDue(ctx), generate: () => generateFollowups(ctx) },

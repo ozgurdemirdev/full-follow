@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Param, Put, Query } from "@nestjs/common";
 import {
-  CHANNELS, DIRECTIONS, DRAFT_STATUSES, MILESTONES, OPP_STAGES, OPEN_OPP_STAGES,
-  PROJECT_STAGES, SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
+  CHANNELS, DIRECTIONS, DRAFT_STATUSES,
+  SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS, MARKETING_DEFAULTS, CONTACT_STATUSES, TAG_COLORS,
 } from "@fullfollow/core";
 import { CORE, type Core } from "../core.provider";
@@ -27,8 +27,7 @@ export class MiscController {
   @Get("meta")
   meta() {
     return {
-      tags: TAGS, source_kinds: SOURCE_KINDS, opp_stages: OPP_STAGES, open_opp_stages: OPEN_OPP_STAGES,
-      project_stages: PROJECT_STAGES, milestones: MILESTONES, channels: CHANNELS, directions: DIRECTIONS,
+      tags: TAGS, source_kinds: SOURCE_KINDS, channels: CHANNELS, directions: DIRECTIONS,
       touch_kinds: TOUCH_KINDS, connection_tags: CONNECTION_TAGS, network_defaults: NETWORK_DEFAULTS, draft_statuses: DRAFT_STATUSES, comment_targets: this.core.commentTargets(), labels: LABELS,
       template_kinds: TEMPLATE_KINDS, idea_stages: IDEA_STAGES, interest_levels: INTEREST_LEVELS, marketing_defaults: MARKETING_DEFAULTS,
       contact_statuses: CONTACT_STATUSES, tag_colors: TAG_COLORS,
@@ -46,12 +45,6 @@ export class MiscController {
   @Get("report/referrals")
   referrals() {
     return this.core.reports.referrals();
-  }
-
-  /** Kaynak hunisi: bulundu → yazıldı → cevap → görüşme → teklif → kazanıldı; period = 30 | 90 | all (kayıt tarihine göre) */
-  @Get("report/sources")
-  sourceFunnel(@Query("period") period?: string) {
-    return this.core.reports.sourceFunnel(period);
   }
 
   /** Rapor: kaynak dönüşümü + ay tahsilatı vs fiyat tabanı */

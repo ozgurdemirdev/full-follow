@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { emit, parse, stamp, type Ctx } from "../context";
 import { links } from "../db/schema";
 import { linkCreate, linkUpdate } from "../schemas";
-import { link, requireRow, TARGET_TABLE, truncate } from "./shared";
+import { link, requireRow, requireTarget, truncate } from "./shared";
 import { Bin } from "./trash";
 
 /** Labelled links on an opportunity, project or own project; a project also shows the links of the opportunity it came from. */
@@ -13,7 +13,7 @@ export function linksService(ctx: Ctx) {
   function create(input: unknown) {
     const d = parse(linkCreate, input);
     return ctx.db.transaction((tx) => {
-      requireRow(ctx, TARGET_TABLE[d.target_type], d.target_id);
+      requireTarget(ctx, d.target_type, d.target_id);
       const r = tx.insert(links).values({ ...d, ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "link.created", ...owner(d), summary: `Link eklendi: ${d.label}`, data: { link_id: r.id } });
       return { row: r, effects: [] as string[] };

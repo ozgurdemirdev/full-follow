@@ -1,7 +1,7 @@
-import { OFFER_STAGES, RATE_MIN_SAMPLE, SOURCE_FUNNEL_DEFAULT_PERIOD, SOURCE_FUNNEL_PERIODS, SOURCE_FUNNEL_STEPS, SOURCE_WEAK_SHARE, type ContactStatus } from "../constants";
-import { addDays } from "../dates";
-import { FFError, rows, type Ctx } from "../context";
-import { REPLIED_AFTER } from "./templates";
+import {
+  addDays, FFError, OFFER_STAGES, RATE_MIN_SAMPLE, REPLIED_AFTER, rows, SOURCE_FUNNEL_DEFAULT_PERIOD, SOURCE_FUNNEL_PERIODS, SOURCE_FUNNEL_STEPS, SOURCE_WEAK_SHARE,
+  type Ctx, type ContactStatus, type SourceFunnel,
+} from "@fullfollow/core";
 
 export type FunnelPeriod = (typeof SOURCE_FUNNEL_PERIODS)[number];
 export type FunnelStep = (typeof SOURCE_FUNNEL_STEPS)[number];
@@ -17,7 +17,8 @@ export function parseFunnelPeriod(v: unknown): FunnelPeriod {
 }
 
 /**
- * Per record kind: how its touches and opportunities are matched. A company counts its own touches and its people's,
+ * Per record kind: how its touches and opportunities are matched.
+ * TODO(modules): the touches, people and companies through ctx.mod("network") / ctx.mod("people") / ctx.mod("companies") (raw table reads for now: one query per kind keeps it cheap). A company counts its own touches and its people's,
  * the same way status.ts moves a company's status when one of its people is written to.
  */
 const KIND = {
@@ -54,7 +55,7 @@ function recordFlags(ctx: Ctx, kind: keyof typeof KIND, since: string | null) {
  * too noisy to rank. `weak`: among sources with enough sample, the lowest SOURCE_WEAK_SHARE by reply rate (at least one
  * source must be better than it).
  */
-export function sourceFunnel(ctx: Ctx, period: unknown = SOURCE_FUNNEL_DEFAULT_PERIOD) {
+export function sourceFunnel(ctx: Ctx, period: unknown = SOURCE_FUNNEL_DEFAULT_PERIOD): SourceFunnel {
   const p = parseFunnelPeriod(period);
   const since = p === "all" ? null : addDays(ctx.clock.today(), -p);
   const counts = new Map<number, number[]>();

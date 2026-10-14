@@ -20,9 +20,8 @@ export function todayService(ctx: Ctx) {
       drafts: q.drafts({ ...o, filter: { status: "bekliyor" } }),
       follow_ups: {
         people: ctx.mod("people")?.list({ ...o, filter: { follow_up_due: true } }) ?? { rows: [], total: 0 },
-        opportunities: q.opportunities({ ...o, filter: { due: true } }),
+        opportunities: ctx.mod("pipeline")?.opportunities.list({ ...o, filter: { due: true } }) ?? { rows: [], total: 0 },
       },
-      payments: q.payments({ ...o, filter: { due_within_days: 7 } }),
       window_end: addDays(date, 7),
       // Paket 2: güncellenecek paylaşımlar ve zamanı gelen takipler (taslak bekleyen)
       followups: (() => { const l = followupsDue(ctx); return { rows: l.slice(0, limit), total: l.length }; })(),

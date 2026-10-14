@@ -5,8 +5,8 @@ export const entities: Record<string, EntityHandler> = {
   company: {
     aliases: ["firma", "companies", "firmalar"],
     ref: { table: "companies", col: "name", label: "firma" },
-    // people, touches and channels come from the relations the modules contribute
-    related: ["opportunities", "drafts", "comments"],
+    // people, touches, channels and opportunities come from the relations the modules contribute
+    related: ["drafts", "comments"],
     bulk: { label: "firma", keys: (item) => keyList(companyKeys(item)) },
     save: (ctx, d, id) => (id ? ctx.mod("companies")!.update(id, d) : ctx.mod("companies")!.create(d)),
     get: (ctx, id) => ctx.mod("companies")!.get(id),

@@ -6,12 +6,20 @@ import { MODULE_TYPE_OWNER, type CommentTarget } from "../constants";
 import type { EntityRef } from "../modules/types";
 
 /** Tables of the comment targets core owns; the modules' targets come from the registry (`targetTable`) */
-export const TARGET_TABLE: Record<string, string> = {
-  opportunity: "opportunities", project: "projects", draft: "drafts", payment: "payments", idea: "ideas", own_project: "own_projects",
-};
+export const TARGET_TABLE: Record<string, string> = { draft: "drafts", idea: "ideas", own_project: "own_projects" };
 
 /** Table of a comment target type: core's, else the installed module's; undefined for an unknown type or one whose module is not installed */
 export const targetTable = (ctx: Ctx, type: string): string | undefined => TARGET_TABLE[type] ?? ctx.types.commentTarget(type)?.table;
+
+/** The row a file, link or comment hangs on: its table comes from the registry, so a record type whose module is not installed is a clear error */
+export function requireTarget(ctx: Ctx, type: string, id: number) {
+  const table = targetTable(ctx, type);
+  if (!table) {
+    const owner = (MODULE_TYPE_OWNER as Record<string, string>)[type];
+    throw new FFError("validation", owner ? `"${type}" türü için "${owner}" modülü kurulu değil` : `bilinmeyen kayıt türü "${type}"`);
+  }
+  return requireRow(ctx, table, id);
+}
 
 export const TABLE_LABEL: Record<string, string> = {
   people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
@@ -31,18 +39,18 @@ export interface Link {
   project_id?: number | null;
 }
 
-/** Olay için ilgili kayıtları tamamlar: fırsat/projeden kişiyi, projeden fırsatı bulur */
+/** Olay için ilgili kayıtları tamamlar: fırsat/projeden kişiyi, projeden fırsatı bulur (without the pipeline and projects modules it keeps what it was given) */
 export function link(ctx: Ctx, l: Link): Required<Link> {
   let { person_id = null, opportunity_id = null, project_id = null } = l;
   if (project_id) {
-    const p = row(ctx, "SELECT person_id, opportunity_id FROM projects WHERE id = ?", project_id);
+    const p = ctx.mod("projects")?.projects.ref(project_id);
     if (p) {
       person_id ??= p.person_id;
       opportunity_id ??= p.opportunity_id;
     }
   }
   if (opportunity_id) {
-    const o = row(ctx, "SELECT person_id FROM opportunities WHERE id = ?", opportunity_id);
+    const o = ctx.mod("pipeline")?.opportunities.ref(opportunity_id);
     if (o) person_id ??= o.person_id;
   }
   return { person_id, opportunity_id, project_id };
@@ -51,14 +59,8 @@ export function link(ctx: Ctx, l: Link): Required<Link> {
 /** Bir yorum hedefinin olay bağlantıları (modül hedefleri kendi bağlantısını verir) */
 export function targetLink(ctx: Ctx, type: CommentTarget, id: number): Required<Link> {
   switch (type) {
-    case "opportunity": return link(ctx, { opportunity_id: id });
-    case "project": return link(ctx, { project_id: id });
     case "idea":
     case "own_project": return link(ctx, {});
-    case "payment": {
-      const p = row(ctx, "SELECT project_id FROM payments WHERE id = ?", id);
-      return link(ctx, { project_id: p?.project_id });
-    }
     case "draft": {
       const r = row(ctx, "SELECT person_id, opportunity_id, project_id FROM drafts WHERE id = ?", id);
       return link(ctx, r ?? {});
@@ -69,15 +71,9 @@ export function targetLink(ctx: Ctx, type: CommentTarget, id: number): Required<
 
 export function targetLabel(ctx: Ctx, type: CommentTarget, id: number): string {
   switch (type) {
-    case "opportunity": return row(ctx, "SELECT title FROM opportunities WHERE id = ?", id)?.title ?? `#${id}`;
-    case "project": return row(ctx, "SELECT name FROM projects WHERE id = ?", id)?.name ?? `#${id}`;
     case "draft": {
       const d = row(ctx, "SELECT p.name FROM drafts d JOIN people p ON p.id = d.person_id WHERE d.id = ?", id);
       return `taslak #${id}${d ? ` (${d.name})` : ""}`;
-    }
-    case "payment": {
-      const p = row(ctx, "SELECT milestone, project_id FROM payments WHERE id = ?", id);
-      return p ? `ödeme #${id} (${p.milestone})` : `ödeme #${id}`;
     }
     case "idea": return row(ctx, "SELECT title FROM ideas WHERE id = ?", id)?.title ?? `#${id}`;
     case "own_project": return row(ctx, "SELECT name FROM own_projects WHERE id = ?", id)?.name ?? `#${id}`;
@@ -93,8 +89,6 @@ export const truncate = (s: string | null | undefined, n: number) => {
 // ---- İsimle referans ----
 
 const CORE_REFS = {
-  opportunity: { table: "opportunities", col: "title", label: "fırsat" },
-  project: { table: "projects", col: "name", label: "proje" },
   source: { table: "sources", col: "name", label: "kaynak" },
   sector: { table: "sectors", col: "name", label: "sektör" },
   idea: { table: "ideas", col: "title", label: "fikir" },
@@ -134,12 +128,10 @@ export function resolveRef(ctx: Ctx, type: string, ref: string | number): number
 
 const CORE_INPUT_REFS: Record<string, [string, string]> = {
   source: ["source_id", "source"],
-  opp: ["opportunity_id", "opportunity"], opportunity: ["opportunity_id", "opportunity"],
-  project: ["project_id", "project"],
   idea: ["idea_id", "idea"], parent: ["parent_id", "idea"], own_project: ["own_project_id", "own_project"], template: ["template_id", "template"],
 };
 
-/** Girdideki isim alanlarını (source, opp, project, idea, template ve kurulu modüllerin türleri: person, company, post, referred_by...) *_id'ye çevirir */
+/** Girdideki isim alanlarını (source, idea, template ve kurulu modüllerin türleri: person, company, post, opportunity, opp, project, referred_by...) *_id'ye çevirir */
 export function resolveInput<T extends Record<string, any>>(ctx: Ctx, data: T): Record<string, any> {
   const out: Record<string, any> = { ...data };
   const moduleRefs = ctx.types.inputRefs().map(([key, idKey, type]): [string, [string, string]] => [key, [idKey, type]]);

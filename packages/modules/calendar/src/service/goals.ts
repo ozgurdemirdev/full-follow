@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import {
-  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, followUpsDue, has, isoWeekday, outgoingMessageCounts, page, parse, paymentsDue, requireRow, row, rows, schema, stamp,
+  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, followUpsDue, has, isoWeekday, outgoingMessageCounts, page, parse, requireRow, row, rows, schema, stamp,
   truncate, writeEvent as emit, type CalendarDay, type CalendarTask, type Ctx, type DayPlan, type GoalDay, type GoalRecord, type ListOpts,
 } from "@fullfollow/core";
 import { MAX_CALENDAR_DAYS, STREAK_LOOKBACK_DAYS, TASK_ORDER_SQL } from "./constants";
@@ -107,8 +107,8 @@ export function goalsService(ctx: Ctx) {
     if (from > to || daysBetween(from, to) >= MAX_CALENDAR_DAYS) throw new FFError("validation", `takvim aralığı en fazla ${MAX_CALENDAR_DAYS} gün olabilir`);
     const taskRows = rows<CalendarTask & { due_date: string }>(ctx,
       `SELECT id, title, due_date, due_time, kind, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY ${TASK_ORDER_SQL}`, from, to);
-    // TODO(modules): via ctx.mod("projects") payments due
-    const payments = paymentsDue(ctx, from, to);
+    // payments come from the projects module (none without it)
+    const payments = ctx.mod("projects")?.payments.due(from, to) ?? [];
     // TODO(modules): via ctx.mod("drafts") follow-ups due
     const followUps = followUpsDue(ctx, from, to);
     return days(from, to).map((d) => {

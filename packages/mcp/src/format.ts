@@ -20,22 +20,13 @@ type Row = Record<string, any>;
 
 const LINE: Record<string, (r: Row) => string> = {
   sector: (r) => join(`#${r.id} ${r.path}`, `${r.people_count ?? 0} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
-  opp_person: (r) => join(`#${r.id} ${r.person_name}`, label(r.role), r.company_name, r.note && cut(r.note, 60)),
-  offer: (r) => join(`#${r.id} v${r.version}`, d(r.offered_at), tl(r.amount), r.accepted_at && "kabul edildi", r.opportunity_title, !!r.items?.length && `${r.items.length} kalem`, r.note && cut(r.note, 60), r.file_id && `dosya #${r.file_id}`),
   file: (r) => join(`#${r.id} ${r.name}`, `${Math.max(1, Math.round(r.size / 1024))} KB`, d(r.created_at)),
   link: (r) => join(`#${r.id} ${r.label}`, r.url, r.from && `(${r.from})`),
   note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, 80)),
   tag: (r) => join(`#${r.id} ${r.name}`, `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
   trash: (r) => join(`${r.type} #${r.id} ${r.label}`, `${r.what} · silindi ${d(r.deleted_at)}`),
   source: (r) => join(`#${r.id} ${r.name}`, r.kind, `${r.opp_count ?? 0} fırsat`, !!r.people_count && `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
-  opportunity: (r) => join(`#${r.id} ${r.title}`, r.person_name, r.company_name, label(r.stage), tl(r.estimated_value), r.source_name, r.source_date && `ilan ${d(r.source_date)}`, r.source_url, r.next_follow_up_at && `takip ${d(r.next_follow_up_at)}`, r.lost_reason && `neden: ${cut(r.lost_reason, 40)}`, r.project_id && `proje #${r.project_id}`),
-  project: (r) => join(
-    `#${r.id} ${r.name}`, r.person_name, label(r.stage), `${tl(r.paid_total)}/${tl(r.price)}`,
-    r.next_payment && `sıradaki: ${label(r.next_payment.milestone)} ${tl(r.next_payment.remaining)}${r.next_payment.due_date ? ` ${d(r.next_payment.due_date)}` : ""}`,
-    r.next_task && `görev: ${cut(r.next_task.title, 40)}`,
-  ),
   draft: (r) => join(`#${r.id} ${r.to_name ?? r.person_name}`, label(r.channel), label(r.status), !!r.followup_step && `${r.followup_step}. takip`, `"${cut(r.body, 60)}"`, r.reject_note && `ret: ${cut(r.reject_note, 40)}`),
-  payment: (r) => join(`#${r.id} ${r.project_name}`, label(r.milestone), `${tl(r.paid_amount)}/${tl(r.expected_amount)}`, r.due_date && `vade ${d(r.due_date)}`, r.status !== "bekliyor" && label(r.status === "odendi" ? "ödendi" : r.status === "kismi" ? "kısmi" : "gecikmiş")),
   comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, 60)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, 60)}"`, r.count > 1 && `${r.count} yorum`, r.last_by === "ozgur" && !r.resolved_at && "CEVAPSIZ", r.resolved_at && "kapalı"),
   setting: (r) => `${r.key}=${r.value}`,
   template: (r) => join(`#${r.id} ${r.name}`, label(r.kind), r.channel ? label(r.channel) : "tüm kanallar", r.sector_path ?? "tüm sektörler",
@@ -128,7 +119,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     }
     const t = name === "people" && type === "idea" ? "interest"
       : name === "people" && type === "opportunity" ? "opp_person"
-      : ({ ...relationTypes, links: "link", notes: "note", opportunities: "opportunity", projects: "project", payments: "payment", drafts: "draft", comments: "comment", ideas: "idea", offers: "offer", files: "file" } as Record<string, string>)[name];
+      : ({ ...relationTypes, links: "link", notes: "note", drafts: "draft", comments: "comment", ideas: "idea", files: "file" } as Record<string, string>)[name];
     out.push(`${name} (${rows.length}):`, ...rows.map((r) => "  " + line(t, r)));
   }
   return out.join("\n");
@@ -161,8 +152,6 @@ export function todayText(t: any): string {
     { at: 300, text: t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "" },
     { at: 400, text: sec("Onay bekleyen taslak", "draft", t.drafts) },
     { at: 500, text: sec("Takip zamanı (taslak yok)", "followup", t.followups ?? { rows: [], total: 0 }) },
-    { at: 700, text: sec("Takip: fırsat", "opportunity", t.follow_ups.opportunities) },
-    { at: 900, text: sec("Ödeme (7 gün)", "payment", t.payments) },
   ];
   const parts = [...core, ...todaySections.map((s) => ({ at: s.at, text: s.render(t, mcpFormat) }))]
     .sort((a, b) => a.at - b.at)
@@ -241,8 +230,8 @@ export function reviewText(r: any): string {
 }
 
 export const KIND_NAME: Record<string, string> = {
-  source: "kaynak", opportunity: "fırsat", project: "proje",
-  draft: "taslak", payment: "ödeme", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", offer: "teklif",
+  source: "kaynak",
+  draft: "taslak", comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link",
   template: "şablon", idea: "fikir", own_project: "kendi projesi", interest: "fikir ilgisi", tag: "etiket", trash: "çöp kutusu",
 };
 

@@ -1,30 +1,13 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, money, parse, row, rows, stamp, type Ctx } from "../context";
-import { payments } from "../db/schema";
-import { label } from "../constants";
-import { paymentCreate, paymentUpdate } from "../schemas";
 import { z } from "zod";
-import { link, requireRow } from "./shared";
-import { Bin } from "./trash";
+import {
+  Bin, eventLink as link, FFError, keptRow, label, money, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
+  type Ctx, type PaymentStatus,
+} from "@fullfollow/core";
+import { paymentCreate, paymentUpdate } from "./schemas";
 
-export interface DuePayment {
-  id: number;
-  project_id: number;
-  project_name: string;
-  milestone: string;
-  expected_amount: number;
-  paid_amount: number;
-  done: boolean;
-}
-
-/** Payments whose due date falls in the range (paid ones too, they show as done); the calendar feed reads this */
-export function paymentsDue(ctx: Ctx, from: string, to: string): (DuePayment & { due_date: string })[] {
-  return rows(ctx, `SELECT p.id, p.project_id, pr.name AS project_name, p.milestone, p.expected_amount, p.paid_amount, p.due_date, p.paid_amount >= p.expected_amount AS done
-    FROM payments p JOIN projects pr ON pr.id = p.project_id WHERE p.due_date BETWEEN ? AND ? ORDER BY p.id`, from, to)
-    .map((r) => ({ ...r, done: !!r.done }));
-}
-
-export type PaymentStatus = "odendi" | "kismi" | "gecikmis" | "bekliyor";
+const { payments } = schema;
+type Payment = typeof payments.$inferSelect;
 
 /** Durum saklanmaz, hesaplanır */
 export function paymentStatus(p: { expected_amount: number; paid_amount: number; due_date: string | null }, today: string): PaymentStatus {
@@ -56,7 +39,12 @@ export function ledgerOf(ctx: Ctx, paymentId: number): { date: string; amount: n
 
 /** Bir ayda (YYYY-MM) tahsil edilen toplam */
 export function collectedIn(ctx: Ctx, ym: string): number {
-  return (row(ctx, `SELECT COALESCE(SUM(amount), 0) AS v FROM (${LEDGER_SQL}) WHERE substr(date, 1, 7) = ?`, ym)?.v ?? 0) as number;
+  return (keptRow(ctx, `SELECT COALESCE(SUM(amount), 0) AS v FROM (${LEDGER_SQL}) WHERE substr(date, 1, 7) = ?`, ym)?.v ?? 0) as number;
+}
+
+/** What is still unpaid of the payments due in a month (YYYY-MM) */
+export function outstandingDue(ctx: Ctx, ym: string): number {
+  return (keptRow(ctx, "SELECT COALESCE(SUM(expected_amount - paid_amount),0) v FROM payments WHERE due_date IS NOT NULL AND substr(due_date,1,7) = ? AND paid_amount < expected_amount", ym)?.v ?? 0) as number;
 }
 
 export function paymentsService(ctx: Ctx) {
@@ -81,7 +69,7 @@ export function paymentsService(ctx: Ctx) {
   function update(id: number, input: unknown) {
     const d = parse(paymentUpdate, input);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "payments", id);
+      const cur = requireRow<Payment>(ctx, "payments", id);
       const expected = d.expected_amount ?? cur.expected_amount;
       const paid = d.paid_amount ?? cur.paid_amount;
       if (paid > expected) throw new FFError("validation", `ödenen (${paid}) beklenenden (${expected}) fazla olamaz`);
@@ -105,7 +93,7 @@ export function paymentsService(ctx: Ctx) {
           : `Ödeme planı güncellendi: ${label(d.milestone ?? cur.milestone)} (${Object.keys(d).join(", ")})`,
         data: { payment_id: id, ...(ledgerChanged ? { entries } : {}) },
       });
-      return { row: requireRow(ctx, "payments", id), effects: [] as string[] };
+      return { row: requireRow<Payment>(ctx, "payments", id), effects: [] as string[] };
     });
   }
 
@@ -113,7 +101,7 @@ export function paymentsService(ctx: Ctx) {
   function pay(id: number, amount: unknown, date?: unknown) {
     const d = parse(payInput, { amount, date });
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "payments", id);
+      const cur = requireRow<Payment>(ctx, "payments", id);
       const remaining = cur.expected_amount - cur.paid_amount;
       if (d.amount > remaining) throw new FFError("rule", `Kalan tutar ${money(remaining)}, fazlası girilemez`);
       const paid = cur.paid_amount + d.amount;
@@ -130,12 +118,12 @@ export function paymentsService(ctx: Ctx) {
         const pr = row(ctx, "SELECT stage FROM projects WHERE id = ?", cur.project_id);
         if (pr?.stage === "pesinat") effects.push("peşinat tamam, proje ilerleyebilir");
       }
-      return { row: requireRow(ctx, "payments", id), effects };
+      return { row: requireRow<Payment>(ctx, "payments", id), effects };
     });
   }
 
   function remove(id: number) {
-    const cur = requireRow(ctx, "payments", id);
+    const cur = requireRow<Payment>(ctx, "payments", id);
     if (cur.paid_amount > 0) throw new FFError("rule", "Ödeme alınmış kayıt silinemez; önce ödenen tutarı düzelt");
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);

@@ -129,7 +129,7 @@ suite("people, companies and network together", () => {
       app.drafts.create({ person_id: p.id, channel: "email", body: "taslak" });
       return { c, p, o };
     };
-    const matrix: string[][] = [["people"], ["companies"], ["network"], ["people", "companies", "network"], ["calendar"], ["posts"]];
+    const matrix: string[][] = [["people"], ["companies"], ["network"], ["people", "companies", "network"], ["calendar"], ["posts"], ["pipeline"], ["projects"], ["pipeline", "projects"]];
 
     it.each(matrix)("without %s", (...off) => {
       const { c, p, o } = seed();
@@ -140,10 +140,25 @@ suite("people, companies and network together", () => {
       expect(today.follow_ups.people.total).toBe(off.includes("people") ? 0 : 1);
       expect(today).toHaveProperty("drafts");
       for (const call of [() => bare.marketing(), () => bare.review(), () => bare.reports.report(), () => bare.reports.referrals(), () => bare.find("trash"),
-        () => bare.find("opportunity"), () => bare.find("project"), () => bare.find("draft"), () => bare.find("comment"), () => bare.find("note"),
-        () => bare.get("opportunity", o.id, ["comments", "drafts"]), () => bare.timeline("opportunity", o.id), () => bare.ctx.mod("posts")?.stats()]) {
+        () => bare.find("draft"), () => bare.find("comment"), () => bare.find("note"), () => bare.ctx.mod("posts")?.stats(), () => bare.reports.month("2026-10"), () => bare.ctx.mod("calendar")?.calendar("2026-10-01", "2026-10-31"),
+        ...(off.includes("pipeline") ? [] : [() => bare.find("opportunity"), () => bare.get("opportunity", o.id, ["comments", "drafts"]), () => bare.timeline("opportunity", o.id)]),
+        ...(off.includes("projects") ? [] : [() => bare.find("project"), () => bare.find("payment")])]) {
         expect(call).not.toThrow();
       }
+      // the opportunity and project records of a missing module are a clear error, the rest of the views read zero
+      if (off.includes("pipeline")) {
+        expect(() => bare.find("opportunity")).toThrow(/"opportunity" türü için "pipeline" modülü kurulu değil/);
+        expect(() => bare.move("opportunity", o.id, "temas")).toThrow(FFError);
+        expect(today.follow_ups.opportunities.total).toBe(0);
+        expect(bare.reports.bySource()).toEqual([]);
+        expect(bare.find("source").rows.find((s) => s.name === "R10")).toMatchObject({ opp_count: 0 });
+      } else expect(bare.find("source").rows.find((s) => s.name === "R10")).toMatchObject({ opp_count: 1 });
+      if (off.includes("projects")) {
+        expect(() => bare.find("project")).toThrow(/"project" türü için "projects" modülü kurulu değil/);
+        expect(() => bare.find("payment")).toThrow(/"payment" türü için "projects" modülü kurulu değil/);
+        expect(today).not.toHaveProperty("payments");
+        expect(bare.reports.month("2026-10")).toMatchObject({ collected: 0, outstanding_due: 0 });
+      } else expect(today.payments.total).toBe(0);
       // the records of a missing module are a clear error, the others keep working
       if (off.includes("people")) {
         expect(() => bare.find("person")).toThrow(/"person" türü için "people" modülü kurulu değil/);
@@ -171,7 +186,7 @@ suite("people, companies and network together", () => {
 
     it("everything switched off at once still deletes what has no dependants and says why the rest cannot go", () => {
       const { p } = seed();
-      const bare = appWithout(["people", "companies", "network", "calendar", "posts"], h, "ozgur", clock);
+      const bare = appWithout(["people", "companies", "network", "calendar", "posts", "pipeline", "projects"], h, "ozgur", clock);
       expect(bare.modules.list()).toEqual([]);
       expect(bare.today(5)).toMatchObject({ comments: { total: 2 }, follow_ups: { people: { total: 0 } } });
       // a draft is core's: it still works with a contact address

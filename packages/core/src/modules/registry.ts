@@ -13,7 +13,10 @@ export interface ModuleRegistry {
   list(): ModuleDef[];
   /** module keys given in the off list (known or not), sorted */
   off(): string[];
-  /** `coreHooks`: listeners for rules whose feature is not a module yet; they run after the modules' hooks of the same event */
+  /**
+   * `coreHooks`: listeners for rules whose feature is not a module yet (drafts, ideas); they run before the modules' hooks of the same event,
+   * which is where those features land once they are modules (their keys sort before pipeline's), so the effect order does not change when they move
+   */
   bind(ctx: Ctx, coreHooks?: Record<string, Hook>): ModuleRuntime;
 }
 
@@ -98,13 +101,11 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
       };
       const emit = <N extends EventName>(name: N, payload: EventPayload<N>): string[] => {
         if (!ctx.sqlite.inTransaction) throw new Error(`emit("${name}") must run inside the caller's transaction`);
-        const effects: string[] = [];
+        const effects: string[] = [...(coreHooks[name]?.(ctx, payload) ?? [])];
         for (const def of installed) {
           const out = def.hooks?.[name]?.(ctx, payload);
           if (out) effects.push(...out);
         }
-        const own = coreHooks[name]?.(ctx, payload);
-        if (own) effects.push(...own);
         return effects;
       };
       return { mod, emit, types, contrib };

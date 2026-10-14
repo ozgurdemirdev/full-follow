@@ -1,8 +1,8 @@
 import { emit, parse, rows, stamp, type Ctx } from "../context";
 import { files } from "../db/schema";
 import { fileCreate } from "../schemas";
-import { link, requireRow, TARGET_TABLE, truncate } from "./shared";
-import { Bin } from "./trash";
+import { link, requireRow, requireTarget, truncate } from "./shared";
+import { announceTrashed, Bin } from "./trash";
 
 type FileRow = typeof files.$inferSelect;
 
@@ -22,7 +22,7 @@ export function filesService(ctx: Ctx) {
   function create(input: unknown) {
     const d = parse(fileCreate, input);
     return ctx.db.transaction((tx) => {
-      requireRow(ctx, TARGET_TABLE[d.target_type], d.target_id);
+      requireTarget(ctx, d.target_type, d.target_id);
       const r = tx.insert(files).values({ ...d, ...stamp(ctx) }).returning().get();
       emit(tx, ctx, { type: "file.uploaded", ...owner(d), summary: `Dosya eklendi: ${truncate(d.name, 60)}`, data: { file_id: r.id } });
       return { row: r, effects: [] as string[] };
@@ -35,7 +35,8 @@ export function filesService(ctx: Ctx) {
     const cur = get(id);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      bin.unlink("offers", "file_id", id);
+      // what points at the file (an offer's link to it) is emptied by the module that owns it
+      announceTrashed(ctx, bin, "file", id);
       bin.take("files", "id = ?", id);
       bin.commit(tx, "file", id, `Dosya: ${truncate(cur.name, 60)}`);
       emit(tx, ctx, { type: "file.deleted", ...owner(cur), summary: `Dosya silindi: ${truncate(cur.name, 60)}` });

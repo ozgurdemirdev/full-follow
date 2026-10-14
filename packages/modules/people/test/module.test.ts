@@ -82,12 +82,4 @@ describe("people as a module", () => {
     expect(app.ctx.types.chatCard("person")!(app.ctx, p.id)).toMatchObject({ title: "Ada", draft_id: null });
     expect(() => app.save("comment", { target_type: "company", target_id: 1, body: "x" })).toThrow(/yorum yazılamaz/);
   });
-
-  it("a person that has an opportunity cannot be deleted", () => {
-    const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
-    const p = app.people.create({ name: "Ada" }).row;
-    app.opportunities.create({ title: "Site", person_id: p.id, source_id: app.get("source", "R10").row.id });
-    expect(() => app.remove("person", p.id)).toThrow(/fırsatları var/);
-  });
 });

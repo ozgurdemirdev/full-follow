@@ -26,14 +26,18 @@ import type { CalendarApi } from "./calendar";
 import type { CompaniesApi } from "./companies";
 import type { NetworkApi, TouchCreated, TouchUpdated } from "./network";
 import type { PeopleApi } from "./people";
+import type { OpportunityWon, PipelineApi } from "./pipeline";
 import type { PostsApi } from "./posts";
+import type { ProjectsApi } from "./projects";
 import type { RecordRestored, RecordTrashed } from "./records";
 
 export type * from "./calendar";
 export type * from "./companies";
 export type * from "./network";
 export type * from "./people";
+export type * from "./pipeline";
 export type * from "./posts";
+export type * from "./projects";
 export type * from "./records";
 
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
@@ -42,13 +46,16 @@ export interface ModuleApis {
   companies: CompaniesApi;
   network: NetworkApi;
   people: PeopleApi;
+  pipeline: PipelineApi;
   posts: PostsApi;
+  projects: ProjectsApi;
 }
 
 /** Event name to its payload type. Names not listed here are accepted with an `unknown` payload. */
 export interface ModuleEvents {
   "touch.created": TouchCreated;
   "touch.updated": TouchUpdated;
+  "opportunity.won": OpportunityWon;
   "record.trashed": RecordTrashed;
   "record.restored": RecordRestored;
 }

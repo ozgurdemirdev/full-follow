@@ -3,16 +3,11 @@ import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { AuthController, AuthGuard } from "./auth";
 import { CommentsController } from "./controllers/comments.controller";
 import { FilesController } from "./controllers/files.controller";
-import { OffersController } from "./controllers/offers.controller";
-import { OpportunityPeopleController } from "./controllers/opportunity-people.controller";
 import { LinksController } from "./controllers/links.controller";
 import { NotesController } from "./controllers/notes.controller";
 import { SectorsController } from "./controllers/sectors.controller";
 import { DraftsController } from "./controllers/drafts.controller";
 import { MiscController } from "./controllers/misc.controller";
-import { OpportunitiesController } from "./controllers/opportunities.controller";
-import { PaymentsController } from "./controllers/payments.controller";
-import { ProjectsController } from "./controllers/projects.controller";
 import { SourcesController } from "./controllers/sources.controller";
 import { TemplatesController } from "./controllers/templates.controller";
 import { IdeasController } from "./controllers/ideas.controller";
@@ -29,8 +24,8 @@ import { moduleControllers } from "./modules.generated";
 @Module({
   controllers: [
     AuthController, MiscController, SourcesController,
-    OpportunitiesController, ProjectsController, PaymentsController, DraftsController,
-    CommentsController, SectorsController, NotesController, LinksController, FilesController, OffersController, OpportunityPeopleController,
+    DraftsController,
+    CommentsController, SectorsController, NotesController, LinksController, FilesController,
     TemplatesController, IdeasController, OwnProjectsController, MarketingController, TagsController, TrashController, ChatController,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,

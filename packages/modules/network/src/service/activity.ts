@@ -50,12 +50,17 @@ export function activity(ctx: Ctx, period: string = "week"): ActivityReport {
       channels.set(t.channel, c);
     }
   }
-  // TODO(modules): people and companies through ctx.mod, drafts through ctx.mod("drafts"), offers through ctx.mod("pipeline") (raw table reads for now)
-  for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"], ["drafts", "drafts"], ["offers", "offers"]] as const) {
+  // TODO(modules): people and companies through ctx.mod, drafts through ctx.mod("drafts") (raw table reads for now)
+  for (const [table, key] of [["people", "new_people"], ["companies", "new_companies"], ["drafts", "drafts"]] as const) {
     for (const r of rows<{ created_at: string }>(ctx, `SELECT created_at FROM ${table} WHERE created_at >= ?`, since)) {
       const i = indexOf(dayOf(r.created_at));
       if (i >= 0) buckets[i][key]++;
     }
+  }
+  // offers come from the pipeline module (none without it)
+  for (const created_at of ctx.mod("pipeline")?.offerCreatedSince(since) ?? []) {
+    const i = indexOf(dayOf(created_at));
+    if (i >= 0) buckets[i].offers++;
   }
   const dist = (table: "people" | "companies") => {
     const m = new Map(rows<{ s: string; n: number }>(ctx, `SELECT contact_status s, COUNT(*) n FROM ${table} GROUP BY contact_status`).map((r) => [r.s, r.n]));

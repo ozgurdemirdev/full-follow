@@ -1,29 +1,20 @@
 import { monthOf } from "../dates";
-import { rows, type Ctx } from "../context";
-import { collectedIn } from "./payments";
+import type { Ctx } from "../context";
 import { settingsService } from "./settings";
-import { sourceFunnel } from "./sourceFunnel";
 
 export function reportsService(ctx: Ctx) {
-  /** Kaynak bazında dönüşüm: kazanılan / kapanan (kazanılan + kaybedilen). Açık fırsatlar paydaya girmez. */
+  /** Kaynak bazında dönüşüm: kazanılan / kapanan (kazanılan + kaybedilen). Açık fırsatlar paydaya girmez. Empty without the pipeline module. */
   function bySource() {
-    return rows(ctx, `
-      SELECT s.id AS source_id, s.name AS source,
-        COUNT(o.id) AS total,
-        COALESCE(SUM(o.stage = 'kazanildi'), 0) AS won,
-        COALESCE(SUM(o.stage = 'kaybedildi'), 0) AS lost,
-        COALESCE(SUM(o.stage NOT IN ('kazanildi','kaybedildi')), 0) AS open,
-        COALESCE(SUM(CASE WHEN o.stage = 'kazanildi' THEN COALESCE(o.estimated_value, 0) END), 0) AS won_value
-      FROM sources s LEFT JOIN opportunities o ON o.source_id = s.id
-      GROUP BY s.id ORDER BY won DESC, total DESC, s.name`)
-      .map((r) => ({ ...r, conversion: r.won + r.lost > 0 ? r.won / (r.won + r.lost) : null }));
+    return ctx.mod("pipeline")?.bySource() ?? [];
   }
 
   /** Bir ayın tahsilatı (her ödeme girişi kendi tarihinin ayına, kısmi ödemeler dahil) ve fiyat tabanı ile farkı */
   function month(m?: string) {
     const ym = m ? m.slice(0, 7) : monthOf(ctx.clock.today());
-    const collected = collectedIn(ctx, ym);
-    const expected = rows(ctx, "SELECT COALESCE(SUM(expected_amount - paid_amount),0) v FROM payments WHERE due_date IS NOT NULL AND substr(due_date,1,7) = ? AND paid_amount < expected_amount", ym)[0].v as number;
+    // without the projects module nothing is collected or due
+    const projects = ctx.mod("projects");
+    const collected = projects?.collectedIn(ym) ?? 0;
+    const expected = projects?.outstandingDue(ym) ?? 0;
     const f = settingsService(ctx).priceFloor();
     return { month: ym, collected, outstanding_due: expected, floor: f.floor, floor_detail: f, gap: collected - f.floor };
   }
@@ -45,5 +36,5 @@ export function reportsService(ctx: Ctx) {
   }
 
   // TODO(modules): the referral report becomes the referrals module; until then it reads the people module's referral tree
-  return { bySource, sourceFunnel: (period?: unknown) => sourceFunnel(ctx, period), month, months, report, referrals: () => ctx.mod("people")?.referralValues() ?? [] };
+  return { bySource, sourceFunnel: (period?: unknown) => ctx.mod("pipeline")?.funnel(period), month, months, report, referrals: () => ctx.mod("people")?.referralValues() ?? [] };
 }

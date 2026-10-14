@@ -1,8 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
 import type { Core } from "../core.provider";
 
-/** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, ...) */
-export const CORE_CARD_TYPES = ["opportunity", "draft", "template", "idea", "payment", "comment"] as const;
+/** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, opportunities, payments, ...) */
+export const CORE_CARD_TYPES = ["draft", "template", "idea", "comment"] as const;
 type CardType = string;
 const MAX_KEYS = 30;
 const SNIPPET = 80;
@@ -43,10 +43,6 @@ export function cardRecords(core: Core, keys: string): CardRecord[] {
 
 function card(core: Core, type: CardType, id: number, personId?: number): Row {
   switch (type) {
-    case "opportunity": {
-      const r = core.get("opportunity", id).row as Row;
-      return { title: r.title, stage: r.stage, value: r.estimated_value, person: r.person_name ?? null };
-    }
     case "draft": {
       const r = core.get("draft", id).row as Row;
       return { title: r.to_name ?? r.person_name ?? r.contact ?? `Taslak #${id}`, channel: r.channel, status: r.status, body: clip(String(r.body ?? "")) };
@@ -55,11 +51,6 @@ function card(core: Core, type: CardType, id: number, personId?: number): Row {
     case "idea": {
       const r = core.get("idea", id).row as Row;
       return { title: r.title, stage: r.stage };
-    }
-    case "payment": {
-      const r = core.get("payment", id).row as Row;
-      const project = core.get("project", r.project_id).row as Row;
-      return { title: `${project.name}`, project_id: r.project_id, milestone: r.milestone, expected: r.expected_amount, paid: r.paid_amount, due_date: r.due_date };
     }
     case "comment": {
       const r = core.get("comment", id).row as Row;

@@ -1,14 +1,13 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, parse, row, stamp, type Ctx } from "../context";
-import type { Q } from "../db/client";
-import { opportunities } from "../db/schema";
-import { label, OPEN_OPP_STAGES, type OppStage } from "../constants";
-import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "../schemas";
-import { addTagBySlug, checkSource } from "./categories";
-import { dropMember, upsertMember } from "./oppPeople";
-import { createProjectFromOpportunity } from "./projects";
-import { link, placeInGroup, requireRow, resolveRef } from "./shared";
-import { announceTrashed, Bin } from "./trash";
+import {
+  addTagBySlug, announceTrashed, Bin, checkSource, eventLink as link, FFError, keptRow, label, OPEN_OPP_STAGES, parse, placeInGroup, requireRow, resolveRef, row, schema, stamp,
+  writeEvent as emit, type Ctx, type OpportunityWon, type OppStage, type Q,
+} from "@fullfollow/core";
+import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "./schemas";
+import { dropMember, upsertMember } from "./team";
+
+const { opportunities } = schema;
+type Opp = typeof opportunities.$inferSelect;
 
 const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
 
@@ -16,7 +15,7 @@ const isClosed = (s: string) => s === "kazanildi" || s === "kaybedildi";
  * Aşamayı uygular (kanban sütun sırası, closed_at, lost_reason, olay). Kurallar (proje açma vb.) çağıranda.
  * move() ve temasın otomatik ilerletmesi kullanır.
  */
-export function applyStage(q: Q, ctx: Ctx, cur: typeof opportunities.$inferSelect, stage: OppStage, o: { reason?: string | null; position?: number; auto?: boolean } = {}) {
+export function applyStage(q: Q, ctx: Ctx, cur: Opp, stage: OppStage, o: { reason?: string | null; position?: number; auto?: boolean } = {}) {
   const changed = stage !== cur.stage;
   const closed = isClosed(stage);
   const t = ctx.clock.now();
@@ -41,6 +40,17 @@ export function applyStage(q: Q, ctx: Ctx, cur: typeof opportunities.$inferSelec
   return changed;
 }
 
+/** What the projects module needs to open a project from a won opportunity: plain data, the accepted offer and the price included */
+function wonPayload(ctx: Ctx, opp: Opp): OpportunityWon {
+  const offer = keptRow<{ id: number; amount: number; items: string }>(ctx, "SELECT id, amount, items FROM offers WHERE opportunity_id = ? AND accepted_at IS NOT NULL", opp.id);
+  const companyId = keptRow<{ company_id: number | null }>(ctx, "SELECT company_id FROM people WHERE id = ?", opp.person_id)?.company_id ?? null;
+  return {
+    opportunity: { id: opp.id, title: opp.title, person_id: opp.person_id, company_id: companyId, estimated_value: opp.estimated_value },
+    offer: offer ? { id: offer.id, amount: offer.amount, items: JSON.parse(offer.items) } : null,
+    price: offer?.amount ?? opp.estimated_value ?? 0,
+  };
+}
+
 export function opportunitiesService(ctx: Ctx) {
   function create(input: unknown) {
     const d = parse(oppCreate, input);
@@ -58,7 +68,7 @@ export function opportunitiesService(ctx: Ctx) {
     if (input && typeof input === "object" && ("stage" in input || "position" in input)) throw new FFError("rule", "Aşama için move kullan");
     const { add_people, remove_people, ...d } = parse(oppUpdate, input);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "opportunities", id);
+      const cur = requireRow<Opp>(ctx, "opportunities", id);
       if (d.person_id) requireRow(ctx, "people", d.person_id);
       if (d.source_id) checkSource(ctx, d.source_id, cur.source_id);
       if (Object.keys(d).length) {
@@ -66,7 +76,7 @@ export function opportunitiesService(ctx: Ctx) {
         emit(tx, ctx, { type: "opp.updated", ...link(ctx, { opportunity_id: id }), summary: `Fırsat güncellendi (${Object.keys(d).join(", ")})` });
       }
       // team changes (the main contact may have just changed, so read the row again)
-      const now = requireRow(ctx, "opportunities", id);
+      const now = requireRow<Opp>(ctx, "opportunities", id);
       const effects = [
         ...(remove_people ?? []).map((p) => dropMember(tx, ctx, now, resolveRef(ctx, "person", p))),
         ...(add_people ?? []).map((m) => upsertMember(tx, ctx, now, resolveRef(ctx, "person", m.person), m.role, m.note)),
@@ -76,39 +86,32 @@ export function opportunitiesService(ctx: Ctx) {
   }
 
   /**
-   * Aşama değiştirir (her yöne serbest). Kazanıldı: proje + ödeme planı + müşteri etiketi.
-   * Kaybedildi: neden zorunlu.
+   * Aşama değiştirir (her yöne serbest). Kaybedildi: neden zorunlu.
+   * Won: emits `opportunity.won` (the projects module opens the project and its payment plan) and tags the person as a customer.
    */
   function move(id: number, input: unknown) {
     const s = parse(stageMove, input);
     const stage = parse(oppStageEnum, s.stage);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "opportunities", id);
+      const cur = requireRow<Opp>(ctx, "opportunities", id);
       const reason = s.reason ?? cur.lost_reason;
       if (stage === "kaybedildi" && !reason) throw new FFError("rule", "Kaybedildi için neden zorunlu");
       const changed = applyStage(tx, ctx, cur, stage, { reason, position: s.position });
       const effects: string[] = [];
       if (stage === "kazanildi" && changed) {
-        if (row(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", id)) {
-          effects.push("proje zaten var");
-        } else {
-          const { project, planned } = createProjectFromOpportunity(tx, ctx, { ...cur, stage });
-          effects.push(`proje #${project.id} açıldı`);
-          effects.push(planned ? `${planned} ödeme planlandı` : "fiyat girilmediği için ödeme planı yok");
-        }
+        effects.push(...ctx.emit("opportunity.won", wonPayload(ctx, cur)));
         if (addTagBySlug(tx, ctx, "person", cur.person_id, "musteri")) effects.push("müşteri etiketi eklendi");
       }
-      return { row: requireRow(ctx, "opportunities", id), effects };
+      return { row: requireRow<Opp>(ctx, "opportunities", id), effects };
     });
   }
 
   function remove(id: number) {
-    const cur = requireRow(ctx, "opportunities", id);
-    if (row(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", id)) throw new FFError("rule", `${cur.title} silinemez: projesi var`);
+    const cur = requireRow<Opp>(ctx, "opportunities", id);
+    if (ctx.mod("projects")?.projects.forOpportunity(id)) throw new FFError("rule", `${cur.title} silinemez: projesi var`);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
-      bin.unlink("drafts", "opportunity_id", id);
-      // touches and tasks that point at it are the modules' to clean (network, calendar)
+      // touches, tasks and drafts that point at it are the owning modules' to clean
       announceTrashed(ctx, bin, "opportunity", id);
       // offers point at files, so they go first
       bin.take("offers", "opportunity_id = ?", id);

@@ -73,6 +73,24 @@ export function row<T = any>(ctx: Ctx, sql: string, ...params: unknown[]): T | u
   return ctx.sqlite.prepare(sql).get(...params) as T | undefined;
 }
 
+/** Statements kept per connection for SQL that is a literal in code (never built from input), so the reads of hot paths do not prepare again. The set is bounded by the literals. */
+const kept = new WeakMap<object, Map<string, Database.Statement>>();
+function keep(ctx: Ctx, sql: string): Database.Statement {
+  let byConnection = kept.get(ctx.sqlite);
+  if (!byConnection) kept.set(ctx.sqlite, (byConnection = new Map()));
+  let st = byConnection.get(sql);
+  if (!st) byConnection.set(sql, (st = ctx.sqlite.prepare(sql)));
+  return st;
+}
+/** Same as rows, for a literal SQL text: the statement is prepared once per connection */
+export function keptRows<T = any>(ctx: Ctx, sql: string, ...params: unknown[]): T[] {
+  return keep(ctx, sql).all(...params) as T[];
+}
+/** Same as row, for a literal SQL text: the statement is prepared once per connection */
+export function keptRow<T = any>(ctx: Ctx, sql: string, ...params: unknown[]): T | undefined {
+  return keep(ctx, sql).get(...params) as T | undefined;
+}
+
 export interface EventInput {
   type: string;
   summary: string;

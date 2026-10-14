@@ -15,7 +15,7 @@ export const STICKY_CONTACT_STATUSES: readonly ContactStatus[] = ["olumsuz", "ta
 /** How far a status has come: a touch only moves a status forward (a negative rank is a hand set one) */
 export const CONTACT_STATUS_RANK: Record<ContactStatus, number> = { yazilmadi: 0, yazildi: 1, cevap_geldi: 2, gorusuldu: 3, olumsuz: -1, es_gecildi: -1, tanidik: -1, arkadas: -1 };
 /** Silinen kayıt çöp kutusuna gider (geri yüklenir); kategoriler (etiket, sektör, kaynak) yerinde gizlenir. Modüllerin türleri kayıt defterinden gelir (trash.type sütunu düz metindir). */
-export const CORE_TRASH_TYPES = ["opportunity", "project", "note", "template", "idea", "draft", "payment", "comment", "interest", "link", "own_project", "opportunity_person", "offer", "file"] as const;
+export const CORE_TRASH_TYPES = ["note", "template", "idea", "draft", "comment", "interest", "link", "own_project", "file"] as const;
 export const SOURCE_KINDS = ["forum", "liste", "referans", "sosyal", "diger"] as const;
 
 export const OPP_STAGES = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"] as const;
@@ -46,11 +46,14 @@ export const LINK_TARGETS = ["opportunity", "project", "own_project"] as const;
 
 /** find/get/save/delete için kayıt türleri */
 /** Record types that belong to a feature module, and the module key that owns each: names the missing module in the error when it is not installed */
-export const MODULE_TYPE_OWNER = { task: "calendar", goal: "calendar", goal_log: "calendar", post: "posts", person: "people", company: "companies", touch: "network" } as const;
+export const MODULE_TYPE_OWNER = {
+  task: "calendar", goal: "calendar", goal_log: "calendar", post: "posts", person: "people", company: "companies", touch: "network",
+  opportunity: "pipeline", offer: "pipeline", opportunity_person: "pipeline", project: "projects", payment: "projects",
+} as const;
 
 export const RECORD_TYPES = [
-  "opportunity", "project", "draft", "payment", "source", "comment", "setting",
-  "sector", "note", "tag", "trash", "link", "offer",
+  "draft", "source", "comment", "setting",
+  "sector", "note", "tag", "trash", "link",
   // Paket 2: pazarlama
   "template", "idea", "interest",
   // kendi projelerim
@@ -59,11 +62,9 @@ export const RECORD_TYPES = [
 export type RecordType = (typeof RECORD_TYPES)[number];
 
 export const TYPE_ALIASES: Record<string, RecordType> = {
-  opp: "opportunity", fırsat: "opportunity", firsat: "opportunity",
-  proje: "project",
-  taslak: "draft", odeme: "payment", ödeme: "payment", kaynak: "source",
+  taslak: "draft", kaynak: "source",
   yorum: "comment", ayar: "setting", settings: "setting",
-  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link", teklif: "offer", teklifler: "offer", offers: "offer",
+  sektor: "sector", sektör: "sector", not: "note", notes: "note", links: "link", linkler: "link", baglanti: "link", bağlantı: "link",
   sablon: "template", şablon: "template", templates: "template",
   fikir: "idea", ideas: "idea", ilgi: "interest",
   own: "own_project", own_projects: "own_project", kendi_proje: "own_project", "kendi projem": "own_project", projelerim: "own_project", urunum: "own_project",

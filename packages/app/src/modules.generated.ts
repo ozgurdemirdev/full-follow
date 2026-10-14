@@ -4,7 +4,9 @@ import mod0 from "@fullfollow/mod-calendar";
 import mod1 from "@fullfollow/mod-companies";
 import mod2 from "@fullfollow/mod-network";
 import mod3 from "@fullfollow/mod-people";
-import mod4 from "@fullfollow/mod-posts";
+import mod4 from "@fullfollow/mod-pipeline";
+import mod5 from "@fullfollow/mod-posts";
+import mod6 from "@fullfollow/mod-projects";
 
-export const modules: ModuleDef[] = [mod0, mod1, mod2, mod3, mod4];
+export const modules: ModuleDef[] = [mod0, mod1, mod2, mod3, mod4, mod5, mod6];
 export const modulesOff: string[] = [];

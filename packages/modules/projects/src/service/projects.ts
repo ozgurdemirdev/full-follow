@@ -1,14 +1,12 @@
 import { eq } from "drizzle-orm";
-import { addDays } from "../dates";
-import { emit, FFError, money, parse, row, stamp, type Ctx } from "../context";
-import type { Q } from "../db/client";
-import { opportunities, payments, projects } from "../db/schema";
-import { label } from "../constants";
-import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "../schemas";
-import { link, requireRow } from "./shared";
-import { acceptedAmount } from "./offers";
-import { readTemplate } from "./settings";
-import { announceTrashed, Bin } from "./trash";
+import {
+  addDays, announceTrashed, Bin, eventLink as link, FFError, keptRow, label, money, parse, readTemplate, requireRow, row, schema, stamp, writeEvent as emit,
+  type Ctx, type OpportunityWon, type Q,
+} from "@fullfollow/core";
+import { projectCreate, projectStageEnum, projectUpdate, stageMove } from "./schemas";
+
+const { payments, projects } = schema;
+type Project = typeof projects.$inferSelect;
 
 /** Şablondan ödeme planı üretir (zaten ödeme varsa ya da fiyat 0 ise üretmez). Üretilen sayıyı döner. */
 export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: number; started_at: string | null }): number {
@@ -33,14 +31,19 @@ export function planPayments(q: Q, ctx: Ctx, project: { id: number; price: numbe
   return tpl.length;
 }
 
-/** Kazanılan fırsattan proje açar (fırsatın projesi yoksa); fiyat kabul edilen tekliften, yoksa fırsat değerinden */
-export function createProjectFromOpportunity(q: Q, ctx: Ctx, opp: typeof opportunities.$inferSelect): { project: typeof projects.$inferSelect; planned: number } {
+/**
+ * A won opportunity opens its project (the `opportunity.won` event of the pipeline module): the price comes with the event
+ * (accepted offer, else the estimate), the payment plan from the template. An opportunity that already has a project gets none. Returns the effects.
+ */
+export function openProjectForWonOpportunity(q: Q, ctx: Ctx, won: OpportunityWon): string[] {
+  if (keptRow(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", won.opportunity.id)) return ["proje zaten var"];
   const project = q.insert(projects).values({
-    name: opp.title, opportunity_id: opp.id, person_id: opp.person_id, stage: "pesinat",
-    price: acceptedAmount(ctx, opp.id) ?? opp.estimated_value ?? 0, started_at: ctx.clock.today(), ...stamp(ctx),
+    name: won.opportunity.title, opportunity_id: won.opportunity.id, person_id: won.opportunity.person_id, stage: "pesinat",
+    price: won.price, started_at: ctx.clock.today(), ...stamp(ctx),
   }).returning().get();
   emit(q, ctx, { type: "project.created", ...link(ctx, { project_id: project.id }), summary: `Proje açıldı: ${project.name}` });
-  return { project, planned: planPayments(q, ctx, project) };
+  const planned = planPayments(q, ctx, project);
+  return [`proje #${project.id} açıldı`, planned ? `${planned} ödeme planlandı` : "fiyat girilmediği için ödeme planı yok"];
 }
 
 function assertDepositPaid(ctx: Ctx, projectId: number) {
@@ -57,9 +60,12 @@ export function projectsService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       requireRow(ctx, "people", d.person_id);
       if (d.opportunity_id) {
-        const opp = requireRow(ctx, "opportunities", d.opportunity_id);
+        const pipeline = ctx.mod("pipeline");
+        if (!pipeline) throw new FFError("validation", `fırsat verildi (#${d.opportunity_id}) ama "pipeline" modülü kurulu değil`);
+        const opp = pipeline.opportunities.ref(d.opportunity_id);
+        if (!opp) throw new FFError("not_found", `fırsat #${d.opportunity_id} bulunamadı`);
         if (opp.person_id !== d.person_id) throw new FFError("validation", `fırsat #${d.opportunity_id} bu kişiye ait değil`);
-        if (row(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", d.opportunity_id)) {
+        if (keptRow(ctx, "SELECT 1 x FROM projects WHERE opportunity_id = ?", d.opportunity_id)) {
           throw new FFError("rule", "Bu fırsatın zaten bir projesi var");
         }
       }
@@ -74,9 +80,9 @@ export function projectsService(ctx: Ctx) {
     if (input && typeof input === "object" && "stage" in input) throw new FFError("rule", "Aşama için move kullan");
     const d = parse(projectUpdate, input);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "projects", id);
+      const cur = requireRow<Project>(ctx, "projects", id);
       if (Object.keys(d).length) tx.update(projects).set({ ...d, updated_at: ctx.clock.now() }).where(eq(projects.id, id)).run();
-      const r = requireRow(ctx, "projects", id);
+      const r = requireRow<Project>(ctx, "projects", id);
       const effects: string[] = [];
       if (d.price !== undefined && d.price !== cur.price) {
         const planned = planPayments(tx, ctx, r);
@@ -93,7 +99,7 @@ export function projectsService(ctx: Ctx) {
     const s = parse(stageMove, input);
     const stage = parse(projectStageEnum, s.stage);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "projects", id);
+      const cur = requireRow<Project>(ctx, "projects", id);
       if (stage === cur.stage) return { row: cur, effects: [] as string[] };
       if (stage !== "pesinat" && stage !== "iptal") assertDepositPaid(ctx, id);
       const set: Record<string, unknown> = { stage, updated_at: ctx.clock.now() };
@@ -107,20 +113,19 @@ export function projectsService(ctx: Ctx) {
         type: "project.stage", ...link(ctx, { project_id: id }),
         summary: `Proje ${label(cur.stage)} → ${label(stage)}`, data: { from: cur.stage, to: stage },
       });
-      return { row: requireRow(ctx, "projects", id), effects };
+      return { row: requireRow<Project>(ctx, "projects", id), effects };
     });
   }
 
   function remove(id: number) {
-    const cur = requireRow(ctx, "projects", id);
+    const cur = requireRow<Project>(ctx, "projects", id);
     const paid = row(ctx, "SELECT COALESCE(SUM(paid_amount),0) p FROM payments WHERE project_id = ?", id)?.p ?? 0;
     if (paid > 0) throw new FFError("rule", `${cur.name} silinemez: ${money(paid)} ödeme alınmış`);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("comments", "target_type = 'payment' AND target_id IN (SELECT id FROM payments WHERE project_id = ?)", id);
       bin.take("payments", "project_id = ?", id);
-      bin.unlink("drafts", "project_id", id);
-      // touches and tasks that point at it are the modules' to clean (network, calendar)
+      // touches, tasks and drafts that point at it are the owning modules' to clean
       announceTrashed(ctx, bin, "project", id);
       bin.take("comments", "target_type = 'project' AND target_id = ?", id);
       bin.take("files", "target_type = 'project' AND target_id = ?", id);

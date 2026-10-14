@@ -13,8 +13,15 @@ function checkTargets(ctx: Ctx, d: { person_id?: number | null; company_id?: num
   if (set > 1) throw new FFError("validation", "görev en fazla bir kayda (kişi, firma, fırsat ya da proje) bağlanabilir");
   if (d.person_id) requireRow(ctx, "people", d.person_id);
   if (d.company_id) requireRow(ctx, "companies", d.company_id);
-  if (d.opportunity_id) requireRow(ctx, "opportunities", d.opportunity_id);
-  if (d.project_id) requireRow(ctx, "projects", d.project_id);
+  // opportunities come from the pipeline module, projects from the projects module (a link to one that is not installed is refused)
+  if (d.opportunity_id) {
+    if (!ctx.mod("pipeline")) throw new FFError("validation", `fırsat verildi (#${d.opportunity_id}) ama "pipeline" modülü kurulu değil`);
+    if (!ctx.mod("pipeline")!.opportunities.ref(d.opportunity_id)) throw new FFError("not_found", `fırsat #${d.opportunity_id} bulunamadı`);
+  }
+  if (d.project_id) {
+    if (!ctx.mod("projects")) throw new FFError("validation", `proje verildi (#${d.project_id}) ama "projects" modülü kurulu değil`);
+    if (!ctx.mod("projects")!.projects.ref(d.project_id)) throw new FFError("not_found", `proje #${d.project_id} bulunamadı`);
+  }
 }
 
 export function tasksService(ctx: Ctx) {
@@ -68,10 +75,13 @@ export function tasksService(ctx: Ctx) {
     const f = o.filter ?? {};
     const today = ctx.clock.today();
     let items = rows(ctx, `
-      SELECT t.*, p.name AS person_name, co.name AS company_name, op.title AS opportunity_title, pr.name AS project_name
-      FROM tasks t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies co ON co.id = t.company_id LEFT JOIN opportunities op ON op.id = t.opportunity_id
-      LEFT JOIN projects pr ON pr.id = t.project_id
+      SELECT t.*, p.name AS person_name, co.name AS company_name
+      FROM tasks t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies co ON co.id = t.company_id
       ORDER BY (t.due_date IS NULL), t.due_date, t.id`);
+    // the titles of opportunities and names of projects come from their modules (null without them)
+    const titles = ctx.mod("pipeline")?.opportunities.titles(items.flatMap((t) => (t.opportunity_id ? [t.opportunity_id as number] : [])));
+    const names = ctx.mod("projects")?.projects.names(items.flatMap((t) => (t.project_id ? [t.project_id as number] : [])));
+    items = items.map((t) => ({ ...t, opportunity_title: titles?.get(t.opportunity_id) ?? null, project_name: names?.get(t.project_id) ?? null }));
     const wantDone = bool(f.done);
     if (!bool(f.all)) items = items.filter((t) => (wantDone ? !!t.done_at : !t.done_at));
     if (f.assignee) items = items.filter((t) => t.assignee === f.assignee);

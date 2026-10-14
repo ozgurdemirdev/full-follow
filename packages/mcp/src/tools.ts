@@ -16,7 +16,7 @@ function run(fn: () => string) {
 }
 
 /** Record types that have a page in the panel (what `open` may show) */
-const CORE_OPENABLE = ["opportunity", "project", "draft", "template", "idea", "own_project", "comment"];
+const CORE_OPENABLE = ["draft", "template", "idea", "own_project", "comment"];
 const idOrName = z.union([z.number(), z.string()]);
 const obj = z.record(z.string(), z.any());
 /** Muhatap: kişi, firma ya da sadece adres (biri) */
@@ -41,7 +41,6 @@ export function registerTools(server: McpServer, core: Core) {
     description: describe("today", [
       [100, "Bugünün işleri: cevapsız yorumlar, "],
       [120, "takip dizisi (zamanı gelen takip taslakları otomatik hazırlanır), taslaklar, "],
-      [300, "ödemeler"],
       [320, "."],
     ]),
     inputSchema: { limit: z.number().optional() },
@@ -54,7 +53,6 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("open", {
     description: describe("open", [
       [100, "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası olarak çağırma. type: "],
-      [130, "opportunity|project"],
       [200, "|draft|template|idea|own_project"],
       [300, "|comment; id sayı ya da isim."],
     ]),
@@ -72,12 +70,12 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("find", {
     description: describe("find", [
       [100, "Ara/listele. type: "],
-      [130, "opportunity|project"],
-      [200, "|draft|payment|source|comment"],
+      [200, "|draft"],
+      [206, "|source|comment"],
       [220, "|sector|note|setting"],
       [300, "|template|idea|own_project|interest|tag"],
-      [400, "|offer|trash. offer: {opportunity_id:3} teklif sürümleri, yeniden eskiye. "],
-      [420, "{stage:'teklif'} {overdue:true} {status:'bekliyor'}(draft) {unanswered:true}(comment) "],
+      [401, "|trash. "],
+      [422, "{status:'bekliyor'}(draft) {unanswered:true}(comment) "],
       [440, "{all:true}("],
       [500, "tag/sector/source: silinenler dahil); "],
       [600, "template {channel,sector,kind:'takip'}; idea {stage,sector,own_project:'Full Follow',general:true}; own_project {status,sellable,sector}; interest {idea_id|person_id}; trash {type:'person'}."],
@@ -88,10 +86,12 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("get", {
     description: describe("get", [
       [100, "Tek kaydın tam hali. id sayı ya da isim. with: "],
-      [200, "opportunities|projects|payments|drafts|comments"],
+      [202, "drafts|comments"],
       [220, "|people|notes"],
-      [300, "|links|offers|files (opportunity: "],
-      [400, "comments,drafts,links,people (ekip, ana muhatap hariç),offers (teklif sürümleri),files; project: links; "],
+      [300, "|links"],
+      [302, " (opportunity: "],
+      [400, "comments,drafts,links,"],
+      [402, "; "],
       [420, "idea: people"],
       [500, "; "],
       [600, "own_project: ideas,links,comments)."],
@@ -102,9 +102,12 @@ export function registerTools(server: McpServer, core: Core) {
   server.registerTool("save", {
     description: describe("save", [
       [100, "Oluştur/güncelle (id varsa güncelle). data dizi ise toplu ekler (liste verildiğinde tek çağrı): mükerrerler (e-posta, alan adı, firma adı, LinkedIn, Instagram) atlanır ve raporlanır. data DB alan adlarıyla; "],
-      [130, "source/opp/project isimle verilebilir"],
+      [130, "source"],
+      [133, " isimle verilebilir"],
       [141, "; tarih ISO ya da bugün/yarın/+3g. Aşama için move. "],
-      [144, "tag: {name,color}. opportunity: source_url, source_date (ilan linki/tarihi); ekip: {add_people:[{person:'Deniz',role:'karar_verici|teknik|ortak|diger',note?}],remove_people:['Ahmet']} (id ile birlikte; ekipteki kişinin rolünü de değiştirir; ana muhatap person_id'dir, ekipte yer almaz). note: {person,body}. offer: {opportunity:'Pizza Z'|id,amount,offered_at?,items:[{label,amount}]?,note?} yeni sürüm açar (v1, v2...), id ile güncellenir; {accepted:true|false} + id teklifi kabul eder ya da kabulü geri alır (fırsatta tek kabul edilmiş teklif olur, kabul fırsat değerini teklif tutarına çeker; kazanınca proje fiyatı kabul edilen tekliften). link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). "],
+      [144, "tag: {name,color}. "],
+      [144.2, "note: {person,body}. "],
+      [144.4, "link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). "],
       [146, "comment: {target_type,target_id,body} ya da {reply_to,body}; id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
       [200, "template: {name,kind:ilk|takip|teklif|diger,channel?,sector?,body} yer tutucu {ad} {firma} {sektor}. idea: {title,problem,stage,sectors:['Sağlık > Diş hekimi'],notes,parent:'üst fikir' (sadece genel), own_project:'Full Follow'|null (null = genel), priority:yuksek|orta|dusuk, position (0 = üst), done:true|false}. own_project: {name,description,status,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). interest: {idea,person,interest:anlatildi|ilgilendi|ilgilenmedi,note}. "],
     ]),
@@ -117,7 +120,11 @@ export function registerTools(server: McpServer, core: Core) {
   }));
 
   server.registerTool("move", {
-    description: "Aşama değiştir. Fırsat: bulundu|temas|cevap|gorusme|teklif|kazanildi|kaybedildi (kaybedildi için reason şart). Proje: pesinat|tasarim_onayi|test_surumu|yayin|teslim|bakim|iptal. Fikir: fikir|dogrulaniyor|demo|urun. Kendi projesi: aktif|beklemede|tamamlandi|birakildi.",
+    // the opportunity and project stage lists come from their modules
+    description: describe("move", [
+      [100, "Aşama değiştir. "],
+      [130, "Fikir: fikir|dogrulaniyor|demo|urun. Kendi projesi: aktif|beklemede|tamamlandi|birakildi."],
+    ]),
     inputSchema: { type: z.string(), id: idOrName, stage: z.string(), reason: z.string().optional() },
   }, ({ type, id, stage, reason }) => run(() => {
     const t = core.normalizeType(type);
@@ -136,16 +143,6 @@ export function registerTools(server: McpServer, core: Core) {
       project_id: a.project !== undefined ? core.resolveRef("project", a.project) : undefined,
     });
     return ok("taslak", r.row.id, ["onay bekliyor"]);
-  }));
-
-  server.registerTool("pay", {
-    description: "Ödeme gir: tutar mevcut ödenene eklenir (kısmi olabilir). date varsayılan bugün.",
-    inputSchema: { payment_id: z.number(), amount: z.number(), date: z.string().optional() },
-  }, ({ payment_id, amount, date }) => run(() => {
-    const r = core.payments.pay(payment_id, amount, date);
-    const p = r.row;
-    const fmt = (n: number) => `${n.toLocaleString("tr-TR")}`;
-    return ok("ödeme", p.id, [`${fmt(p.paid_amount)}/${fmt(p.expected_amount)}${p.paid_amount >= p.expected_amount ? " ödendi" : " kısmi"}`, ...r.effects.filter((e) => e !== "tamamen ödendi")]);
   }));
 
   server.registerTool("timeline", {
@@ -170,7 +167,7 @@ export function registerTools(server: McpServer, core: Core) {
     return "ok · çöp kutusunda (geri: restore:true)";
   }));
 
-  // tools only an installed module has (the calendar's plan, ...)
+  // tools only an installed module has (the calendar's plan, the payments' pay, ...)
   for (const tool of defs.flatMap((d) => d.tools ?? [])) {
     server.registerTool(tool.name, { description: tool.description, inputSchema: tool.input }, (args: any) => run(() => tool.run(core.ctx, args, mcpFormat)));
   }

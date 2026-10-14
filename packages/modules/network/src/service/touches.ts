@@ -18,17 +18,23 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
   const s = resolveSubject(ctx, d);
   let oppId = d.opportunity_id ?? null;
   if (!s.person_id && (d.idea_id || (!s.company_id && (oppId || d.project_id)))) throw new FFError("validation", "fikir bağlantısı sadece kişiye, fırsat ve proje bağlantısı kişiye ya da firmaya yazılan temasta olur");
-  // TODO(modules): opportunities and projects through ctx.mod("pipeline") / ctx.mod("projects") (raw table reads for now)
+  // opportunities come from the pipeline module, projects from the projects module (a link to one that is not installed is refused)
+  const pipeline = ctx.mod("pipeline");
   if (oppId) {
-    const o = requireRow(ctx, "opportunities", oppId);
+    if (!pipeline) throw new FFError("validation", `fırsat verildi (#${oppId}) ama "pipeline" modülü kurulu değil`);
+    const o = pipeline.opportunities.ref(oppId);
+    if (!o) throw new FFError("not_found", `fırsat #${oppId} bulunamadı`);
     if (!sameSide(ctx, o.person_id, s)) throw new FFError("validation", `fırsat #${oppId} bu kişiye ya da firmasına ait değil`);
   } else if (s.person_id && !d.project_id) {
     // proje hakkındaki temas satış fırsatını ilerletmesin; sadece serbest temas tek açık fırsata bağlanır
-    const open = rows<{ id: number }>(ctx, "SELECT id FROM opportunities WHERE person_id = ? AND stage IN ('bulundu','temas','cevap','gorusme','teklif')", s.person_id);
-    if (open.length === 1) oppId = open[0].id;
+    const open = pipeline?.opportunities.openIdsOf(s.person_id) ?? [];
+    if (open.length === 1) oppId = open[0];
   }
   if (d.project_id) {
-    const p = requireRow(ctx, "projects", d.project_id);
+    const projects = ctx.mod("projects");
+    if (!projects) throw new FFError("validation", `proje verildi (#${d.project_id}) ama "projects" modülü kurulu değil`);
+    const p = projects.projects.ref(d.project_id);
+    if (!p) throw new FFError("not_found", `proje #${d.project_id} bulunamadı`);
     if (!sameSide(ctx, p.person_id, s)) throw new FFError("validation", `proje #${d.project_id} bu kişiye ya da firmasına ait değil`);
   }
   // TODO(modules): ideas through ctx.mod("ideas")
@@ -57,11 +63,13 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
 
 /** Touch rows with the names they hang on; `where` narrows to one touch (`t.id = ?`) or to a company's scope */
 function selectTouches(ctx: Ctx, where = "", ...params: unknown[]): TouchListRow[] {
-  return rows(ctx, `SELECT t.*, p.name AS person_name, COALESCE(c.name, pc.name) AS company_name, COALESCE(p.name, c.name, t.contact) AS to_name,
-      op.title AS opportunity_title, i.title AS idea_title
+  const list = rows(ctx, `SELECT t.*, p.name AS person_name, COALESCE(c.name, pc.name) AS company_name, COALESCE(p.name, c.name, t.contact) AS to_name,
+      i.title AS idea_title
     FROM touches t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies c ON c.id = t.company_id LEFT JOIN companies pc ON pc.id = p.company_id
-    LEFT JOIN opportunities op ON op.id = t.opportunity_id LEFT JOIN ideas i ON i.id = t.idea_id ${where} ORDER BY t.happened_at DESC, t.id DESC`, ...params)
-    .map(({ contact_key: _k, ...t }) => ({ ...t, expects_reply: !!t.expects_reply }));
+    LEFT JOIN ideas i ON i.id = t.idea_id ${where} ORDER BY t.happened_at DESC, t.id DESC`, ...params);
+  // the opportunity titles come from the pipeline module (null without it)
+  const titles = ctx.mod("pipeline")?.opportunities.titles(list.flatMap((t) => (t.opportunity_id ? [t.opportunity_id as number] : [])));
+  return list.map(({ contact_key: _k, ...t }) => ({ ...t, opportunity_title: titles?.get(t.opportunity_id) ?? null, expects_reply: !!t.expects_reply }));
 }
 
 export function touchesService(ctx: Ctx) {

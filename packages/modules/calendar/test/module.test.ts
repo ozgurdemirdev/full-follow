@@ -30,16 +30,4 @@ describe("calendar as a module", () => {
     expect(today.plan).toMatchObject({ date: "2026-10-14", goals: [] });
     expect(today.tasks).toMatchObject({ total: 1, rows: [{ title: "bugün" }] });
   });
-
-  it("a project's next task comes from the module", () => {
-    const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
-    // the people module is not installed here: a bare row is all the opportunity needs
-    const personId = Number(h.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES ('Ada', ?, ?, 'ozgur')").run(clock.now(), clock.now()).lastInsertRowid);
-    const o = app.opportunities.create({ title: "Site", person_id: personId, source_id: app.get("source", "R10").row.id }).row;
-    app.opportunities.move(o.id, { stage: "kazanildi" });
-    const projectId = app.find("project").rows[0].id;
-    app.tasks.create({ title: "tasarım", project_id: projectId, due_date: "2026-10-20" });
-    expect(app.find("project").rows[0].next_task).toMatchObject({ title: "tasarım" });
-  });
 });

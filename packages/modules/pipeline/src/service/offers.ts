@@ -1,24 +1,19 @@
 import { eq } from "drizzle-orm";
-import { emit, FFError, money, parse, row, rows, stamp, type Ctx } from "../context";
-import type { Q } from "../db/client";
-import { offers, opportunities } from "../db/schema";
-import { offerCreate, offerUpdate } from "../schemas";
-import { link, requireRow } from "./shared";
-import { Bin } from "./trash";
+import {
+  Bin, eventLink as link, FFError, money, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
+  type Ctx, type OfferItem, type Q,
+} from "@fullfollow/core";
+import { offerCreate, offerUpdate } from "./schemas";
 
+const { offers, opportunities } = schema;
 type Offer = typeof offers.$inferSelect;
 
 /** items is stored as JSON text; callers get the parsed array */
-const present = (o: Offer) => ({ ...o, items: JSON.parse(o.items) as { label: string; amount: number }[] });
+export const present = (o: Offer) => ({ ...o, items: JSON.parse(o.items) as OfferItem[] });
 
 /** Offer versions of an opportunity, newest first */
 export function offersOf(ctx: Ctx, opportunityId: number) {
   return rows<Offer>(ctx, "SELECT * FROM offers WHERE opportunity_id = ? ORDER BY version DESC", opportunityId).map(present);
-}
-
-/** Amount of the accepted offer of an opportunity (null when none is accepted) */
-export function acceptedAmount(ctx: Ctx, opportunityId: number): number | null {
-  return row(ctx, "SELECT amount FROM offers WHERE opportunity_id = ? AND accepted_at IS NOT NULL", opportunityId)?.amount ?? null;
 }
 
 /** One accepted offer per opportunity: clear the others, mark this one, and make its amount the opportunity's estimate */
