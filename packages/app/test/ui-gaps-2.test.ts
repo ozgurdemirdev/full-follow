@@ -36,4 +36,18 @@ suite("the data the second batch of screens reads", () => {
     app.comments.markRead(ask.id);
     expect(unread().map((c: any[]) => c[1])).toEqual(["2026-10-15T10:00:00Z", null, "2026-10-15T10:00:00Z"]);
   });
+
+  it("the focus project is a setting that must name an own project; it clears itself when that project is deleted", () => {
+    const focus = () => app.settings.all().focus_own_project_id;
+    expect(focus()).toBeNull();
+    const p = app.ownProjects.create({ name: "Full Follow" }).row;
+    expect(() => app.settings.set("focus_own_project_id", 999)).toThrow(/kendi projesi #999/);
+    app.settings.set("focus_own_project_id", p.id);
+    expect(focus()).toBe(p.id);
+    app.settings.set("focus_own_project_id", null);
+    expect(focus()).toBeNull();
+    app.settings.set("focus_own_project_id", p.id);
+    app.ownProjects.remove(p.id);
+    expect(focus()).toBeNull();
+  });
 });

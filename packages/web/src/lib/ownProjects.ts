@@ -1,8 +1,10 @@
-// Own projects screen: journey, derived next step and interest, shelf split, focus per browser
-import { useState } from "react";
-import type { Idea, OwnRow, OwnStage, Sellable } from "../api/types";
+// Own projects screen: journey, interest text, shelf split, focus
+import { useEffect } from "react";
+import { run } from "../api/actions";
+import type { OwnProject, OwnStage, Sellable } from "../api/types";
 import { ago, daysFrom } from "./format";
-import { PRIORITIES } from "./labels";
+import { ratePct } from "./ideas";
+import { useSettings } from "./settings";
 
 /** Journey steps in order; the bar of a step is done before the project's stage, current at it, hatched after it */
 export const JOURNEY: { key: OwnStage; label: string }[] = [
@@ -13,15 +15,20 @@ export const JOURNEY: { key: OwnStage; label: string }[] = [
 ];
 export const stageLabel = (s: OwnStage) => JOURNEY.find((j) => j.key === s)?.label ?? s;
 export type JourneyState = "done" | "now" | "next";
-export const journeyState = (at: OwnStage, step: OwnStage): JourneyState => {
+/** A project without a stage has every step still ahead of it */
+export const journeyState = (at: OwnStage | null, step: OwnStage): JourneyState => {
   const a = JOURNEY.findIndex((j) => j.key === at);
   const k = JOURNEY.findIndex((j) => j.key === step);
   return k < a ? "done" : k === a ? "now" : "next";
 };
 
+/** A click on a journey step sets the project's stage */
+export const setStage = (p: Pick<OwnProject, "id">, stage: OwnStage) =>
+  run("patch", `/own-projects/${p.id}`, { stage }, { ok: `Aşama: ${stageLabel(stage)}` }).catch(() => {});
+
 /** Projects on the shelf (left and finished) are not worked on */
 export const SHELF_STATUSES: string[] = ["birakildi", "tamamlandi"];
-export const onShelf = (p: OwnRow) => SHELF_STATUSES.includes(p.status);
+export const onShelf = (p: OwnProject) => SHELF_STATUSES.includes(p.status);
 
 /** Status dot colour (token classes) */
 export const STATUS_DOT: Record<string, string> = {
@@ -41,66 +48,40 @@ export const IDEA_STAGE_CLS: Record<string, string> = {
 };
 export const PRIORITY_DOT: Record<string, string> = { yuksek: "bg-danger", orta: "bg-warning", dusuk: "bg-text-muted" };
 
-export interface OwnStats {
-  /** open ideas, highest priority first, then by position */
-  open: Idea[];
-  done: number;
-  told: number;
-  interested: number;
-  /** interested / told in percent, null when nobody was told */
-  rate: number | null;
-  /** next step: the top open high priority idea. Moves into core with the own-projects module (gap G15) */
-  next?: Idea;
-  /** open high priority ideas */
-  top: Idea[];
-}
+type Interest = Pick<OwnProject, "told" | "interested" | "interest_share">;
+export const rateText = (p: Interest) => (p.interest_share === null ? "–" : `%${ratePct(p.interest_share)}`);
+export const rateNote = (p: Interest) => (p.told ? `${p.told} kişiye anlattın, ${p.interested} ilgilendi` : "Henüz kimseye anlatılmadı");
 
-const PERCENT = 100;
-
-/** Stats of every project from one ideas list, one pass. Derived here until core serves them (gap G15) */
-export function ownStats(ideas: Idea[]): Map<number, OwnStats> {
-  const by = new Map<number, Idea[]>();
-  for (const i of ideas) {
-    if (!i.own_project_id) continue;
-    const list = by.get(i.own_project_id);
-    if (list) list.push(i);
-    else by.set(i.own_project_id, [i]);
+/** The id the old build kept in this browser as the focus */
+const LEGACY_FOCUS_KEY = "ff.ownFocus";
+const legacyFocus = (): number | null => {
+  try {
+    return Number(localStorage.getItem(LEGACY_FOCUS_KEY)) || null;
+  } catch {
+    return null;
   }
-  const out = new Map<number, OwnStats>();
-  for (const [id, list] of by) {
-    const open = list.filter((i) => !i.done_at).sort((a, b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority) || a.position - b.position || a.id - b.id);
-    const told = list.reduce((s, i) => s + i.told, 0);
-    const interested = list.reduce((s, i) => s + i.interested, 0);
-    const top = open.filter((i) => i.priority === "yuksek");
-    out.set(id, { open, done: list.length - open.length, told, interested, rate: told ? Math.round((interested / told) * PERCENT) : null, next: top[0], top });
-  }
-  return out;
-}
+};
 
-export const EMPTY_STATS: OwnStats = { open: [], done: 0, told: 0, interested: 0, rate: null, top: [] };
-export const rateText = (s: OwnStats) => (s.rate === null ? "–" : `%${s.rate}`);
-export const rateNote = (s: OwnStats) => (s.told ? `${s.told} kişiye anlattın, ${s.interested} ilgilendi` : "Henüz kimseye anlatılmadı");
-
-const FOCUS_KEY = "ff.ownFocus";
-
-/** The focused project: picked by the user, kept per browser until core has the `focus_own_project_id` setting (gap G15) */
+/**
+ * The focused project: the `focus_own_project_id` setting. A focus an earlier build kept in this browser moves into the setting once
+ * (when the setting is still empty) and the old key is deleted.
+ */
 export function useFocusId() {
-  const [id, set] = useState<number | null>(() => {
+  const s = useSettings();
+  const loaded = !!s.data;
+  const stored = s.data?.focus_own_project_id ?? null;
+  useEffect(() => {
+    if (!loaded) return;
+    const old = legacyFocus();
     try {
-      return Number(localStorage.getItem(FOCUS_KEY)) || null;
+      localStorage.removeItem(LEGACY_FOCUS_KEY);
     } catch {
-      return null;
+      /* storage blocked: nothing to delete */
     }
-  });
-  const setId = (next: number) => {
-    set(next);
-    try {
-      localStorage.setItem(FOCUS_KEY, String(next));
-    } catch {
-      /* storage blocked: the choice lasts until reload */
-    }
-  };
-  return [id, setId] as const;
+    if (old && stored === null) run("put", "/settings", { focus_own_project_id: old }, { silent: true }).catch(() => {});
+  }, [loaded, stored]);
+  const set = (id: number) => run("put", "/settings", { focus_own_project_id: id }, { silent: true }).catch(() => {});
+  return { id: stored, set, loading: !loaded };
 }
 
 /** "bugün güncellendi", "dün", "5 gün önce" */

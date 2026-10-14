@@ -115,8 +115,12 @@ export const QUOTA_NEAR_RATIO = 0.8;
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes",
+  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days",
 ] as const;
+
+/** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
+export const POST_REFRESH_DEFAULT_DAYS = 30;
+export const POST_REFRESH_MAX_DAYS = 365;
 
 /** Network ayarlarının varsayılanları (gün) */
 export const NETWORK_DEFAULTS = { reply_wait_days: 3, cooling_days: 30 } as const;

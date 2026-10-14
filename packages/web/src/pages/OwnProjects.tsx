@@ -2,8 +2,8 @@
 import { useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { run } from "../api/actions";
-import { useIdeas, useOwnProjects } from "../api/keys";
-import type { OwnRow } from "../api/types";
+import { useOwnProjects } from "../api/keys";
+import type { OwnProject } from "../api/types";
 import { Page } from "../app/Page";
 import { PATHS } from "../app/routes";
 import { openSheet } from "../app/ui";
@@ -13,7 +13,7 @@ import { Hero } from "../components/own-projects/Hero";
 import { ProjectOverlay } from "../components/own-projects/ProjectOverlay";
 import { Shelf } from "../components/own-projects/Shelf";
 import { Empty, ErrorBox, PageSkeleton } from "../components/ui";
-import { EMPTY_STATS, onShelf, ownStats, useFocusId } from "../lib/ownProjects";
+import { onShelf, useFocusId } from "../lib/ownProjects";
 
 /** Size of the box the overlay grows from when a project is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -21,29 +21,27 @@ const fallbackRect = () => new DOMRect((innerWidth - FALLBACK_BOX.width) / 2, (i
 
 export default function OwnProjects() {
   const projects = useOwnProjects();
-  const ideas = useIdeas();
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
-  const [focusId, setFocusId] = useFocusId();
+  const focusPick = useFocusId();
   const [from, setFrom] = useState<DOMRect | null>(null);
   const openId = Number(params.id) || null;
 
-  const rows = projects.rows as OwnRow[];
-  const stats = useMemo(() => ownStats(ideas.rows), [ideas.rows]);
+  const rows = projects.rows;
   const live = useMemo(() => rows.filter((p) => !onShelf(p)), [rows]);
   const shelf = useMemo(() => rows.filter(onShelf), [rows]);
-  const focus = live.find((p) => p.id === focusId) ?? live[0];
+  const focus = live.find((p) => p.id === focusPick.id) ?? live[0];
   const others = useMemo(() => live.filter((p) => p !== focus), [live, focus]);
   const openIdeas = live.reduce((a, p) => a + p.open_ideas, 0);
-  const error = (projects.error && !projects.data ? projects : ideas.error && !ideas.data ? ideas : null);
+  const error = projects.error && !projects.data ? projects : null;
 
   const open = (id: number, rect: DOMRect) => {
     setFrom(rect);
     navigate(`${PATHS.ownProjects}/${id}`, { replace: true });
   };
-  const revive = (p: OwnRow) => run("patch", `/own-projects/${p.id}`, { status: "aktif" }, { ok: `Raftan indirildi: ${p.name}` }).catch(() => {});
-  const makeFocus = (p: OwnRow) => {
-    setFocusId(p.id);
+  const revive = (p: OwnProject) => run("patch", `/own-projects/${p.id}`, { status: "aktif" }, { ok: `Raftan indirildi: ${p.name}` }).catch(() => {});
+  const makeFocus = (p: OwnProject) => {
+    void focusPick.set(p.id);
     if (onShelf(p)) void revive(p);
   };
 
@@ -59,13 +57,13 @@ export default function OwnProjects() {
       }
     >
       {error ? <ErrorBox error={error.error} retry={error.reload} /> : null}
-      {!projects.data || !ideas.data ? (
+      {!projects.data || focusPick.loading ? (
         !error && <PageSkeleton />
       ) : (
         <>
           {rows.length === 0 ? <Empty>Henüz kendi projen yok. Kendi ürününü ekle; satılabilir mi, hangi sektöre uyar, sıradaki fikirler neler, burada dursun.</Empty> : null}
-          {focus ? <Hero key={focus.id} p={focus} stats={stats.get(focus.id) ?? EMPTY_STATS} onOpen={(rect) => open(focus.id, rect)} /> : null}
-          <Gallery rows={others} stats={stats} empty={EMPTY_STATS} onOpen={open} />
+          {focus ? <Hero key={focus.id} p={focus} onOpen={(rect) => open(focus.id, rect)} /> : null}
+          <Gallery rows={others} onOpen={open} />
           <Shelf rows={shelf} onRevive={revive} />
           <ProjectOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} p={openId ? rows.find((p) => p.id === openId) : undefined}
             isFocus={!!focus && focus.id === openId} onFocus={makeFocus} onClose={() => navigate(PATHS.ownProjects, { replace: true })} />

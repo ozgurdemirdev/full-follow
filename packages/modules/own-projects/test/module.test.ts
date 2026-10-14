@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FFError, openDb, type Clock } from "@fullfollow/core";
-import { appFor, fakeIdeas, idea } from "./helpers";
+import { appFor, fakeIdeas, idea, told } from "./helpers";
 
 const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
 const events = (h: ReturnType<typeof openDb>) => h.sqlite.prepare("SELECT type FROM events ORDER BY id").all().map((e: any) => e.type);
@@ -37,6 +37,42 @@ describe("own projects as a module", () => {
     expect(app.projects.get(a.id)).toMatchObject({ name: "A" });
     expect(app.projects.ref(b.id)).toMatchObject({ name: "B", status: "aktif" });
     expect(app.projects.ref(999)).toBeUndefined();
+  });
+
+  it("the journey stage is one of four steps or empty, and it reads back from the list and the single record", () => {
+    const h = openDb(":memory:");
+    const app = appFor(h, "ozgur", clock);
+    const p = app.projects.create({ name: "Full Follow" }).row;
+    expect(app.projects.get(p.id)!.stage).toBeNull();
+    expect(app.projects.update(p.id, { stage: "demo" }).row.stage).toBe("demo");
+    expect(app.get("own_project", p.id).row.stage).toBe("demo");
+    expect(app.find("own_project").rows[0].stage).toBe("demo");
+    expect(() => app.projects.update(p.id, { stage: "lansman" })).toThrow(/stage/);
+    expect(app.projects.update(p.id, { stage: null }).row.stage).toBeNull();
+    expect(app.projects.create({ name: "B", stage: "urun" }).row.stage).toBe("urun");
+  });
+
+  it("interest counts each person once across a project's ideas: interested over answered, the next step is the first open high priority idea", () => {
+    const h = openDb(":memory:");
+    const app = appFor(h, "ozgur", clock);
+    const p = app.projects.create({ name: "Full Follow" }).row;
+    const empty = app.projects.get(p.id)!;
+    expect([empty.told, empty.interested, empty.answered, empty.interest_share, empty.next_idea, empty.top_ideas]).toEqual([0, 0, 0, null, null, []]);
+    const a = idea(h, "A", { own_project_id: p.id, priority: "yuksek", position: 2 });
+    const b = idea(h, "B", { own_project_id: p.id, priority: "yuksek", position: 1 });
+    const c = idea(h, "C", { own_project_id: p.id, priority: "orta" });
+    idea(h, "D", { own_project_id: p.id, priority: "yuksek", position: 0, done: true });
+    // Ada heard two ideas and likes one: one person, interested; Can said no; Eda was told and has not answered; a general idea's listener is not counted
+    const ada = told(h, a, "ilgilendi");
+    told(h, b, "ilgilenmedi", ada);
+    told(h, a, "ilgilenmedi");
+    told(h, c, "anlatildi");
+    told(h, idea(h, "genel"), "ilgilendi");
+    expect(app.projects.get(p.id)).toMatchObject({
+      told: 3, interested: 1, answered: 2, interest_share: 0.5,
+      next_idea: { id: b, title: "B" }, top_ideas: [{ id: b, title: "B" }, { id: a, title: "A" }],
+    });
+    expect(app.get("own_project", p.id).row).toMatchObject({ told: 3, interest_share: 0.5, next_idea: { title: "B" } });
   });
 
   it("deleting a project takes its sectors, links and comments and announces itself; restoring brings them back", () => {

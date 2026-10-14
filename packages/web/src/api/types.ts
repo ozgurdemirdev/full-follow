@@ -1,5 +1,6 @@
 // REST yanıt tipleri (packages/core/src/services/queries.ts ile aynı alanlar)
 import type { Actor, OppStage, ProjectStage } from "../lib/labels";
+import type { OwnStage } from "./types-own";
 
 export interface List<T> {
   rows: T[];
@@ -260,6 +261,16 @@ export interface OwnProject extends Base {
   open_ideas: number;
   done_ideas: number;
   sectors: { id: number; path: string }[];
+  stage: OwnStage | null;
+  /** distinct people told about any idea of the project, interested in one, answered (interested or not) */
+  told: number;
+  interested: number;
+  answered: number;
+  /** interested / answered, 0 to 1; null while nobody has answered */
+  interest_share: number | null;
+  /** open high priority ideas in order; the first is the next step */
+  top_ideas: { id: number; title: string }[];
+  next_idea: { id: number; title: string } | null;
 }
 export interface Interest extends Base {
   idea_id: number;
@@ -528,8 +539,10 @@ export interface PriceFloor {
   chat_pinned_notes: string;
   subtotal: number;
   floor: number;
-  /** days after which a post is due for a refresh; absent until core has the setting (hidden then) */
-  post_refresh_days?: number;
+  /** days after which a post without an interval of its own is due for a refresh */
+  post_refresh_days: number;
+  /** the own project in focus; null when none was picked or it is gone */
+  focus_own_project_id: number | null;
   /** reject rules Claude learned; absent until core has them, deletable once present (PUT /settings {draft_rules}) */
   draft_rules?: string[];
 }
