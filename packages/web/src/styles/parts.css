@@ -334,15 +334,38 @@
   border-radius: var(--radius-pill);
   background: var(--color-danger);
 }
+/* an action (Aç, Geri al) is the dark pill of the form board's saved toast */
+.ff-toast[data-action] {
+  gap: var(--spacing-6);
+  padding: var(--spacing-3) var(--spacing-3) var(--spacing-3) var(--spacing-8);
+}
 .ff-toast a,
 .ff-toast button {
+  display: flex;
   flex: none;
-  padding: 0;
+  align-items: center;
+  height: var(--spacing-toast-action);
+  padding: 0 var(--spacing-6);
   border: 0;
-  background: transparent;
-  color: var(--color-accent-on);
-  font-weight: var(--font-weight-medium);
-  text-decoration: underline;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-on);
+  color: var(--color-text-primary);
+  font-size: var(--text-base-sm);
+  text-decoration: none;
+}
+.ff-toast a:hover {
+  color: var(--color-text-primary);
+}
+.ff-toast-check {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-toast-check);
+  height: var(--spacing-toast-check);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-on);
+  color: var(--color-accent);
 }
 @keyframes toast-in {
   from {
@@ -462,31 +485,6 @@
   border-radius: var(--radius-pill);
   background: var(--color-accent-on);
   color: var(--color-accent);
-}
-
-/* sheet: same card look as the overlay (floating card on desktop, bottom sheet on phones) */
-.ff-sheet {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-height: 100dvh;
-  overflow-y: auto;
-  border-radius: var(--radius-sheet-mobile) var(--radius-sheet-mobile) 0 0;
-  border: var(--bw-default) solid var(--color-border);
-  border-bottom: 0;
-  background: var(--color-surface-1);
-  box-shadow: var(--shadow-overlay);
-}
-@variant desk {
-  .ff-sheet {
-    width: var(--spacing-sheet-width);
-    height: calc(100dvh - var(--spacing-overlay-gap) * 2);
-    max-height: none;
-    margin: var(--spacing-overlay-gap);
-    border-radius: var(--radius-overlay);
-    border-bottom: var(--bw-default) solid var(--color-border);
-  }
 }
 
 /* ---------- layout helpers ---------- */

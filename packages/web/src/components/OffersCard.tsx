@@ -1,24 +1,19 @@
-import { useState } from "react";
 import { remove, run } from "../api/actions";
+import { openSheet } from "../app/ui";
 import type { FileRow, Offer } from "../api/types";
 import { fmtDay, tl } from "../lib/format";
 import { fileHref } from "./FilesCard";
-import { OfferForm } from "./OfferForm";
 import { Card, Chip, Empty } from "./ui";
 
 /** Offer versions of an opportunity: newest first, one can be accepted (its amount becomes the opportunity value) */
 export function OffersCard({ opportunityId, offers, files }: { opportunityId: number; offers: Offer[]; files: FileRow[] }) {
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<number | null>(null);
   const accept = (o: Offer, accepted: boolean) =>
     void run("patch", `/offers/${o.id}`, { accepted }, { ok: accepted ? `v${o.version} kabul edildi` : "Kabul geri alındı" }).catch(() => {});
   return (
-    <Card title="Teklifler" className="opp-side rise" actions={adding ? null : <button type="button" className="btn btn-sec btn-sm" onClick={() => setAdding(true)}>Yeni teklif</button>}>
-      {adding ? <OfferForm opportunityId={opportunityId} files={files} onDone={() => setAdding(false)} /> : null}
-      {!offers.length && !adding ? <Empty>Henüz teklif yok. Her revizyon yeni bir sürüm olarak kaydedilir.</Empty> : null}
+    <Card title="Teklifler" className="opp-side rise" actions={<button type="button" className="btn btn-sec btn-sm" onClick={() => openSheet("offer", { opportunity_id: opportunityId })}>Yeni teklif</button>}>
+      {!offers.length ? <Empty>Henüz teklif yok. Her revizyon yeni bir sürüm olarak kaydedilir.</Empty> : null}
       {offers.map((o) => {
         const file = files.find((f) => f.id === o.file_id);
-        if (editing === o.id) return <OfferForm key={o.id} opportunityId={opportunityId} offer={o} files={files} onDone={() => setEditing(null)} />;
         return (
           <div key={o.id} className="inset flex flex-col gap-3 px-5 py-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -41,7 +36,7 @@ export function OffersCard({ opportunityId, offers, files }: { opportunityId: nu
               {o.accepted_at
                 ? <button type="button" className="btn btn-sec btn-sm" onClick={() => accept(o, false)}>Kabulü geri al</button>
                 : <button type="button" className="btn btn-pri btn-sm" onClick={() => accept(o, true)}>Kabul et</button>}
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(o.id)}>Düzenle</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("offer", { opportunity_id: opportunityId, edit: o.id })}>Düzenle</button>
               <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => void remove(`/offers/${o.id}`, `v${o.version} teklifi`).catch(() => {})}>Sil</button>
             </div>
           </div>

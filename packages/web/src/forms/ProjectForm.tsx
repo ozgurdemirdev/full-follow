@@ -1,12 +1,14 @@
 // Direct project entry for work that did not go through the pipeline (won opportunities open their project themselves)
 import { useState } from "react";
-import { run } from "../api/actions";
-import { Combo } from "../components/Combo";
-import { NumberField } from "../components/NumberField";
-import { Field } from "../components/Sheet";
+import { Form } from "../components/forms/Form";
+import { DateField, NumField, TextField } from "../components/forms/fields";
+import { ComboField } from "../components/forms/fields-rich";
 import { todayIso } from "../lib/format";
 import { emptyRef, ensurePerson, type Ref } from "./helpers";
-import { SubmitGuard, useSubmit, usePersonOptions, type FormProps } from "./QuickAdd";
+import { errorsOf, saveRecord, usePersonOptions, useSubmit, type FormProps } from "./shared";
+
+const PRICE_STEP = 1000;
+const FEE_STEP = 100;
 
 export function ProjectForm(p: FormProps) {
   const personOptions = usePersonOptions();
@@ -16,33 +18,24 @@ export function ProjectForm(p: FormProps) {
   const [fee, setFee] = useState<number | null>(null);
   const [started, setStarted] = useState(todayIso());
 
-  const submit = useSubmit(p, async () => {
-    await run("post", "/projects", {
-      name: name.trim(), person_id: await ensurePerson(person, { tags: ["müşteri"] }),
-      price: price ?? 0, maintenance_fee: fee, started_at: started || undefined,
-    }, { ok: "Proje eklendi" });
-  });
+  const submit = useSubmit(
+    p,
+    async () => {
+      await saveRecord(p, null, {
+        name: name.trim(), person_id: await ensurePerson(person, { tags: ["müşteri"] }),
+        price: price ?? 0, maintenance_fee: fee, started_at: started || undefined,
+      });
+    },
+    () => errorsOf({ name: !name.trim() && "Proje adı gerekli", person: !person.text.trim() && "Müşteriyi seç ya da yeni bir ad yaz" }),
+  );
 
   return (
-    <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
-      <Field label="Proje adı" htmlFor="pr-name">
-        <input id="pr-name" className="inp" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Pizza Z mobil uygulama" />
-      </Field>
-      <Field label="Müşteri (kişi)" htmlFor="pr-person">
-        <Combo id="pr-person" value={person} onChange={setPerson} options={personOptions} placeholder="Kişi ara ya da yeni ad yaz" />
-      </Field>
-      <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
-        <Field label="Fiyat (₺)" htmlFor="pr-price">
-          <NumberField id="pr-price" className="inp font-mono" min={0} value={price} onChange={setPrice} />
-        </Field>
-        <Field label="Başlangıç" htmlFor="pr-start">
-          <input id="pr-start" className="inp" type="date" value={started} onChange={(e) => setStarted(e.target.value)} />
-        </Field>
-      </div>
-      <Field label="Aylık bakım ücreti (₺, isteğe bağlı)" htmlFor="pr-fee">
-        <NumberField id="pr-fee" className="inp font-mono" min={0} value={fee} onChange={setFee} />
-      </Field>
-      <SubmitGuard ok={!!name.trim() && !!person.text.trim()} />
-    </form>
+    <Form id={p.formId} onSubmit={submit}>
+      <TextField name="name" label="Proje adı" req value={name} onChange={setName} placeholder="Örn. Pizza Z mobil uygulama" autoFocus />
+      <ComboField name="person" label="Müşteri" req value={person} onChange={setPerson} options={personOptions} placeholder="Kişi ara ya da yeni ad yaz" newLabel="Yeni kişi" />
+      <NumField label="Toplam" half prefix="₺" step={PRICE_STEP} value={price} onChange={setPrice} />
+      <NumField label="Bakım ücreti" half opt prefix="₺" suffix="/ ay" step={FEE_STEP} value={fee} onChange={setFee} />
+      <DateField label="Başlangıç" half value={started} onChange={setStarted} placeholder="Örn. 12 Ekim" />
+    </Form>
   );
 }

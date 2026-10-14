@@ -1,21 +1,31 @@
-// Paket 2 formları: taslak (şablon önerili), paylaşım, fikir, mesaj şablonu
+// Marketing forms of the sheet: draft (with template suggestions), post, idea, message template
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
-import { run } from "../api/actions";
 import { useCompanies, useIdeas, useOwnProjects, usePeople, useSectors } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Detail, Idea, Post, Template } from "../api/types";
-import { Combo } from "../components/Combo";
-import { ChipRadio, Field } from "../components/Sheet";
-import { Chip } from "../components/ui";
+import { Form, Note } from "../components/forms/Form";
+import { AreaField, ChipsField, DateField, NumField, SegField, TextField, Field } from "../components/forms/fields";
+import { ComboField, SuggField, type Suggestion } from "../components/forms/fields-rich";
 import { todayIso } from "../lib/format";
-import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PRIORITIES, PRIORITY, PLATFORMS, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
-import { SubmitGuard, useSubmit, usePersonOptions, type FormProps } from "./QuickAdd";
+import { CHANNEL, CHANNELS, IDEA_STAGE, IDEA_STAGES, PLATFORM, PLATFORMS, PRIORITIES, PRIORITY, TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
 import { emptyRef, ensureCompany, ensurePerson, type Ref } from "./helpers";
+import { SectorTagsField } from "./pickers";
+import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "./shared";
 
-const PLACEHOLDERS = "{ad} {ad_soyad} {firma} {sektor}";
+const CHANNEL_OPTIONS = CHANNELS.map((c) => ({ value: c, label: CHANNEL[c] }));
+const TOKENS = ["{ad}", "{firma}"];
+const ALL_TOKENS = ["{ad}", "{ad_soyad}", "{firma}", "{sektor}"];
+const REFRESH_DEFAULT = 7;
+const SUGGESTED = 8;
+
+/** Link as the record keeps it: with a scheme */
+const withScheme = (v: string) => (!v.trim() || /^https?:\/\//i.test(v.trim()) ? v.trim() : `https://${v.trim()}`);
+const showUrl = (v: string | null | undefined) => (v ?? "").replace(/^https:\/\//i, "");
 
 // ---------------------------------------------------------------- taslak
+const TO_KINDS = [{ value: "person" as const, label: "Kişi" }, { value: "company" as const, label: "Firma" }];
+
 export function DraftForm(p: FormProps) {
   const pre = p.sheet.preset;
   // firmaya giden taslak (info@ gibi): {ad} ve {firma} firma adıyla dolar
@@ -23,7 +33,7 @@ export function DraftForm(p: FormProps) {
   const company = pre?.company_id ? companies.byId.get(pre.company_id) : undefined;
   const people = usePeople();
   const personOptions = usePersonOptions();
-  const companyOptions = useMemo(() => companies.rows.map((x) => ({ id: x.id, label: x.name, sub: x.email ?? undefined })), [companies.rows]);
+  const companyOptions = useCompanyOptions(true);
   const [toKind, setToKind] = useState<"person" | "company">("person");
   const [toCompany, setToCompany] = useState<Ref>(emptyRef);
   const [person, setPerson] = useState<Ref>(() => ({ id: pre?.person_id ?? null, text: "" }));
@@ -46,6 +56,15 @@ export function DraftForm(p: FormProps) {
   const sug = useQuery<Template[]>(subject ? `/templates/suggest?${subject}&channel=${ch}` : null);
   const all = useQuery<{ rows: Template[] }>(subject ? null : `/templates?channel=${ch}&limit=50`);
   const list = (subject ? sug.data : all.data?.rows) ?? [];
+  const suggestions = useMemo(
+    () => list.slice(0, SUGGESTED).map((t): Suggestion => ({
+      key: t.id,
+      name: t.name,
+      meta: `${TEMPLATE_KIND[t.kind]}${t.sector_path ? ` · ${t.sector_path}` : ""}`,
+      rate: t.sent ? t.replied / t.sent : null,
+    })),
+    [list],
+  );
 
   const pick = async (t: Pick<Template, "id" | "body">) => {
     setTemplateId(t.id);
@@ -65,67 +84,55 @@ export function DraftForm(p: FormProps) {
     if (t && templateId === null) void pick(t);
   }, [preTemplate.data, subject, templateId]);
 
-  const submit = useSubmit(p, async () => {
-    const to = companyId || toKind === "company"
-      ? { company_id: companyId ?? await ensureCompany(toCompany) }
-      : { person_id: await ensurePerson(person, { tags: ["aday"] }) };
-    await run("post", "/drafts", {
-      ...to, channel: ch, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
-      opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,
-    }, { ok: "Taslak onaya düştü" });
-  });
+  const submit = useSubmit(
+    p,
+    async () => {
+      const to = companyId || toKind === "company"
+        ? { company_id: companyId ?? await ensureCompany(toCompany) }
+        : { person_id: await ensurePerson(person, { tags: ["aday"] }) };
+      await saveRecord(p, null, {
+        ...to, channel: ch, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
+        opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,
+      });
+    },
+    () => errorsOf({
+      to: !pre?.company_id && !(toKind === "company" ? toCompany.text : person.text).trim() && "Alıcıyı seç",
+      body: !body.trim() && "Metin boş olamaz",
+    }),
+  );
 
   return (
-    <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
+    <Form id={p.formId} onSubmit={submit}>
       {pre?.company_id ? (
-        <p className="m-0 text-base text-text-secondary">Firmaya: {company?.name ?? ""}{company?.email ? ` · ${company.email}` : ""}</p>
+        <Note>Firmaya: {company?.name ?? ""}{company?.email ? ` · ${company.email}` : ""}</Note>
       ) : (
         <>
-          <ChipRadio label="Kime" value={toKind} onChange={(v) => { setToKind(v); setTemplateId(null); }}
-            items={[{ value: "person", label: "Kişi" }, { value: "company", label: "Firma" }]} />
+          <SegField label="Kime" options={TO_KINDS} value={toKind} onChange={(v) => (setToKind(v), setTemplateId(null))} />
           {toKind === "person" ? (
-            <Field label="Kişi" htmlFor="d-person">
-              <Combo id="d-person" value={person} onChange={(v) => { setPerson(v); setTemplateId(null); }} options={personOptions} placeholder="Kişi ara" />
-            </Field>
+            <ComboField name="to" label="Alıcı" req value={person} onChange={(v) => (setPerson(v), setTemplateId(null))} options={personOptions} placeholder="Kişi ara" newLabel="Yeni kişi" />
           ) : (
-            <Field label="Firma" htmlFor="d-company">
-              <Combo id="d-company" value={toCompany} onChange={(v) => { setToCompany(v); setTemplateId(null); }} options={companyOptions} placeholder="Firma ara" />
-            </Field>
+            <ComboField name="to" label="Alıcı" req value={toCompany} onChange={(v) => (setToCompany(v), setTemplateId(null))} options={companyOptions} placeholder="Firma ara" newLabel="Yeni firma" />
           )}
         </>
       )}
-      <Field label="Kanal" htmlFor="d-channel">
-        <select id="d-channel" className="inp" value={ch} onChange={(e) => { setChannel(e.target.value); setTemplateId(null); }}>
-          {CHANNELS.map((c) => <option key={c} value={c}>{CHANNEL[c]}</option>)}
-        </select>
-      </Field>
-      <Field label={list.length ? "Şablon (uygun olan önce)" : "Şablon"}>
-        {list.length ? (
-          <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="Şablon">
-            {list.slice(0, 8).map((t) => (
-              <button key={t.id} type="button" role="radio" aria-checked={templateId === t.id} className="fchip h-control-height-xs" onClick={() => pick(t)}
-                title={t.sent ? `${t.replied}/${t.sent} dönüş` : undefined}>
-                {t.name}
-                <span className="text-text-muted"> · {TEMPLATE_KIND[t.kind]}{t.sector_path ? ` · ${t.sector_path}` : ""}</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className="text-base-sm text-text-muted">Bu kanal için şablon yok. Şablonlar sayfasından ekleyebilirsin.</span>
-        )}
-      </Field>
-      <Field label="Metin" htmlFor="d-body">
-        <textarea id="d-body" className="inp min-h-textarea-lg leading-relaxed" required value={body} onChange={(e) => setBody(e.target.value)} placeholder="Mesaj metni" />
-      </Field>
-      <Field label="Neden şimdi (isteğe bağlı)" htmlFor="d-reason">
-        <input id="d-reason" className="inp" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Örn. paylaşıma yorum yaptı" />
-      </Field>
-      <SubmitGuard ok={!!pre?.company_id || !!(toKind === "company" ? toCompany.text : person.text).trim()} />
-    </form>
+      <ChipsField label="Kanal" value={ch} onChange={(v) => (v && setChannel(v), setTemplateId(null))} options={CHANNEL_OPTIONS} />
+      {suggestions.length ? (
+        <SuggField label="Şablon önerisi" hint="Uygun olan önce, seçince metne yazılır" options={suggestions} value={templateId} onPick={(s) => void pick(list.find((t) => t.id === s.key) ?? { id: Number(s.key), body: "" })} />
+      ) : (
+        <Field label="Şablon"><span className="form-hint">Bu kanal için şablon yok. Şablonlar sayfasından ekleyebilirsin.</span></Field>
+      )}
+      <AreaField name="body" label="Metin" req value={body} onChange={setBody} placeholder="Mesaj metni" rows={6} tokens={TOKENS} />
+      <TextField label="Neden şimdi" opt value={reason} onChange={setReason} placeholder="Örn. paylaşıma yorum yaptı" />
+    </Form>
   );
 }
 
 // ---------------------------------------------------------------- paylaşım
+const PLATFORM_DOT: Record<string, string> = {
+  r10: "var(--color-entity-payment)", linkedin: "var(--color-entity-person)", instagram: "var(--color-entity-comment)", diger: "var(--color-entity-neutral)",
+};
+const PLATFORM_OPTIONS = PLATFORMS.map((x) => ({ value: x, label: PLATFORM[x], dot: PLATFORM_DOT[x] ?? PLATFORM_DOT.diger }));
+
 export function PostForm(p: FormProps) {
   const editId = p.sheet.preset?.post_id;
   const existing = useQuery<Detail<Post>>(editId ? `/posts/${editId}` : null);
@@ -134,87 +141,72 @@ export function PostForm(p: FormProps) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [postedAt, setPostedAt] = useState(todayIso());
-  const [refresh, setRefresh] = useState("7");
-  const [ideaId, setIdeaId] = useState(p.sheet.preset?.idea_id ? String(p.sheet.preset.idea_id) : "");
+  const [refresh, setRefresh] = useState<number | null>(REFRESH_DEFAULT);
+  const [idea, setIdea] = useState<Ref>(() => ({ id: p.sheet.preset?.idea_id ?? null, text: "" }));
   const [body, setBody] = useState("");
   const [notes, setNotes] = useState("");
+  const ideaOptions = useMemo(() => ideas.rows.map((x) => ({ id: x.id, label: x.title })), [ideas.rows]);
 
+  useEffect(() => {
+    if (idea.id && !idea.text) {
+      const x = ideas.byId.get(idea.id);
+      if (x) setIdea({ id: x.id, text: x.title });
+    }
+  }, [ideas.byId, idea]);
   const row = existing.data?.row;
   useEffect(() => {
     if (!row) return;
     setPlatform(row.platform);
     setTitle(row.title);
-    setUrl(row.url ?? "");
+    setUrl(showUrl(row.url));
     setPostedAt(row.posted_at.slice(0, 10));
-    setRefresh(row.refresh_days ? String(row.refresh_days) : "");
-    setIdeaId(row.idea_id ? String(row.idea_id) : "");
+    setRefresh(row.refresh_days ?? null);
+    setIdea({ id: row.idea_id, text: "" });
     setBody(row.body ?? "");
     setNotes(row.notes ?? "");
   }, [row]);
 
-  const submit = useSubmit(p, async () => {
-    const data = {
-      platform, title: title.trim(), url, posted_at: postedAt || undefined, body, notes,
-      refresh_days: refresh ? Math.max(1, Math.round(Number(refresh))) : null,
-      idea_id: ideaId ? Number(ideaId) : null,
-    };
-    if (editId) await run("patch", `/posts/${editId}`, data, { ok: "Paylaşım güncellendi" });
-    else await run("post", "/posts", data, { ok: "Paylaşım eklendi" });
-  });
+  const submit = useSubmit(
+    p,
+    async () => {
+      await saveRecord(p, editId, {
+        platform, title: title.trim(), url: withScheme(url), posted_at: postedAt || undefined, body, notes,
+        refresh_days: refresh ? Math.max(1, Math.round(refresh)) : null,
+        idea_id: idea.id,
+      });
+    },
+    () => errorsOf({ title: !title.trim() && "Başlık gerekli" }),
+  );
 
   return (
-    <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
-      <Field label="Platform">
-        <ChipRadio label="Platform" items={PLATFORMS.map((x) => ({ value: x, label: PLATFORM[x] }))} value={platform}
-          onChange={(v) => { setPlatform(v); if (!editId && !refresh && v === "r10") setRefresh("7"); }} />
-      </Field>
-      <Field label="Başlık" htmlFor="po-title">
-        <input id="po-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. Kurumsal web sitesi yapıyorum" />
-      </Field>
-      <Field label="Bağlantı" htmlFor="po-url">
-        <input id="po-url" className="inp" type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
-      </Field>
-      <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
-        <Field label="Paylaşım tarihi" htmlFor="po-date">
-          <input id="po-date" className="inp" type="date" value={postedAt} onChange={(e) => setPostedAt(e.target.value)} />
-        </Field>
-        <Field label="Kaç günde bir güncellensin" htmlFor="po-refresh">
-          <input id="po-refresh" className="inp font-mono" inputMode="numeric" value={refresh} onChange={(e) => setRefresh(e.target.value.replace(/\D/g, ""))} placeholder="boş = hatırlatma yok" />
-        </Field>
-      </div>
-      {ideas.rows.length ? (
-        <Field label="Tanıttığı fikir" htmlFor="po-idea">
-          <select id="po-idea" className="inp" value={ideaId} onChange={(e) => setIdeaId(e.target.value)}>
-            <option value="">Yok</option>
-            {ideas.rows.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
-          </select>
-        </Field>
-      ) : null}
-      <Field label="Metin (isteğe bağlı)" htmlFor="po-body">
-        <textarea id="po-body" className="inp" value={body} onChange={(e) => setBody(e.target.value)} />
-      </Field>
-      <Field label="Not" htmlFor="po-notes">
-        <input id="po-notes" className="inp" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </Field>
-    </form>
+    <Form id={p.formId} onSubmit={submit}>
+      <ChipsField label="Platform" value={platform} onChange={(v) => { if (!v) return; setPlatform(v); if (!editId && !refresh && v === "r10") setRefresh(REFRESH_DEFAULT); }} options={PLATFORM_OPTIONS} />
+      <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Örn. Kurumsal web sitesi yapıyorum" autoFocus />
+      <AreaField label="Metin" opt value={body} onChange={setBody} rows={4} />
+      <TextField label="Link" opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder="instagram.com/p/..." />
+      <DateField label="Paylaşım tarihi" half value={postedAt} onChange={setPostedAt} placeholder="Örn. 12 Ekim" />
+      <NumField label="Güncelleme aralığı" half opt suffix="gün" hint="Bu kadar gün eskiyince hatırlatır, boş = hatırlatma yok" value={refresh} onChange={setRefresh} />
+      {ideas.rows.length ? <ComboField label="Tanıttığı fikir" opt value={idea} onChange={setIdea} options={ideaOptions} placeholder="Fikir ara" /> : null}
+      <TextField label="Not" opt value={notes} onChange={setNotes} />
+    </Form>
   );
 }
 
 // ---------------------------------------------------------------- fikir
+const PROJECT_NONE = "none";
+
 export function IdeaForm(p: FormProps) {
   const editId = p.sheet.preset?.idea_id;
   const existing = useQuery<Detail<Idea>>(editId ? `/ideas/${editId}` : null);
-  const sectors = useSectors();
   const ideas = useIdeas();
   const projects = useOwnProjects();
   const [projectId, setProjectId] = useState(p.sheet.preset?.own_project_id ? String(p.sheet.preset.own_project_id) : "");
   const [priority, setPriority] = useState("orta");
-  const [parentId, setParentId] = useState("");
+  const [parent, setParent] = useState<Ref>(emptyRef);
   const [title, setTitle] = useState("");
   const [problem, setProblem] = useState("");
   const [stage, setStage] = useState("fikir");
-  const [chosen, setChosen] = useState<string[]>([]);
-  const [sectorText, setSectorText] = useState("");
+  const [sectors, setSectors] = useState<(number | string)[]>([]);
   const [notes, setNotes] = useState("");
 
   const row = existing.data?.row;
@@ -223,88 +215,63 @@ export function IdeaForm(p: FormProps) {
     setTitle(row.title);
     setProjectId(row.own_project_id ? String(row.own_project_id) : "");
     setPriority(row.priority);
-    setParentId(row.parent_id ? String(row.parent_id) : "");
+    setParent({ id: row.parent_id, text: "" });
     setProblem(row.problem ?? "");
     setStage(row.stage);
-    setChosen(row.sectors.map((s) => s.path));
+    setSectors(row.sectors.map((s) => s.id));
     setNotes(row.notes ?? "");
   }, [row]);
+  const parentOptions = useMemo(
+    () => ideas.rows.filter((x) => !x.parent_id && !x.own_project_id && x.id !== editId).map((x) => ({ id: x.id, label: x.title })),
+    [ideas.rows, editId],
+  );
+  useEffect(() => {
+    if (parent.id && !parent.text) {
+      const x = ideas.byId.get(parent.id);
+      if (x) setParent({ id: x.id, text: x.title });
+    }
+  }, [ideas.byId, parent]);
+  const where = useMemo(
+    () => [{ value: PROJECT_NONE, label: "Para kazanma fikirleri" }, ...projects.rows.filter((x) => x.status !== "birakildi" || String(x.id) === projectId).map((x) => ({ value: String(x.id), label: x.name }))],
+    [projects.rows, projectId],
+  );
 
-  const addSector = () => {
-    const v = sectorText.trim();
-    if (v && !chosen.includes(v)) setChosen((c) => [...c, v]);
-    setSectorText("");
-  };
-
-  const submit = useSubmit(p, async () => {
-    const all = sectorText.trim() && !chosen.includes(sectorText.trim()) ? [...chosen, sectorText.trim()] : chosen;
-    // "Sağlık > Diş hekimi" yazılırsa eksik sektörler açılır
-    // inside a project: priority only; general idea: stage, sectors and optional parent
-    const data = projectId
-      ? { title: title.trim(), problem, notes, own_project_id: Number(projectId), priority }
-      : { title: title.trim(), problem, stage, notes, sectors: all, parent_id: parentId ? Number(parentId) : null, ...(row?.own_project_id ? { own_project_id: null } : {}) };
-    if (editId) await run("patch", `/ideas/${editId}`, data, { ok: "Fikir güncellendi" });
-    else await run("post", "/ideas", data, { ok: "Fikir eklendi" });
-  });
+  const submit = useSubmit(
+    p,
+    async () => {
+      // "Sağlık > Diş hekimi" yazılırsa eksik sektörler açılır
+      // inside a project: priority only; general idea: stage, sectors and optional parent
+      const data = projectId
+        ? { title: title.trim(), problem, notes, own_project_id: Number(projectId), priority }
+        : { title: title.trim(), problem, stage, notes, sectors, parent_id: parent.id, ...(row?.own_project_id ? { own_project_id: null } : {}) };
+      await saveRecord(p, editId, data);
+    },
+    () => errorsOf({ title: !title.trim() && "Başlık gerekli" }),
+  );
 
   return (
-    <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
-      <Field label="Ürün fikri" htmlFor="i-title">
-        <input id="i-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. klinik randevu botu" />
-      </Field>
-      <Field label="Nerede" htmlFor="i-where">
-        <select id="i-where" className="inp" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-          <option value="">Para kazanma fikirleri</option>
-          {projects.rows.filter((x) => x.status !== "birakildi" || String(x.id) === projectId).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-        </select>
-      </Field>
+    <Form id={p.formId} onSubmit={submit}>
+      <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Örn. klinik randevu botu" autoFocus />
+      <ChipsField label="Nerede" value={projectId || PROJECT_NONE} onChange={(v) => v && setProjectId(v === PROJECT_NONE ? "" : v)} options={where} />
+      <AreaField label={projectId ? "Açıklama" : "Çözdüğü sorun"} opt value={problem} onChange={setProblem} placeholder={projectId ? "Bu fikir ne yapacak" : "Kimin hangi derdini çözüyor"} rows={3} />
       {projectId ? (
-        <Field label="Öncelik">
-          <ChipRadio label="Öncelik" items={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
-        </Field>
+        <SegField label="Öncelik" options={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
       ) : (
-        <Field label="Üst fikir (isteğe bağlı)" htmlFor="i-parent">
-          <select id="i-parent" className="inp" value={parentId} onChange={(e) => setParentId(e.target.value)}>
-            <option value="">Yok, kendi başına bir fikir</option>
-            {ideas.rows.filter((x) => !x.parent_id && !x.own_project_id && x.id !== editId).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
-          </select>
-        </Field>
-      )}
-      <Field label={projectId ? "Açıklama" : "Çözdüğü sorun"} htmlFor="i-problem">
-        <textarea id="i-problem" className="inp" value={problem} onChange={(e) => setProblem(e.target.value)} placeholder={projectId ? "Bu fikir ne yapacak" : "Kimin hangi derdini çözüyor"} />
-      </Field>
-      {projectId ? null : (
         <>
-          <Field label="Aşama">
-            <ChipRadio label="Aşama" items={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} value={stage} onChange={setStage} />
-          </Field>
-          <Field label="Hedef sektörler (Ana > Alt)" htmlFor="i-sector">
-            <div className="flex gap-3">
-              <input id="i-sector" className="inp min-w-0 flex-1" list="i-sector-list" value={sectorText} placeholder="Sağlık > Diş hekimi"
-                onChange={(e) => setSectorText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSector())} />
-              <button type="button" className="btn btn-sec" disabled={!sectorText.trim()} onClick={addSector}>Ekle</button>
-            </div>
-            <datalist id="i-sector-list">{sectors.rows.map((x) => <option key={x.id} value={x.path} />)}</datalist>
-            {chosen.length ? (
-              <div className="flex flex-wrap gap-2">
-                {chosen.map((x) => (
-                  <button key={x} type="button" className="chip bg-chip-neutral-bg text-chip-neutral-fg border-0" title="Kaldır" onClick={() => setChosen((c) => c.filter((y) => y !== x))}>
-                    {x} ×
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </Field>
+          <ChipsField label="Aşama" value={stage} onChange={(v) => v && setStage(v)} options={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} />
+          <SectorTagsField value={sectors} onChange={setSectors} />
+          <ComboField label="Üst fikir" opt value={parent} onChange={setParent} options={parentOptions} placeholder="Bağlı olduğu fikir" />
         </>
       )}
-      <Field label="Notlar" htmlFor="i-notes">
-        <textarea id="i-notes" className="inp" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </Field>
-    </form>
+      <AreaField label="Notlar" opt value={notes} onChange={setNotes} rows={3} />
+    </Form>
   );
 }
 
 // ---------------------------------------------------------------- şablon
+const KIND_OPTIONS = TEMPLATE_KINDS.map((k) => ({ value: k, label: TEMPLATE_KIND[k] }));
+const PREVIEW: Record<string, string> = { "{ad}": "Ayşe", "{ad_soyad}": "Ayşe Demir", "{firma}": "Gülüş Diş", "{sektor}": "Diş hekimi" };
+
 export function TemplateForm(p: FormProps) {
   const editId = p.sheet.preset?.template_id;
   const existing = useQuery<Detail<Template>>(editId ? `/templates/${editId}` : null);
@@ -312,8 +279,9 @@ export function TemplateForm(p: FormProps) {
   const [name, setName] = useState("");
   const [kind, setKind] = useState("ilk");
   const [channel, setChannel] = useState("");
-  const [sector, setSector] = useState("");
+  const [sector, setSector] = useState<Ref>(emptyRef);
   const [body, setBody] = useState("");
+  const sectorOptions = useMemo(() => sectors.rows.filter((x) => !x.deleted_at).map((x) => ({ id: x.id, label: x.path })), [sectors.rows]);
 
   const row = existing.data?.row;
   useEffect(() => {
@@ -321,50 +289,30 @@ export function TemplateForm(p: FormProps) {
     setName(row.name);
     setKind(row.kind);
     setChannel(row.channel ?? "");
-    setSector(row.sector_path ?? "");
+    setSector({ id: row.sector_id, text: row.sector_path ?? "" });
     setBody(row.body);
   }, [row]);
 
-  const preview = useMemo(() => body.replace(/\{ad\}/g, "Ayşe").replace(/\{ad_soyad\}/g, "Ayşe Demir").replace(/\{firma\}/g, "Gülüş Diş").replace(/\{sektor\}/g, "Diş hekimi"), [body]);
+  const preview = useMemo(() => ALL_TOKENS.reduce((text, t) => text.split(t).join(PREVIEW[t]), body), [body]);
 
-  const submit = useSubmit(p, async () => {
-    const data = { name: name.trim(), kind, channel: channel || null, sector: sector.trim() || null, body };
-    if (editId) await run("patch", `/templates/${editId}`, data, { ok: "Şablon güncellendi" });
-    else await run("post", "/templates", data, { ok: "Şablon eklendi" });
-  });
+  const submit = useSubmit(
+    p,
+    async () => {
+      await saveRecord(p, editId, { name: name.trim(), kind, channel: channel || null, sector: sector.text.trim() || null, body });
+    },
+    () => errorsOf({ name: !name.trim() && "Şablon adı gerekli", body: !body.trim() && "Metin boş olamaz" }),
+  );
 
   return (
-    <form id={p.formId} onSubmit={submit} className="flex flex-col gap-8">
-      <Field label="Ad" htmlFor="tp-name">
-        <input id="tp-name" className="inp" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Diş hekimi ilk mesaj" />
-      </Field>
-      <Field label="Tür">
-        <ChipRadio label="Tür" items={TEMPLATE_KINDS.map((k) => ({ value: k, label: TEMPLATE_KIND[k] }))} value={kind} onChange={setKind} />
-      </Field>
-      <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
-        <Field label="Kanal" htmlFor="tp-channel">
-          <select id="tp-channel" className="inp" value={channel} onChange={(e) => setChannel(e.target.value)}>
-            <option value="">Tüm kanallar</option>
-            {CHANNELS.map((c) => <option key={c} value={c}>{CHANNEL[c]}</option>)}
-          </select>
-        </Field>
-        <Field label="Sektör (boş = hepsi)" htmlFor="tp-sector">
-          <input id="tp-sector" className="inp" list="tp-sector-list" value={sector} onChange={(e) => setSector(e.target.value)} placeholder="Sağlık > Diş hekimi" />
-          <datalist id="tp-sector-list">{sectors.rows.map((x) => <option key={x.id} value={x.path} />)}</datalist>
-        </Field>
-      </div>
-      <Field label="Metin" htmlFor="tp-body">
-        <textarea id="tp-body" className="inp min-h-textarea-lg leading-relaxed" required value={body} onChange={(e) => setBody(e.target.value)}
-          placeholder="Merhaba {ad}, {firma} için..." />
-        <span className="text-sm text-text-muted">Yer tutucular: {PLACEHOLDERS}</span>
-      </Field>
+    <Form id={p.formId} onSubmit={submit}>
+      <TextField name="name" label="Şablon adı" req value={name} onChange={setName} placeholder="Örn. Diş hekimi ilk mesaj" autoFocus />
+      <SegField label="Tür" options={KIND_OPTIONS} value={kind} onChange={setKind} />
+      <ChipsField label="Kanal" hint="Seçmezsen tüm kanallarda kullanılır" clearable value={channel} onChange={setChannel} options={CHANNEL_OPTIONS} />
+      <ComboField label="Sektör" opt hint="Boş = hepsi, ya da Ana > Alt yaz" value={sector} onChange={setSector} options={sectorOptions} placeholder="Sağlık > Diş hekimi" />
+      <AreaField name="body" label="Metin" req value={body} onChange={setBody} placeholder="Merhaba {ad}, {firma} için..." rows={5} tokens={ALL_TOKENS} hint="Gönderirken {ad} ve {firma} kişinin bilgisiyle dolar" />
       {body.includes("{") ? (
-        <div className="flex flex-col gap-2">
-          <Chip className="self-start">Önizleme</Chip>
-          <p className="inset m-0 whitespace-pre-line px-6 py-5 text-base-sm leading-normal text-text-primary">{preview}</p>
-        </div>
+        <Field label="Önizleme"><p className="form-preview">{preview}</p></Field>
       ) : null}
-    </form>
+    </Form>
   );
 }
-

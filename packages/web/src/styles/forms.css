@@ -1,0 +1,487 @@
+/* Form sheet and its field types from the design board (Forms.dc.html).
+   Phone first: the base rules are the bottom sheet with one column, `desk` is the floating side sheet with two columns. */
+
+/* ---------- frame ---------- */
+.form-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  padding: 0;
+  border: 0;
+  background: var(--color-bg-scrim);
+  cursor: default;
+  animation: form-fade var(--dur-fade) var(--ease-standard);
+}
+@variant desk {
+  .form-scrim {
+    background: linear-gradient(90deg, transparent var(--spacing-form-scrim-from), var(--color-bg-scrim));
+  }
+}
+.form-scrim[data-closing] {
+  opacity: 0;
+  transition: opacity var(--dur-form-sheet-out) var(--ease-leave);
+}
+.form-sheet[data-closing] {
+  pointer-events: none;
+}
+.form-sheet {
+  position: fixed;
+  z-index: var(--z-sheet);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  max-height: var(--spacing-form-sheet-max-h);
+  overflow: hidden;
+  border-radius: var(--radius-overlay) var(--radius-overlay) 0 0;
+  border: var(--bw-default) solid var(--color-border);
+  border-bottom: 0;
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  transform: translateY(var(--form-drag, 0));
+  animation: form-up var(--dur-form-sheet) var(--ease-out);
+}
+.form-sheet[data-closing] {
+  animation: form-up-out var(--dur-form-sheet-out) var(--ease-leave) forwards;
+}
+.form-sheet[data-dragging] {
+  transition: none;
+}
+.form-sheet:not([data-dragging]) {
+  transition: transform var(--dur-fade) var(--ease-out);
+}
+@variant desk {
+  .form-sheet {
+    top: var(--spacing-overlay-gap);
+    right: var(--spacing-overlay-gap);
+    bottom: var(--spacing-overlay-gap);
+    left: auto;
+    width: min(var(--spacing-form-sheet-width), calc(100vw - var(--spacing-overlay-gap) * 2));
+    max-height: none;
+    border-radius: var(--radius-overlay);
+    border-bottom: var(--bw-default) solid var(--color-border);
+    animation-name: form-side;
+  }
+  .form-sheet[data-closing] {
+    animation-name: form-side-out;
+  }
+}
+@keyframes form-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes form-up {
+  from {
+    transform: translateY(var(--spacing-form-slide-y));
+    opacity: 0;
+  }
+}
+@keyframes form-up-out {
+  to {
+    transform: translateY(var(--spacing-form-slide-y));
+    opacity: 0;
+  }
+}
+@keyframes form-side {
+  from {
+    transform: translateX(var(--spacing-form-slide-x));
+    opacity: 0;
+  }
+}
+@keyframes form-side-out {
+  to {
+    transform: translateX(var(--spacing-form-slide-x));
+    opacity: 0;
+  }
+}
+.form-grab {
+  flex: none;
+  align-self: center;
+  width: var(--spacing-form-grab-w);
+  height: var(--spacing-form-grab-h);
+  margin: var(--spacing-4) auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+  touch-action: none;
+  cursor: grab;
+}
+@variant desk {
+  .form-grab {
+    display: none;
+  }
+}
+.form-sheet button {
+  transition:
+    transform var(--dur-press) var(--ease-standard),
+    filter var(--dur-hover) var(--ease-standard),
+    background-color var(--dur-hover) var(--ease-standard),
+    border-color var(--dur-hover) var(--ease-standard);
+}
+.form-sheet button:hover {
+  filter: brightness(1.12);
+}
+.form-sheet button:active {
+  transform: scale(var(--press-scale));
+}
+
+/* ---------- header, body, footer ---------- */
+.form-head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--spacing-6);
+  padding: var(--spacing-form-head-pad-top) var(--spacing-10) var(--spacing-7);
+  border-bottom: var(--bw-default) solid var(--color-border-subtle);
+}
+.form-head-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-form-head-icon);
+  height: var(--spacing-form-head-icon);
+  border-radius: var(--radius-cell);
+  background: var(--color-form-tile);
+  color: var(--color-accent);
+}
+.form-head-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--spacing-0_5);
+  min-width: 0;
+}
+.form-title {
+  margin: 0;
+  font-size: var(--text-form-title);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--tracking-title);
+}
+.form-dest {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.form-close {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-form-close);
+  height: var(--spacing-form-close);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+.form-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--spacing-7);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--spacing-8) var(--spacing-10) var(--spacing-10);
+}
+.form-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-7);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-8) var(--spacing-6);
+}
+@variant desk {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.form-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-6) var(--spacing-10) var(--spacing-8);
+  border-top: var(--bw-default) solid var(--color-border-subtle);
+  background: var(--color-surface-1);
+}
+.form-foot-gap {
+  flex-grow: 1;
+}
+.form-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  height: var(--spacing-control-height-2xl);
+  padding: 0 var(--spacing-8);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+.form-btn[data-kind="danger"] {
+  padding: 0 var(--spacing-7);
+  border-color: var(--color-drafts-reject-border);
+  color: var(--color-danger-soft);
+}
+.form-btn[data-kind="primary"] {
+  padding: 0 var(--spacing-9);
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+  font-weight: var(--font-weight-medium);
+}
+.form-btn[aria-busy="true"] {
+  opacity: var(--opacity-login-busy);
+}
+/* ---------- banners ---------- */
+.form-dup,
+.form-sum {
+  display: flex;
+  animation: form-fade var(--dur-segment) var(--ease-out) backwards;
+}
+.form-dup {
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-6) var(--spacing-7);
+  border-radius: var(--radius-inner-lg);
+  background: var(--color-form-dup-bg);
+  border: var(--bw-default) solid var(--color-form-dup-border);
+}
+.form-dup-text {
+  display: flex;
+  gap: var(--spacing-4);
+  font-size: var(--text-base);
+  color: var(--color-form-dup-text);
+  line-height: var(--leading-tight);
+}
+.form-dup-text svg {
+  flex: none;
+  margin-top: var(--spacing-0_5);
+  color: var(--color-warning);
+}
+.form-dup-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  padding-left: var(--spacing-form-dup-indent);
+}
+.form-dup-actions button,
+.form-dup-actions a {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-control-height-sm);
+  padding: 0 var(--spacing-6);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-form-dup-border);
+  background: transparent;
+  color: var(--color-form-dup-text);
+  font-size: var(--text-sm);
+}
+.form-dup-actions [data-kind="primary"] {
+  border: 0;
+  background: var(--color-warning);
+  color: var(--color-accent-on);
+  font-weight: var(--font-weight-medium);
+}
+.form-sum {
+  gap: var(--spacing-4);
+  padding: var(--spacing-5) var(--spacing-6);
+  border-radius: var(--radius-inner);
+  background: var(--color-listening-bg);
+  border: var(--bw-default) solid var(--color-drafts-reject-border);
+  font-size: var(--text-base-sm);
+  color: var(--color-form-error-text);
+}
+.form-sum svg {
+  flex: none;
+  margin-top: var(--spacing-0_5);
+}
+
+/* ---------- field frame ---------- */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+@variant desk {
+  .form-field[data-half] {
+    grid-column: auto;
+  }
+}
+.form-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-2);
+  font-size: var(--text-base-sm);
+  color: var(--color-text-neutral-chip);
+}
+.form-req {
+  color: var(--color-accent);
+}
+.form-opt {
+  font-size: var(--text-xs);
+  color: var(--color-text-disabled);
+}
+.form-err {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: var(--color-danger-soft);
+}
+.form-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---------- control frame (text, combo, number, date, tags) ---------- */
+.form-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  /* the board sizes its fields as content-box: 46px plus the border */
+  height: var(--spacing-field-height);
+  padding: 0 var(--spacing-6);
+  border-radius: var(--radius-cell);
+  background: var(--color-surface-inset);
+  border: var(--bw-default) solid var(--color-border);
+}
+.form-control:focus-within {
+  border-color: var(--color-form-focus-border);
+}
+.form-control[data-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.form-control input {
+  flex-grow: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+.form-control input::placeholder {
+  color: var(--color-text-muted);
+}
+.form-control svg {
+  flex: none;
+}
+.form-affix {
+  font-size: var(--text-base-sm);
+  color: var(--color-text-disabled);
+  white-space: nowrap;
+}
+.form-icon-muted {
+  color: var(--color-text-disabled);
+}
+.form-icon-soft {
+  color: var(--color-text-muted);
+}
+.form-icon-btn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.form-control .form-icon-btn {
+  width: var(--spacing-form-icon-btn);
+  height: var(--spacing-form-icon-btn);
+  border-radius: var(--radius-form-step);
+}
+.form-native-date {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- combo ---------- */
+.form-combo {
+  position: relative;
+}
+.form-combo .form-control {
+  padding: 0 var(--spacing-3) 0 var(--spacing-6);
+}
+.form-list {
+  position: absolute;
+  top: calc(var(--spacing-field-height) + var(--spacing-2));
+  right: 0;
+  left: 0;
+  z-index: var(--z-form-list);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--spacing-2);
+  list-style: none;
+  border-radius: var(--radius-inner);
+  background: var(--color-surface-2);
+  border: var(--bw-default) solid var(--color-border);
+  box-shadow: var(--shadow-form-list);
+  animation: form-fade var(--dur-segment) var(--ease-out) backwards;
+}
+.form-opt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  width: 100%;
+  padding: var(--spacing-form-opt-pad-y) var(--spacing-4);
+  border: 0;
+  border-radius: var(--radius-event);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  text-align: left;
+}
+.form-opt-row[data-active="true"] {
+  background: var(--color-form-tile);
+}
+.form-opt-ini {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-form-opt-ini);
+  height: var(--spacing-form-opt-ini);
+  border-radius: var(--radius-pill);
+  background: var(--color-chip-neutral-bg);
+  color: var(--color-text-neutral-chip);
+  font-size: var(--text-2xs);
+}
+.form-opt-name {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.form-opt-sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.form-opt-new {
+  border-top: var(--bw-default) solid var(--color-border);
+  border-radius: 0 0 var(--radius-event) var(--radius-event);
+  color: var(--color-accent);
+}
