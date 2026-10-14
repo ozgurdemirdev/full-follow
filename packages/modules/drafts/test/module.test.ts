@@ -52,9 +52,11 @@ describe("drafts as a module", () => {
     reject("  çok uzun  ");
     reject("çok uzun");
     reject("resmi yazma");
+    // the note sent when no reason was given is kept on the draft but teaches nothing
+    reject("Neden yazılmadı");
     expect(ozgur.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma"]);
     expect(ozgur.today(5).draft_rules).toEqual(["çok uzun", "resmi yazma"]);
-    expect(h.sqlite.prepare("SELECT COUNT(*) n FROM events WHERE type = 'draft.rejected'").get()).toEqual({ n: 3 });
+    expect(h.sqlite.prepare("SELECT COUNT(*) n FROM events WHERE type = 'draft.rejected'").get()).toEqual({ n: 4 });
     for (let i = 0; i < DRAFT_RULES_MAX; i++) reject(`kural ${i}`);
     const kept = ozgur.settings.view().draft_rules as string[];
     expect(kept).toHaveLength(DRAFT_RULES_MAX);
