@@ -71,7 +71,7 @@ export function peopleList(ctx: Ctx, o: ListOpts): Rows {
       const n = net.get(p.id)!;
       return {
         ...stripKeys(p), ...labelFields(tags.get(p.id), sectors.get(p.id)),
-        last_touch_at: n.last_touch_at, last_channel: n.last_channel, last_direction: n.last_direction,
+        last_touch_at: n.last_touch_at, last_channel: n.last_channel, last_direction: n.last_direction, last_summary: n.last_summary,
         days_since: n.days_since, awaiting: n.awaiting, cooling: n.cooling,
         rhythm: rhythm.get(p.id) ?? new Array<number>(RHYTHM_WEEKS).fill(0),
       };

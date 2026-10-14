@@ -9,6 +9,8 @@ export interface PersonNet {
   last_touch_at: string | null;
   last_channel: string | null;
   last_direction: "giden" | "gelen" | null;
+  /** text of the last touch */
+  last_summary: string | null;
   last_in_at: string | null;
   /** son temastan (yoksa eklenmeden) bu yana gün */
   days_since: number;
@@ -53,6 +55,7 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
     )
     SELECT p.id, p.created_at, p.next_follow_up_at, a.last_at, a.last_in, d.attempts, d.last_out,
       (SELECT channel || '|' || direction FROM touches x WHERE x.person_id = p.id ORDER BY x.happened_at DESC, x.id DESC LIMIT 1) AS last_cd,
+      (SELECT summary FROM touches x WHERE x.person_id = p.id ORDER BY x.happened_at DESC, x.id DESC LIMIT 1) AS last_summary,
       (SELECT channel FROM touches x WHERE x.person_id = p.id AND x.direction = 'giden' AND x.expects_reply = 1 AND x.happened_at = d.last_out ORDER BY x.id DESC LIMIT 1) AS await_channel,
       EXISTS (SELECT 1 FROM person_tags g JOIN tags tg ON tg.id = g.tag_id WHERE g.person_id = p.id AND tg.slug IN (${tags})) AS tagged
     FROM people p LEFT JOIN agg a ON a.person_id = p.id LEFT JOIN pend d ON d.person_id = p.id`);
@@ -70,7 +73,7 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
       : null;
     const connection = !!r.last_in || !!r.tagged;
     out.set(r.id, {
-      last_touch_at: r.last_at ?? null, last_channel: ch, last_direction: dir as PersonNet["last_direction"], last_in_at: r.last_in ?? null,
+      last_touch_at: r.last_at ?? null, last_channel: ch, last_direction: dir as PersonNet["last_direction"], last_summary: r.last_summary ?? null, last_in_at: r.last_in ?? null,
       days_since, awaiting,
       cooling: connection && !awaiting && !r.next_follow_up_at && days_since >= cfg.cooling_days,
     });

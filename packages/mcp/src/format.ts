@@ -87,7 +87,7 @@ const SKIP = new Set(["updated_at", "position", "tag_list", "created_at", "perso
   "tag_ids", "source_id", "source_name", "contact_status", "deleted_at", "slug", "color", "company_count", "open_opps", "touch_count", "to_name", "contact",
   "company_id", "source_url", "source_date", "version", "offered_at", "amount", "accepted_at", "file_id", "opportunity_id",
   "description", "sellable", "sellable_note", "open_ideas", "done_ideas", "own_project_title", "own_project_id", "priority",
-  "sector_name", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "days_since", "awaiting", "cooling", "referral_count", "referral_value", "rhythm", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"]);
+  "sector_name", "sector_path", "sector_id", "last_touch_at", "last_channel", "last_direction", "last_summary", "days_since", "awaiting", "cooling", "referral_count", "referral_value", "rhythm", "expects_reply", "path", "parent_name", "parent_id", "instagram", "linkedin"]);
 
 /** Tek kaydın tam hali + istenen ilişkili kayıtlar */
 export function block(res: { type: string; id: number; row: Row; related: Record<string, any[]>; comments_open?: number }): string {
