@@ -111,7 +111,7 @@ export const QUOTA_NEAR_RATIO = 0.8;
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules",
+  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden",
 ] as const;
 
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */

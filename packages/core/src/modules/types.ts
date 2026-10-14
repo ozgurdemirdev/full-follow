@@ -305,6 +305,8 @@ export interface ModuleRuntime {
   mod: ModAccess;
   emit<N extends EventName>(name: N, payload: EventPayload<N>): string[];
   types: TypeRegistry;
+  /** keys of the installed modules (the `modules_hidden` setting accepts only these) */
+  moduleKeys: readonly string[];
   /** the installed modules' contributions of one kind, in registration order */
   contrib<K extends keyof Contributions>(key: K): NonNullable<Contributions[K]>[];
 }
