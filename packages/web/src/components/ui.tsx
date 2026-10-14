@@ -42,6 +42,8 @@ const AV = {
   list: "size-avatar-list text-base-sm",
   row: "size-avatar-row text-sm",
   tile: "size-avatar-tile text-base-sm",
+  /** overlapping stack on a post tile (border and font come from .posts-stack) */
+  stack: "size-posts-avatar",
   lg: "size-avatar-lg text-md",
   xl: "size-avatar-xl text-lg",
   hero: "size-avatar-hero text-xl",
@@ -50,8 +52,8 @@ const AVATAR_COLORS = 5;
 const hashName = (s: string) => [...s].reduce((h, c) => h + c.charCodeAt(0), 0);
 /** Initials on one of the five avatar colour pairs: picked by record id, by name when there is no id */
 export const avatarPair = (name: string, id?: number) => `avatar-${((id ?? hashName(name)) % AVATAR_COLORS) + 1}`;
-export function Avatar({ name, size = "md", id, className = "" }: { name: string; size?: keyof typeof AV; id?: number; className?: string }) {
-  return <span className={`avatar ${avatarPair(name, id)} ${AV[size]} ${className}`} aria-hidden="true">{initials(name)}</span>;
+export function Avatar({ name, size = "md", id, className = "", title }: { name: string; size?: keyof typeof AV; id?: number; className?: string; title?: string }) {
+  return <span className={`avatar ${avatarPair(name, id)} ${AV[size]} ${className}`} title={title} aria-hidden="true">{initials(name)}</span>;
 }
 
 /** Kademeli giriş animasyonu için sıra numarası */
