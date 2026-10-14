@@ -39,7 +39,6 @@ export function MascotCard() {
           items={VARIANT_IDS.map((id) => VARIANTS[id].name)}
           value={Math.max(0, VARIANT_IDS.indexOf(p.variant))}
           onChange={(i) => mascotPrefs.setVariant(VARIANT_IDS[i])}
-          width="var(--spacing-seg-tab-mobile)"
         />
       </div>
       <div className="flex flex-col gap-3">

@@ -12,6 +12,7 @@ import { EditDelete } from "../components/contact";
 import { FeedComposer, FeedItems, useFeed, type FeedGroup, type FeedKind } from "../components/Feed";
 import { LinksCard } from "../components/LinksCard";
 import { NextStep } from "../components/NextStep";
+import { NumberField } from "../components/NumberField";
 import { Avatar, Chip, Empty, ErrorBox, Filters, PageSkeleton, Tags, Who } from "../components/ui";
 import { daysFrom, fmtDay, fmtDayLong, norm, tl, todayIso } from "../lib/format";
 import {
@@ -303,13 +304,13 @@ function ProjectCard({ p, payments }: { p: Project; payments: Payment[] }) {
 }
 
 function PaymentRow({ p }: { p: Payment }) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const remaining = p.expected_amount - p.paid_amount;
   const pay = async () => {
-    await run("post", `/payments/${p.id}/pay`, { amount: Number(amount || remaining) }, { ok: "Ödeme kaydedildi" });
+    await run("post", `/payments/${p.id}/pay`, { amount: amount ?? remaining }, { ok: "Ödeme kaydedildi" });
     setOpen(false);
-    setAmount("");
+    setAmount(null);
   };
   const tone: Tone = p.status === "odendi" ? "success" : p.status === "gecikmis" ? "warning" : "payment";
   const st = { odendi: "Ödendi", kismi: "Kısmi", bekliyor: "Bekliyor", gecikmis: "Gecikti" }[p.status];
@@ -328,7 +329,7 @@ function PaymentRow({ p }: { p: Payment }) {
       </div>
       {open ? (
         <div className="flex gap-3">
-          <input className="inp inp-num h-control-height-md" type="number" inputMode="numeric" min={1} max={remaining} placeholder={String(remaining)} value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={(e) => e.key === "Enter" && pay()} aria-label="Tutar" autoFocus />
+          <NumberField className="inp inp-num h-control-height-md" min={1} max={remaining} placeholder={remaining.toLocaleString("tr-TR")} value={amount} onChange={setAmount} onKeyDown={(e) => e.key === "Enter" && pay()} ariaLabel="Tutar" autoFocus />
           <button type="button" className="btn btn-pri" onClick={pay}>Kaydet</button>
         </div>
       ) : null}

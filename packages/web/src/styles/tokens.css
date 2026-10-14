@@ -174,11 +174,6 @@
   --spacing-avatar-tile: 40px;
   --spacing-avatar-hero: 56px;
   --spacing-main-basis: 560px;
-  --spacing-seg-tab: 140px;
-  --spacing-seg-tab-wide: 150px;
-  --spacing-seg-tab-mobile: 104px;
-  --spacing-seg-height: 32px;
-  --spacing-drawer-width: 280px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -204,8 +199,6 @@
   --shadow-toast: 0 16px 48px rgba(0,0,0,.5);
   --shadow-overlay: 0 40px 120px rgba(0,0,0,.6);
   --shadow-knob: 0 4px 14px rgba(0,0,0,.45);
-  --shadow-drawer: 24px 0 48px rgba(4,4,5,.55);
-  --shadow-sheet: -24px 0 60px rgba(4,4,5,.6);
   --ease-out: cubic-bezier(.2,.8,.2,1);
   --ease-pop: cubic-bezier(.2,1.4,.4,1);
   --ease-standard: ease;
@@ -428,7 +421,6 @@
   --z-mascot: 45;
   --z-mascot-perch: 55;
   --z-overlay: 48;
-  --z-scrim: 25;
   --bw-default: 1px;
   --bw-check: 1.5px;
   --bw-strong: 2px;
@@ -583,10 +575,6 @@
 
 @utility z-overlay {
   z-index: var(--z-overlay);
-}
-
-@utility z-scrim {
-  z-index: var(--z-scrim);
 }
 
 @utility bw-default {

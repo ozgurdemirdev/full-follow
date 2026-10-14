@@ -2,17 +2,18 @@ import { useState } from "react";
 import { run } from "../api/actions";
 import type { FileRow, Offer, OfferItem } from "../api/types";
 import { todayIso } from "../lib/format";
+import { NumberField } from "./NumberField";
 import { Field } from "./Sheet";
 
 /** Offer form (new version or edit): amount, date, price breakdown, note, and an optional offer file of the opportunity */
 export function OfferForm({ opportunityId, offer, files, onDone }: { opportunityId: number; offer?: Offer; files: FileRow[]; onDone: () => void }) {
-  const [amount, setAmount] = useState(offer ? String(offer.amount) : "");
+  const [amount, setAmount] = useState<number | null>(offer ? offer.amount : null);
   const [date, setDate] = useState(offer?.offered_at ?? todayIso());
   const [note, setNote] = useState(offer?.note ?? "");
-  const [items, setItems] = useState<{ label: string; amount: string }[]>((offer?.items ?? []).map((i) => ({ label: i.label, amount: String(i.amount) })));
+  const [items, setItems] = useState<{ label: string; amount: number | null }[]>((offer?.items ?? []).map((i) => ({ label: i.label, amount: i.amount })));
   const [fileId, setFileId] = useState(offer?.file_id ? String(offer.file_id) : "");
   const [busy, setBusy] = useState(false);
-  const setItem = (i: number, patch: Partial<{ label: string; amount: string }>) => setItems((list) => list.map((x, k) => (k === i ? { ...x, ...patch } : x)));
+  const setItem = (i: number, patch: Partial<{ label: string; amount: number | null }>) => setItems((list) => list.map((x, k) => (k === i ? { ...x, ...patch } : x)));
   const save = async () => {
     const body = {
       amount: Number(amount), offered_at: date, note: note.trim() || null, file_id: fileId ? Number(fileId) : null,
@@ -33,7 +34,7 @@ export function OfferForm({ opportunityId, offer, files, onDone }: { opportunity
     <div className="inset flex flex-col gap-5 p-5">
       <div className="grid grid-cols-1 gap-4 desk:grid-cols-2">
         <Field label="Tutar (₺, KDV hariç)" htmlFor="of-amount">
-          <input id="of-amount" className="inp inp-num" type="number" inputMode="numeric" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+          <NumberField id="of-amount" min={1} value={amount} onChange={setAmount} autoFocus />
         </Field>
         <Field label="Teklif tarihi" htmlFor="of-date">
           <input id="of-date" className="inp" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -44,11 +45,11 @@ export function OfferForm({ opportunityId, offer, files, onDone }: { opportunity
           {items.map((it, i) => (
             <div key={i} className="flex gap-3">
               <input className="inp min-w-0 flex-1" placeholder="Kalem (ör. Tasarım)" aria-label="Kalem adı" value={it.label} onChange={(e) => setItem(i, { label: e.target.value })} />
-              <input className="inp inp-num w-amount-field" type="number" inputMode="numeric" min={0} placeholder="₺" aria-label="Kalem tutarı" value={it.amount} onChange={(e) => setItem(i, { amount: e.target.value })} />
+              <NumberField className="inp inp-num w-amount-field" min={0} placeholder="₺" ariaLabel="Kalem tutarı" value={it.amount} onChange={(amount) => setItem(i, { amount })} />
               <button type="button" className="btn btn-ghost btn-sm" aria-label="Kalemi kaldır" onClick={() => setItems((l) => l.filter((_, k) => k !== i))}>Kaldır</button>
             </div>
           ))}
-          <button type="button" className="btn btn-sec btn-sm self-start" onClick={() => setItems((l) => [...l, { label: "", amount: "" }])}>Kalem ekle</button>
+          <button type="button" className="btn btn-sec btn-sm self-start" onClick={() => setItems((l) => [...l, { label: "", amount: null }])}>Kalem ekle</button>
         </div>
       </Field>
       <Field label="Not" htmlFor="of-note">

@@ -7,7 +7,6 @@ import { timelinePath } from "../app/routes";
 import { openSheet } from "../app/ui";
 import { Chip, Empty, ErrorBox, order, PageSkeleton, Segmented, Who } from "../components/ui";
 import { fmtDay, tl } from "../lib/format";
-import { useIsDesktop } from "../lib/media";
 import { MILESTONE, PROJECT_STAGE, PROJECT_STEPS } from "../lib/labels";
 
 const TABS = [
@@ -20,7 +19,6 @@ const TABS = [
 export default function Projects() {
   const projects = useProjects();
   const threads = useThreads();
-  const desk = useIsDesktop();
   const [tab, setTab] = useState(0);
 
   const counts = TABS.map((t) => projects.rows.filter(t.test).length);
@@ -41,7 +39,7 @@ export default function Projects() {
         !projects.error && <PageSkeleton />
       ) : (
         <>
-          <Segmented label="Proje durumu" items={tabs} value={tab} onChange={setTab} width={desk ? "var(--spacing-seg-tab)" : "var(--spacing-seg-tab-mobile)"} />
+          <Segmented label="Proje durumu" items={tabs} value={tab} onChange={setTab} />
           {shown.length === 0 ? <div className="card"><Empty>Bu durumda proje yok. Kazanılan fırsatlar otomatik proje olur.</Empty></div> : null}
           <div className="grid grid-cols-1 gap-7 desk:grid-cols-2">
             {shown.map((p, i) => (

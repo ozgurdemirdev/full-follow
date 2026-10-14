@@ -9,6 +9,7 @@ import { closeSheet, useUI, type SheetState } from "../app/ui";
 import { PATHS } from "../app/routes";
 import { Combo, type Option } from "../components/Combo";
 import { Icon } from "../components/icons";
+import { NumberField } from "../components/NumberField";
 import { ChipRadio, Field, Sheet } from "../components/Sheet";
 import { addDaysIso, todayIso } from "../lib/format";
 import { dur, ease, riseY } from "../lib/motion";
@@ -172,7 +173,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   const personOptions = usePersonOptions();
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [title, setTitle] = useState("");
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState<number | null>(null);
   const [sourceId, setSourceId] = useState("");
   const [url, setUrl] = useState("");
   const [srcDate, setSrcDate] = useState("");
@@ -181,7 +182,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
     if (!o) return;
     setPerson({ id: o.person_id, text: o.person_name });
     setTitle(o.title);
-    setValue(o.estimated_value ? String(o.estimated_value) : "");
+    setValue(o.estimated_value || null);
     setSourceId(String(o.source_id));
     setUrl(o.source_url ?? "");
     setSrcDate(o.source_date ?? "");
@@ -189,7 +190,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   }, [o]);
   const submit = useSubmit(p, async () => {
     await run("patch", `/opportunities/${p.id}`, {
-      person_id: await ensurePerson(person, { tags: ["aday"] }), title: title.trim(), estimated_value: value ? Number(value) : null, source_id: Number(sourceId),
+      person_id: await ensurePerson(person, { tags: ["aday"] }), title: title.trim(), estimated_value: value, source_id: Number(sourceId),
       source_url: url, source_date: srcDate || null, next_follow_up_at: date || null,
     }, { ok: "Fırsat güncellendi" });
   });
@@ -209,7 +210,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
       <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
         <Field label="Tahmini tutar (₺)" htmlFor="oe-value">
-          <input id="oe-value" className="inp font-mono" type="number" inputMode="numeric" min={0} value={value} onChange={(e) => setValue(e.target.value)} />
+          <NumberField id="oe-value" className="inp font-mono" min={0} value={value} onChange={setValue} />
         </Field>
         <Field label="Sıradaki adım tarihi" htmlFor="oe-date">
           <input id="oe-date" className="inp" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -252,7 +253,7 @@ function OpportunityCreate(p: FormProps) {
   const [sourceId, setSourceId] = useState<string>("");
   const [newSource, setNewSource] = useState("");
   const [referrer, setReferrer] = useState<Ref>(emptyRef);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState<number | null>(null);
   const [date, setDate] = useState(addDaysIso(todayIso(), 1));
   const [stage, setStage] = useState<OppStage>(p.sheet.preset?.stage ?? "bulundu");
   const [step, setStep] = useState("");
@@ -274,7 +275,7 @@ function OpportunityCreate(p: FormProps) {
     const o = await run<Opportunity>("post", "/opportunities", {
       title: title.trim() || company.text.trim() || person.text.trim(),
       person_id, source_id, stage,
-      estimated_value: value ? Number(value) : null,
+      estimated_value: value,
       next_follow_up_at: date || undefined,
       source_url: url.trim() || undefined, source_date: srcDate || undefined,
     }, { silent: true });
@@ -327,7 +328,7 @@ function OpportunityCreate(p: FormProps) {
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
       <div className="grid grid-cols-1 gap-5 desk:grid-cols-2">
         <Field label="Tahmini tutar (₺)" htmlFor="f-value">
-          <input id="f-value" className="inp font-mono" type="number" inputMode="numeric" min={0} value={value} onChange={(e) => setValue(e.target.value)} placeholder="25000" />
+          <NumberField id="f-value" className="inp font-mono" min={0} value={value} onChange={setValue} placeholder="25.000" />
         </Field>
         <Field label="Sıradaki adım tarihi" htmlFor="f-date">
           <input id="f-date" className="inp" type="date" value={date} onChange={(e) => setDate(e.target.value)} />

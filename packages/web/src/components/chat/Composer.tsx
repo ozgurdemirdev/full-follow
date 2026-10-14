@@ -1,13 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type RefObject, type Ref } from "react";
 import type { ChatMeta } from "../../api/chat";
-import { CHAT_UI, T } from "../../lib/chatText";
+import { CHAT_UI, MIC_ERROR, T } from "../../lib/chatText";
 import { acceptAttr, isImage, refuseReason } from "../../lib/chatFiles";
 import { chatPrefs } from "../../lib/chatStore";
 import { useDictation } from "../../lib/useDictation";
 import { Attachment } from "./Attachment";
 import { Icon } from "../icons";
 
-const MIC_ERROR = { denied: T.micDenied, insecure: T.micInsecure, network: T.micNetwork, nomic: T.micNone, browser: T.micBrowser, failed: T.micFailed } as const;
 const micError = (e: keyof typeof MIC_ERROR | null) => (e ? MIC_ERROR[e] : null);
 
 interface Pending {

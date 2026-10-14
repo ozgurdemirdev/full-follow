@@ -9,7 +9,6 @@ import { PATHS, timelinePath } from "../app/routes";
 import { toast } from "../components/toast";
 import { Chip, Empty, ErrorBox, order, PageSkeleton, Segmented, Who } from "../components/ui";
 import { ago } from "../lib/format";
-import { useIsDesktop } from "../lib/media";
 import { CHANNEL, STAGE } from "../lib/labels";
 import { openSheet } from "../app/ui";
 
@@ -21,7 +20,6 @@ const TABS: { label: string; test: (d: Draft) => boolean }[] = [
 
 export default function Drafts() {
   const drafts = useQuery<List<Draft>>(K.drafts);
-  const desk = useIsDesktop();
   const [tab, setTab] = useState(0);
   const rows = drafts.data?.rows ?? [];
   const counts = TABS.map((t) => rows.filter(t.test).length);
@@ -35,8 +33,7 @@ export default function Drafts() {
         !drafts.error && <PageSkeleton />
       ) : (
         <>
-          <Segmented label="Taslak durumu" items={TABS.map((t, i) => `${t.label} (${counts[i]})`)} value={tab} onChange={setTab}
-            width={desk ? "var(--spacing-seg-tab-wide)" : "var(--spacing-seg-tab-mobile)"} />
+          <Segmented label="Taslak durumu" items={TABS.map((t, i) => `${t.label} (${counts[i]})`)} value={tab} onChange={setTab} />
           {shown.length === 0 ? <div className="card"><Empty>Burada şu an taslak yok.</Empty></div> : null}
           {shown.map((d, i) => <DraftCard key={d.id} d={d} i={i} />)}
         </>

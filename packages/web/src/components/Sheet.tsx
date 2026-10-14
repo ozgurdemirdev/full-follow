@@ -34,7 +34,7 @@ export function Sheet({ open, title, onClose, children, footer }: {
     };
   }, [open, onClose]);
 
-  const hidden = desk ? { x: "100%" } : { y: "100%" };
+  const hidden = desk ? { x: "110%" } : { y: "100%" };
   return (
     <MotionScope>
     <AnimatePresence>
@@ -44,7 +44,7 @@ export function Sheet({ open, title, onClose, children, footer }: {
             type="button"
             aria-label="Kapat"
             tabIndex={-1}
-            className="absolute inset-0 border-0 bg-bg-scrim p-0"
+            className="ff-scrim"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -60,17 +60,17 @@ export function Sheet({ open, title, onClose, children, footer }: {
             animate={{ x: 0, y: 0 }}
             exit={hidden}
             transition={{ duration: dur.sheet, ease: ease.out }}
-            className="relative flex max-h-dvh w-full flex-col overflow-y-auto rounded-t-sheet-mobile border-t border-border-sidebar bg-bg-canvas shadow-sheet desk:h-dvh desk:w-sheet-width desk:rounded-none desk:border-l desk:border-t-0"
+            className="ff-sheet"
           >
-            <header className="flex items-center gap-5 border-b border-border-sidebar px-7 py-9 desk:px-10">
-              <h2 className="m-0 flex-grow text-xl font-semibold">{title}</h2>
+            <header className="flex items-center gap-5 border-b border-border-subtle px-11 py-10">
+              <h2 className="m-0 flex-grow text-3xl font-light leading-heading tracking-kpi">{title}</h2>
               <button type="button" className="ibtn" aria-label="Kapat" onClick={onClose}>
                 <Icon name="close" />
               </button>
             </header>
-            <div className="flex flex-grow flex-col gap-8 px-7 py-9 desk:px-10">{children}</div>
+            <div className="flex flex-grow flex-col gap-8 px-11 py-10">{children}</div>
             {footer ? (
-              <footer className="sticky bottom-0 flex justify-end gap-3 border-t border-border-sidebar bg-bg-canvas px-7 py-7 desk:px-10">{footer}</footer>
+              <footer className="sticky bottom-0 flex justify-end gap-3 border-t border-border-subtle bg-surface-1 px-11 py-7">{footer}</footer>
             ) : null}
           </m.section>
         </div>

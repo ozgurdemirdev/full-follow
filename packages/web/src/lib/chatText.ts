@@ -104,6 +104,9 @@ export const T = {
   charCount: (n: number, max: number) => `${n.toLocaleString("tr-TR")} / ${max.toLocaleString("tr-TR")}`,
 } as const;
 
+/** Why dictation failed, by the code useDictation reports */
+export const MIC_ERROR = { denied: T.micDenied, insecure: T.micInsecure, network: T.micNetwork, nomic: T.micNone, browser: T.micBrowser, failed: T.micFailed } as const;
+
 /** Sizes the UI formats; not design tokens */
 export const CHAT_UI = {
   /** how close to the bottom still counts as "at the bottom" (CSS px) */

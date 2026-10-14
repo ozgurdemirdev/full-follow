@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { run } from "../api/actions";
 import { useQuery } from "../api/store";
 import type { Detail, Goal } from "../api/types";
+import { NumberField } from "../components/NumberField";
 import { Field } from "../components/Sheet";
 import { CHANNEL, CHANNELS, GOAL_METRIC, GOAL_PRESETS, WEEKDAY_SHORT } from "../lib/labels";
 import { useSubmit, type FormProps } from "./QuickAdd";
@@ -13,7 +14,7 @@ export function GoalForm(p: FormProps) {
   const editId = p.sheet.preset?.edit;
   const existing = useQuery<Detail<Goal>>(editId ? `/goals/${editId}` : null);
   const [title, setTitle] = useState("");
-  const [target, setTarget] = useState("10");
+  const [target, setTarget] = useState<number | null>(10);
   const [days, setDays] = useState<number[]>(EVERY_DAY);
   // what counts by itself: a channel key, a metric key (GOAL_METRIC) or empty for hand entry
   const [auto, setAuto] = useState("");
@@ -23,7 +24,7 @@ export function GoalForm(p: FormProps) {
   useEffect(() => {
     if (!row) return;
     setTitle(row.title);
-    setTarget(String(row.target));
+    setTarget(row.target);
     setDays(row.days.split(",").map(Number));
     setAuto(row.channel ?? row.metric ?? "");
     setNote(row.note ?? "");
@@ -43,7 +44,7 @@ export function GoalForm(p: FormProps) {
         <input id="g-title" className="inp" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. LinkedIn bağlantı isteği" />
       </Field>
       <Field label="Günlük sayı" htmlFor="g-target">
-        <input id="g-target" className="inp" type="number" min={1} required value={target} onChange={(e) => setTarget(e.target.value)} />
+        <NumberField id="g-target" className="inp" min={1} required value={target} onChange={setTarget} />
       </Field>
       <Field label="Tekrar">
         <div className="flex flex-wrap gap-3" role="group" aria-label="Tekrar günleri">
