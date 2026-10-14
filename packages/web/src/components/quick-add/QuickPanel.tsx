@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useModules } from "../../api/modules";
 import type { SheetKind } from "../../app/ui";
 import { useIsDesktop } from "../../lib/media";
 import { norm } from "../../lib/format";
 import { FORM_ICON, PathIcon } from "../forms/icons";
 import { QUICK_GROUPS, type QuickItem } from "./items";
 import type { QuickHost } from "./store";
-
-const ALL_ITEMS = QUICK_GROUPS.flatMap((g) => g.items);
 
 /** An item matches by its name, its destination, or its letter */
 const matches = (it: QuickItem, q: string) => !q || norm(`${it.name} ${it.dest}`).includes(q) || norm(it.key) === q;
@@ -21,8 +20,10 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
   const [sel, setSel] = useState(0);
   const list = useRef<HTMLDivElement>(null);
   const q = norm(text.trim());
+  const { has } = useModules();
 
-  const groups = useMemo(() => QUICK_GROUPS.map((g) => ({ ...g, items: g.items.filter((it) => matches(it, q)) })).filter((g) => g.items.length), [q]);
+  const installed = useMemo(() => QUICK_GROUPS.map((g) => ({ ...g, items: g.items.filter((it) => has(it.module)) })), [has]);
+  const groups = useMemo(() => installed.map((g) => ({ ...g, items: g.items.filter((it) => matches(it, q)) })).filter((g) => g.items.length), [installed, q]);
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
       onPick(flat[sel].kind);
     } else if (e.key.length === 1 && !text) {
       // the search is empty: a letter is a shortcut, not the start of a word
-      const hit = ALL_ITEMS.find((it) => it.key.toLowerCase() === e.key.toLowerCase());
+      const hit = installed.flatMap((g) => g.items).find((it) => it.key.toLowerCase() === e.key.toLowerCase());
       if (hit) {
         e.preventDefault();
         onPick(hit.kind);

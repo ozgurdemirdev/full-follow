@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import {
   Bin, bool, eventLink as link, FFError, has, page, parse, requireRow, row, rows, schema, stamp, truncate, writeEvent as emit,
-  type Ctx, type ListOpts, type NextTask, type OpenProjectTask, type TaskListRow,
+  type Ctx, type ListOpts, type NextTask, type OpenProjectTask, type ProjectTasks, type TaskListRow, type TaskRecord,
 } from "@fullfollow/core";
 import { parseQuickTask } from "./quickAdd";
 import { taskCreate, taskQuick, taskUpdate } from "./schemas";
@@ -103,6 +103,24 @@ export function tasksService(ctx: Ctx) {
     return page(items, o.limit, o.offset);
   }
 
+  /** Tasks grouped by project (by due date, undated last): the open ones, the done ones too with `done`, of the given projects or of every project that has any */
+  function byProject(o: { project_ids?: number[]; done?: boolean } = {}): ProjectTasks[] {
+    const only = o.project_ids?.length ? JSON.stringify(o.project_ids) : null;
+    const items = rows<TaskRecord>(ctx, `SELECT * FROM tasks WHERE project_id IS NOT NULL AND (? IS NULL OR project_id IN (SELECT value FROM json_each(?)))${o.done ? "" : " AND done_at IS NULL"}
+      ORDER BY project_id, (due_date IS NULL), due_date, id`, only, only);
+    // names come from the projects module (null without it); a task hangs on a project only, so no other record names
+    const names = ctx.mod("projects")?.projects.names([...new Set(items.map((t) => t.project_id as number))]);
+    const groups = new Map<number, ProjectTasks>();
+    for (const t of items) {
+      const id = t.project_id as number;
+      const name = names?.get(id) ?? null;
+      const group = groups.get(id) ?? { project_id: id, project_name: name, tasks: [] };
+      group.tasks.push({ ...t, person_name: null, company_name: null, opportunity_title: null, project_name: name, idea_title: null });
+      groups.set(id, group);
+    }
+    return [...groups.values()];
+  }
+
   /** The open task of a project that is due first (undated ones last) */
   function next(projectId: number): NextTask | null {
     return row<NextTask>(ctx, "SELECT id, title, due_date, assignee, created_by FROM tasks WHERE project_id = ? AND done_at IS NULL ORDER BY (due_date IS NULL), due_date, id LIMIT 1", projectId) ?? null;
@@ -118,5 +136,5 @@ export function tasksService(ctx: Ctx) {
     return out;
   }
 
-  return { create, quick, update, remove, list, next, openOfProjects };
+  return { create, quick, update, remove, list, byProject, next, openOfProjects };
 }

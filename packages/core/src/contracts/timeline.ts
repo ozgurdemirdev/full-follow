@@ -31,6 +31,8 @@ export interface FeedRow {
   type: FeedKind;
   created_by: Actor;
   created_at: string;
+  /** local date of `created_at` as the server counts it, the key of the page's `day_counts` */
+  day: string;
   /** the event's own summary line */
   text: string;
   /** TL, payments only */
@@ -54,14 +56,26 @@ export interface FeedQuery {
   actor?: string;
   /** only events from this date (or time) on */
   since?: string;
-  /** the summary contains this text (case insensitive for ASCII letters) */
+  /** the summary, or the name of the person, opportunity or project the event names, contains this text (case insensitive for ASCII letters) */
   q?: string;
+  /** only the events of one record, `person:12`: the links of the event, the row it points at, and comments on that record */
+  record?: string;
+}
+
+/** Events of one local day, by who wrote them */
+export interface DayCount {
+  ozgur: number;
+  claude: number;
 }
 
 /** A page of the feed, newest first; `next_before` is null on the last page */
 export interface FeedPage {
   rows: FeedRow[];
   next_before: string | null;
+  /** events per actor of every day the rows fall on, whatever the filters (the day headers) */
+  day_counts: Record<string, DayCount>;
+  /** rows matching the filters, only when `record` is asked for (the focus card) */
+  total?: number;
 }
 
 /** The week strip of the timeline screen: Monday to Sunday against the week before, counted in SQL */
@@ -76,6 +90,8 @@ export interface WeekStrip {
   collections_count: number;
   tasks_done: number;
   claude_drafts: number;
+  /** of those, the drafts Özgür approved or sent */
+  claude_drafts_approved: number;
   /** the same counts of the week before, for the "geçen hafta" lines */
   prev: { touches: number; tasks_done: number };
 }

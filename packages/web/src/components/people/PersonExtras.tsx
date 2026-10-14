@@ -1,8 +1,10 @@
 import { Link } from "wouter";
+import { useModules } from "../../api/modules";
 import type { PersonCard } from "../../api/types";
 import { opportunityPath, PATHS, timelinePath } from "../../app/routes";
 import { tl } from "../../lib/format";
 import { IDEA_STAGE, INTEREST, INTEREST_TONE, PLATFORM, PROJECT_STAGE, STAGE, STAGE_TONE } from "../../lib/labels";
+import { useRecordHref } from "../../lib/useRecordHref";
 import { Section } from "../contact";
 import { Chip } from "../ui";
 
@@ -20,6 +22,8 @@ function ReferralValueLine({ v }: { v: NonNullable<PersonCard["referral_value"]>
 /** What the old person card had beyond the board: referral network, deals and projects, marketing links, the free note, the timeline */
 export function PersonExtras({ card }: { card: PersonCard }) {
   const p = card.row;
+  const { has } = useModules();
+  const recordHref = useRecordHref();
   return (
     <>
       <div className="ppl-panel">
@@ -55,7 +59,7 @@ export function PersonExtras({ card }: { card: PersonCard }) {
               </Link>
             ))}
             {card.projects.map((x) => (
-              <Link key={`r${x.id}`} href={timelinePath("project", x.id)} className="flex items-center gap-3 text-text-primary hover:text-text-primary">
+              <Link key={`r${x.id}`} href={recordHref("project", x.id)} className="flex items-center gap-3 text-text-primary hover:text-text-primary">
                 <span className="min-w-0 flex-grow truncate text-base">{x.name}</span>
                 <Chip tone="success">{PROJECT_STAGE[x.stage]}</Chip>
               </Link>
@@ -84,7 +88,7 @@ export function PersonExtras({ card }: { card: PersonCard }) {
       ) : null}
 
       {p.notes ? <p className="ppl-panel m-0 whitespace-pre-line text-base-sm leading-normal text-text-primary">{p.notes}</p> : null}
-      <Link href={timelinePath("person", p.id)} className="text-base-sm">Tüm zaman çizelgesi</Link>
+      {has("timeline") ? <Link href={timelinePath("person", p.id)} className="text-base-sm">Tüm zaman çizelgesi</Link> : null}
     </>
   );
 }

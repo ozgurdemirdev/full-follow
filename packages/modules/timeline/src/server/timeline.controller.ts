@@ -6,7 +6,7 @@ import { RECORD_TIMELINE_HTTP_LIMIT } from "../constants";
 export class TimelineController {
   constructor(@Inject(APP_TOKEN) private app: Core) {}
 
-  /** Genel akış (yeniden eskiye): before = bir önceki sayfanın next_before'u, limit, type (temas,odeme,...), actor, since, q */
+  /** Genel akış (yeniden eskiye): before = bir önceki sayfanın next_before'u, limit, type (temas,odeme,...), actor, since, q (özet ya da kayıt adı), record (person:12) */
   @Get()
   feed(@Query() q: FeedQuery) {
     return this.app.mod("timeline")!.feed(q);

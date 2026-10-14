@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { useBoard } from "../../api/keys";
+import { isMissing } from "../../api/modules";
 import { useQuery } from "../../api/store";
 import type { Opportunity, Report } from "../../api/types";
 import { opportunityPath, PATHS } from "../../app/routes";
@@ -39,6 +40,7 @@ export function FunnelCard() {
       max: Math.max(1, ...BOARD_STAGES.map((s) => count.get(s) ?? 0)),
     };
   }, [board.rows]);
+  if (isMissing(board.error)) return null;
 
   const total = BOARD_STAGES.reduce((s, k) => s + (counts.get(k) ?? 0), 0);
   const value = open.reduce((s, o) => s + (o.estimated_value ?? 0), 0);

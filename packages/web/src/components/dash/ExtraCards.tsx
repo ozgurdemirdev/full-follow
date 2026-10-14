@@ -2,13 +2,15 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { run } from "../../api/actions";
+import { useModules } from "../../api/modules";
 import type { FollowupDue, List, Post, Quota, QuotaState, Today } from "../../api/types";
-import { opportunityPath, PATHS, timelinePath } from "../../app/routes";
+import { opportunityPath, PATHS } from "../../app/routes";
 import { SHOWN } from "../../lib/dashboard";
 import { fmtDay, followNote, initials } from "../../lib/format";
 import { CHANNEL_DOT, PLATFORM, PLATFORM_DOT, STAGE } from "../../lib/labels";
 import { refreshNote } from "../../lib/marketing";
 import { channelName } from "../../lib/network";
+import { useRecordHref } from "../../lib/useRecordHref";
 import { BoardIcon } from "../boardIcons";
 import { Card, Meter } from "../ui";
 
@@ -134,22 +136,24 @@ interface FollowItem {
 
 /** People and opportunities whose follow-up date has come (the header counts them as "takip") */
 export function FollowUpsCard({ data }: { data: Today }) {
+  const { has } = useModules();
+  const recordHref = useRecordHref();
   const items = useMemo(() => {
     const seen = new Set<number>();
     const out: FollowItem[] = [];
-    for (const o of data.follow_ups.opportunities.rows) {
+    for (const o of data.follow_ups?.opportunities?.rows ?? []) {
       seen.add(o.person_id);
       out.push({ key: `o${o.id}`, name: o.person_name, org: o.title, note: followNote(o.next_follow_up_at), stage: STAGE[o.stage], href: opportunityPath(o.id) });
     }
-    for (const p of data.follow_ups.people.rows) {
+    for (const p of data.follow_ups?.people?.rows ?? []) {
       if (seen.has(p.id)) continue;
-      out.push({ key: `p${p.id}`, name: p.name, org: p.company_name, note: followNote(p.next_follow_up_at), href: timelinePath("person", p.id) });
+      out.push({ key: `p${p.id}`, name: p.name, org: p.company_name, note: followNote(p.next_follow_up_at), href: recordHref("person", p.id) });
     }
     return out;
-  }, [data]);
+  }, [data, recordHref]);
 
   return (
-    <Card title="Takibi gelenler" className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={PATHS.people}>Hepsi</MoreLink>}>
+    <Card title="Takibi gelenler" className="dash-gap-4 dash-head-pad rise" actions={has("people") ? <MoreLink href={PATHS.people}>Hepsi</MoreLink> : undefined}>
       {items.length === 0 ? <p className="m-0 text-base-sm text-text-muted">Bugün takibi gelen kimse yok.</p> : null}
       {items.slice(0, SHOWN.followups).map((it) => (
         <Link key={it.key} href={it.href} className="dash-row flex items-center gap-5 border-t border-border-subtle py-4 text-text-primary hover:text-text-primary">

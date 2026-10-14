@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import type { CompanyCard } from "../../api/types";
-import { opportunityPath, PATHS, timelinePath } from "../../app/routes";
+import { opportunityPath, PATHS } from "../../app/routes";
 import type { CompanyView } from "../../lib/companies";
 import { fmtDayLong, lira } from "../../lib/format";
 import { CONTACT_STATUS, OPEN_STAGES, PROJECT_STAGE, STAGE } from "../../lib/labels";
 import { profileUrl, webUrl } from "../../lib/network";
+import { useRecordHref } from "../../lib/useRecordHref";
 import { Tags } from "../ui";
 import { MoneyBar } from "./MoneyBar";
 
@@ -44,6 +45,7 @@ function facts(v: CompanyView, card?: CompanyCard): Fact[] {
 /** Left column of the company overlay: money block, facts, projects and open opportunities */
 export function Aside({ v, max, card }: { v: CompanyView; max: number; card?: CompanyCard }) {
   const { money } = v;
+  const recordHref = useRecordHref();
   const opps = (card?.opportunities ?? []).filter((o) => OPEN_STAGES.includes(o.stage));
   const drafts = card?.drafts.length ?? 0;
   return (
@@ -66,7 +68,7 @@ export function Aside({ v, max, card }: { v: CompanyView; max: number; card?: Co
       <div className="co-panel is-work">
         <span className="co-panel-title">Projeler ve fırsatlar</span>
         {v.projects.map((p) => (
-          <Link key={`p${p.id}`} href={timelinePath("project", p.id)} className="co-work" data-k="won">
+          <Link key={`p${p.id}`} href={recordHref("project", p.id)} className="co-work" data-k="won">
             <i />
             <span className="flex min-w-0 flex-grow flex-col"><b>{p.name}</b><small>{PROJECT_STAGE[p.stage]}</small></span>
             <em>{lira(p.price)}</em>

@@ -5,32 +5,55 @@ export type TlType = "temas" | "odeme" | "gorev" | "asama" | "taslak" | "yorum";
 
 /** The record an event belongs to (the chip of a row, the target of the focus card) */
 export interface TlRec {
-  /** "kind:id", the focus and filter key */
-  key: string;
   /** record type as recordPath knows it: person, company, opportunity, project, own_project, idea, post, template */
   kind: string;
   id: number;
   name: string;
 }
 
-/** One row of the global feed, built in the browser from the lists the screens already load.
- *  Gap: becomes a row of a core `GET /timeline` feed (same fields) when the timeline module lands. */
-export interface TlItem {
-  key: string;
-  /** epoch ms the feed sorts by */
-  at: number;
-  /** false when the source only knows the day (a payment date): the row shows no clock */
-  timed: boolean;
+/** One row of `GET /api/timeline` (the timeline module's feed) */
+export interface TlRow {
+  /** the event id */
+  id: number;
   type: TlType;
-  by: Actor;
+  created_by: Actor;
+  /** ISO instant, UTC */
+  created_at: string;
+  /** the server's local date of created_at: the key of day_counts */
+  day: string;
   text: string;
   /** TL, payments only */
   amount?: number;
   rec: TlRec | null;
-  /** every record the event touches (person, opportunity, project...): focusing any of them shows the row */
-  refs: string[];
-  /** drafts only: Özgür approved or sent it */
-  approved?: boolean;
+}
+
+export interface TlDayCount {
+  ozgur: number;
+  claude: number;
+}
+
+/** A page of the feed, newest first; `next_before` is the cursor of the next page, null on the last one */
+export interface TlPage {
+  rows: TlRow[];
+  next_before: string | null;
+  /** every event of each day the rows fall on, whatever the filters (the day headers) */
+  day_counts: Record<string, TlDayCount>;
+  /** rows matching the filters, only when the request names a `record` */
+  total?: number;
+}
+
+/** `GET /api/timeline/week` */
+export interface TlWeekData {
+  start: string;
+  me: number;
+  claude: number;
+  touches: number;
+  collections_amount: number;
+  collections_count: number;
+  tasks_done: number;
+  claude_drafts: number;
+  claude_drafts_approved: number;
+  prev: { touches: number; tasks_done: number };
 }
 
 export interface TlWeekTile {

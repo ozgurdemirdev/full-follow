@@ -12,7 +12,7 @@ export function FocusCard({ rec, summary, onClear }: { rec: TlRec; summary: stri
   // a chip far down the feed focuses a record: bring the card into view
   useEffect(() => {
     root.current?.scrollIntoView({ block: "nearest" });
-  }, [rec.key]);
+  }, [rec.kind, rec.id]);
   return (
     <section ref={root} aria-label={rec.name} className="tlx-focus" data-rec={recTone(rec.kind)}>
       <span className="tlx-focus-icon"><PathIcon d={kind.icon} className="size-icon-xl" stroke={1.7} /></span>

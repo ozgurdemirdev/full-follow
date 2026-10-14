@@ -58,9 +58,28 @@ describe("timeline as a module", () => {
     expect(app.timeline.feed({ since: "2026-10-12" }).rows).toHaveLength(2);
     expect(app.timeline.feed({ q: "%50" }).rows.map((r) => r.type)).toEqual(["odeme"]);
     expect(app.timeline.feed({ q: "kerem" }).rows).toHaveLength(1);
+    // the search also finds the record an event names, not only its summary
+    expect(app.timeline.feed({ q: "lovelace" }).rows.map((r) => r.type)).toEqual(["odeme"]);
     expect(app.timeline.feed({ type: "", actor: "" }).rows).toHaveLength(3);
     expect(() => app.timeline.feed({ type: "bad" })).toThrow(/geçersiz tür/);
     expect(() => app.timeline.feed({ actor: "x" })).toThrow(FFError);
+  });
+
+  it("a record's feed keeps its own events and those of the rows it owns; day headers count the whole day, whatever the filters", () => {
+    const h = openDb(":memory:");
+    const app = appFor(h, "ozgur", clock, [feedKinds]);
+    const ada = person(h, "Ada");
+    const bob = person(h, "Bob");
+    const at = "2026-10-13T12:00:00Z";
+    event(h, { type: "touch.created", at, data: { touch_id: touch(h, { person_id: ada }) } });
+    event(h, { type: "payment.paid", at, person_id: ada, data: { amount: 10 } });
+    event(h, { type: "task.done", at, by: "claude", person_id: bob });
+    const page = app.timeline.feed({ record: `person:${ada}`, actor: "ozgur", type: "odeme" });
+    expect(page.rows.map((r) => r.type)).toEqual(["odeme"]);
+    expect(page.total).toBe(1);
+    expect(app.timeline.feed({ record: `person:${ada}` })).toMatchObject({ total: 2, day_counts: { [page.rows[0].day]: { ozgur: 2, claude: 1 } } });
+    expect(app.timeline.feed().total).toBeUndefined();
+    expect(() => app.timeline.feed({ record: "ada" })).toThrow(FFError);
   });
 
   it("the week strip counts Monday to Sunday against the week before, in SQL", () => {
@@ -85,7 +104,7 @@ describe("timeline as a module", () => {
     event(h, { type: "touch.created", at: noon("19"), by: "ozgur" });
     const week = app.timeline.week();
     expect(week).toEqual({
-      start: "2026-10-12", me: 6, claude: 3, touches: 2, collections_amount: 4000, collections_count: 2, tasks_done: 2, claude_drafts: 2,
+      start: "2026-10-12", me: 6, claude: 3, touches: 2, collections_amount: 4000, collections_count: 2, tasks_done: 2, claude_drafts: 2, claude_drafts_approved: 0,
       prev: { touches: 2, tasks_done: 1 },
     });
     // any date of a week asks for that week
@@ -107,7 +126,7 @@ describe("timeline as a module", () => {
 
   it("without the modules that write events the feed is empty and the week strip is zero; a core without the module has no timeline", () => {
     const app = appFor(openDb(":memory:"), "ozgur", clock);
-    expect(app.timeline.feed()).toEqual({ rows: [], next_before: null });
+    expect(app.timeline.feed()).toEqual({ rows: [], next_before: null, day_counts: {} });
     expect(app.timeline.week()).toMatchObject({ start: "2026-10-12", me: 0, claude: 0, touches: 0, collections_amount: 0, tasks_done: 0 });
     expect(createCore(openDb(":memory:"), "ozgur", clock).mod("timeline")).toBeUndefined();
   });

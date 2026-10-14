@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { run } from "../../api/actions";
 import { useQuery } from "../../api/store";
 import type { Detail, FileRow } from "../../api/types";
+import { useModules } from "../../api/modules";
 import { PATHS, timelinePath } from "../../app/routes";
 import { lira } from "../../lib/format";
 import { ASSIGNEE, MILESTONE } from "../../lib/labels";
@@ -16,6 +17,7 @@ import { ProjectAdmin } from "./ProjectAdmin";
 export function ProjectDetail({ v }: { v: ProjectView }) {
   const { p } = v;
   const files = useQuery<Detail<unknown, { files?: FileRow[] }>>(`/projects/${p.id}?with=files`);
+  const { has } = useModules();
   const toggle = (id: number, done: boolean) => void run("patch", `/tasks/${id}`, { done: !done }, { silent: true }).catch(() => {});
   return (
     <div className="prj-detail" id={`prj-detail-${p.id}`}>
@@ -63,7 +65,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
             {v.ask.label}
           </button>
           <Link href={PATHS.comments} className="prj-link">Yorumlar · {v.comments}</Link>
-          <Link href={timelinePath("project", p.id)} className="prj-link">Zaman çizelgesi</Link>
+          {has("timeline") ? <Link href={timelinePath("project", p.id)} className="prj-link">Zaman çizelgesi</Link> : null}
         </div>
       </div>
 

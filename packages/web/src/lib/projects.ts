@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { run } from "../api/actions";
 import { useProjects, useThreads } from "../api/keys";
 import { useQuery } from "../api/store";
-import type { List, Payment, ProjectRow, ProjectTask, Thread, WaitKey } from "../api/types";
+import type { List, Payment, ProjectRow, ProjectTask, ProjectTaskGroup, Thread, WaitKey } from "../api/types";
 import { ACTIVE_PROJECT_STAGES, lateDays, remaining } from "./dashboard";
 import { daysFrom, lira, todayIso } from "./format";
 import { MILESTONE, PROJECT_STEPS, type ProjectStage } from "./labels";
@@ -167,21 +167,22 @@ export function buildViews(projects: ProjectRow[], payments: Payment[], tasks: P
   });
 }
 
-/** Every task of every project, open and done (the screen shows both); cap of the list endpoint applies */
-const TASKS_KEY = "/tasks?all=true&limit=1000";
+/** The tasks of every project, open and done (the screen shows both), grouped by project: the calendar module's endpoint, no list cap */
+const TASKS_KEY = "/tasks/by-project?done=true";
 const PAYMENTS_KEY = "/payments?limit=1000";
 
 /** The whole screen's data in one place: four shared lists, joined once per change */
 export function useProjectViews() {
   const projects = useProjects();
   const payments = useQuery<List<Payment>>(PAYMENTS_KEY);
-  const tasks = useQuery<List<ProjectTask>>(TASKS_KEY);
+  const tasks = useQuery<{ rows: ProjectTaskGroup[] }>(TASKS_KEY);
   const threads = useThreads();
   const views = useMemo(
-    () => buildViews(projects.rows as ProjectRow[], payments.data?.rows ?? [], tasks.data?.rows ?? [], threads.rows, todayIso()),
+    () => buildViews(projects.rows as ProjectRow[], payments.data?.rows ?? [], tasks.data?.rows.flatMap((g) => g.tasks) ?? [], threads.rows, todayIso()),
     [projects.rows, payments.data, tasks.data, threads.rows],
   );
-  const ready = !!projects.data && !!payments.data && (!!tasks.data || !!tasks.error);
+  // the tasks are optional (the calendar module may be gone): the screen waits for their answer, not for their data
+  const ready = !!projects.data && !!payments.data && !tasks.loading;
   const error = projects.error ?? payments.error;
   return { views, ready, error, reload: () => Promise.all([projects.reload(), payments.reload(), tasks.reload()]).then(() => undefined) };
 }

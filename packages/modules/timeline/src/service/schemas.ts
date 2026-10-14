@@ -12,7 +12,14 @@ export const feedQuery = z.strictObject({
   actor: z.preprocess(given, z.enum(ACTORS).optional()),
   since: z.preprocess(given, z.string().trim().refine(isIsoDateTime, "since: YYYY-MM-DD ya da ISO zaman olmalı").optional()),
   q: z.preprocess(given, z.string().trim().max(FEED_QUERY_MAX).optional()),
+  record: z.preprocess(given, z.string().trim().regex(/^[a-z_]+:\d+$/, "record: tür:id olmalı (person:12)").optional()),
 });
+
+/** `person:12` to its kind and id (the schema has checked the shape) */
+export function recordOf(record: string) {
+  const [kind, id] = record.split(":");
+  return { kind, id: Number(id) };
+}
 
 /** `temas,odeme` to the feed kinds it names; an unknown kind is a validation error */
 export function kindsOf(list: string | undefined) {

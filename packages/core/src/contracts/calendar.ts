@@ -36,6 +36,13 @@ export interface TaskListRow extends TaskRecord {
   idea_title: string | null;
 }
 
+/** The tasks of one project; `project_name` is null when the projects module is not installed */
+export interface ProjectTasks {
+  project_id: number;
+  project_name: string | null;
+  tasks: TaskListRow[];
+}
+
 /** The next open task of a project (project boards show it) */
 export interface NextTask {
   id: number;
@@ -144,6 +151,8 @@ export interface CalendarApi {
     update(id: number, input: unknown): Saved<TaskRecord>;
     remove(id: number): Removed;
     list(opts: ListOpts): { rows: TaskListRow[]; total: number };
+    /** the tasks of projects grouped by project, by due date, the open ones (the done ones too with `done`): of the given projects, or of every project that has any */
+    byProject(opts?: { project_ids?: number[]; done?: boolean }): ProjectTasks[];
     /** the open task of a project that is due first */
     next(projectId: number): NextTask | null;
     /** the open tasks of these projects (one statement), each project's list in due order, undated last */
