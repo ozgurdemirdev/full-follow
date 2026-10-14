@@ -24,6 +24,8 @@
 
 @import "./templates.css";
 
+@import "./timeline.css";
+
 
 @layer base {
   html {

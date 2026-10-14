@@ -57,7 +57,7 @@ export const PATHS: Record<PageKey, string> = {
 
 export const settingsPath = (slug: string) => `${PATHS.settings}/${slug}`;
 export const opportunityPath = (id: number) => `${PATHS.opportunity}/${id}`;
-export const timelinePath = (type: "person" | "opportunity" | "project", id: number) => `/zaman/${type}/${id}`;
+export const timelinePath = (type: string, id: number) => `/zaman/${type}/${id}`;
 
 /** Page of a record (people, companies, ideas, own projects, posts and timeline already take /:id; the rest follow the same pattern).
  *  null: no page of its own (task and goal open their form on the dashboard, payment lives inside its project). */
