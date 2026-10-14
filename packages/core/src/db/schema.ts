@@ -254,6 +254,8 @@ export const tasks = sqliteTable("tasks", {
   company_id: integer("company_id").references(() => companies.id),
   opportunity_id: integer("opportunity_id").references(() => opportunities.id),
   project_id: integer("project_id").references(() => projects.id),
+  /** the idea a pitch task is about (the pitch draft request) */
+  idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
 });
 
 /** Kayıtlara yorum: kök yorum + cevaplar (parent_id = kök). Özgür ve Claude yazar. */
@@ -266,6 +268,10 @@ export const comments = sqliteTable("comments", {
   parent_id: integer("parent_id").references((): AnySQLiteColumn => comments.id),
   /** Sadece kök yorumda dolar: konu kapatıldı */
   resolved_at: text("resolved_at"),
+  /** JSON list of short answers Claude offers with a question (quick answer chips) */
+  options: text("options"),
+  /** When Özgür opened the thread; set on Claude's comments only, null while unread */
+  read_at: text("read_at"),
 }, (t) => [index("comments_target").on(t.target_type, t.target_id), index("comments_parent").on(t.parent_id)]);
 
 /** Günlük iş planı: tekrarlı hedef (örn. günde 20 cold mail). channel doluysa o kanaldaki giden mesajlar kendiliğinden sayılır. */
@@ -351,6 +357,8 @@ export const posts = sqliteTable("posts", {
   /** gün; boşsa hatırlatma yok */
   refresh_days: integer("refresh_days"),
   refreshed_at: text("refreshed_at"),
+  /** metin | gorsel | video | karusel: the posts module validates it */
+  format: text("format"),
   idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
   notes: text("notes"),
 }, (t) => [index("posts_posted").on(t.posted_at)]);
@@ -380,6 +388,8 @@ export const ideas = sqliteTable("ideas", {
   priority: text("priority", { enum: IDEA_PRIORITIES }).notNull().default("orta"),
   position: integer("position").notNull().default(0),
   done_at: text("done_at"),
+  /** how the idea earns money, in a sentence */
+  money_note: text("money_note"),
 }, (t) => [index("ideas_own_project").on(t.own_project_id, t.priority, t.position)]);
 
 export const idea_sectors = sqliteTable("idea_sectors", {
@@ -401,6 +411,8 @@ export const own_projects = sqliteTable("own_projects", {
   /** who could buy it and how */
   sellable_note: text("sellable_note"),
   notes: text("notes"),
+  /** fikir | dogrulama | demo | urun, null = not placed yet: the own-projects module validates it */
+  stage: text("stage"),
 }, (t) => [index("own_projects_status").on(t.status)]);
 
 export const own_project_sectors = sqliteTable("own_project_sectors", {
