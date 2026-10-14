@@ -41,10 +41,10 @@ const hakan = person("Ege Emlak", "Hakan Demirtaş", "Kurucu");
 const zeynep = person("Nova Spor Salonu", "Zeynep Kaya", "İşletme sahibi");
 const deniz = person("Pera Butik", "Deniz Arslan", "E-ticaret sorumlusu");
 
-const opp = (p, title, value, src, days) => at(days).opportunities.create({ title, person_id: p.id, source_id: src, estimated_value: value }).row;
+const opp = (p, title, value, src, days) => at(days).mod("pipeline").opportunities.create({ title, person_id: p.id, source_id: src, estimated_value: value }).row;
 const touch = (days, p, o, channel, direction, summary, kind = "mesaj") =>
-  at(days).touches.create({ person_id: p.id, opportunity_id: o?.id ?? null, channel, direction, kind, summary });
-const move = (days, o, stage, reason) => at(days).opportunities.move(o.id, { stage, reason });
+  at(days).mod("network").touches.create({ person_id: p.id, opportunity_id: o?.id ?? null, channel, direction, kind, summary });
+const move = (days, o, stage, reason) => at(days).mod("pipeline").opportunities.move(o.id, { stage, reason });
 
 const clinic = opp(elif, "Randevu ve hasta takip uygulaması", 85000, referral, -24);
 touch(-24, elif, clinic, "telefon", "giden", "Ali Bey'in tanıtmasıyla arandı, ihtiyacı dinlendi", "arama");
@@ -102,12 +102,12 @@ const payments = (oppId) => handle.sqlite.prepare(
 const projectOf = (oppId) => handle.sqlite.prepare("SELECT id FROM projects WHERE opportunity_id = ?").get(oppId).id;
 const pay = (days, oppId, index) => {
   const p = payments(oppId)[index];
-  at(days).payments.pay(p.id, p.expected_amount, shift(days));
+  at(days).mod("projects").payments.pay(p.id, p.expected_amount, shift(days));
 };
 pay(-58, shop.id, 0);
-at(-45).projects.move(projectOf(shop.id), { stage: "tasarim_onayi" });
+at(-45).mod("projects").projects.move(projectOf(shop.id), { stage: "tasarim_onayi" });
 pay(-40, shop.id, 1);
-at(-20).projects.move(projectOf(shop.id), { stage: "test_surumu" });
+at(-20).mod("projects").projects.move(projectOf(shop.id), { stage: "test_surumu" });
 pay(-19, dealer.id, 0);
 
 const calendar = core.mod("calendar");
@@ -121,14 +121,14 @@ calendar?.goals.create({ title: "Yeni temas", target: 5, days: [1, 2, 3, 4, 5] }
 
 // The assistant prepares follow-ups; a person approves before anything is sent
 const claude = at(0, "claude");
-claude.drafts.create({
+claude.mod("drafts").create({
   person_id: burak.id, opportunity_id: menu.id, channel: "whatsapp",
   body: "Burak Bey merhaba, menü ekranlarına bakabildiniz mi? Fiyat ve teslim süresini içeren kısa bir teklif hazırladım, uygunsanız bu hafta göstereyim.",
 });
 claude.save("comment", { target_type: "opportunity", target_id: fleet.id, body: "Canan Hanım'a ilk mesajdan bu yana 8 gün geçti, takip mesajı önerebilirim." });
 
 // A finished panel chat: the assistant reads the same records through MCP tools
-const chat = (actor) => at(0, actor).chat;
+const chat = (actor) => at(0, actor).mod("chat");
 const session = chat("ozgur").createSession();
 chat("ozgur").updateSession(session.id, { title: "Bu haftanın takipleri" });
 const exchange = (n, question, tools, answer) => {
