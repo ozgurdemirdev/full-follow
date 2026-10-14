@@ -11,6 +11,8 @@ export interface DraftRecord {
   opportunity_id: number | null;
   project_id: number | null;
   channel: Channel;
+  /** email subject line; null for the other channels */
+  subject: string | null;
   body: string;
   status: DraftStatus;
   reject_note: string | null;
@@ -27,6 +29,7 @@ export interface DraftRecord {
 /** A draft as listed: the row plus the recipient's name */
 export interface DraftRow extends DraftRecord {
   person_name: string | null;
+  /** the company of the recipient: the company the draft is written to, or the company of its person (null without the companies module) */
   company_name: string | null;
   to_name: string | null;
 }

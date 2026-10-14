@@ -207,6 +207,8 @@ export const drafts = sqliteTable("drafts", {
   opportunity_id: integer("opportunity_id").references(() => opportunities.id),
   project_id: integer("project_id").references((): AnySQLiteColumn => projects.id),
   channel: text("channel", { enum: CHANNELS }).notNull(),
+  /** email subject line (empty for the other channels) */
+  subject: text("subject"),
   body: text("body").notNull(),
   status: text("status", { enum: DRAFT_STATUSES }).notNull().default("bekliyor"),
   reject_note: text("reject_note"),

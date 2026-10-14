@@ -51,17 +51,17 @@ export const mcp: McpDef = {
   marketing: [{ at: 500, render: (m) => (m.followups.length ? [`Takip zamanı gelen: ${m.followups.length}`] : []) }],
   tools: [{
     name: "draft",
-    description: "Özgür'ün onayına taslak mesaj bırak (why: neden şimdi, tek cümle). Muhatap person, company ya da contact. body yoksa template (id/ad) muhataba uygulanır ({ad} {firma} {sektor}); uygun şablon: find template {channel,sector}. Onaylama ve gönderme sadece Özgür'de.",
+    description: "Özgür'ün onayına taslak mesaj bırak (why: neden şimdi, tek cümle). Muhatap person, company ya da contact. subject: e-posta konusu. body yoksa template (id/ad) muhataba uygulanır ({ad} {firma} {sektor}); uygun şablon: find template {channel,sector}. Onaylama ve gönderme sadece Özgür'de.",
     input: {
       person: idOrName.optional(), company: idOrName.optional(), contact: z.string().optional(), channel: z.string(), body: z.string().optional(),
-      template: idOrName.optional(), why: z.string().optional(), opp: idOrName.optional(), project: idOrName.optional(),
+      template: idOrName.optional(), subject: z.string().optional(), why: z.string().optional(), opp: idOrName.optional(), project: idOrName.optional(),
     },
     run: (ctx, a, f) => {
       const r = ctx.mod("drafts")!.create({
         person_id: a.person !== undefined ? resolveRef(ctx, "person", a.person) : undefined,
         company_id: a.company !== undefined ? resolveRef(ctx, "company", a.company) : undefined,
         contact: a.contact,
-        channel: a.channel, body: a.body, reason: a.why,
+        channel: a.channel, subject: a.subject, body: a.body, reason: a.why,
         template_id: a.template !== undefined ? resolveRef(ctx, "template", a.template) : undefined,
         opportunity_id: a.opp !== undefined ? resolveRef(ctx, "opportunity", a.opp) : undefined,
         project_id: a.project !== undefined ? resolveRef(ctx, "project", a.project) : undefined,
