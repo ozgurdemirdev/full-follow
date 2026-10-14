@@ -41,6 +41,10 @@ export default defineModule({
   // the touches of a person or company point at their sent drafts (touches.draft_id), so the drafts are taken after the network module took the touches
   hookOrder: { "record.trashed": 10 },
   contribute: {
+    // the events the timeline module shows in its global feed: a draft written (the draft row carries the company the event does not)
+    timelineKinds: {
+      "draft.created": { kind: "taslak", row: { key: "draft_id", table: "drafts" } },
+    },
     trashTypes: [{ type: "draft", label: "taslak" }],
     commentTargets: {
       draft: {

@@ -13,6 +13,7 @@ import mod9 from "@fullfollow/mod-projects";
 import mod10 from "@fullfollow/mod-referrals";
 import mod11 from "@fullfollow/mod-reports";
 import mod12 from "@fullfollow/mod-templates";
+import mod13 from "@fullfollow/mod-timeline";
 
-export const modules: ModuleDef[] = [mod0, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8, mod9, mod10, mod11, mod12];
+export const modules: ModuleDef[] = [mod0, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8, mod9, mod10, mod11, mod12, mod13];
 export const modulesOff: string[] = [];

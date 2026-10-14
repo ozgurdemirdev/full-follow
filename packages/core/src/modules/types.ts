@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import type { Actor } from "../constants";
 import type { Ctx, ListOpts } from "../context";
-import type { ModuleApis, ModuleEvents } from "../contracts";
+import type { FeedKind, ModuleApis, ModuleEvents } from "../contracts";
 
 /** Result shape shared by every write: the row, human readable effects, and a trash handle on delete. */
 export interface SaveResult {
@@ -116,6 +116,15 @@ export interface JobDef {
   run(app: JobApp): void | Promise<void>;
 }
 
+/** How one event type shows in the timeline module's global feed */
+export interface TimelineEventDef {
+  kind: FeedKind;
+  /** key of the event's data that holds the amount in TL (payments) */
+  amount?: string;
+  /** the row the event's data points at (`data.<key>` is its id), for the links the event itself does not carry: a table with person_id, company_id, opportunity_id and project_id columns */
+  row?: { key: string; table: string };
+}
+
 /** What a module adds to the shared views. Each function returns only its own part; the host merges them. */
 export interface Contributions {
   /** sections of the Today view, by key; `limit` is the row cap per section */
@@ -140,6 +149,8 @@ export interface Contributions {
   settingsView?: (ctx: Ctx, settings: Record<string, unknown>) => Record<string, unknown>;
   /** extra count columns of the sources list: column name to the count per source id (the opportunities of a source) */
   sourceCounts?: (ctx: Ctx) => Record<string, Map<number, number>>;
+  /** event type to how it shows in the timeline's global feed (events of a type nobody lists stay out of the feed) */
+  timelineKinds?: Record<string, TimelineEventDef>;
   /** scheduled work for the server host */
   jobs?: JobDef[];
 }

@@ -1,0 +1,1 @@
+CREATE INDEX `events_feed` ON `events` (`created_at`,`id`);

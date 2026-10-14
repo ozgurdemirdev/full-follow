@@ -41,6 +41,7 @@ export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLink
 export { marketingSettings, networkSettings, readSetting, readTemplate, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
+export { normalizeType, resolveId } from "./services/records";
 export { companyKeys, contactKey, personKeys } from "./keys";
 export * as schema from "./db/schema";
 export * as zodKit from "./schemas/kit";
@@ -175,11 +176,6 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     const t = typeOf(type);
     return queries.get(t, resolveId(ctx, t, id), withRel, relLimit);
   };
-  const timeline = (type: string, id: string | number, limit = 20) => {
-    const t = typeOf(type);
-    if (t !== "person" && t !== "opportunity" && t !== "project") throw new FFError("validation", "timeline için person, opportunity ya da project");
-    return queries.timeline(t, resolveId(ctx, t, id), limit);
-  };
 
   return {
     actor,
@@ -206,7 +202,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     // okuma
     queries, today: todayFn,
     // genel giriş (MCP araçları)
-    find, get, save, saveMany, move, remove, restore, timeline,
+    find, get, save, saveMany, move, remove, restore,
     resolveRef: (type: string, ref: string | number) => resolveRef(ctx, type, ref),
   };
 }

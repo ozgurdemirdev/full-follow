@@ -98,11 +98,6 @@ export function block(res: { type: string; id: number; row: Row; related: Record
   return out.join("\n");
 }
 
-export function timelineText(events: Row[]): string {
-  if (!events.length) return "olay yok";
-  return events.map((e) => `${d(e.created_at)} ${who(e.created_by)} · ${e.summary}`).join("\n");
-}
-
 const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =>
   res.total ? `${title} (${res.total}):\n` + res.rows.map((r) => "  " + line(type, r)).join("\n") + (res.total > res.rows.length ? `\n  … +${res.total - res.rows.length}` : "") : "";
 

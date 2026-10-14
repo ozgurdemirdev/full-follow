@@ -28,6 +28,10 @@ export default defineModule({
     },
   },
   contribute: {
+    // the events the timeline module shows in its global feed: a task done
+    timelineKinds: {
+      "task.done": { kind: "gorev" },
+    },
     trashTypes: [{ type: "task", label: "görev" }, { type: "goal", label: "hedef" }],
     commentTargets: {
       task: {

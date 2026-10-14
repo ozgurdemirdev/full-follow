@@ -424,7 +424,7 @@ export const events = sqliteTable("events", {
   data: text("data"),
   created_by: text("created_by", { enum: ACTORS }).notNull(),
   created_at: text("created_at").notNull(),
-}, (t) => [index("events_person").on(t.person_id), index("events_opp").on(t.opportunity_id), index("events_project").on(t.project_id)]);
+}, (t) => [index("events_person").on(t.person_id), index("events_opp").on(t.opportunity_id), index("events_project").on(t.project_id), index("events_feed").on(t.created_at, t.id)]);
 
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),

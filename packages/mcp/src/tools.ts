@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { FFError, type Core } from "@fullfollow/core";
 import { z } from "zod";
 import { describer } from "./describe";
-import { block, bulkText, kindName, list, mcpFormat, ok, timelineText, todayText, useMcpDefs } from "./format";
+import { block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs } from "./format";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
@@ -119,11 +119,6 @@ export function registerTools(server: McpServer, core: Core) {
     const r = core.move(type, id, stage, reason);
     return ok(kindName(t), r.row?.id, r.effects, `→ ${stage}`);
   }));
-
-  server.registerTool("timeline", {
-    description: "Kişi/fırsat/proje olay geçmişi (son N, eskiden yeniye).",
-    inputSchema: { type: z.string(), id: idOrName, limit: z.number().optional() },
-  }, ({ type, id, limit }) => run(() => timelineText(core.timeline(type, id, limit ?? 20))));
 
   server.registerTool("delete", {
     description: "Kayıt sil (offer dahil): çöp kutusuna gider (kurallar geçerli, olay yazılır); etiket/sektör/kaynak kayıtlarda kalır, yeni kayda seçilemez. restore:true silineni geri yükler (id ya da çöp kutusundaki ad; liste: find trash).",

@@ -1,11 +1,10 @@
-import { Body, Controller, Get, Inject, Param, Put, Query } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Put, Query } from "@nestjs/common";
 import {
   CHANNELS, DIRECTIONS,
   SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
   CONTACT_STATUSES, TAG_COLORS,
 } from "@fullfollow/core";
 import { CORE, type Core } from "../core.provider";
-import { intId } from "../http";
 
 @Controller("api")
 export class MiscController {
@@ -38,12 +37,6 @@ export class MiscController {
   @Get("today")
   today(@Query("limit") limit?: string) {
     return this.core.today(limit ? Number(limit) : 50);
-  }
-
-  /** Kişi / fırsat / proje zaman çizelgesi (eskiden yeniye) */
-  @Get("timeline/:type/:id")
-  timeline(@Param("type") type: string, @Param("id") id: string, @Query("limit") limit?: string) {
-    return this.core.timeline(type, intId(id), limit ? Number(limit) : 50);
   }
 
   @Get("settings")

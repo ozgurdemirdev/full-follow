@@ -20,6 +20,12 @@ export default defineModule({
     "opportunity.won": (ctx, won: OpportunityWon) => openProjectForWonOpportunity(ctx.db, ctx, won),
   },
   contribute: {
+    // the events the timeline module shows in its global feed: a payment received (its amount is in TL in the event data) and a project opened or moved
+    timelineKinds: {
+      "payment.paid": { kind: "odeme", amount: "amount" },
+      "project.created": { kind: "asama" },
+      "project.stage": { kind: "asama" },
+    },
     trashTypes: [{ type: "project", label: "proje" }, { type: "payment", label: "ödeme" }],
     commentTargets: {
       project: {

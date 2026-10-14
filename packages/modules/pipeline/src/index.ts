@@ -36,6 +36,11 @@ export default defineModule({
     },
   },
   contribute: {
+    // the events the timeline module shows in its global feed: an opportunity opened or moved
+    timelineKinds: {
+      "opp.created": { kind: "asama" },
+      "opp.stage": { kind: "asama" },
+    },
     trashTypes: [{ type: "opportunity", label: "fırsat" }, { type: "offer", label: "teklif" }, { type: "opportunity_person", label: "ekip üyesi" }],
     // the opportunities whose follow-up is due (the people's part of `follow_ups` comes from the people module)
     today: (ctx, { limit }) => ({ follow_ups: { opportunities: ctx.mod("pipeline")!.opportunities.list({ limit, filter: { due: true } }) } }),

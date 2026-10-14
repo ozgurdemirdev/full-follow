@@ -36,6 +36,7 @@ import type { ReferralsApi } from "./referrals";
 import type { RecordRestored, RecordTrashed } from "./records";
 import type { ReportsApi } from "./reports";
 import type { TemplatesApi } from "./templates";
+import type { TimelineApi } from "./timeline";
 
 export type * from "./calendar";
 export type * from "./companies";
@@ -51,6 +52,7 @@ export type * from "./records";
 export type * from "./referrals";
 export type * from "./reports";
 export type * from "./templates";
+export type * from "./timeline";
 
 /** Module key to the API that module exposes through `ctx.mod(key)`. */
 export interface ModuleApis {
@@ -67,6 +69,7 @@ export interface ModuleApis {
   referrals: ReferralsApi;
   reports: ReportsApi;
   templates: TemplatesApi;
+  timeline: TimelineApi;
 }
 
 /** Event name to its payload type. Names not listed here are accepted with an `unknown` payload. */

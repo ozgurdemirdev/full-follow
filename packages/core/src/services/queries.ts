@@ -156,13 +156,5 @@ function queriesService(ctx: Ctx) {
     return { type, id, row: rowData, related, comments_open };
   }
 
-  /** Kişi / fırsat / proje olayları: son N olay, eskiden yeniye */
-  function timeline(type: "person" | "opportunity" | "project", id: number, limit = 20) {
-    const col = { person: "person_id", opportunity: "opportunity_id", project: "project_id" }[type];
-    if (!col) throw new FFError("validation", "timeline için type: person, opportunity ya da project");
-    const list = rows(ctx, `SELECT * FROM events WHERE ${col} = ? ORDER BY id DESC LIMIT ?`, id, limit).reverse();
-    return list.map((e) => ({ ...e, data: e.data ? JSON.parse(e.data) : null }));
-  }
-
-  return { find, get, timeline, sectors, tags, notes, comments, sources };
+  return { find, get, sectors, tags, notes, comments, sources };
 }
