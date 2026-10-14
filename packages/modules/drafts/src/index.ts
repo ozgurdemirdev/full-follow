@@ -4,6 +4,7 @@ import { chatCard } from "./chat";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
 import { sendWarnings } from "./service/quota";
+import { draftRules } from "./service/rules";
 
 /** The follow-up sequence runs once after start and then every hour; FF_AUTO_FOLLOWUP=0 switches it off */
 const FOLLOWUP_FIRST_RUN_MS = 3000;
@@ -62,12 +63,17 @@ export default defineModule({
     today: (ctx, { limit }) => {
       const drafts = ctx.mod("drafts")!;
       const due = drafts.followups.due();
+      const rules = draftRules(ctx);
       return {
         drafts: drafts.list({ limit, filter: { status: "bekliyor" } }),
         followups: { rows: due.slice(0, limit), total: due.length },
         quota: drafts.quota(),
+        // what Özgür taught through his reject notes, for the next drafts (left out while there is none)
+        ...(rules.length ? { draft_rules: rules } : {}),
       };
     },
+    // `GET /api/settings` carries the learned rules; `PUT /api/settings { draft_rules: [...] }` keeps the ones left in the list
+    settingsView: (ctx) => ({ draft_rules: draftRules(ctx) }),
     relations: {
       // `get(person | company | opportunity | project | template, id, with: ["drafts"])`; a company's drafts are those written to it or to its people
       drafts: {

@@ -45,6 +45,7 @@ export const mcp: McpDef = {
     // the daily quota sits at the head of the text, after the week line
     { at: 1, head: true, render: (t, f) => quotaText(t.quota, f) },
     { at: 300, render: (t, f) => (t.auto?.length ? `Otomatik takip taslağı hazırlandı (${t.auto.length}): ${t.auto.join(", ")} · kişiye göre düzelt: save("draft",{body},id)` : "") },
+    { at: 399, render: (t) => (t.draft_rules?.length ? `Taslak kuralları (Özgür'ün ret notlarından, bunlara uy):\n${t.draft_rules.map((r: string) => `- ${r}`).join("\n")}` : "") },
     { at: 400, render: (t, f) => f.section("Onay bekleyen taslak", "draft", t.drafts) },
     { at: 500, render: (t, f) => f.section("Takip zamanı (taslak yok)", "followup", t.followups ?? { rows: [], total: 0 }) },
   ],

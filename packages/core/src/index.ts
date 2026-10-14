@@ -37,7 +37,7 @@ export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sect
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, isColdEmail, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
 export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLinks } from "./services/sectors";
-export { marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingValues } from "./services/settings";
+export { marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingsService, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
 export { cleanName, HttpFailure, refuse, sniff, type Detected, type UploadType } from "./services/uploads";

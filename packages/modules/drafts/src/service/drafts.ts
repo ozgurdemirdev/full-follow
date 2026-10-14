@@ -4,6 +4,7 @@ import {
   assertOzgur, Bin, eventLink as link, FFError, parse, renderTemplate, requireRow, resolveSubject, sameSide, schema, stamp, truncate, writeEvent as emit,
   type Ctx, type DraftRecord, type TemplateRecord,
 } from "@fullfollow/core";
+import { learnRule } from "./rules";
 import { draftCreate, draftUpdate } from "./schemas";
 
 const { drafts } = schema;
@@ -77,7 +78,10 @@ export function draftsService(ctx: Ctx) {
   function reject(id: number, note: unknown) {
     assertOzgur(ctx, "Taslak reddi");
     const n = parse(z.string().trim().min(1, "ret nedeni gerekli"), note);
-    setStatus(id, ["bekliyor", "onaylandi"], "reddedildi", "draft.rejected", `Taslak reddedildi: ${truncate(n, 60)}`, { reject_note: n });
+    ctx.db.transaction(() => {
+      setStatus(id, ["bekliyor", "onaylandi"], "reddedildi", "draft.rejected", `Taslak reddedildi: ${truncate(n, 60)}`, { reject_note: n });
+      learnRule(ctx, n);
+    });
     return { row: requireRow<DraftRecord>(ctx, "drafts", id), effects: [] as string[] };
   }
 
