@@ -44,6 +44,7 @@
   --leading-display: 1.1;
   --leading-heading: 1.15;
   --leading-snug: 1.45;
+  --leading-drafts-text: 1.65;
   --tracking-title: -0.02em;
   --tracking-kpi: -0.03em;
   --tracking-subtitle: -0.01em;
@@ -211,6 +212,15 @@
   --spacing-spark-lg-h-0: 6px;
   --spacing-spark-lg-h-1: 22px;
   --spacing-control-height-2xs: 30px;
+  --spacing-drafts-peek-height: 120px;
+  --spacing-drafts-dot-wide: 22px;
+  --spacing-drafts-chip-height: 26px;
+  --spacing-drafts-cta-circle: 32px;
+  --spacing-drafts-hist-time: 50px;
+  --spacing-drafts-empty-pad: 56px;
+  --spacing-drafts-input-height: 42px;
+  --spacing-drafts-channel-icon: 13px;
+  --spacing-drafts-rule-dot-offset: 7px;
   --container-content: 1240px;
   --container-content-narrow: 920px;
   --breakpoint-desk: 861px;
@@ -243,9 +253,11 @@
   --shadow-overlay: 0 40px 120px rgba(0,0,0,.6);
   --shadow-knob: 0 4px 14px rgba(0,0,0,.45);
   --shadow-row-hover: inset 0 0 0 999px rgba(255,255,255,.025);
+  --shadow-drafts-card: 0 30px 80px rgba(0,0,0,.45);
   --ease-out: cubic-bezier(.2,.8,.2,1);
   --ease-pop: cubic-bezier(.2,1.4,.4,1);
   --ease-standard: ease;
+  --ease-leave: cubic-bezier(.4,0,.2,1);
 }
 
 @theme inline {
@@ -384,6 +396,9 @@
   --color-listening-fg: var(--palette-coral-200);
   --color-listening-border: var(--palette-rec-800);
   --color-danger-soft: var(--palette-coral-200);
+  --color-drafts-reject-bg: var(--palette-wine-950);
+  --color-drafts-reject-border: var(--palette-wine-900);
+  --color-drafts-rejected-bg: var(--palette-rec-950);
   --color-kind-meet: var(--palette-purple-400);
   --color-kind-follow: var(--palette-blue-400);
   --color-kind-pay: var(--palette-gold-400);
@@ -445,6 +460,8 @@
   --palette-gold-400: #E8B44C;
   --palette-green-400: #4CC97A;
   --palette-lime-850: #2E3A1A;
+  --palette-wine-950: #1F1416;
+  --palette-wine-900: #3A2226;
   --dur-press: 120ms;
   --dur-hover: 180ms;
   --dur-fade: 200ms;
@@ -475,6 +492,11 @@
   --dur-mic: 800ms;
   --dur-mic-step: 150ms;
   --dur-icon-pop: 250ms;
+  --dur-drafts-leave: 400ms;
+  --dur-drafts-leave-fade: 350ms;
+  --dur-drafts-enter: 450ms;
+  --dur-drafts-dot: 300ms;
+  --dur-drafts-fade: 350ms;
   --stagger: 50ms;
   --rise-distance: 14px;
   --press-scale: 0.97;
@@ -617,6 +639,26 @@
 
 @utility dur-icon-pop {
   transition-duration: var(--dur-icon-pop);
+}
+
+@utility dur-drafts-leave {
+  transition-duration: var(--dur-drafts-leave);
+}
+
+@utility dur-drafts-leave-fade {
+  transition-duration: var(--dur-drafts-leave-fade);
+}
+
+@utility dur-drafts-enter {
+  transition-duration: var(--dur-drafts-enter);
+}
+
+@utility dur-drafts-dot {
+  transition-duration: var(--dur-drafts-dot);
+}
+
+@utility dur-drafts-fade {
+  transition-duration: var(--dur-drafts-fade);
 }
 
 @utility z-sidebar {

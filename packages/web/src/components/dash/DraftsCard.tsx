@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { run } from "../../api/actions";
 import { usePeople } from "../../api/keys";
 import type { Draft, List } from "../../api/types";
 import { PATHS } from "../../app/routes";
@@ -8,34 +6,14 @@ import { CHANNEL } from "../../lib/labels";
 import { SHOWN } from "../../lib/dashboard";
 import { initials } from "../../lib/format";
 import { BoardIcon } from "../boardIcons";
+import { useDraftEdit } from "../drafts/useDraftEdit";
 import { Card } from "../ui";
 import { useExpand } from "../ExpandOverlay";
 import { DashOverlay, type ExRow } from "./DashOverlay";
 
 /** One draft waiting for approval: approve and send, or edit the text in place */
 function DraftItem({ d, company }: { d: Draft; company: string | null | undefined }) {
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(d.body);
-  const [busy, setBusy] = useState(false);
-
-  const act = async (fn: () => Promise<unknown>) => {
-    setBusy(true);
-    try {
-      await fn();
-    } catch {
-      /* the notice is shown by run() */
-    } finally {
-      setBusy(false);
-    }
-  };
-  const send = () => act(async () => {
-    if (editing && text !== d.body) await run("patch", `/drafts/${d.id}`, { body: text }, { silent: true });
-    await run("post", `/drafts/${d.id}/send`, undefined, { ok: "Temas olarak kaydedildi" });
-  });
-  const save = () => act(async () => {
-    await run("patch", `/drafts/${d.id}`, { body: text }, { ok: "Taslak güncellendi" });
-    setEditing(false);
-  });
+  const { editing, setEditing, text, setText, busy, save, send } = useDraftEdit(d, "Temas olarak kaydedildi");
 
   return (
     <article className="flex flex-col gap-5 rounded-inner-lg border border-border-subtle bg-surface-2 p-8">
@@ -53,11 +31,11 @@ function DraftItem({ d, company }: { d: Draft; company: string | null | undefine
       )}
       {d.reason ? <p className="m-0 text-sm text-text-secondary"><span className="text-claude-soft">Neden: </span>{d.reason}</p> : null}
       <div className="mt-auto flex flex-wrap gap-3">
-        <button type="button" className="dash-btn is-primary" disabled={busy} onClick={send}>
+        <button type="button" className="dash-btn is-primary" disabled={busy} onClick={() => void send()}>
           <BoardIcon name="check" className="size-icon-chip" stroke={2} />
           Onayla, gönderdim
         </button>
-        <button type="button" className="dash-btn" disabled={busy} onClick={editing ? save : () => setEditing(true)}>{editing ? "Kaydet" : "Düzenle"}</button>
+        <button type="button" className="dash-btn" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? "Kaydet" : "Düzenle"}</button>
       </div>
     </article>
   );
