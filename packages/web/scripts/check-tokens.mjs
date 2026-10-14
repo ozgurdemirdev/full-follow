@@ -1,10 +1,14 @@
 // Kaynakta sabit (hardcoded) tasarım değeri var mı? Renk kodu, rgb/hsl, px ölçüsü ve
 // Tailwind'in sayısal keyfi değerleri (w-[123px] gibi) yasak. Sadece tokens.json/tokens.css muaf.
-import { readdirSync, readFileSync, statSync } from "node:fs";
+// Taranan yerler: packages/web/src ve her modülün web klasörü (packages/modules/*/web).
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
+const here = dirname(fileURLToPath(import.meta.url));
+const root = resolve(here, "..", "..");
+const modulesDir = join(root, "modules");
+const roots = [join(root, "web", "src"), ...(existsSync(modulesDir) ? readdirSync(modulesDir).map((m) => join(modulesDir, m, "web")).filter(existsSync) : [])];
 const skip = new Set(["tokens.json", "tokens.css"]);
 const rules = [
   [/#[0-9a-fA-F]{3,8}\b/, "renk kodu"],
@@ -34,7 +38,7 @@ function check(file) {
     }
   });
 }
-walk(root);
+roots.forEach(walk);
 if (errors.length) {
   console.error(`Sabit tasarım değeri bulundu (token kullan):\n${errors.join("\n")}`);
   process.exit(1);

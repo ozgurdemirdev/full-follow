@@ -1,5 +1,5 @@
 import type { Thread } from "../api/types";
-import { recordPath } from "../app/routes";
+import { linkTo } from "../app/modules/links";
 import { TARGET } from "./labels";
 
 /** Where a thread stands, from Özgür's side (the states of the Comments board) */
@@ -40,7 +40,7 @@ const KIND: Record<string, { label: string; dot: string }> = {
 export const kindOf = (type: string) => KIND[type] ?? { label: TARGET[type] ?? type, dot: "bg-entity-neutral" };
 
 /** Page of the record a thread is about, null when it has none */
-export const targetHref = (t: Pick<Thread, "target_type" | "target_id">) => recordPath(t.target_type, t.target_id);
+export const targetHref = (t: Pick<Thread, "target_type" | "target_id">) => linkTo(t.target_type, t.target_id);
 
 /** What the old filters sent in `?f=` (the dashboard links with `mine`) and the tab each belongs to */
 const FILTER_TAB: Record<string, CTab> = { open: "open", mine: "you", claude: "claude", all: "open" };

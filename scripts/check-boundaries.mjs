@@ -3,7 +3,9 @@
 //  - packages/modules/*: imports only @fullfollow/core, its own package and its own files
 //  - app:                only src/modules.generated.ts (and tests) import module packages
 //  - server:             only src/modules.generated.ts imports module packages, and only their "/server" part
-//  - web (outside src/modules), mcp: never import a module package by name or path
+//  - mcp: never imports a module package by name or path
+//  - web (packages/web): only src/modules.generated.ts imports a module, and only its web/index (the manifest)
+//  - module web/ folders: import React and npm packages, @kit/* and their own files; never another module's web folder, @fullfollow/*, server or node code
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -92,14 +94,38 @@ for (const file of walk(serverPackage)) {
   }
 }
 
-// mcp and web (outside its src/modules): modules reach them only through @fullfollow/app or the web module glob
-const webModules = join(packages, "web", "src", "modules");
-for (const host of [join(packages, "mcp"), join(packages, "web")]) {
-  for (const file of walk(host)) {
-    if (under(file, webModules)) continue;
+// mcp: modules reach it only through @fullfollow/app
+for (const file of walk(join(packages, "mcp"))) {
+  for (const { spec, line } of imports(file)) {
+    if (isModuleName(spec)) report(file, line, `import a module only through @fullfollow/app, not "${spec}"`);
+    else if (spec.startsWith(".") && under(resolve(dirname(file), spec), modulesDir)) report(file, line, `import a module only through @fullfollow/app, not by path ("${spec}")`);
+  }
+}
+
+// web host: the generated list is the one place that loads a module's web manifest (web/index), nothing else of a module
+const webPackage = join(packages, "web");
+const webGenerated = join(webPackage, "src", "modules.generated.ts");
+for (const file of walk(webPackage)) {
+  for (const { spec, line } of imports(file)) {
+    if (isModuleName(spec)) report(file, line, `the web loads modules only through src/modules.generated.ts, not "${spec}"`);
+    else if (spec.startsWith(".") && under(resolve(dirname(file), spec), modulesDir)) {
+      const target = relative(modulesDir, resolve(dirname(file), spec)).split(sep).join("/");
+      if (file !== webGenerated || !/^[^/]+\/web\/index$/.test(target)) report(file, line, `the web loads a module only as web/index in src/modules.generated.ts, not by path ("${spec}")`);
+    }
+  }
+}
+
+// module web folders: the kit (@kit/*), npm packages and their own files only
+const NODE_BUILTIN = /^(?:node:|(?:fs|path|os|child_process|crypto|http|https|net|stream|url|util|zlib|events|buffer|worker_threads)(?:\/|$)|@nestjs\/|better-sqlite3$|drizzle-orm)/;
+for (const [name, dir] of moduleNames) {
+  const webDir = join(dir, "web");
+  for (const file of walk(webDir)) {
     for (const { spec, line } of imports(file)) {
-      if (isModuleName(spec)) report(file, line, `import a module only through @fullfollow/app or the web module glob, not "${spec}"`);
-      else if (spec.startsWith(".") && under(resolve(dirname(file), spec), modulesDir)) report(file, line, `import a module only through @fullfollow/app or the web module glob, not by path ("${spec}")`);
+      if (spec.startsWith("@fullfollow/")) report(file, line, `web code of ${name} must not import "${spec}" (use @kit/*)`);
+      else if (NODE_BUILTIN.test(spec)) report(file, line, `web code of ${name} must not import server or node code ("${spec}")`);
+      else if (spec.startsWith(".") && !under(resolve(dirname(file), spec), webDir) && resolve(dirname(file), spec) !== webDir) {
+        report(file, line, `web code of ${name} may import only @kit/* and its own web folder, not "${spec}" (another module's web part is never imported)`);
+      }
     }
   }
 }

@@ -1,9 +1,9 @@
 import { Link } from "wouter";
-import { useQuery } from "../../api/store";
-import type { Plan, Report } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { lira } from "../../lib/format";
-import { Meter } from "../ui";
+import { useQuery } from "@kit/api/store";
+import type { Plan, Report, Today } from "@kit/api/types";
+import { CALENDAR_PATH } from "../paths";
+import { lira } from "@kit/lib/format";
+import { Meter } from "@kit/components/ui";
 
 interface Item {
   key: string;
@@ -42,11 +42,18 @@ export function GoalMeters({ plan, sent, target }: { plan: Plan; sent: number; t
     items.push({ key: "month", name: "Aylık ciro", value: lira(month.collected), of: lira(month.floor), pct: percent(month.collected, month.floor) });
   }
   if (target > 0) items.push({ key: "week", name: "Haftalık temas", value: String(sent), of: String(target), pct: percent(sent, target) });
-  if (goal) items.push({ key: "goal", name: goal.title, value: String(goal.done), of: String(goal.target), pct: percent(goal.done, goal.target), href: PATHS.calendar });
+  if (goal) items.push({ key: "goal", name: goal.title, value: String(goal.done), of: String(goal.target), pct: percent(goal.done, goal.target), href: CALENDAR_PATH });
   if (!items.length) return null;
   return (
     <section aria-label="Hedefler" className="dash-goals rise">
       {items.map((it) => <GoalMeter key={it.key} it={it} />)}
     </section>
   );
+}
+
+/** The dashboard's goal strip (slot "dashboard.strip"): drawn when the Today payload carries the plan, the week and the network settings */
+export function GoalStrip({ today }: { today: Today }) {
+  const { plan, week, network } = today;
+  if (!plan || !week || !network) return null;
+  return <GoalMeters plan={plan} sent={week.sent} target={network.settings.weekly_target} />;
 }

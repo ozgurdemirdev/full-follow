@@ -1,66 +1,55 @@
-// Which feature modules this server has (`GET /api/modules`), read once before the app draws, and the one place that answers
-// "is this module here": the shell, the dashboard and the data layer all ask it. Core features (dashboard, comments, settings) belong to no module.
+// Which feature modules this server has (`GET /api/modules`) and which of them Özgür hid (setting `modules_hidden`), both read once before the app draws.
+// Two different questions: `has(key)` is "is the module installed" (a read for a module that is not there is never sent, data guards use it),
+// `visible(key)` is "installed and not hidden" (everything that is only on screen: routes, nav, cards, forms, links, slots, search).
+// Core features (dashboard, comments, settings) belong to no module.
 import { useMemo, useSyncExternalStore } from "react";
 import { api } from "./client";
 
 export type ModuleKey =
-  | "calendar" | "chat" | "companies" | "drafts" | "ideas" | "network" | "own-projects" | "people" | "pipeline"
+  | "calendar" | "chat" | "companies" | "drafts" | "ideas" | "mascot" | "network" | "own-projects" | "people" | "pipeline"
   | "posts" | "projects" | "referrals" | "reports" | "templates" | "timeline";
 
-/**
- * The module behind each endpoint, longest prefix first (`/report/sources` is the pipeline's, `/report/referrals` the referrals',
- * the rest of `/report` the reports'). An endpoint that is not listed belongs to core.
- */
-const ENDPOINT_MODULE: [string, ModuleKey][] = [
-  ["/report/sources", "pipeline"],
-  ["/report/referrals", "referrals"],
-  ["/own-projects", "own-projects"],
-  ["/opportunity-people", "pipeline"],
-  ["/opportunities", "pipeline"],
-  ["/offers", "pipeline"],
-  ["/people", "people"],
-  ["/companies", "companies"],
-  ["/touches", "network"],
-  ["/network", "network"],
-  ["/stats", "network"],
-  ["/tasks", "calendar"],
-  ["/goals", "calendar"],
-  ["/plan", "calendar"],
-  ["/calendar", "calendar"],
-  ["/projects", "projects"],
-  ["/payments", "projects"],
-  ["/drafts", "drafts"],
-  ["/followups", "drafts"],
-  ["/posts", "posts"],
-  ["/ideas", "ideas"],
-  ["/templates", "templates"],
-  ["/timeline", "timeline"],
-  ["/chat", "chat"],
-  ["/report", "reports"],
-  ["/review", "reports"],
-];
+/** API prefix to the module that owns it, longest prefix first. The registry hands over the generated list as a function (read on first use, so the import cycle with the manifests never matters) */
+let ownerSource: () => readonly [string, string][] = () => [];
+let owners: [string, string][] | null = null;
+export const setEndpointOwners = (source: () => readonly [string, string][]) => {
+  ownerSource = source;
+  owners = null;
+};
 
-/** Keys the server has; null until read, or when it cannot be (an older server): then every module counts as installed */
-let installed: ReadonlySet<string> | null = null;
+interface State {
+  /** Keys the server has; null until read, or when it cannot be (an older server): then every module counts as installed */
+  installed: ReadonlySet<string> | null;
+  hidden: ReadonlySet<string>;
+}
+let state: State = { installed: null, hidden: new Set() };
 const listeners = new Set<() => void>();
-
-/** Reads `GET /api/modules`; never fails (a server without the endpoint keeps everything on) */
-export async function loadModules() {
-  try {
-    installed = new Set((await api.get<{ key: string }[]>("/modules")).map((m) => m.key));
-  } catch {
-    installed = null;
-  }
+const publish = (patch: Partial<State>) => {
+  state = { ...state, ...patch };
   listeners.forEach((fn) => fn());
+};
+
+/** Reads `GET /api/modules` and the hidden list of `GET /api/settings`; never fails (a server without the endpoint keeps everything on) */
+export async function loadModules() {
+  const [keys, hidden] = await Promise.all([
+    api.get<{ key: string }[]>("/modules").then((l) => new Set(l.map((m) => m.key)), () => null),
+    api.get<{ modules_hidden?: string[] }>("/settings").then((s) => s.modules_hidden ?? [], () => [] as string[]),
+  ]);
+  publish({ installed: keys, hidden: new Set(hidden) });
 }
 
-const moduleOn = (key: ModuleKey | null | undefined) => !key || !installed || installed.has(key);
+/** The hidden list as the settings answer has it (the Modüller switches call this, optimistically, and again to roll back) */
+export const setHiddenModules = (keys: readonly string[]) => publish({ hidden: new Set(keys) });
+
+const installedIn = (s: State, key: string | null | undefined) => !key || !s.installed || s.installed.has(key);
+const visibleIn = (s: State, key: string | null | undefined) => installedIn(s, key) && !(key && s.hidden.has(key));
 
 /** Whether the server has the endpoint behind a data key (`/people?limit=5`): a read for one that is gone is never sent */
 export function endpointOn(path: string) {
   const [, tail = ""] = path.match(/^(\/[^?]*)/) ?? [];
-  const hit = ENDPOINT_MODULE.find(([prefix]) => tail === prefix || tail.startsWith(`${prefix}/`));
-  return moduleOn(hit?.[1]);
+  owners ??= [...ownerSource()].sort((a, b) => b[0].length - a[0].length);
+  const hit = owners.find(([prefix]) => tail === prefix || tail.startsWith(`${prefix}/`));
+  return installedIn(state, hit?.[1]);
 }
 
 const subscribe = (fn: () => void) => {
@@ -68,11 +57,17 @@ const subscribe = (fn: () => void) => {
   return () => void listeners.delete(fn);
 };
 
-/** `has(key)`: the module is installed (no key: always) */
+/** The module is installed and not hidden (no key: always): the same test as `useModules().visible`, for code that runs outside React */
+export const moduleVisible = (key: string | null | undefined) => visibleIn(state, key);
+
+/** `has(key)`: installed (no key: always). `visible(key)`: installed and not hidden. Both change identity when either list changes */
 export function useModules() {
-  const keys = useSyncExternalStore(subscribe, () => installed);
-  const has = useMemo(() => (key: ModuleKey | null | undefined) => !key || !keys || keys.has(key), [keys]);
-  return { has };
+  const snapshot = useSyncExternalStore(subscribe, () => state);
+  return useMemo(() => ({
+    has: (key: string | null | undefined) => installedIn(snapshot, key),
+    visible: (key: string | null | undefined) => visibleIn(snapshot, key),
+    hidden: snapshot.hidden,
+  }), [snapshot]);
 }
 
 /** A read the server answered with "no such endpoint": the module behind it is switched off */

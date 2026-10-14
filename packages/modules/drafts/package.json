@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow drafts module: drafts for approval, the follow-up sequence, daily send limits and warnings",
-  "fullfollow": { "module": "drafts" },
+  "fullfollow": { "module": "drafts", "endpoints": ["/drafts", "/followups"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { useLocation } from "wouter";
-import { PATHS, recordPath } from "../app/routes";
-import { openSheet, type SheetKind } from "../app/ui";
+import { currentRegistry } from "../app/modules/registry";
+import { PATHS } from "../app/routes";
+import { openSheet } from "../app/ui";
 import { CHAT_UI } from "./chatText";
 
 const ms = (v: string) => parseFloat(v);
@@ -24,21 +25,20 @@ export function flashRecord(type: string, id: number) {
   look();
 }
 
-/** Open a record in the panel: its page with a flash, or the dashboard with its edit form for tasks and goals */
+/** Open a record in the panel: its page with a flash, or (a type with no page of its own) the dashboard with its edit form */
 export function useOpenRecord() {
   const [, navigate] = useLocation();
   return useCallback((type: string, id: number) => {
-    if (type === "task" || type === "goal") {
+    const registry = currentRegistry();
+    const path = registry.link(type, id);
+    if (!path) {
+      const preset = registry.quickByKind.get(type)?.form.editPreset?.(id);
+      if (!preset) return;
       navigate(PATHS.today);
-      openSheet(type as SheetKind, { edit: id });
+      openSheet(type, preset);
       return;
     }
-    const path = recordPath(type, id);
-    if (!path) return;
     navigate(path);
     flashRecord(type, id);
   }, [navigate]);
 }
-
-/** Desktop layout (the `desk:` breakpoint from the tokens) */
-export const isDesk = () => window.matchMedia(`(min-width: ${getComputedStyle(document.documentElement).getPropertyValue("--breakpoint-desk")})`).matches;

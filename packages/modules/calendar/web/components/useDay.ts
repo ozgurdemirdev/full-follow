@@ -1,7 +1,8 @@
-import { useQuery } from "../../api/store";
-import type { CalendarDay, Plan } from "../../api/types";
-import { itemsOf, type CalItem } from "../../lib/calendar";
-import { todayIso } from "../../lib/format";
+import { useQuery } from "@kit/api/store";
+import type { Plan } from "@kit/api/types";
+import type { CalendarDay } from "../types";
+import { itemsOf, type CalItem } from "../calendar";
+import { todayIso } from "@kit/lib/format";
 
 /** The feed the page already loaded: its days are reused instead of asking for the same day again */
 export interface Feed {

@@ -68,3 +68,13 @@ export const chatLive = {
   },
 };
 export const useChatLive = () => useSyncExternalStore(chatLive.subscribe, chatLive.get);
+
+/** Something other than the chat's own button opens the chat (the mascot, while it is drawn): the button steps aside. Whatever fills that role reports here and clears it when it goes away */
+let openerPresent = false;
+const openerSubs = new Set<() => void>();
+export const setChatOpener = (present: boolean) => {
+  if (present === openerPresent) return;
+  openerPresent = present;
+  openerSubs.forEach((fn) => fn());
+};
+export const useChatOpener = () => useSyncExternalStore((fn) => (openerSubs.add(fn), () => void openerSubs.delete(fn)), () => openerPresent);

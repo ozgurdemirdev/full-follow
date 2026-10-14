@@ -1,9 +1,10 @@
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { brotliCompressSync, constants as zc, gzipSync } from "node:zlib";
 import { defineConfig, type Plugin } from "vite";
 
@@ -26,6 +27,8 @@ const precompress = (): Plugin => {
     apply: "build",
     configResolved: (c) => void (outDir = c.build.outDir),
     closeBundle() {
+      // closeBundle also runs after a failed build, with nothing written: stay quiet so the build's own error is the one that shows
+      if (!existsSync(outDir)) return;
       const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
       for (const f of walk(outDir).filter((f) => /\.(js|css|html|svg|json)$/.test(f))) {
         const buf = readFileSync(f);
@@ -41,7 +44,8 @@ const precompress = (): Plugin => {
 export default defineConfig({
   plugins: [htmlTokens(), react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss(), precompress()],
   resolve: {
-    alias: { "@geist": pkgDir("@fontsource-variable/geist"), "@geist-mono": pkgDir("@fontsource-variable/geist-mono") },
+    // @kit is the web package's src: module web parts (packages/modules/<key>/web) import the shell and the UI kit through it
+    alias: { "@geist": pkgDir("@fontsource-variable/geist"), "@geist-mono": pkgDir("@fontsource-variable/geist-mono"), "@kit": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   server: {
     port: 5173,

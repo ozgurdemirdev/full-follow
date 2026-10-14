@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "wouter";
-import { remove, run } from "../../api/actions";
-import { openSheet } from "../../app/ui";
-import { ANYTIME, KIND, type CalItem, type Kind } from "../../lib/calendar";
-import { BoardIcon } from "../boardIcons";
-import { EditDelete } from "../contact";
-import { MicButton } from "../MicButton";
+import { remove, run } from "@kit/api/actions";
+import { openSheet } from "@kit/app/ui";
+import { ANYTIME, KIND, type CalItem, type Kind } from "../calendar";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { EditDelete } from "@kit/components/contact";
+import { MicButton } from "@kit/components/MicButton";
 
 /** Ticking a task toggles it; ticking a payment records the whole remainder (the payments card of the dashboard does the same) */
 function tick(e: CalItem) {

@@ -1,7 +1,8 @@
-import type { CalendarDay, DueFollowUp, DuePayment, PlanTask, TaskKind } from "../api/types";
-import { recordPath } from "../app/routes";
-import { addDaysIso, lira, toDate } from "./format";
-import { MILESTONE } from "./labels";
+import type { PlanTask, TaskKind } from "@kit/api/types";
+import type { CalendarDay, DueFollowUp, DuePayment } from "./types";
+import { linkTo } from "@kit/app/modules/links";
+import { addDaysIso, lira, toDate } from "@kit/lib/format";
+import { MILESTONE } from "@kit/lib/labels";
 
 /** What an item of the calendar is: a meeting, a follow-up, a payment or a plain task */
 export type Kind = "meet" | "follow" | "pay" | "task";
@@ -54,7 +55,7 @@ export function itemsOf(date: string, tasks: DayTask[], payments: DuePayment[], 
   };
   const fromFollowUp = (f: DueFollowUp): CalItem => ({
     key: `f${f.type}${f.id}`, time: null, title: `${f.name} takibi`, kind: "follow", done: f.done, extra: "", tick: null,
-    href: recordPath(f.type, f.id) ?? undefined,
+    href: linkTo(f.type, f.id) ?? undefined,
   });
   const all = [...tasks.map(fromTask), ...payments.map(fromPayment), ...followUps.map(fromFollowUp)];
   return all.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));

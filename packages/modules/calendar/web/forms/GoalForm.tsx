@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "../api/store";
-import type { Detail, Goal } from "../api/types";
-import { Form } from "../components/forms/Form";
-import { ChipsField, MultiChipsField, NumField, TextField } from "../components/forms/fields";
-import { CHANNEL, CHANNELS, GOAL_METRIC, GOAL_PRESETS, WEEKDAY_SHORT } from "../lib/labels";
-import { errorsOf, saveRecord, useSubmit, type FormProps } from "./shared";
+import { useQuery } from "@kit/api/store";
+import type { Detail } from "@kit/api/types";
+import { Form } from "@kit/components/forms/Form";
+import { ChipsField, MultiChipsField, NumField, TextField } from "@kit/components/forms/fields";
+import { CHANNEL, CHANNELS, WEEKDAY_SHORT } from "@kit/lib/labels";
+import { errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
+import { GOAL_METRIC, GOAL_PRESETS } from "../labels";
+import type { Goal } from "../types";
 
 const EVERY_DAY = GOAL_PRESETS[0].days;
 const DEFAULT_TARGET = 10;

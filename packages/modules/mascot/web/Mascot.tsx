@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
-import { useElapsed } from "../components/chat/StatusLine";
-import { useChatLive } from "../lib/chatStore";
-import { T } from "../lib/chatText";
-import { isDesk } from "../lib/openRecord";
-import { MASCOT_TEXT } from "../lib/mascotText";
+import { useElapsed } from "@kit/lib/useElapsed";
+import { useChatLive } from "@kit/lib/chatStore";
+import { isDesk } from "@kit/lib/media";
+import { MASCOT_TEXT } from "./text";
 import { ACT_ERROR_MS, ACT_MIN_MS, ACT_PROPS_MIN_SIZE, CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_GAP, PERCH_HEIGHT, PERCH_X, PERCH_Y, SIZE } from "./config";
 import { mascotLive, mascotPrefs, useMascotLive, useMascotPrefs, type MascotPrefs } from "./mascotStore";
 import { activityOf, newDebounce, settle } from "./activity";
@@ -369,7 +368,7 @@ function MascotBody({ onActivate }: Props) {
       {!chat.open && chat.running && chat.status && (
         <div className="mascot-pill" role="status">
           <b>{chat.status}</b>
-          <i className="mono">{T.seconds(seconds)}</i>
+          <i className="mono">{MASCOT_TEXT.seconds(seconds)}</i>
         </div>
       )}
       <span className="cb-badge" aria-hidden="true" />

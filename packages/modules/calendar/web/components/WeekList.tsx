@@ -1,7 +1,7 @@
-import { toDate } from "../../lib/format";
-import { WEEKDAY_SHORT } from "../../lib/labels";
-import { ANYTIME, KIND, type CalItem, type Kind } from "../../lib/calendar";
-import { Meter } from "../ui";
+import { toDate } from "@kit/lib/format";
+import { WEEKDAY_SHORT } from "@kit/lib/labels";
+import { ANYTIME, KIND, type CalItem, type Kind } from "../calendar";
+import { Meter } from "@kit/components/ui";
 
 const PERCENT = 100;
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import type { TlRec } from "../../api/types";
-import { recordPath } from "../../app/routes";
+import { linkTo } from "../../app/modules/links";
 import { recKind, recTone } from "../../lib/timeline";
 import { PathIcon } from "./PathIcon";
 
@@ -21,7 +21,7 @@ export function FocusCard({ rec, summary, onClear }: { rec: TlRec; summary: stri
         <span className="tlx-focus-name">{rec.name}</span>
         <span className="tlx-focus-sum">{summary}</span>
       </div>
-      <Link href={recordPath(rec.kind, rec.id) ?? "#"} className="tlx-open">Kartı aç</Link>
+      <Link href={linkTo(rec.kind, rec.id) ?? "#"} className="tlx-open">Kartı aç</Link>
       <button type="button" className="tlx-back" onClick={onClear}>Hepsine dön</button>
     </section>
   );

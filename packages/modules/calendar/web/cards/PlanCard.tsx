@@ -1,15 +1,15 @@
-import { run } from "../../api/actions";
-import type { GoalDay, Plan, PlanTask } from "../../api/types";
-import { openSheet } from "../../app/ui";
-import { PATHS } from "../../app/routes";
-import { fmtDay, fmtToday } from "../../lib/format";
-import { KIND, OF_TASK_KIND } from "../../lib/calendar";
-import { goalAutoNote } from "../../lib/goals";
-import { BoardIcon } from "../boardIcons";
-import { toast } from "../toast";
-import { Card, Meter } from "../ui";
-import { useExpand } from "../ExpandOverlay";
-import { DashOverlay, type ExRow } from "./DashOverlay";
+import { run } from "@kit/api/actions";
+import type { GoalDay, Plan, PlanTask, Today } from "@kit/api/types";
+import { openSheet } from "@kit/app/ui";
+import { CALENDAR_PATH } from "../paths";
+import { fmtDay, fmtToday } from "@kit/lib/format";
+import { KIND, OF_TASK_KIND } from "../calendar";
+import { goalAutoNote } from "../goals";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { toast } from "@kit/components/toast";
+import { Card, Meter } from "@kit/components/ui";
+import { useExpand } from "@kit/components/ExpandOverlay";
+import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 
 /** Time column of a task row without a time */
 const ANYTIME = "Gün içi";
@@ -54,14 +54,15 @@ function items(plan: Plan): Item[] {
 }
 
 /** "Bugünün planı": the day's tasks and goals with check off, and the way to add a task */
-export function PlanCard({ plan }: { plan: Plan }) {
+export function PlanCard({ today }: { today: Today }) {
+  const plan = today.plan!; // the manifest shows the card only when the plan is there
   const ex = useExpand();
   const list = items(plan);
   const done = list.filter((i) => i.done).length;
   const share = list.length ? (done / list.length) * 100 : 0;
   const rows: ExRow[] = list.map((i) => ({
     key: i.key, lead: i.time === ANYTIME ? "Gün" : i.time, mono: true, title: i.title, sub: i.kind, tag: i.done ? "Tamamlandı" : "Bekliyor",
-    dot: i.done ? "bg-accent" : "bg-entity-later", href: PATHS.calendar,
+    dot: i.done ? "bg-accent" : "bg-entity-later", href: CALENDAR_PATH,
   }));
 
   return (
@@ -92,7 +93,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
         </button>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Bugünün planı", sub: `${fmtToday(plan.date)} · ${list.length} iş, ${done} tamamlandı`, page: "Takvim", href: PATHS.calendar, foot: `${list.length - done} iş açık`, rows }} />
+        spec={{ title: "Bugünün planı", sub: `${fmtToday(plan.date)} · ${list.length} iş, ${done} tamamlandı`, page: "Takvim", href: CALENDAR_PATH, foot: `${list.length - done} iş açık`, rows }} />
     </>
   );
 }

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { remove, run } from "../../api/actions";
-import type { GoalDay } from "../../api/types";
-import { openSheet } from "../../app/ui";
-import { KIND, GOAL_BEHIND, type CalItem } from "../../lib/calendar";
-import { fmtDay } from "../../lib/format";
-import { goalAutoNote } from "../../lib/goals";
-import { EditDelete } from "../contact";
-import { toast } from "../toast";
-import { Meter } from "../ui";
+import { remove, run } from "@kit/api/actions";
+import type { GoalDay } from "@kit/api/types";
+import { openSheet } from "@kit/app/ui";
+import { KIND, GOAL_BEHIND, type CalItem } from "../calendar";
+import { fmtDay } from "@kit/lib/format";
+import { goalAutoNote } from "../goals";
+import { EditDelete } from "@kit/components/contact";
+import { toast } from "@kit/components/toast";
+import { Meter } from "@kit/components/ui";
 
 const PERCENT = 100;
 /** Open items listed as carried to tomorrow */

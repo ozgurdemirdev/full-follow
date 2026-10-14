@@ -13,4 +13,5 @@ export const MASCOT_TEXT = {
   size: "Boyut",
   resetPosition: "Konumu sıfırla",
   resetDone: "Maskot yerine döndü",
+  seconds: (n: number) => `${n} sn`,
 } as const;

@@ -1,6 +1,6 @@
-import { pct } from "../../lib/format";
-import { KINDS, type Kind } from "../../lib/calendar";
-import { Meter } from "../ui";
+import { pct } from "@kit/lib/format";
+import { KINDS, type Kind } from "../calendar";
+import { Meter } from "@kit/components/ui";
 
 const PERCENT = 100;
 

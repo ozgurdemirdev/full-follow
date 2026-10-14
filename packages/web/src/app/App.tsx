@@ -1,27 +1,28 @@
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
-import { Route, Switch } from "wouter";
+import { Redirect, Route, Switch } from "wouter";
 import { api, onAuthRequired } from "../api/client";
 import { loadModules, useModules } from "../api/modules";
 import { PageSkeleton } from "../components/ui";
 import { requestChatOpen } from "../lib/chatStore";
 import { Fab } from "./Fab";
 import { Login } from "./Login";
-import { guarded } from "./guarded";
-import { PATHS, preload } from "./routes";
+import { lazyOf, preloadRoute, useRegistry } from "./modules/registry";
+import { Slot } from "./modules/Slot";
+import { PATHS } from "./routes";
 import { Sidebar } from "./Sidebar";
 
 // Formlar ve bildirimler (Motion dahil) ilk boyamadan sonra ayrı parçalar halinde yüklenir
 const QuickAdd = lazy(() => import("../forms/QuickAdd"));
 const Toasts = lazy(() => import("../components/Toasts"));
 const ChatWidget = lazy(() => import("./ChatWidget"));
-const Mascot = lazy(() => import("../mascot/Mascot"));
 
 type Auth = "checking" | "in" | "out";
 
 export function App() {
   const [auth, setAuth] = useState<Auth>("checking");
   const [modulesKnown, setModulesKnown] = useState(false);
-  const { has } = useModules();
+  const { visible } = useModules();
+  const { routes } = useRegistry();
 
   useEffect(() => {
     api
@@ -40,7 +41,7 @@ export function App() {
     if (auth !== "in") return;
     // boşta kalınca sık kullanılan sayfaları önceden indir
     // Safari has no requestIdleCallback: a bare `requestIdleCallback?.()` throws a ReferenceError there
-    const id = window.requestIdleCallback?.(() => (["pipeline", "drafts", "people"] as const).forEach(preload));
+    const id = window.requestIdleCallback?.(() => (["pipeline", "drafts", "people"] as const).forEach((page) => preloadRoute({ page })));
     return () => (id ? window.cancelIdleCallback(id) : undefined);
   }, [auth]);
 
@@ -53,32 +54,16 @@ export function App() {
         <Boundary>
           <Suspense fallback={<Fallback />}>
             <Switch>
-              <Route path={PATHS.today} component={guarded.today} />
-              <Route path={PATHS.calendar} component={guarded.calendar} />
-              <Route path={`${PATHS.pipeline}/:id?`} component={guarded.pipeline} />
-              <Route path={`${PATHS.opportunity}/:id`} component={guarded.opportunity} />
-              <Route path={`${PATHS.people}/:id?`} component={guarded.people} />
-              <Route path={`${PATHS.companies}/:id?`} component={guarded.companies} />
-              <Route path={PATHS.referrals} component={guarded.referrals} />
-              <Route path={`${PATHS.projects}/:id?`} component={guarded.projects} />
-              <Route path={`${PATHS.timeline}/:type?/:id?`} component={guarded.timeline} />
-              <Route path={PATHS.report} component={guarded.report} />
-              <Route path={PATHS.review} component={guarded.review} />
-              <Route path={`${PATHS.drafts}/:id?`} component={guarded.drafts} />
-              <Route path={`${PATHS.comments}/:id?`} component={guarded.comments} />
-              <Route path={`${PATHS.posts}/:id?`} component={guarded.posts} />
-              <Route path={`${PATHS.ideas}/:id?`} component={guarded.ideas} />
-              <Route path={`${PATHS.ownProjects}/:id?`} component={guarded.ownProjects} />
-              <Route path={`${PATHS.templates}/:id?`} component={guarded.templates} />
-              <Route path={`${PATHS.settings}/:kategori?`} component={guarded.settings} />
-              <Route component={guarded.today} />
+              {routes.map((r) => <Route key={r.page} path={r.path + (r.params ?? "")} component={lazyOf(r.load)} />)}
+              {/* the route of a module that is gone or hidden leads nowhere: back to the dashboard */}
+              <Route><Redirect to={PATHS.today} replace /></Route>
             </Switch>
           </Suspense>
         </Boundary>
       </div>
       <Suspense fallback={null}>
-        {has("chat") ? <ChatWidget /> : null}
-        <Mascot onActivate={requestChatOpen} />
+        {visible("chat") ? <ChatWidget /> : null}
+        <Slot name="app.overlay" props={{ onActivate: requestChatOpen }} />
       </Suspense>
       <Fab />
       <Suspense fallback={null}>

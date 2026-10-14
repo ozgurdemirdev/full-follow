@@ -11,7 +11,7 @@ export interface Mutation<T = unknown> {
   effects?: string[];
 }
 
-interface Base {
+export interface Base {
   id: number;
   created_at: string;
   updated_at: string;
@@ -585,6 +585,8 @@ export interface PriceFloor {
   post_refresh_days: number;
   /** the own project in focus; null when none was picked or it is gone */
   focus_own_project_id: number | null;
+  /** modules Özgür hid in Settings (keys of installed modules); the shell reads it with the module list */
+  modules_hidden?: string[];
   /** reject rules Claude learned, oldest first (PUT /settings { draft_rules } keeps the ones left in the list); absent when the drafts module is not installed */
   draft_rules?: string[];
 }
@@ -627,23 +629,6 @@ export interface PlanTask {
   kind: TaskKind;
   done_at: string | null;
 }
-/** A payment due on a calendar day */
-export interface DuePayment {
-  id: number;
-  project_id: number;
-  project_name: string;
-  milestone: string;
-  expected_amount: number;
-  paid_amount: number;
-  done: boolean;
-}
-/** A follow-up date of a person or an open opportunity */
-export interface DueFollowUp {
-  type: "person" | "opportunity";
-  id: number;
-  name: string;
-  done: boolean;
-}
 export interface Plan {
   date: string;
   weekday: number;
@@ -651,22 +636,6 @@ export interface Plan {
   tasks: PlanTask[];
   streak: number;
   week_ratio: number | null;
-}
-export interface CalendarDay {
-  date: string;
-  goals: GoalDay[];
-  tasks: Omit<PlanTask, "assignee">[];
-  ratio: number | null;
-  payments: DuePayment[];
-  follow_ups: DueFollowUp[];
-}
-export interface Goal extends Base {
-  title: string;
-  target: number;
-  days: string;
-  channel: string | null;
-  metric: string | null;
-  note: string | null;
 }
 
 /** GET /stats/activity: buckets oldest first; drafts and offers are the ones created in the bucket */

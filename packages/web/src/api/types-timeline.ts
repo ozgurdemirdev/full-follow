@@ -5,7 +5,7 @@ export type TlType = "temas" | "odeme" | "gorev" | "asama" | "taslak" | "yorum";
 
 /** The record an event belongs to (the chip of a row, the target of the focus card) */
 export interface TlRec {
-  /** record type as recordPath knows it: person, company, opportunity, project, own_project, idea, post, template */
+  /** record type as the module links know it: person, company, opportunity, project, own_project, idea, post, template */
   kind: string;
   id: number;
   name: string;

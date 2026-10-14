@@ -1,15 +1,15 @@
-// Task and comment forms of the sheet
+// The task form of the sheet
 import { useEffect, useState } from "react";
-import { run } from "../api/actions";
-import { useQuery } from "../api/store";
-import type { Detail, Task, TaskKind } from "../api/types";
-import { Form, Note } from "../components/forms/Form";
-import { AreaField, DateField, SegField, TextField, TimeField } from "../components/forms/fields";
-import { ComboField } from "../components/forms/fields-rich";
-import { todayIso } from "../lib/format";
-import { ASSIGNEE_ITEMS, TASK_KIND_ITEMS, type TaskAssignee } from "../lib/labels";
-import { emptyRef, type Ref } from "./helpers";
-import { errorsOf, saveRecord, useLinkOptions, useSubmit, type FormProps } from "./shared";
+import { useQuery } from "@kit/api/store";
+import type { Detail, Task, TaskKind } from "@kit/api/types";
+import { Form } from "@kit/components/forms/Form";
+import { DateField, SegField, TextField, TimeField } from "@kit/components/forms/fields";
+import { ComboField } from "@kit/components/forms/fields-rich";
+import { todayIso } from "@kit/lib/format";
+import { ASSIGNEE_ITEMS, type TaskAssignee } from "@kit/lib/labels";
+import { emptyRef, type Ref } from "@kit/forms/helpers";
+import { errorsOf, saveRecord, useLinkOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { TASK_KIND_ITEMS } from "../labels";
 
 /** Task kinds in the board's order: Görüşme, Takip, Görev */
 const KINDS = (["gorusme", "takip", "gorev"] as const).map((v) => TASK_KIND_ITEMS.find((k) => k.value === v)!);
@@ -67,38 +67,6 @@ export function TaskForm(p: FormProps) {
       <SegField label="Tür" options={KINDS} value={kind} onChange={setKind} />
       <SegField label="Kim yapacak" options={ASSIGNEE_ITEMS} value={who} onChange={setWho} />
       <ComboField label="Neyle ilgili" opt value={target} onChange={setTarget} options={options} placeholder="Kişi, firma, fırsat ya da proje ara" />
-    </Form>
-  );
-}
-
-// ---------------------------------------------------------------- yorum
-export function CommentForm(p: FormProps) {
-  const preTarget = p.sheet.preset?.target;
-  const options = useLinkOptions();
-  const [target, setTarget] = useState<Ref>(emptyRef);
-  const [body, setBody] = useState("");
-
-  const submit = useSubmit(
-    p,
-    async () => {
-      const t = preTarget ?? (() => {
-        const o = options.find((x) => x.id === target.id);
-        return o ? { type: o.type, id: o.tid } : null;
-      })();
-      if (!t) throw new Error("hedef yok");
-      await run("post", "/comments", { target_type: t.type, target_id: t.id, body: body.trim() }, { ok: "Yorum eklendi, Claude MCP’den görecek" });
-    },
-    () => errorsOf({ target: !preTarget && !target.id && "Neyle ilgili olduğunu seç", body: !body.trim() && "Yorum boş olamaz" }),
-  );
-
-  return (
-    <Form id={p.formId} onSubmit={submit}>
-      {preTarget ? (
-        <Note>{preTarget.label}</Note>
-      ) : (
-        <ComboField name="target" label="Neyle ilgili" req value={target} onChange={setTarget} options={options} placeholder="Fırsat, proje, kişi ya da firma ara" />
-      )}
-      <AreaField name="body" label="Yorum" req value={body} onChange={setBody} placeholder="Not ya da soru yaz" rows={5} hint="Özgür olarak yazıyorsun · Claude MCP’den okuyup cevaplar" />
     </Form>
   );
 }

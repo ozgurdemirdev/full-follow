@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { useModules } from "../../api/modules";
+import { useRegistry } from "../../app/modules/registry";
+import type { QuickAddEntry } from "../../app/modules/types";
 import type { SheetKind } from "../../app/ui";
 import { useIsDesktop } from "../../lib/media";
 import { norm } from "../../lib/format";
 import { FORM_ICON, PathIcon } from "../forms/icons";
-import { QUICK_GROUPS, type QuickItem } from "./items";
 import type { QuickHost } from "./store";
 
 /** An item matches by its name, its destination, or its letter */
-const matches = (it: QuickItem, q: string) => !q || norm(`${it.name} ${it.dest}`).includes(q) || norm(it.key) === q;
+const matches = (it: QuickAddEntry, q: string) => !q || norm(`${it.name} ${it.dest}`).includes(q) || norm(it.key) === q;
 
 /**
  * The list of record types: search ("Ne eklemek istiyorsun?"), groups with a tinted tile, name, destination and letter.
@@ -20,9 +20,8 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
   const [sel, setSel] = useState(0);
   const list = useRef<HTMLDivElement>(null);
   const q = norm(text.trim());
-  const { has } = useModules();
-
-  const installed = useMemo(() => QUICK_GROUPS.map((g) => ({ ...g, items: g.items.filter((it) => has(it.module)) })), [has]);
+  // the record types of the installed, visible modules
+  const installed = useRegistry().quickGroups;
   const groups = useMemo(() => installed.map((g) => ({ ...g, items: g.items.filter((it) => matches(it, q)) })).filter((g) => g.items.length), [installed, q]);
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 

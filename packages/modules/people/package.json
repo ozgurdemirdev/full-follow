@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow people module: people, their tags and sectors, contact status, the referral tree and the person card",
-  "fullfollow": { "module": "people" },
+  "fullfollow": { "module": "people", "endpoints": ["/people"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

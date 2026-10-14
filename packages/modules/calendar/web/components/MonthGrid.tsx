@@ -1,6 +1,6 @@
-import { fmtDayLong } from "../../lib/format";
-import { WEEKDAY_SHORT } from "../../lib/labels";
-import { KIND, type CalItem, type Kind } from "../../lib/calendar";
+import { fmtDayLong } from "@kit/lib/format";
+import { WEEKDAY_SHORT } from "@kit/lib/labels";
+import { KIND, type CalItem, type Kind } from "../calendar";
 
 /** Dots a cell shows at most */
 const MAX_DOTS = 6;

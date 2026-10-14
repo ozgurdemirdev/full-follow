@@ -1,10 +1,10 @@
-import { SetPills, Switch } from "../../components/settings/Parts";
-import { toast } from "../../components/toast";
-import type { SettingRow } from "../../lib/settings";
-import { MASCOT_TEXT as T } from "../../lib/mascotText";
-import { SIZE, VARIANTS, VARIANT_IDS } from "../../mascot/config";
-import { mascotPrefs, useMascotPrefs } from "../../mascot/mascotStore";
-import { PRESET_IDS, PRESET_NAMES } from "../../mascot/palette";
+import { SetPills, Switch } from "@kit/components/settings/Parts";
+import { toast } from "@kit/components/toast";
+import type { SettingRow } from "@kit/lib/settings";
+import { MASCOT_TEXT as T } from "./text";
+import { SIZE, VARIANTS, VARIANT_IDS } from "./config";
+import { mascotPrefs, useMascotPrefs } from "./mascotStore";
+import { PRESET_IDS, PRESET_NAMES } from "./palette";
 
 /** What a swatch shows: the bell colour token of the preset */
 const swatchColor = (id: string) => `var(--color-mascot-${id}-bell)`;
