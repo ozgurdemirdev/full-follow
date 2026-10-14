@@ -202,6 +202,10 @@ export interface Template extends Base {
   reply_rate: number | null;
   /** too few sends to trust the rate */
   early: boolean;
+  /** enough sends and a rate so low that the template should be retired */
+  retire: boolean;
+  /** one sentence about the template, written by the templates module; null when there is nothing to say */
+  tip: string | null;
   score?: number;
 }
 export interface TemplateSectorStat {

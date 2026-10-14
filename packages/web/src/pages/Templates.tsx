@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { K, usePeople, useTemplates } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { MarketingReport } from "../api/types";
+import { usePeople, useTemplates } from "../api/keys";
 import { Page } from "../app/Page";
 import { PATHS } from "../app/routes";
 import { openSheet } from "../app/ui";
@@ -24,7 +22,6 @@ const KIND_ITEMS = [{ value: "", label: "Hepsi" }, ...TEMPLATE_KINDS.map((k) => 
 export default function Templates() {
   const templates = useTemplates();
   const people = usePeople();
-  const marketing = useQuery<MarketingReport>(K.marketing);
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [kind, setKind] = useState("");
@@ -64,7 +61,7 @@ export default function Templates() {
           ) : (
             <TileColumns>{shown.map((t) => <TemplateTile key={t.id} t={t} onOpen={open} />)}</TileColumns>
           )}
-          <TemplateOverlay t={current} from={openId ? (from ?? fallbackRect()) : from} people={people.rows} groups={marketing.data?.template_groups ?? []}
+          <TemplateOverlay t={current} from={openId ? (from ?? fallbackRect()) : from} people={people.rows}
             onClose={() => navigate(PATHS.templates, { replace: true })} />
         </>
       )}
