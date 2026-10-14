@@ -23,7 +23,7 @@ const tabOf = (stage: ProjectStage) => TABS.find((t) => t.stages.includes(stage)
 const MONEY_AHEAD_STEPS = 1;
 const DELIVERED_STEP = PROJECT_STEPS.indexOf("teslim");
 
-/** The projects module will own this (gap G14): core gives each project its waiting state and held money; until then it is derived here */
+/** The three waiting cards; core gives each project its waiting state and held money */
 export const WAIT_CARDS: { key: WaitKey; label: string; sub: string }[] = [
   { key: "me", label: "İş sende", sub: "senin bitireceğin aşamaya bağlı" },
   { key: "client", label: "Müşteride", sub: "onay ya da ödeme bekleniyor" },
@@ -102,25 +102,8 @@ function groupBy<T>(rows: T[], key: (r: T) => number | null): Map<number, T[]> {
   return m;
 }
 
-/**
- * Who the project waits on, and the money that wait holds. Derived until core provides it (gap G14, moves into core
- * with the projects module): late = an overdue payment or an overdue open task of Özgür or the client; otherwise the
- * owner of the next open task that is not Claude's (Özgür: me, the client: client).
- */
-function waitOf(p: ProjectRow, pays: Payment[], open: ProjectTask[], today: string): { wait: WaitKey | null; held: number } {
-  const overdue = pays.filter((x) => x.status === "gecikmis");
-  const firstUnpaid = pays.find((x) => x.status !== "odendi");
-  const heldBy = (wait: WaitKey | null) =>
-    wait === "late" ? overdue.reduce((a, x) => a + remaining(x), 0) : wait && firstUnpaid ? remaining(firstUnpaid) : 0;
-  if (p.waiting !== undefined) {
-    const wait = p.waiting ? FROM_CORE[p.waiting] : null;
-    return { wait, held: p.waiting_amount ?? heldBy(wait) };
-  }
-  const lateTask = open.some((t) => humanTask(t) && t.due_date && t.due_date < today);
-  const owner = open.find(humanTask)?.assignee;
-  const wait: WaitKey | null = overdue.length || lateTask ? "late" : owner === "ozgur" ? "me" : owner === "musteri" ? "client" : null;
-  return { wait, held: heldBy(wait) };
-}
+/** Who the project waits on and the money that wait holds: core works both out (projects module), the screen only maps them */
+const waitOf = (p: ProjectRow): { wait: WaitKey | null; held: number } => ({ wait: p.waiting ? FROM_CORE[p.waiting] : null, held: p.waiting_amount });
 
 function nextText(pays: Payment[], open: ProjectTask[], today: string): string {
   const late = pays.filter((x) => x.status === "gecikmis").sort(byDue)[0];
@@ -167,7 +150,7 @@ export function buildViews(projects: ProjectRow[], payments: Payment[], tasks: P
     const pays = (paysBy.get(p.id) ?? []).sort(byMilestone);
     const all = (tasksBy.get(p.id) ?? []).sort((a, b) => a.id - b.id);
     const open = all.filter((t) => !t.done_at).sort(byDue);
-    const { wait, held } = waitOf(p, pays, open, today);
+    const { wait, held } = waitOf(p);
     const mark = pays.find((x) => x.status !== "odendi")?.id;
     const steps = stepsOf(p, pays);
     const stateOf = (x: Payment): MoneyState => steps[stepIndex(x.milestone)]?.state === "paid" || x.status === "odendi" ? "paid" : x.status === "gecikmis" ? "late"
@@ -203,7 +186,7 @@ export function useProjectViews() {
   return { views, ready, error, reload: () => Promise.all([projects.reload(), payments.reload(), tasks.reload()]).then(() => undefined) };
 }
 
-/** Whether any project task belongs to the client: the "Müşteride" card appears only then (until gap G14 is built it never does) */
+/** Whether any project waits on the client or has a task of the client: the "Müşteride" card appears only then */
 export const hasClientTasks = (views: ProjectView[]) => views.some((v) => v.tasks.some((t) => t.assignee === "musteri" && !t.done_at)) || views.some((v) => v.p.waiting === "musteride");
 
 /** Project count and held money per wait, for the three cards */
