@@ -32,7 +32,8 @@ export function useDraftEdit(d: Draft, sendOk: string) {
     if (changed) await patch({ silent: true });
     await run("post", `/drafts/${d.id}/send`, undefined, { ok: sendOk });
   });
-  const reject = (note: string, ok: string) => act(() => run("post", `/drafts/${d.id}/reject`, { note }, { ok }));
+  // an empty note is sent as an explicit "no reason", never as a made up note text
+  const reject = (note: string, ok: string) => act(() => run("post", `/drafts/${d.id}/reject`, note ? { note } : { no_reason: true }, { ok }));
 
   return { editing, setEditing, text, setText, subject, setSubject, busy, save, send, reject };
 }

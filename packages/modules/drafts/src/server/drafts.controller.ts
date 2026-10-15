@@ -36,8 +36,8 @@ export class DraftsController {
   }
 
   @Post(":id/reject")
-  reject(@Param("id") id: string, @Body() b: { note: string }) {
-    return this.drafts.reject(intId(id), b?.note);
+  reject(@Param("id") id: string, @Body() b: { note?: string; no_reason?: boolean }) {
+    return this.drafts.reject(intId(id), b);
   }
 
   @Post(":id/send")
