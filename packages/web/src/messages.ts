@@ -32,6 +32,10 @@ export const m = defineMessages({
     // time words
     today: "Bugün",
     tomorrow: "Yarın",
+    // sidebar groups and quick add groups: a module's manifest names its group with these (`group: m.navGroups.network`),
+    // the registry lists them in this order; the text is also the group's label on screen
+    navGroups: { network: "Network", marketing: "Pazarlama", salesProjects: "Satış ve projeler" },
+    quickGroups: { people: "Kişiler ve iletişim", sales: "Satış", plan: "Plan", marketing: "Pazarlama", own: "Kendi işlerin" },
     // record kinds, singular and plural (what a record is called in a sentence or a label)
     nouns: {
       person: "Kişi",
