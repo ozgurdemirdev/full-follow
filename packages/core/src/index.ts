@@ -1,6 +1,7 @@
-import type { Actor, RecordType } from "./constants";
+import { AMBIGUOUS_SHOWN, SUMMARY_PREVIEW_CHARS, type Actor, type RecordType } from "./constants";
 import { FFError, norm, rows, systemClock, type Clock, type Ctx, type DuplicateHit, type ListOpts } from "./context";
 import type { DbHandle } from "./db/client";
+import { m } from "./messages";
 import { sourcesService, tagsService } from "./services/categories";
 import { commentsService } from "./services/comments";
 import { assertKeysFree, recordSkipped } from "./services/dupes";
@@ -91,7 +92,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "link": return nid ? links.update(nid, d) : links.create(d);
       case "comment": return nid ? comments.update(nid, d) : comments.add(d);
       case "setting": return settings.setMany(d);
-      case "trash": throw new FFError("validation", "çöp kutusuna kayıt yazılmaz; geri yüklemek için restore");
+      case "trash": throw new FFError("validation", m.records.trashNotWritable);
     }
   }
 
@@ -102,7 +103,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
   function saveMany(type: string, items: Record<string, any>[]): BulkResult {
     const t = typeOf(type);
     const out: BulkResult = { created: [], skipped: [], failed: [] };
-    const labelOf = (d: Record<string, any>) => String(d?.name ?? d?.title ?? d?.email ?? d?.contact ?? d?.summary ?? "").slice(0, 60);
+    const labelOf = (d: Record<string, any>) => String(d?.name ?? d?.title ?? d?.email ?? d?.contact ?? d?.summary ?? "").slice(0, SUMMARY_PREVIEW_CHARS);
     ctx.sqlite.transaction(() => {
       items.forEach((item, index) => {
         try {
@@ -126,7 +127,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     const moveStage = ctx.types.entity(t)?.move;
     if (moveStage) return moveStage(ctx, nid, { stage, reason, position });
     const movable = ctx.types.entityTypes().filter((x) => ctx.types.entity(x)?.move);
-    throw new FFError("validation", `move sadece ${movable.join(", ")} için`);
+    throw new FFError("validation", m.records.moveOnly(movable.join(", ")));
   }
 
   /** Silme: kayıt çöp kutusuna gider (restore ile geri gelir); etiket, sektör ve kaynak yerinde gizlenir */
@@ -141,8 +142,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       case "comment": return comments.remove(nid);
       case "note": return notes.remove(nid);
       case "link": return links.remove(nid);
-      case "setting": throw new FFError("validation", "ayar silinmez");
-      case "trash": throw new FFError("validation", "çöp kutusundan kalıcı silme yok");
+      case "setting": throw new FFError("validation", m.records.settingNotDeletable);
+      case "trash": throw new FFError("validation", m.records.trashNoPermanentDelete);
     }
   }
 
@@ -159,7 +160,7 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
       const nid = resolveId(ctx, t, id);
       return t === "tag" ? tags.restore(nid) : t === "sector" ? sectors.restore(nid) : sources.restore(nid);
     }
-    if (!isTrashType(ctx, t)) throw new FFError("validation", `${t} geri yüklenemez`);
+    if (!isTrashType(ctx, t)) throw new FFError("validation", m.records.cannotRestore(t));
     const s = String(id).trim().replace(/^#/, "");
     const rid = /^\d+$/.test(s) ? Number(s) : trashIdByLabel(t, s);
     return restoreFromTrash(ctx, t, rid, (keys) => assertKeysFree(ctx, keys));
@@ -169,8 +170,8 @@ export function createCore(handle: DbHandle, actor: Actor, clock: Clock = system
     const hits = rows<{ record_id: number; label: string }>(ctx, "SELECT record_id, label FROM trash WHERE type = ? ORDER BY id DESC", t)
       .filter((x) => norm(x.label).includes(norm(label)));
     if (hits.length === 1) return hits[0].record_id;
-    if (!hits.length) throw new FFError("not_found", `çöp kutusunda "${label}" adlı ${typeLabel(ctx, t)} yok`);
-    throw new FFError("ambiguous", `"${label}" birden fazla kayıtla eşleşiyor: ${hits.slice(0, 8).map((h) => `#${h.record_id} ${h.label}`).join(", ")}`);
+    if (!hits.length) throw new FFError("not_found", m.records.trashNoLabelMatch(label, typeLabel(ctx, t)));
+    throw new FFError("ambiguous", m.records.ambiguousMatch(label, hits.slice(0, AMBIGUOUS_SHOWN).map((h) => `#${h.record_id} ${h.label}`).join(", ")));
   }
 
   const find = (type: string, o: ListOpts = {}) => queries.find(typeOf(type), o);

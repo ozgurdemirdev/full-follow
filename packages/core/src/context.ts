@@ -1,7 +1,8 @@
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import type { Actor } from "./constants";
-import { LOCALE } from "./i18n";
+import { LIST_PAGE_SIZE, type Actor } from "./constants";
+import { LANG, LOCALE } from "./i18n";
+import { m } from "./messages";
 import { localDate, nowIso } from "./dates";
 import type { Db, Q } from "./db/client";
 import { events } from "./db/schema";
@@ -121,22 +122,22 @@ export function stamp(ctx: Ctx) {
 }
 
 export function assertOzgur(ctx: Ctx, what: string): void {
-  if (ctx.actor !== "ozgur") throw new FFError("forbidden", `${what} sadece Özgür tarafından yapılır`);
+  if (ctx.actor !== "ozgur") throw new FFError("forbidden", m.forbiddenAction(what));
 }
 
-export const money = (n: number) => `${n.toLocaleString(LOCALE)}₺`;
+export const money = (n: number) => `${n.toLocaleString(LOCALE)}${m.currency}`;
 
 /** Arama için: küçük harf, Türkçe karakter ve aksan duyarsız */
 export function norm(s: string | null | undefined): string {
   return (s ?? "")
-    .toLocaleLowerCase("tr")
+    .toLocaleLowerCase(LANG)
     .replace(/ı/g, "i")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
 }
 
 /** limit/offset ile dilimleme */
-export function page<T>(list: T[], limit = 20, offset = 0): { rows: T[]; total: number } {
+export function page<T>(list: T[], limit = LIST_PAGE_SIZE, offset = 0): { rows: T[]; total: number } {
   return { rows: list.slice(offset, offset + limit), total: list.length };
 }
 

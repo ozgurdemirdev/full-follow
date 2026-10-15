@@ -5,14 +5,16 @@ import os from "node:os";
 import path from "node:path";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
+import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS } from "./constants";
+import { m } from "./messages.start";
 
 const red = (s: string) => (process.stdout.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
 const green = (s: string) => (process.stdout.isTTY ? `\x1b[32m${s}\x1b[0m` : s);
 
 function die(msg: string, hint?: string, err?: unknown): never {
   if (err) console.error(err);
-  console.error(red(`\n✗ ${msg}`));
-  if (hint) console.error(`  Ne yapmalı: ${hint}`);
+  console.error(red(m.failure(msg)));
+  if (hint) console.error(m.hint(hint));
   process.exit(1);
 }
 
@@ -31,7 +33,7 @@ function openBrowser(url: string) {
 /** Port doluysa: zaten çalışan bir Full Follow mu? */
 async function alreadyRunning(port: number): Promise<boolean> {
   try {
-    const r = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: AbortSignal.timeout(1500) });
+    const r = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: AbortSignal.timeout(HEALTH_PROBE_TIMEOUT_MS) });
     return r.ok && ((await r.json()) as { ok?: boolean })?.ok === true;
   } catch {
     return false;
@@ -51,11 +53,11 @@ async function bootstrap() {
   try {
     mods = await load();
   } catch (e) {
-    die("Sunucu modülleri yüklenemedi", "npm install çalıştır, sonra npm start (Node sürümünü değiştirdiysen önce node_modules klasörünü sil)", e);
+    die(m.modulesNotLoaded, m.modulesNotLoadedHint, e);
   }
   mods.core.loadRootEnv();
 
-  const port = Number(process.env.FF_PORT || 3000);
+  const port = Number(process.env.FF_PORT || DEFAULT_PORT);
   // Şifre varsa yerel ağa (telefon) açılır; yoksa sadece bu bilgisayara
   const host = process.env.FF_HOST || (mods.authEnabled() ? "0.0.0.0" : "127.0.0.1");
   const url = `http://localhost:${port}`;
@@ -65,7 +67,7 @@ async function bootstrap() {
     // rota listesi gibi ayrıntılar yazılmaz; sadece uyarı ve hata
     app = await mods.NestFactory.create<NestExpressApplication>(mods.AppModule, { logger: ["error", "warn"] });
   } catch (e) {
-    die(`Veritabanı ya da uygulama açılamadı (${mods.core.defaultDbPath()})`, "dosya başka bir programda kilitli olabilir; Full Follow'un başka bir penceresi açıksa kapat", e);
+    die(m.dbOpenFailed(mods.core.defaultDbPath()), m.dbOpenFailedHint, e);
   }
 
   // Ctrl+C ve SIGTERM: sohbet CLI süreçleri de kapansın (onModuleDestroy)
@@ -91,37 +93,37 @@ async function bootstrap() {
     if ((e as NodeJS.ErrnoException).code === "EADDRINUSE") {
       await app.close().catch(() => {});
       if (await alreadyRunning(port)) {
-        console.log(green(`\nFull Follow zaten açık: ${url}`));
+        console.log(green(m.alreadyOpen(url)));
         openBrowser(url);
         process.exit(0);
       }
-      die(`${port} portu başka bir program tarafından kullanılıyor`, `.env dosyasına FF_PORT=${port + 1} yaz ve tekrar npm start`);
+      die(m.portBusy(port), m.portBusyHint(port + 1));
     }
-    die("Sunucu dinlemeye başlayamadı", undefined, e);
+    die(m.listenFailed, undefined, e);
   }
 
-  console.log(green(`\n  Full Follow hazır: ${url}\n`));
+  console.log(green(m.ready(url)));
   if (host === "0.0.0.0") {
     for (const list of Object.values(os.networkInterfaces())) {
-      for (const n of list ?? []) if (n.family === "IPv4" && !n.internal) console.log(`  Telefondan (aynı ağ): http://${n.address}:${port}`);
+      for (const n of list ?? []) if (n.family === "IPv4" && !n.internal) console.log(m.phone(n.address, port));
     }
   } else {
-    console.log("  Şifre (FF_PASSWORD) tanımlı değil: sadece bu bilgisayardan açılır.");
+    console.log(m.noPassword);
   }
-  if (!fs.existsSync(index)) console.log("  Web arayüzü derlenmemiş; npm start ile derle (API: /api/health)");
-  console.log("  Kapatmak için Ctrl+C.\n");
+  if (!fs.existsSync(index)) console.log(m.webNotBuilt);
+  console.log(m.stopHint);
   openBrowser(url);
-  scheduleBackup(mods.core.backupDb);
+  scheduleBackup(mods.core.backupDb, mods.core.BACKUPS_KEPT);
 }
 
 /** Günlük yedek (data/backups): açılışta ve açık kaldıkça 6 saatte bir kontrol; FF_BACKUP=0 kapatır */
-function scheduleBackup(backupDb: (file?: string, keep?: number) => Promise<string | null>) {
+function scheduleBackup(backupDb: (file?: string, keep?: number) => Promise<string | null>, keptByDefault: number) {
   if (process.env.FF_BACKUP === "0") return;
-  const keep = Number(process.env.FF_BACKUP_KEEP || 14);
-  const run = () => backupDb(undefined, keep).then((f) => f && console.log(`  Yedek alındı: ${f}`)).catch((e) => console.warn("  Yedek alınamadı:", e?.message ?? e));
+  const keep = Number(process.env.FF_BACKUP_KEEP || keptByDefault);
+  const run = () => backupDb(undefined, keep).then((f) => f && console.log(m.backupDone(f))).catch((e) => console.warn(m.backupFailed, e?.message ?? e));
   void run();
-  setInterval(run, 6 * 60 * 60 * 1000).unref();
+  setInterval(run, BACKUP_CHECK_MS).unref();
 }
 
-process.on("unhandledRejection", (e) => die("Beklenmeyen hata", undefined, e));
-bootstrap().catch((e) => die("Sunucu başlatılamadı", undefined, e));
+process.on("unhandledRejection", (e) => die(m.unexpected, undefined, e));
+bootstrap().catch((e) => die(m.startFailed, undefined, e));

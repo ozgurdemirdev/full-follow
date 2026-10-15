@@ -1,5 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { FFError, HttpFailure } from "@fullfollow/core";
+import { m } from "./messages";
 
 export { intId, listOpts, withList } from "@fullfollow/core";
 
@@ -28,6 +29,6 @@ export class ErrorFilter implements ExceptionFilter {
       return res.status(e.getStatus()).json({ error: body.message ?? e.message, code: body.code ?? "http" });
     }
     console.error(e);
-    return res.status(500).json({ error: "beklenmeyen hata", code: "internal" });
+    return res.status(500).json({ error: m.unexpectedError, code: "internal" });
   }
 }

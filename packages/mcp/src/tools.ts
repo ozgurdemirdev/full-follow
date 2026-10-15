@@ -2,7 +2,9 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { FFError, type Core } from "@fullfollow/core";
 import { z } from "zod";
 import { describer } from "./describe";
+import { OPENED_LABEL_CHARS, TODAY_ROWS } from "./constants";
 import { block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs } from "./format";
+import { m } from "./messages";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
@@ -11,7 +13,7 @@ function run(fn: () => string) {
     return text(fn());
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { content: [{ type: "text" as const, text: `hata: ${msg}` }], isError: true };
+    return { content: [{ type: "text" as const, text: m.error(msg) }], isError: true };
   }
 }
 
@@ -25,48 +27,48 @@ const obj = z.record(z.string(), z.any());
  */
 export function registerTools(server: McpServer, core: Core) {
   // what the installed modules add: record formatting, description fragments, tools of their own
-  const defs = core.modules.list().flatMap((m) => (m.mcp ? [m.mcp] : []));
+  const defs = core.modules.list().flatMap((mod) => (mod.mcp ? [mod.mcp] : []));
   useMcpDefs(defs);
   const describe = describer(defs);
   const openable = new Set([...CORE_OPENABLE, ...defs.flatMap((d) => Object.entries(d.entities ?? {}).filter(([, e]) => e.openable).map(([type]) => type))]);
 
   server.registerTool("today", {
     description: describe("today", [
-      [100, "Bugünün işleri: cevapsız yorumlar, "],
+      [100, m.tools.todayHead],
       [320, "."],
     ]),
     inputSchema: { limit: z.number().optional() },
   }, ({ limit }) => run(() => {
     // what the modules prepare for the day (the drafts module's follow-up drafts) goes into the view before it is written
-    return todayText({ ...core.today(limit ?? 10), ...Object.assign({}, ...defs.map((d) => d.todayData?.(core.mod) ?? {})) });
+    return todayText({ ...core.today(limit ?? TODAY_ROWS), ...Object.assign({}, ...defs.map((d) => d.todayData?.(core.mod) ?? {})) });
   }));
 
   server.registerTool("open", {
     description: describe("open", [
-      [100, "Kaydı Özgür'ün panelinde açar. Sadece Özgür açıkça aç, göster, nerede, bulamadım dediğinde çağır; ekleme, güncelleme, arama, rapor gibi başka hiçbir işin parçası olarak çağırma. type: "],
-      [300, "|comment; id sayı ya da isim."],
+      [100, m.tools.openHead],
+      [300, m.tools.openTail],
     ]),
     inputSchema: { type: z.string(), id: idOrName },
   }, ({ type, id }) => run(() => {
     const t = core.normalizeType(type);
-    if (!openable.has(t)) throw new FFError("validation", `${t} kaydının panelde sayfası yok`);
+    if (!openable.has(t)) throw new FFError("validation", m.openNoPage(t));
     const r = core.get(t, id);
     const row = r.row as Record<string, any>;
-    const label = String(row.name ?? row.title ?? row.target_label ?? row.to_name ?? `#${r.id}`).slice(0, 60);
+    const label = String(row.name ?? row.title ?? row.target_label ?? row.to_name ?? `#${r.id}`).slice(0, OPENED_LABEL_CHARS);
     // "(tür #id)": the panel chat reads the canonical record from this suffix
-    return `açıldı: ${label} (${r.type} #${r.id})`;
+    return m.opened(label, r.type, r.id);
   }));
 
   server.registerTool("find", {
     description: describe("find", [
-      [100, "Ara/listele. type: "],
+      [100, m.tools.findHead],
       [206, "|source|comment"],
       [220, "|sector|note|setting"],
       [304, "|tag"],
       [401, "|trash. "],
       [423, "{unanswered:true}(comment) "],
       [440, "{all:true}("],
-      [500, "tag/sector/source: silinenler dahil); "],
+      [500, m.tools.findDeleted],
       [604, "trash {type:'person'}."],
     ]),
     inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().optional(), offset: z.number().optional() },
@@ -74,7 +76,7 @@ export function registerTools(server: McpServer, core: Core) {
 
   server.registerTool("get", {
     description: describe("get", [
-      [100, "Tek kaydın tam hali. id sayı ya da isim. with: "],
+      [100, m.tools.getHead],
       [203, "comments"],
       [220, "|people|notes"],
       [300, "|links"],
@@ -90,27 +92,27 @@ export function registerTools(server: McpServer, core: Core) {
 
   server.registerTool("save", {
     description: describe("save", [
-      [100, "Oluştur/güncelle (id varsa güncelle). data dizi ise toplu ekler (liste verildiğinde tek çağrı): mükerrerler (e-posta, alan adı, firma adı, LinkedIn, Instagram) atlanır ve raporlanır. data DB alan adlarıyla; "],
+      [100, m.tools.saveHead],
       [130, "source"],
-      [133, " isimle verilebilir"],
-      [141, "; tarih ISO ya da bugün/yarın/+3g. Aşama için move. "],
+      [133, m.tools.saveByName],
+      [141, m.tools.saveDates],
       [144, "tag: {name,color}. "],
       [144.2, "note: {person,body}. "],
-      [144.4, "link: {target_type:opportunity|project|own_project,target_id,label,url} (roadmap, teklif sunumu, Figma, repo; projede fırsatın linkleri de görünür). "],
-      [146, "comment: {target_type,target_id,body} ya da {reply_to,body}, soru sorarsan options:['Evet','Hayır'] (en çok 4 kısa cevap, Özgür tek tıkla seçer); id + {resolved:true} konuyu kapatır. setting: {bagkur_monthly:5000} {followup_days:'3,7'} {weekly_target:20} {channel_limits:{email:20,instagram:15,whatsapp:15}} (günlük giden mesaj limiti, 0 = limitsiz) {email_warmup_until:'2026-10-27'} (bu tarihe kadar soğuk e-posta kapalı, boş = yok). "],
+      [144.4, m.tools.saveLink],
+      [146, m.tools.saveComment],
     ]),
     inputSchema: { type: z.string(), data: z.union([obj, z.array(obj)]), id: idOrName.optional() },
   }, ({ type, data, id }) => run(() => {
     const t = core.normalizeType(type);
     if (Array.isArray(data)) return bulkText(kindName(t), core.saveMany(type, data));
     const r = core.save(type, data, id);
-    return t === "setting" ? ok("ayar", undefined, [], Object.keys(data).join(",")) : ok(kindName(t), r.row?.id ?? (typeof id === "number" ? id : undefined), r.effects);
+    return t === "setting" ? ok(m.kind.setting, undefined, [], Object.keys(data).join(",")) : ok(kindName(t), r.row?.id ?? (typeof id === "number" ? id : undefined), r.effects);
   }));
 
   server.registerTool("move", {
     // the opportunity and project stage lists come from their modules
     description: describe("move", [
-      [100, "Aşama değiştir. "],
+      [100, m.tools.moveHead],
     ]),
     inputSchema: { type: z.string(), id: idOrName, stage: z.string(), reason: z.string().optional() },
   }, ({ type, id, stage, reason }) => run(() => {
@@ -120,12 +122,12 @@ export function registerTools(server: McpServer, core: Core) {
   }));
 
   server.registerTool("delete", {
-    description: "Kayıt sil (offer dahil): çöp kutusuna gider (kurallar geçerli, olay yazılır); etiket/sektör/kaynak kayıtlarda kalır, yeni kayda seçilemez. restore:true silineni geri yükler (id ya da çöp kutusundaki ad; liste: find trash).",
+    description: m.tools.deleteAll,
     inputSchema: { type: z.string(), id: idOrName, restore: z.boolean().optional() },
   }, ({ type, id, restore }) => run(() => {
-    if (restore) return ok("geri yüklendi", undefined, core.restore(type, id).effects);
+    if (restore) return ok(m.restoredKind, undefined, core.restore(type, id).effects);
     core.remove(type, id);
-    return "ok · çöp kutusunda (geri: restore:true)";
+    return m.deleted;
   }));
 
   // tools only an installed module has (the calendar's plan, the payments' pay, ...)

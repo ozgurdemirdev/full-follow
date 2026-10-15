@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { assertOzgur, emit, FFError, parse, row, rows, stamp, type Ctx } from "../context";
 import { comments } from "../db/schema";
-import type { Actor, CommentTarget } from "../constants";
+import { SUMMARY_PREVIEW_CHARS, type Actor, type CommentTarget } from "../constants";
+import { m } from "../messages";
 import { commentCreate, commentUpdate } from "../schemas";
 import { requireRow, targetLabel, targetLink, targetTable, truncate } from "./shared";
 import { Bin } from "./trash";
@@ -89,25 +90,25 @@ export function commentsService(ctx: Ctx) {
           tx.update(comments).set({ resolved_at: null, updated_at: ctx.clock.now() }).where(eq(comments.id, root.id)).run();
           emit(tx, ctx, {
             type: "comment.reopened", ...targetLink(ctx, type, targetId),
-            summary: `Yorum konusu yeniden açıldı (${targetLabel(ctx, type, targetId)})`,
+            summary: m.comments.threadReopened(targetLabel(ctx, type, targetId)),
           });
-          effects.push("konu yeniden açıldı");
+          effects.push(m.comments.reopenedEffect);
         }
       } else {
-        if (!d.target_type || !d.target_id) throw new FFError("validation", "yorum için target_type ve target_id (ya da reply_to) gerekli");
+        if (!d.target_type || !d.target_id) throw new FFError("validation", m.comments.needsTarget);
         type = d.target_type; targetId = d.target_id;
         const table = targetTable(ctx, type);
-        if (!table) throw new FFError("validation", `target_type: "${type}" için yorum yazılamaz (geçerli: ${ctx.types.commentTargets().join(", ")})`);
+        if (!table) throw new FFError("validation", m.comments.targetInvalid(type, ctx.types.commentTargets().join(", ")));
         requireRow(ctx, table, targetId);
       }
-      if (d.options && ctx.actor !== "claude") throw new FFError("forbidden", "Hızlı cevap seçeneklerini sadece Claude ekler");
+      if (d.options && ctx.actor !== "claude") throw new FFError("forbidden", m.comments.optionsClaudeOnly);
       const r = tx.insert(comments).values({
         target_type: type, target_id: targetId, body: d.body, parent_id: parentId,
         options: d.options ? JSON.stringify(d.options) : null, ...stamp(ctx),
       }).returning().get();
       emit(tx, ctx, {
         type: "comment.created", ...targetLink(ctx, type, targetId),
-        summary: `${ctx.actor === "claude" ? "Claude" : "Özgür"} yorum yazdı (${targetLabel(ctx, type, targetId)}): ${truncate(d.body, 60)}`,
+        summary: m.comments.written(m.actor[ctx.actor], targetLabel(ctx, type, targetId), truncate(d.body, SUMMARY_PREVIEW_CHARS)),
         data: { comment_id: r.id, thread: parentId ?? r.id },
       });
       return { row: withOptions(r), effects };
@@ -116,7 +117,7 @@ export function commentsService(ctx: Ctx) {
 
   /** Özgür opened the thread: Claude's comments in it are read now (no event: reading is not a change worth a timeline row) */
   function markRead(id: number) {
-    assertOzgur(ctx, "Konuyu okundu işaretlemek");
+    assertOzgur(ctx, m.comments.markReadAction);
     const root = rootOf(id);
     ctx.sqlite.prepare("UPDATE comments SET read_at = ? WHERE (id = ? OR parent_id = ?) AND created_by = 'claude' AND read_at IS NULL")
       .run(ctx.clock.now(), root.id, root.id);
@@ -130,7 +131,7 @@ export function commentsService(ctx: Ctx) {
       tx.update(comments).set({ resolved_at: resolved ? ctx.clock.now() : null, updated_at: ctx.clock.now() }).where(eq(comments.id, root.id)).run();
       emit(tx, ctx, {
         type: resolved ? "comment.resolved" : "comment.reopened", ...targetLink(ctx, root.target_type, root.target_id),
-        summary: `Yorum konusu ${resolved ? "kapatıldı" : "yeniden açıldı"} (${targetLabel(ctx, root.target_type, root.target_id)})`,
+        summary: (resolved ? m.comments.threadClosed : m.comments.threadReopened)(targetLabel(ctx, root.target_type, root.target_id)),
       });
       return { row: withOptions(requireRow(ctx, "comments", root.id)), effects: [] as string[] };
     });
@@ -141,7 +142,7 @@ export function commentsService(ctx: Ctx) {
     const { body, resolved } = parse(commentUpdate, input);
     const cur = requireRow(ctx, "comments", id);
     if (body !== undefined) {
-      if (cur.created_by !== ctx.actor) throw new FFError("forbidden", "Yorumu sadece yazarı düzenleyebilir");
+      if (cur.created_by !== ctx.actor) throw new FFError("forbidden", m.comments.authorOnlyEdit);
       ctx.db.update(comments).set({ body, updated_at: ctx.clock.now() }).where(eq(comments.id, id)).run();
     }
     if (resolved !== undefined) resolve(id, resolved);
@@ -158,16 +159,16 @@ export function commentsService(ctx: Ctx) {
     if (ctx.actor !== "ozgur") {
       const foreign = cur.created_by !== ctx.actor
         || (!cur.parent_id && row(ctx, "SELECT 1 x FROM comments WHERE parent_id = ? AND created_by != ?", id, ctx.actor));
-      if (foreign) throw new FFError("forbidden", "Claude sadece kendi yorumlarını silebilir");
+      if (foreign) throw new FFError("forbidden", m.comments.claudeOnlyOwn);
     }
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       if (!cur.parent_id) bin.take("comments", "parent_id = ?", id);
       bin.take("comments", "id = ?", id);
-      bin.commit(tx, "comment", id, `Yorum: ${truncate(cur.body, 60)}`);
+      bin.commit(tx, "comment", id, m.comments.entry(truncate(cur.body, SUMMARY_PREVIEW_CHARS)));
       emit(tx, ctx, {
         type: "comment.deleted", ...targetLink(ctx, cur.target_type, cur.target_id),
-        summary: `Yorum silindi (${targetLabel(ctx, cur.target_type, cur.target_id)}): ${truncate(cur.body, 60)}`,
+        summary: m.comments.deleted(targetLabel(ctx, cur.target_type, cur.target_id), truncate(cur.body, SUMMARY_PREVIEW_CHARS)),
       });
       return { effects: [] as string[], trash: { type: "comment", id } };
     });

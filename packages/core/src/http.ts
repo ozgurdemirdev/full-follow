@@ -1,4 +1,5 @@
 import { FFError } from "./context";
+import { m } from "./messages";
 
 /** Nest injection token (a string, so module packages can use it without importing the server) of the composed app */
 export const APP_TOKEN = "FF_APP";
@@ -22,6 +23,6 @@ export const withList = (w?: string) => (w ? String(w).split(",").map((s) => s.t
 /** A positive integer id from a URL; anything else is a 400 (code "http") */
 export function intId(v: string): number {
   const n = Number(v);
-  if (!Number.isInteger(n) || n <= 0) throw new FFError("http", `geçersiz id "${v}"`);
+  if (!Number.isInteger(n) || n <= 0) throw new FFError("http", m.invalidId(v));
   return n;
 }

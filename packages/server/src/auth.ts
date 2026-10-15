@@ -1,9 +1,10 @@
 import { BadRequestException, CanActivate, Controller, ExecutionContext, Injectable, Post, Get, Body, Req, Res, UnauthorizedException, HttpException } from "@nestjs/common";
 import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
+import { LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS, SESSION_MAX_AGE_MS } from "./constants";
+import { m } from "./messages";
 
 const COOKIE = "ff_session";
-const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const password = () => process.env.FF_PASSWORD || "";
 const secret = () => process.env.FF_COOKIE_SECRET || createHash("sha256").update(`ff:${password()}`).digest("hex");
@@ -40,7 +41,7 @@ export class AuthGuard implements CanActivate {
     const path: string = req.path ?? req.url;
     if (path === "/api/login" || path === "/api/logout" || path === "/api/health" || path === "/api/me") return true;
     if (validSession(req.headers.cookie)) return true;
-    throw new UnauthorizedException("giriş gerekli");
+    throw new UnauthorizedException(m.auth.required);
   }
 }
 
@@ -59,15 +60,15 @@ export class AuthController {
     if (!authEnabled()) return { ok: true };
     const ip = req.ip ?? "?";
     const a = attempts.get(ip);
-    if (a && a.reset > Date.now() && a.n >= 8) throw new HttpException("çok fazla deneme, bir dakika bekle", 429);
-    if (typeof b?.password !== "string") throw new BadRequestException("şifre gerekli");
+    if (a && a.reset > Date.now() && a.n >= LOGIN_MAX_ATTEMPTS) throw new HttpException(m.auth.tooManyAttempts, 429);
+    if (typeof b?.password !== "string") throw new BadRequestException(m.auth.passwordRequired);
     if (!safeEqual(b.password, password())) {
-      attempts.set(ip, { n: (a && a.reset > Date.now() ? a.n : 0) + 1, reset: Date.now() + 60_000 });
-      throw new UnauthorizedException("şifre yanlış");
+      attempts.set(ip, { n: (a && a.reset > Date.now() ? a.n : 0) + 1, reset: Date.now() + LOGIN_WINDOW_MS });
+      throw new UnauthorizedException(m.auth.wrongPassword);
     }
     attempts.delete(ip);
-    const exp = String(Date.now() + MAX_AGE_MS);
-    res.setHeader("Set-Cookie", `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE_MS / 1000}`);
+    const exp = String(Date.now() + SESSION_MAX_AGE_MS);
+    res.setHeader("Set-Cookie", `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_MS / 1000}`);
     return { ok: true };
   }
 
