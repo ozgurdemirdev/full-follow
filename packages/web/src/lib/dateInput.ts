@@ -1,5 +1,8 @@
 // Typed date and time for the form sheet's date fields: "17 Ekim", "yarın", "cuma", "14:20" in, ISO out
+import { m as kit } from "../messages";
+import { dates as m } from "../messages.lib";
 import { addDaysIso, fmtToday, norm, todayIso, toDate } from "./format";
+import { LOCALE } from "./i18n";
 
 const MONTHS = ["ocak", "subat", "mart", "nisan", "mayis", "haziran", "temmuz", "agustos", "eylul", "ekim", "kasim", "aralik"];
 const WEEKDAYS = ["pazar", "pazartesi", "sali", "carsamba", "persembe", "cuma", "cumartesi"];
@@ -19,10 +22,10 @@ function nextWeekday(day: number, from: string, inclusive: boolean): string {
 /** The quick chips of a date field: label and the date each one means */
 export function quickDates(today = todayIso()): { label: string; iso: string }[] {
   return [
-    { label: "Bugün", iso: today },
-    { label: "Yarın", iso: addDaysIso(today, 1) },
-    { label: "Cuma", iso: nextWeekday(FRIDAY, today, false) },
-    { label: "Gelecek hafta", iso: nextWeekday(MONDAY, today, false) },
+    { label: kit.today, iso: today },
+    { label: kit.tomorrow, iso: addDaysIso(today, 1) },
+    { label: m.friday, iso: nextWeekday(FRIDAY, today, false) },
+    { label: m.nextWeek, iso: nextWeekday(MONDAY, today, false) },
   ];
 }
 
@@ -54,7 +57,7 @@ function valid(y: number, mo: number, d: number): string | null {
   return dt.getMonth() === mo - 1 && dt.getDate() === d ? iso(y, mo, d) : null;
 }
 
-const withYear = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", year: "numeric", weekday: "long" });
+const withYear = new Intl.DateTimeFormat(LOCALE,{ day: "numeric", month: "long", year: "numeric", weekday: "long" });
 
 /** Display text of an ISO date: "15 Ekim Çarşamba" (with the year when it is not this year) */
 export function formatDate(value: string): string {
@@ -74,7 +77,7 @@ export function parseTime(text: string): string | null {
 export function formatDateTime(value: string): string {
   if (!value) return "";
   const [d, time] = value.split("T");
-  const day = d === todayIso() ? "Bugün" : formatDate(d);
+  const day = d === todayIso() ? kit.today : formatDate(d);
   return time ? `${day}, ${time}` : day;
 }
 export function parseDateTime(text: string, fallbackTime: string): string | null {

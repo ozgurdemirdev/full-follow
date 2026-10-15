@@ -4,13 +4,16 @@ import type { Idea } from "@kit/api/types";
 import { linkTo } from "@kit/app/modules/links";
 import { BoardIcon } from "@kit/components/boardIcons";
 
+import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
+
 /** "Projeye dönüştür" on an idea (the `idea.actions` slot of the ideas screen): opens an own project from the idea and goes to it */
 export default function IdeaToProject({ idea }: { idea: Idea }) {
   const [, navigate] = useLocation();
   if (idea.parent_id) return null;
   const toProject = async () => {
     try {
-      const r = await run<{ id: number }>("post", `/own-projects/from-idea/${idea.id}`, {}, { ok: "Proje açıldı, Kendi projelerim’de" });
+      const r = await run<{ id: number }>("post", `/own-projects/from-idea/${idea.id}`, {}, { ok: m.ideaToProject.opened });
       const page = r.row ? linkTo("own_project", r.row.id) : null;
       if (page) navigate(page);
     } catch {
@@ -19,8 +22,8 @@ export default function IdeaToProject({ idea }: { idea: Idea }) {
   };
   return (
     <button type="button" className="ideas-project" onClick={() => void toProject()}>
-      Projeye dönüştür
-      <span className="ideas-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} /></span>
+      {m.ideaToProject.action}
+      <span className="ideas-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.bold} /></span>
     </button>
   );
 }

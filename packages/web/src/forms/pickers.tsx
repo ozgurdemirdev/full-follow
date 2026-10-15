@@ -7,7 +7,9 @@ import { ChipsField } from "../components/forms/fields";
 import { TagsField, type TagItem } from "../components/forms/fields-rich";
 import { norm } from "../lib/format";
 import { CONTACT_STATUS, CONTACT_STATUSES } from "../lib/labels";
+import { forms } from "../messages.forms";
 
+const m = forms.pickers;
 const SUGGESTIONS = 4;
 
 /** Tags by id: typed text picks an existing tag or opens a new one */
@@ -23,7 +25,7 @@ export function TagIdsField({ value, onChange }: { value: number[]; onChange: (v
     if (r?.row) onChange([...value, r.row.id]);
   };
   return (
-    <TagsField label="Etiketler" tags={items} suggestions={suggestions} placeholder="Etiket yaz, Enter" onAdd={(t) => void add(t)} onRemove={(k) => onChange(value.filter((id) => id !== k))} />
+    <TagsField label={m.tags} tags={items} suggestions={suggestions} placeholder={m.tagPlaceholder} onAdd={(t) => void add(t)} onRemove={(k) => onChange(value.filter((id) => id !== k))} />
   );
 }
 
@@ -31,7 +33,7 @@ export function TagIdsField({ value, onChange }: { value: number[]; onChange: (v
  * Sectors as tags: a number is an existing sector, a text ("Ana > Alt") is sent as typed and core opens it.
  * A sub-sector stands in for its parent, so choosing one drops the parent from the value.
  */
-export function SectorTagsField({ value, onChange, label = "Sektörler" }: { value: (number | string)[]; onChange: (v: (number | string)[]) => void; label?: string }) {
+export function SectorTagsField({ value, onChange, label = m.sectors }: { value: (number | string)[]; onChange: (v: (number | string)[]) => void; label?: string }) {
   const sectors = useSectors();
   const ids = useMemo(() => value.filter((v): v is number => typeof v === "number"), [value]);
   const live = useMemo(() => pickable(sectors.rows, ids), [sectors.rows, ids]);
@@ -42,7 +44,7 @@ export function SectorTagsField({ value, onChange, label = "Sektörler" }: { val
     if (hit) return onChange(ids.includes(hit.id) ? value : [...value.filter((v) => v !== hit.parent_id), hit.id]);
     if (!value.some((v) => typeof v === "string" && norm(v) === norm(text))) onChange([...value, text]);
   };
-  return <TagsField label={label} tags={items} suggestions={suggestions} placeholder="Sektör yaz, Enter" onAdd={add} onRemove={(k) => onChange(value.filter((v) => v !== k))} />;
+  return <TagsField label={label} tags={items} suggestions={suggestions} placeholder={m.sectorPlaceholder} onAdd={add} onRemove={(k) => onChange(value.filter((v) => v !== k))} />;
 }
 
 /** Where it was found: one source of the list, unpicked with a second press */
@@ -51,7 +53,7 @@ export function SourceField({ value, onChange }: { value: number | null; onChang
   const list = pickable(sources.rows, value ? [value] : []);
   return (
     <ChipsField
-      label="Kaynak"
+      label={m.source}
       clearable
       value={value ? String(value) : ""}
       onChange={(v) => onChange(v ? Number(v) : null)}
@@ -63,8 +65,8 @@ export function SourceField({ value, onChange }: { value: number | null; onChang
 export function StatusField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <ChipsField
-      label="Temas durumu"
-      hint="Temas ekleyince kendiliğinden ilerler"
+      label={m.status}
+      hint={m.statusHint}
       value={value}
       onChange={(v) => v && onChange(v)}
       options={CONTACT_STATUSES.map((s) => ({ value: s, label: CONTACT_STATUS[s] }))}

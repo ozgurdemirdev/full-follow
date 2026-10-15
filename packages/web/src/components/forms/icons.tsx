@@ -1,4 +1,6 @@
 // Line icon paths used by the login, form sheet and quick add boards that the shared sets do not have (24 unit grid)
+import { stroke as STROKE } from "../../styles/tokens.json";
+
 export const FORM_ICON = {
   lock: "M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3",
   eye: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
@@ -19,7 +21,7 @@ export const FORM_ICON = {
 export type FormIconName = keyof typeof FORM_ICON;
 
 /** Stroke icon from a raw path (the boards' inline svgs) */
-export function PathIcon({ d, className = "size-icon-md", stroke = 1.8 }: { d: string; className?: string; stroke?: number }) {
+export function PathIcon({ d, className = "size-icon-md", stroke = STROKE.thin }: { d: string; className?: string; stroke?: number }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={d} />

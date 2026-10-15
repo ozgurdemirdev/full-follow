@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ChatMeta } from "../api";
-import { T } from "../chatText";
+import { T } from "../messages";
 import { Icon } from "@kit/components/icons";
 
 interface Props {

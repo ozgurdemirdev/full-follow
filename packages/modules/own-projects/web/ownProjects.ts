@@ -4,13 +4,14 @@ import { run } from "@kit/api/actions";
 import type { OwnProject, OwnStage, Sellable } from "@kit/api/types";
 import { ago, daysFrom, ratePct } from "@kit/lib/format";
 import { useSettings } from "@kit/lib/settings";
+import { m } from "./messages";
 
 /** Journey steps in order; the bar of a step is done before the project's stage, current at it, hatched after it */
 export const JOURNEY: { key: OwnStage; label: string }[] = [
-  { key: "fikir", label: "Fikir" },
-  { key: "dogrulama", label: "Doğrulama" },
-  { key: "demo", label: "Demo" },
-  { key: "urun", label: "Ürün" },
+  { key: "fikir", label: m.stages.fikir },
+  { key: "dogrulama", label: m.stages.dogrulama },
+  { key: "demo", label: m.stages.demo },
+  { key: "urun", label: m.stages.urun },
 ];
 export const stageLabel = (s: OwnStage) => JOURNEY.find((j) => j.key === s)?.label ?? s;
 export type JourneyState = "done" | "now" | "next";
@@ -23,7 +24,7 @@ export const journeyState = (at: OwnStage | null, step: OwnStage): JourneyState 
 
 /** A click on a journey step sets the project's stage */
 export const setStage = (p: Pick<OwnProject, "id">, stage: OwnStage) =>
-  run("patch", `/own-projects/${p.id}`, { stage }, { ok: `Aşama: ${stageLabel(stage)}` }).catch(() => {});
+  run("patch", `/own-projects/${p.id}`, { stage }, { ok: m.stage(stageLabel(stage)) }).catch(() => {});
 
 /** Projects on the shelf (left and finished) are not worked on */
 export const SHELF_STATUSES: string[] = ["birakildi", "tamamlandi"];
@@ -42,7 +43,7 @@ export const SELLABLE_CLS: Record<Sellable, string> = {
 
 type Interest = Pick<OwnProject, "told" | "interested" | "interest_share">;
 export const rateText = (p: Interest) => (p.interest_share === null ? "–" : `%${ratePct(p.interest_share)}`);
-export const rateNote = (p: Interest) => (p.told ? `${p.told} kişiye anlattın, ${p.interested} ilgilendi` : "Henüz kimseye anlatılmadı");
+export const rateNote = (p: Interest) => (p.told ? m.rateNote(p.told, p.interested) : m.notTold);
 
 /** The id the old build kept in this browser as the focus */
 const LEGACY_FOCUS_KEY = "ff.ownFocus";
@@ -79,5 +80,5 @@ export function useFocusId() {
 /** "bugün güncellendi", "dün", "5 gün önce" */
 export function updatedText(iso: string): string {
   const d = daysFrom(iso);
-  return d >= 0 ? "bugün güncellendi" : d === -1 ? "dün" : ago(iso);
+  return d >= 0 ? m.updatedToday : d === -1 ? m.yesterday : ago(iso);
 }

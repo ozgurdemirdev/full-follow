@@ -15,6 +15,10 @@ import { ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { COMPANIES_PATH } from "../paths";
 import { searchText, SORT, TILE_PAGE, totalsOf, useCompanyViews, type SegmentFilter, type SortKey } from "../companies";
 import { norm } from "@kit/lib/format";
+import { m as kit } from "@kit/messages";
+
+import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a company is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -56,19 +60,19 @@ export default function Companies() {
 
   return (
     <Page
-      title="Firmalar"
-      sub="Kimin içinde kimi tanıyorsun, firma sana ne kazandırdı"
+      title={kit.nouns.companies}
+      sub={m.page.sub}
       className="flex flex-col gap-10"
       right={
         <div className="ppl-tools">
           <label className="ppl-search co-search">
-            <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
-            <span className="sr-only">Firma ara</span>
-            <input type="search" value={q} onChange={(e) => reset(setQ)(e.target.value)} placeholder="Firma, sektör ya da şehir" />
+            <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
+            <span className="sr-only">{m.page.searchLabel}</span>
+            <input type="search" value={q} onChange={(e) => reset(setQ)(e.target.value)} placeholder={m.page.searchPlaceholder} />
           </label>
           <button type="button" className="dash-new" onClick={() => openSheet("company")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
-            Firma ekle
+            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
+            {m.page.add}
           </button>
         </div>
       }
@@ -83,9 +87,9 @@ export default function Companies() {
           <TileColumns>
             {rows.slice(0, shown).map((v) => <CompanyTile key={v.c.id} v={v} max={max} onOpen={open} />)}
           </TileColumns>
-          {rows.length === 0 ? <p className="co-empty">Bu süzgeçte firma yok.</p> : null}
+          {rows.length === 0 ? <p className="co-empty">{m.page.empty}</p> : null}
           {rows.length > shown ? (
-            <button type="button" className="co-btn co-more" onClick={() => setShown((n) => n + TILE_PAGE)}>{rows.length - shown} firma daha göster</button>
+            <button type="button" className="co-btn co-more" onClick={() => setShown((n) => n + TILE_PAGE)}>{m.page.showMore(rows.length - shown)}</button>
           ) : null}
           <Slot name="companies.page.after" />
           <CompanyOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} v={openId ? byId.get(openId) : undefined} max={max}

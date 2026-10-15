@@ -7,7 +7,9 @@ import { useRegistry } from "../../app/modules/registry";
 import type { SettingsCategoryDef, SettingsCtx, SettingsEntry } from "../../app/modules/types";
 import { BOARD_ICON } from "../../components/boardIcons";
 import { ago } from "../../lib/format";
-import { useSettings, type SettingCategory, type SettingRow } from "../../lib/settings";
+import { m as kit } from "../../messages";
+import { useSettings, words, type SettingCategory, type SettingRow } from "../../lib/settings";
+import { settings as msg } from "../../messages.settings";
 import { accountRows } from "./AccountRows";
 import { claudeRows } from "./ClaudeRows";
 import { listRows } from "./ListRows";
@@ -24,15 +26,17 @@ const ICON = {
   trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
 };
 
+const m = msg.categories;
+
 /** The categories the kit owns; modules add their own (the mascot's) and rows to any of them. Orders: modules slot in between by number */
 const CORE_CATEGORIES: SettingsCategoryDef[] = [
-  { slug: "hesap", name: "Hesap ve görünüm", icon: ICON.account, order: 10 },
-  { slug: "isletme", name: "İşletme ve vergi", icon: ICON.business, sub: "Rapor’daki aylık taban buradan hesaplanır", order: 20 },
-  { slug: "takip", name: "Takip kuralları", icon: ICON.follow, sub: "Claude bu sürelere göre “Bugün dokun” listesini kurar", order: 30 },
-  { slug: "claude", name: "Claude", icon: ICON.claude, sub: "Claude MCP üzerinden aynı veritabanını kullanır", order: 40 },
-  { slug: "liste", name: "Etiketler ve listeler", icon: ICON.lists, order: 60 },
-  { slug: "moduller", name: "Modüller", icon: ICON.modules, sub: "Gizlediğin modül menüden, kartlardan ve hızlı eklemeden kalkar; verisi ve Claude erişimi yerinde durur", order: 70 },
-  { slug: "cop", name: "Çöp kutusu", icon: ICON.trash, sub: "Sildiğin her şey burada durur. Geri yükleyince temasları, notları ve yorumlarıyla aynen döner", order: 80 },
+  { slug: "hesap", name: m.account, icon: ICON.account, order: 10 },
+  { slug: "isletme", name: m.business, icon: ICON.business, sub: m.businessSub, order: 20 },
+  { slug: "takip", name: m.follow, icon: ICON.follow, sub: m.followSub, order: 30 },
+  { slug: "claude", name: m.claude, icon: ICON.claude, sub: m.claudeSub, order: 40 },
+  { slug: "liste", name: m.lists, icon: ICON.lists, order: 60 },
+  { slug: "moduller", name: m.modules, icon: ICON.modules, sub: m.modulesSub, order: 70 },
+  { slug: "cop", name: m.trash, icon: ICON.trash, sub: m.trashSub, order: 80 },
 ];
 
 /** The kit's rows (each category's rows are sorted by `order`: 10, 20, ... so a module's rows can sit between) */
@@ -59,10 +63,10 @@ export function useSettingCategories(): SettingCategory[] {
     const ctx: SettingsCtx = { floor, hasRules, withSession };
     const trashRows: SettingRow[] = trash.rows.map((x) => ({
       id: `${x.type}-${x.id}`,
-      name: `${x.label} · ${x.what}`,
-      hint: `${ago(x.deleted_at)} silindi`,
-      keywords: ["çöp", "silinen", "geri al"],
-      control: <button type="button" className="set-btn" onClick={() => void restore(x.type, x.id).catch(() => {})}>Geri yükle</button>,
+      name: msg.trash.name(x.label, x.what),
+      hint: msg.trash.deleted(ago(x.deleted_at)),
+      keywords: words(msg.trash.keywords),
+      control: <button type="button" className="set-btn" onClick={() => void restore(x.type, x.id).catch(() => {})}>{kit.restore}</button>,
     }));
     const rowsOf = (slug: string): SettingRow[] => {
       if (slug === "moduller") return moduleRows(has);
@@ -77,7 +81,7 @@ export function useSettingCategories(): SettingCategory[] {
         name: c.name,
         icon: c.icon,
         sub: c.sub,
-        empty: c.slug === "cop" ? (trash.error && !trash.data ? "Çöp kutusu yüklenemedi." : trash.data ? "Çöp kutusu boş." : undefined) : undefined,
+        empty: c.slug === "cop" ? (trash.error && !trash.data ? msg.trash.failed : trash.data ? msg.trash.empty : undefined) : undefined,
         rows: rowsOf(c.slug),
       }))
       // a category a module brought goes with it: no rows, no category

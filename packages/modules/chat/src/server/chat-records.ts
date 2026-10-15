@@ -1,5 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import type { Core } from "@fullfollow/core";
+import { m } from "../messages";
 
 /** Record types core builds chips for; the installed modules add theirs (`chatCards` contribution: tasks, people, companies, posts, opportunities, payments, drafts, templates, ...) */
 export const CORE_CARD_TYPES = ["comment"] as const;
@@ -15,7 +16,7 @@ const clip = (s: string) => (s.length > SNIPPET ? `${s.slice(0, SNIPPET - 1)}…
 /** "task:7,person:12" → [{type, id}]; unknown types and bad ids are a 400, more than MAX_KEYS too */
 export function parseKeys(raw: string, validTypes: readonly string[]): { key: string; type: CardType; id: number; person?: number }[] {
   const parts = raw.split(",").map((k) => k.trim()).filter(Boolean);
-  if (!parts.length || parts.length > MAX_KEYS) throw new BadRequestException(`1 ile ${MAX_KEYS} kayıt anahtarı gerekli`);
+  if (!parts.length || parts.length > MAX_KEYS) throw new BadRequestException(m.errors.recordKeys(MAX_KEYS));
   return parts.map((key) => {
     // "template:5@12": a template filled for person 12
     const [head, at] = key.split("@");
@@ -23,7 +24,7 @@ export function parseKeys(raw: string, validTypes: readonly string[]): { key: st
     const n = Number(id);
     const person = at === undefined ? undefined : Number(at);
     if (!validTypes.includes(type) || !Number.isInteger(n) || n <= 0 || (person !== undefined && (!Number.isInteger(person) || person <= 0))) {
-      throw new BadRequestException(`geçersiz anahtar "${key}"`);
+      throw new BadRequestException(m.errors.badKey(key));
     }
     return { key, type, id: n, person };
   });

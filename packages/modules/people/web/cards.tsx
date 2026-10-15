@@ -7,6 +7,8 @@ import { SHOWN } from "@kit/lib/dashboard";
 import { followNote, initials } from "@kit/lib/format";
 import { STAGE } from "@kit/lib/labels";
 import { useRecordHref } from "@kit/lib/useRecordHref";
+import { m as kit } from "@kit/messages";
+import { m } from "./messages";
 import { Card } from "@kit/components/ui";
 import { MoreLink } from "@kit/components/dash/MoreLink";
 import { PEOPLE_PATH } from "./paths";
@@ -39,14 +41,14 @@ function FollowUpsCard({ data }: { data: Today }) {
   }, [data, recordHref, linkTo]);
 
   return (
-    <Card title="Takibi gelenler" className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={PEOPLE_PATH}>Hepsi</MoreLink>}>
-      {items.length === 0 ? <p className="m-0 text-base-sm text-text-muted">Bugün takibi gelen kimse yok.</p> : null}
+    <Card title={m.card.title} className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={PEOPLE_PATH}>{kit.all}</MoreLink>}>
+      {items.length === 0 ? <p className="m-0 text-base-sm text-text-muted">{m.card.empty}</p> : null}
       {items.slice(0, SHOWN.followups).map((it) => {
         const body = (
           <>
             <span className="dash-av size-avatar-list text-sm">{initials(it.name)}</span>
             <span className="flex min-w-0 flex-grow flex-col">
-              <span className="truncate text-base">{it.name}{it.org ? <span className="text-text-secondary"> · {it.org}</span> : null}</span>
+              <span className="truncate text-base">{it.name}{it.org ? <span className="text-text-secondary">{m.sep}{it.org}</span> : null}</span>
               {it.note ? <span className={`text-sm ${it.note.late ? "text-warning" : "text-text-secondary"}`}>{it.note.text}</span> : null}
             </span>
             {it.stage ? <span className="dash-chip is-lg bg-chip-opportunity-bg text-chip-opportunity-fg">{it.stage}</span> : null}

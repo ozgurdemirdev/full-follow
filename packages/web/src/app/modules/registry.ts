@@ -4,6 +4,7 @@
 import { lazy, useEffect, useState, type ComponentType, type LazyExoticComponent } from "react";
 import { endpointOwners, webModules } from "../../modules.generated";
 import { moduleVisible, setEndpointOwners, useModules } from "../../api/modules";
+import { m as kit } from "../../messages";
 import { core } from "./core";
 import { setLinkResolver, setPageResolver } from "./links";
 import type { DashboardEntry, Lazy, NavEntry, QuickAddEntry, RouteEntry, SearchSource, SettingsCategoryDef, SettingsEntry, SlotEntry, WebModule } from "./types";
@@ -14,9 +15,9 @@ setLinkResolver((type, id) => currentRegistry().link(type, id));
 setPageResolver((page) => currentRegistry().pagePath(page));
 
 /** Sidebar groups in display order (a group a module names that is not here follows them) */
-export const NAV_GROUPS = ["Network", "Pazarlama", "Satış ve projeler"];
+export const NAV_GROUPS = Object.values(kit.navGroups);
 /** Quick add groups in display order */
-export const QUICK_GROUPS = ["Kişiler ve iletişim", "Satış", "Plan", "Pazarlama", "Kendi işlerin"];
+export const QUICK_GROUPS = Object.values(kit.quickGroups);
 /** Slot entries without an order of their own sort here */
 const DEFAULT_SLOT_ORDER = 100;
 

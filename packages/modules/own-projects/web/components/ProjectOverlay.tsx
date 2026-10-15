@@ -13,7 +13,11 @@ import { Comments } from "@kit/components/contact";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { ErrorBox, Meter, Skeleton } from "@kit/components/ui";
 import { Journey, SellChip, StarIcon } from "./Bits";
+import { m as kit } from "@kit/messages";
+
+import { m } from "../messages";
 import { OwnLinks } from "./OwnLinks";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 type Related = { ideas: Idea[]; comments: Thread[] };
 
@@ -23,12 +27,12 @@ function HeaderMenu({ p, onClose }: { p: OwnProject; onClose: () => void }) {
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
-      <button type="button" className="ppl-round" aria-label="Diğer işlemler" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={2.4} />
+      <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("own_project", { own_project_id: p.id }))}>Düzenle</button>
-        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/own-projects/${p.id}`, `“${p.name}” projesi`).then(onClose).catch(() => {}))}>Sil</button>
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("own_project", { own_project_id: p.id }))}>{kit.edit}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/own-projects/${p.id}`, m.overlay.deleteNoun(p.name)).then(onClose).catch(() => {}))}>{kit.delete}</button>
       </div>
     </div>
   );
@@ -39,22 +43,22 @@ function Aside({ p, threads }: { p: OwnProject; threads: Thread[] }) {
   return (
     <div className="opr-aside">
       <div className="opr-panel">
-        <span className="opr-label">Para kazandırır mı?</span>
+        <span className="opr-label">{m.overlay.earns}</span>
         <SellChip p={p} className="self-start" />
         {p.sellable_note ? <p className="opr-sell-note">{p.sellable_note}</p> : null}
         <div className="flex flex-wrap gap-2">
           {p.sectors.length
             ? p.sectors.map((s) => <span key={s.id} className="opr-chip bg-chip-source-bg text-chip-source-fg">{s.path}</span>)
-            : <span className="opr-empty">Uygun sektör seçilmedi</span>}
+            : <span className="opr-empty">{m.overlay.noSector}</span>}
         </div>
       </div>
       <div className="opr-panel" data-gap="md">
-        <span className="opr-label">Doğrulama</span>
+        <span className="opr-label">{m.overlay.validation}</span>
         <div className="opr-rate">
           <span className="opr-rate-value">{rateText(p)}</span>
           <span className="opr-rate-note">{rateNote(p)}</span>
         </div>
-        <Meter value={p.interest_share === null ? 0 : ratePct(p.interest_share)} size="lg" label="İlgi oranı" />
+        <Meter value={p.interest_share === null ? 0 : ratePct(p.interest_share)} size="lg" label={m.overlay.rateLabel} />
       </div>
       <OwnLinks id={p.id} />
       <div className="opr-panel">
@@ -77,13 +81,13 @@ export function ProjectOverlay({ id, from, p, isFocus, onFocus, onClose }: {
   const key = id ? `/own-projects/${id}?with=ideas,comments` : null;
   const d = useQuery<Detail<OwnProject, Related>>(key);
   const row = d.data?.row ?? p;
-  const setStatus = (status: string) => row && status !== row.status && run("patch", `/own-projects/${row.id}`, { status }, { ok: `Durum: ${OWN_STATUS[status]}` }).catch(() => {});
+  const setStatus = (status: string) => row && status !== row.status && run("patch", `/own-projects/${row.id}`, { status }, { ok: m.statusOk(OWN_STATUS[status]) }).catch(() => {});
 
   return (
     <ExpandOverlay
       open={!!id && !!row}
       from={from}
-      title={row?.name ?? "Proje"}
+      title={row?.name ?? m.overlay.fallbackTitle}
       onClose={onClose}
       headerClassName="opr-head"
       bodyClassName="opr-body"
@@ -96,15 +100,15 @@ export function ProjectOverlay({ id, from, p, isFocus, onFocus, onClose }: {
             </div>
             <button type="button" className="opr-focus" aria-pressed={isFocus} onClick={() => onFocus(row)}>
               <StarIcon className="size-icon-xs" />
-              {isFocus ? "Odakta" : "Odağa al"}
+              {isFocus ? m.overlay.focused : m.overlay.takeFocus}
             </button>
             <HeaderMenu p={row} onClose={onClose} />
-            <button type="button" className="ff-ex-close" data-close aria-label="Küçült" onClick={onClose}>
-              <BoardIcon name="shrink" className="size-icon-btn" stroke={2.2} />
+            <button type="button" className="ff-ex-close" data-close aria-label={kit.collapse} onClick={onClose}>
+              <BoardIcon name="shrink" className="size-icon-btn" stroke={STROKE.medium} />
             </button>
           </div>
           <div className="opr-head-bar">
-            <div className="opr-status" role="radiogroup" aria-label="Durum">
+            <div className="opr-status" role="radiogroup" aria-label={kit.fields.status}>
               {OWN_STATUSES.map((s) => (
                 <button key={s} type="button" role="radio" aria-checked={row.status === s} onClick={() => setStatus(s)}>{OWN_STATUS[s]}</button>
               ))}

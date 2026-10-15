@@ -1,5 +1,7 @@
 import { eq } from "drizzle-orm";
+import { SUMMARY_PREVIEW_CHARS } from "../constants";
 import { emit, parse, stamp, type Ctx } from "../context";
+import { m } from "../messages";
 import { links } from "../db/schema";
 import { linkCreate, linkUpdate } from "../schemas";
 import { assertAttachTarget, requireRow, requireTarget, targetLink, truncate } from "./shared";
@@ -15,7 +17,7 @@ export function linksService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       requireTarget(ctx, d.target_type, d.target_id);
       const r = tx.insert(links).values({ ...d, ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "link.created", ...owner(d), summary: `Link eklendi: ${d.label}`, data: { link_id: r.id } });
+      emit(tx, ctx, { type: "link.created", ...owner(d), summary: m.links.added(d.label), data: { link_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
@@ -32,8 +34,8 @@ export function linksService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("links", "id = ?", id);
-      bin.commit(tx, "link", id, `Link: ${truncate(cur.label, 60)}`);
-      emit(tx, ctx, { type: "link.deleted", ...owner(cur), summary: `Link silindi: ${cur.label}` });
+      bin.commit(tx, "link", id, m.links.entry(truncate(cur.label, SUMMARY_PREVIEW_CHARS)));
+      emit(tx, ctx, { type: "link.deleted", ...owner(cur), summary: m.links.deleted(cur.label) });
       return { effects: [] as string[], trash: { type: "link", id } };
     });
   }

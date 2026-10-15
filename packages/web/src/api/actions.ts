@@ -2,6 +2,8 @@
 import { currentRegistry, invalidatesFor } from "../app/modules/registry";
 import { PATHS } from "../app/routes";
 import { toast, type ToastAction } from "../components/toast";
+import { m as kit } from "../messages";
+import { api as m } from "../messages.api";
 import { api, ApiError } from "./client";
 import { invalidate } from "./store";
 import type { Mutation } from "./types";
@@ -42,13 +44,13 @@ export function report(e: unknown) {
     if (reported.has(e)) return;
     reported.add(e);
   }
-  if (!(e instanceof ApiError)) return toast("Bir hata oldu", "error");
+  if (!(e instanceof ApiError)) return toast(m.failed, "error");
   const d = e.duplicate;
   if (d && duplicateSink) return duplicateSink(e);
   if (!d) return toast(e.message, "error");
   const action: ToastAction = d.in_trash
-    ? { label: "Geri yükle", run: () => void restore(d.type, d.id).catch(() => {}) }
-    : { label: "Kayda git", href: recordHref(d.type, d.id) };
+    ? { label: kit.restore, run: () => void restore(d.type, d.id).catch(() => {}) }
+    : { label: m.goToRecord, href: recordHref(d.type, d.id) };
   toast(e.message, "error", action);
 }
 
@@ -70,7 +72,7 @@ export async function run<T = unknown>(
     const effects = res?.effects?.filter(Boolean) ?? [];
     if (!opts.silent && (opts.ok || effects.length)) {
       const href = typeof opts.open === "function" ? opts.open(res) : opts.open;
-      toast([opts.ok, ...effects].filter(Boolean).join(" · "), href ? "saved" : "ok", href ? { label: "Aç", href } : undefined);
+      toast([opts.ok, ...effects].filter(Boolean).join(" · "), href ? "saved" : "ok", href ? { label: kit.open, href } : undefined);
     }
     return res ?? {};
   } catch (e) {
@@ -81,7 +83,7 @@ export async function run<T = unknown>(
 
 /** Çöp kutusundan (ya da gizlenen etiket/sektör/kaynağı) geri yükler */
 export const restore = (type: string, id: number) => run("post", "/trash/restore", { type, id }, { silent: true }).then((r) => {
-  toast(r.effects?.[0] ?? "Geri yüklendi");
+  toast(r.effects?.[0] ?? m.restored);
   return r;
 });
 
@@ -95,6 +97,6 @@ export async function remove(path: string, label: string) {
     throw e;
   });
   const trash = r.trash as { type: string; id: number } | undefined;
-  toast(`${label} silindi`, "ok", trash ? { label: "Geri al", run: () => void restore(trash.type, trash.id).catch(() => {}) } : undefined);
+  toast(m.deleted(label), "ok", trash ? { label: kit.undo, run: () => void restore(trash.type, trash.id).catch(() => {}) } : undefined);
   return r;
 }

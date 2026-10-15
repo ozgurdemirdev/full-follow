@@ -1,4 +1,5 @@
 import { defineModule, rows } from "@fullfollow/core";
+import { m } from "./messages";
 import { chatService } from "./service/chat";
 
 /**
@@ -8,14 +9,14 @@ import { chatService } from "./service/chat";
  */
 export default defineModule({
   key: "chat",
-  label: "Sohbet",
+  label: m.label,
   smoke: ["/api/chat/meta", "/api/chat/sessions"],
   api: chatService,
   contribute: {
     // a deleted session is hidden in place: the trash lists it and brings it back
     softTrash: {
       type: "chat_session",
-      label: "sohbet",
+      label: m.session,
       list: (ctx) => rows(ctx, "SELECT id, title AS label, deleted_at FROM chat_sessions WHERE deleted_at IS NOT NULL"),
       restore: (ctx, id) => ctx.mod("chat")!.restoreSession(id),
     },

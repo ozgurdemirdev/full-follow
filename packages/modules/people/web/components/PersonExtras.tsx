@@ -3,16 +3,17 @@ import { RecordLink } from "@kit/app/modules/RecordLink";
 import { Slot } from "@kit/app/modules/Slot";
 import { tl } from "@kit/lib/format";
 import { Section } from "@kit/components/contact";
+import { m } from "../messages";
 
 function ReferralValueLine({ v }: { v: NonNullable<PersonCard["referral_value"]> }) {
   const parts = [
-    `${v.direct} kişi tanıttı${v.network > v.direct ? ` (ağıyla ${v.network})` : ""}`,
-    v.opps ? `${v.opps} fırsat` : "henüz fırsat yok",
-    v.won ? `${v.won} kazanıldı · ${tl(v.won_value)}` : "",
-    v.open_value ? `açıkta ${tl(v.open_value)}` : "",
-    v.collected ? `tahsil edilen ${tl(v.collected)}` : "",
+    m.extras.valueIntroduced(v.direct, v.network),
+    m.extras.valueOpps(v.opps),
+    v.won ? m.extras.valueWon(v.won, tl(v.won_value)) : "",
+    v.open_value ? m.extras.valueOpen(tl(v.open_value)) : "",
+    v.collected ? m.extras.valueCollected(tl(v.collected)) : "",
   ].filter(Boolean);
-  return <p className="m-0 text-base-sm text-text-primary"><span className="text-text-secondary">Referans değeri: </span>{parts.join(" · ")}</p>;
+  return <p className="m-0 text-base-sm text-text-primary"><span className="text-text-secondary">{m.extras.valueLabel}</span>{parts.join(m.sep)}</p>;
 }
 
 /**
@@ -24,18 +25,18 @@ export function PersonExtras({ card }: { card: PersonCard }) {
   return (
     <>
       <div className="ppl-panel">
-        <Section title="Referans ağı">
+        <Section title={m.referralNetwork}>
           <span className="text-base-sm text-text-secondary">
-            {card.referrer ? <RecordLink type="person" id={card.referrer.id}>{card.referrer.name} tanıttı</RecordLink> : "Doğrudan bulundu"}
+            {card.referrer ? <RecordLink type="person" id={card.referrer.id}>{m.introducedBy(card.referrer.name)}</RecordLink> : m.foundDirectly}
           </span>
           {card.referrals.length ? (
             <div className="ml-1 flex flex-col gap-2 border-l-2 border-border-default py-1 pl-6">
               {card.referrals.map((r) => (
                 <RecordLink key={r.id} type="person" id={r.id} className="flex flex-wrap items-baseline gap-2 text-base-sm text-text-neutral-chip">
-                  <span className="text-text-muted">tanıttı ·</span> {r.name}
+                  <span className="text-text-muted">{m.extras.introduced}</span> {r.name}
                   {r.company_name ? <span className="text-text-muted">{r.company_name}</span> : null}
-                  {r.opps ? <span className="text-text-secondary">· {r.opps} fırsat{r.won ? `, ${r.won} kazanıldı` : ""}</span> : null}
-                  {r.network ? <span className="text-text-muted">· +{r.network} kişi</span> : null}
+                  {r.opps ? <span className="text-text-secondary">{m.extras.oppsLine(r.opps, r.won)}</span> : null}
+                  {r.network ? <span className="text-text-muted">{m.extras.networkLine(r.network)}</span> : null}
                 </RecordLink>
               ))}
             </div>
@@ -46,7 +47,7 @@ export function PersonExtras({ card }: { card: PersonCard }) {
 
       {card.opportunities.length + card.projects.length + card.drafts.length ? (
         <div className="ppl-panel">
-          <Section title="Satış ve projeler">
+          <Section title={m.extras.sales}>
             <Slot name="person.overlay.deals" props={{ card }} />
           </Section>
         </div>
@@ -54,14 +55,14 @@ export function PersonExtras({ card }: { card: PersonCard }) {
 
       {card.post || card.ideas.length ? (
         <div className="ppl-panel">
-          <Section title="Pazarlama">
+          <Section title={m.extras.marketing}>
             <Slot name="person.overlay.marketing" props={{ card }} />
           </Section>
         </div>
       ) : null}
 
       {p.notes ? <p className="ppl-panel m-0 whitespace-pre-line text-base-sm leading-normal text-text-primary">{p.notes}</p> : null}
-      <Slot name="person.overlay.side" props={{ type: "person", id: p.id, className: "text-base-sm", label: "Tüm zaman çizelgesi" }} />
+      <Slot name="person.overlay.side" props={{ type: "person", id: p.id, className: "text-base-sm", label: m.timelineLink }} />
     </>
   );
 }

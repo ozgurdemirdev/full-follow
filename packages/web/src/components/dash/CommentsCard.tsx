@@ -4,12 +4,15 @@ import { PATHS } from "../../app/routes";
 import { SHOWN } from "../../lib/dashboard";
 import { ago } from "../../lib/format";
 import { ACTOR, TARGET } from "../../lib/labels";
+import { m as kit } from "../../messages";
+import { comments } from "../../messages.comments";
 import { Card } from "../ui";
 import { useExpand } from "../ExpandOverlay";
 import { DashOverlay, type ExRow } from "./DashOverlay";
 
+const m = comments.card;
 const WHO_CHIP = { ozgur: "bg-accent-soft-bg text-accent", claude: "bg-claude-bg text-claude-soft" };
-const WAITING = { claude: "Senin cevabın bekleniyor", ozgur: "Claude’un cevabı bekleniyor" };
+const WAITING = { claude: m.waitingOnYou, ozgur: m.waitingOnClaude };
 
 /** "Yorumlar": the open threads, who wrote last and whose answer is waited for */
 export function CommentsCard() {
@@ -18,14 +21,14 @@ export function CommentsCard() {
   const open = threads.rows.filter((t) => !t.resolved_at);
   const mine = open.filter((t) => t.last_by === "claude").length;
   const rows: ExRow[] = open.map((t) => ({
-    key: t.id, lead: t.last_by === "claude" ? "CL" : "ÖD", title: t.target_label, sub: t.last_body, right: ago(t.last_at),
-    tag: t.last_by === "claude" ? "Senin cevabın" : "Claude’un cevabı", dot: t.last_by === "claude" ? "bg-warning" : "bg-claude", href: PATHS.comments,
+    key: t.id, lead: t.last_by === "claude" ? comments.claudeInitials : kit.ownerInitials, title: t.target_label, sub: t.last_body, right: ago(t.last_at),
+    tag: t.last_by === "claude" ? m.tagYou : m.tagClaude, dot: t.last_by === "claude" ? "bg-warning" : "bg-claude", href: PATHS.comments,
   }));
 
   return (
     <>
-      <Card title="Yorumlar" count={`${open.length} konu`} onExpand={(r) => ex.show("comments", r)} className="dash-gap-5 dash-head-pad rise">
-        {open.length === 0 ? <p className="m-0 text-base-sm text-text-muted">Açık yorum yok.</p> : null}
+      <Card title={kit.nouns.comments} count={m.count(open.length)} onExpand={(r) => ex.show("comments", r)} className="dash-gap-5 dash-head-pad rise">
+        {open.length === 0 ? <p className="m-0 text-base-sm text-text-muted">{m.none}</p> : null}
         {open.slice(0, SHOWN.comments).map((t) => (
           <Link key={t.id} href={PATHS.comments} className="dash-row flex flex-col gap-3 border-t border-border-subtle py-6 text-text-primary hover:text-text-primary">
             <div className="flex flex-wrap items-center gap-3">
@@ -38,7 +41,7 @@ export function CommentsCard() {
         ))}
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Yorumlar", sub: `${open.length} açık konu · ${mine} tanesi senin cevabını bekliyor`, page: "Yorumlar", href: PATHS.comments, foot: `${open.length - mine} konuda Claude’un cevabı bekleniyor`, rows }} />
+        spec={{ title: kit.nouns.comments, sub: m.overlaySub(open.length, mine), page: kit.nouns.comments, href: PATHS.comments, foot: m.overlayFoot(open.length - mine), rows }} />
     </>
   );
 }

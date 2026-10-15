@@ -1,4 +1,6 @@
 // Mascot tuning: every number lives here, by name (port of docs/design/maskot/jelly-config.js and the variants of jelly-body.js). No colours: those come from the tokens.
+import { m } from "./messages";
+
 const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
 export const CFG = {
@@ -60,19 +62,19 @@ export interface Variant { name: string; bell: BellShape; tent: TentShape; face:
 // Face angles are measured on the same dome, so each variant places its own face.
 export const VARIANTS: Record<string, Variant> = {
   yuvarlak: {
-    name: "Yuvarlak",
+    name: m.variants.yuvarlak,
     bell: { R: 1.0, H: 0.98, Y0: 0.3, P: 0.9, flare: 0, lobes: 8, lobeDepth: 0.025 },
     tent: { count: 8, lenMin: 0.5, lenMax: 0.7, rMin: 0.15, rMax: 0.17, taper: 0.15, rootR: 0.6, rootY: 0.18, splayMin: 0.55, splayMax: 0.75, curlMin: 0.5, curlMax: 0.9, sway: 0.12, swing: 0.1 },
     face: { eyeTheta: 1.12, eyePhi: 0.34, eyeR: 0.15, mouthTheta: 1.36, blushTheta: 1.3, blushPhi: 0.62 },
   },
   klasik: {
-    name: "Klasik",
+    name: m.variants.klasik,
     bell: { R: 1.0, H: 0.85, Y0: 0.25, P: 0.95, flare: 0.5, lobes: 8, lobeDepth: 0 },
     tent: { count: 8, lenMin: 0.8, lenMax: 1.0, rMin: 0.15, rMax: 0.17, taper: 0.25, rootR: 0.58, rootY: 0.12, splayMin: 0.35, splayMax: 0.5, curlMin: 0.7, curlMax: 1.1, sway: 0.14, swing: 0.1 },
     face: { eyeTheta: 1.05, eyePhi: 0.36, eyeR: 0.13, mouthTheta: 1.28, blushTheta: 1.22, blushPhi: 0.64 },
   },
   etekli: {
-    name: "Etekli",
+    name: m.variants.etekli,
     bell: { R: 1.0, H: 0.95, Y0: 0.3, P: 0.9, flare: 0.3, lobes: 12, lobeDepth: 0.07 },
     tent: { count: 12, lenMin: 0.55, lenMax: 0.85, rMin: 0.075, rMax: 0.09, taper: 0.3, rootR: 0.48, rootY: 0.16, splayMin: 0.22, splayMax: 0.4, curlMin: 1.2, curlMax: 2.0, sway: 0.3, swing: 0.14 },
     face: { eyeTheta: 1.12, eyePhi: 0.34, eyeR: 0.15, mouthTheta: 1.36, blushTheta: 1.3, blushPhi: 0.62 },

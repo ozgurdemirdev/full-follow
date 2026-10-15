@@ -1,5 +1,7 @@
 import { ControlSkeleton } from "@kit/components/settings/Fields";
+import { LOCALE } from "@kit/lib/i18n";
 import { putSettings, useAutosave, useSettings, type SettingRow } from "@kit/lib/settings";
+import { m } from "./messages";
 
 const PINNED_MAX = 4_000;
 
@@ -14,8 +16,8 @@ function Notes({ server, reload }: { server: string; reload: () => Promise<unkno
   const [text, change] = useAutosave(server, (v) => putSettings({ chat_pinned_notes: v }), reload);
   return (
     <div className="set-notes">
-      <textarea className="set-textarea" aria-label="Sohbet sabit notları" maxLength={PINNED_MAX} value={text} onChange={(e) => change(e.target.value)} />
-      <span>{text.length.toLocaleString("tr-TR")} / {PINNED_MAX.toLocaleString("tr-TR")}</span>
+      <textarea className="set-textarea" aria-label={m.notes.title} maxLength={PINNED_MAX} value={text} onChange={(e) => change(e.target.value)} />
+      <span>{text.length.toLocaleString(LOCALE)} / {PINNED_MAX.toLocaleString(LOCALE)}</span>
     </div>
   );
 }
@@ -23,9 +25,9 @@ function Notes({ server, reload }: { server: string; reload: () => Promise<unkno
 /** The pinned notes row of the "Claude" category */
 export const chatNotesRows = (): SettingRow[] => [{
   id: "chat-notes",
-  name: "Sohbet sabit notları",
-  hint: "Panel sohbetindeki Claude her konuşmada bu notu da görür. Bir sonraki mesajdan itibaren geçerli olur",
-  keywords: ["sohbet", "sabit not", "kural", "bağlam"],
+  name: m.notes.title,
+  hint: m.notes.hint,
+  keywords: m.notes.keywords.split("|"),
   wide: true,
   control: <PinnedNotes />,
 }];

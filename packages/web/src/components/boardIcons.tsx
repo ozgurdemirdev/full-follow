@@ -1,4 +1,6 @@
 // Line icons taken path for path from the design boards (24 unit grid, rounded caps)
+import { stroke as STROKE } from "../styles/tokens.json";
+
 export const BOARD_ICON = {
   home: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
   calendar: "M6 5h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM8 3v4M16 3v4M3 10h18",
@@ -47,7 +49,7 @@ export const BOARD_ICON = {
 
 export type BoardIconName = keyof typeof BOARD_ICON;
 
-export function BoardIcon({ name, className = "size-icon-lg", stroke = 1.7 }: { name: BoardIconName; className?: string; stroke?: number }) {
+export function BoardIcon({ name, className = "size-icon-lg", stroke = STROKE.icon }: { name: BoardIconName; className?: string; stroke?: number }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={BOARD_ICON[name]} />

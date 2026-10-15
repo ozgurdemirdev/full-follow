@@ -1,6 +1,7 @@
 import { BULK_SKIPPED_EVENT } from "../constants";
 import { emit, FFError, row, type Ctx, type DuplicateHit } from "../context";
 import { companyKeys, KEY_LABEL, personKeys, type KeyKind } from "../keys";
+import { m } from "../messages";
 import { trashKeyHit } from "./trash";
 
 /** Anahtar sütunu → tür ("email_key" → "email") */
@@ -46,7 +47,7 @@ export function recordSkipped(ctx: Ctx, type: string, label: string, keys: strin
   if (!count) return;
   emit(ctx.db, ctx, {
     type: BULK_SKIPPED_EVENT,
-    summary: `Toplu eklemede ${count} mükerrer ${label} atlandı`,
+    summary: m.dupe.bulkSkipped(count, label),
     data: { record_type: type, count, keys },
   });
 }
@@ -62,9 +63,8 @@ export function assertKeysFree(ctx: Ctx, keys: string[]) {
 }
 
 export function duplicate(hit: DuplicateHit): FFError {
-  const what = { person: "kişi", company: "firma", tag: "etiket", sector: "sektör", source: "kaynak" }[hit.type];
-  const where = hit.in_trash ? ` (çöp kutusunda, geri yüklenebilir)` : "";
-  return new FFError("duplicate", `Bu ${hit.field} zaten kayıtlı: ${what} #${hit.id} ${hit.label}${where}`, undefined, hit);
+  const what = { person: m.noun.person, company: m.noun.company, tag: m.noun.tag, sector: m.noun.sector, source: m.noun.source }[hit.type];
+  return new FFError("duplicate", m.dupe.exists(hit.field, what, hit.id, hit.label, hit.in_trash), undefined, hit);
 }
 
 export { personKeys, companyKeys };

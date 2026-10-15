@@ -6,6 +6,8 @@ import { fmtDayLong, lira } from "@kit/lib/format";
 import { CONTACT_STATUS, OPEN_STAGES } from "@kit/lib/labels";
 import { profileUrl, webUrl } from "@kit/lib/network";
 import { Tags } from "@kit/components/ui";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 import { MoneyBar } from "./MoneyBar";
 
 interface Fact {
@@ -24,18 +26,18 @@ function facts(v: CompanyView, card?: CompanyCard): Fact[] {
   // the oldest touch is only known when the card holds all of them
   const first = card && rows.length && rows.length >= card.touches.total ? rows[rows.length - 1].happened_at : null;
   const list: (Fact | false | null | undefined | "")[] = [
-    { k: "Sektör", v: c.sectors.map((s) => s.path).join(", ") || "Yok" },
-    !!c.city && { k: "Konum", v: c.city },
-    !!c.source_name && { k: "Kaynak", v: c.source_name },
-    !!first && { k: "İlk temas", v: fmtDayLong(first) },
-    { k: "Temas durumu", v: CONTACT_STATUS[c.contact_status] ?? c.contact_status },
-    !!c.email && { k: "E-posta", v: <a href={`mailto:${c.email}`}>{c.email}</a> },
-    !!c.phone && { k: "Telefon", v: <a href={`tel:${c.phone}`}>{c.phone}</a> },
-    !!c.website && { k: "Web", v: ext(webUrl(c.website), c.website) },
-    !!c.instagram && { k: "Instagram", v: ext(profileUrl("instagram", c.instagram), c.instagram) },
-    !!c.linkedin && { k: "LinkedIn", v: ext(profileUrl("linkedin", c.linkedin), c.linkedin) },
-    c.tag_ids.length > 0 && { k: "Etiketler", v: <span className="flex flex-wrap justify-end gap-2"><Tags ids={c.tag_ids} /></span> },
-    !!c.notes && { k: "Notlar", v: <span className="whitespace-pre-line">{c.notes}</span>, block: true },
+    { k: kit.nouns.sector, v: c.sectors.map((s) => s.path).join(", ") || m.aside.none },
+    !!c.city && { k: m.fields.location, v: c.city },
+    !!c.source_name && { k: kit.nouns.source, v: c.source_name },
+    !!first && { k: m.fields.firstTouch, v: fmtDayLong(first) },
+    { k: m.fields.contactStatus, v: CONTACT_STATUS[c.contact_status] ?? c.contact_status },
+    !!c.email && { k: m.fields.email, v: <a href={`mailto:${c.email}`}>{c.email}</a> },
+    !!c.phone && { k: m.fields.phone, v: <a href={`tel:${c.phone}`}>{c.phone}</a> },
+    !!c.website && { k: m.fields.web, v: ext(webUrl(c.website), c.website) },
+    !!c.instagram && { k: m.fields.instagram, v: ext(profileUrl("instagram", c.instagram), c.instagram) },
+    !!c.linkedin && { k: m.fields.linkedin, v: ext(profileUrl("linkedin", c.linkedin), c.linkedin) },
+    c.tag_ids.length > 0 && { k: kit.nouns.tags, v: <span className="flex flex-wrap justify-end gap-2"><Tags ids={c.tag_ids} /></span> },
+    !!c.notes && { k: kit.nouns.notes, v: <span className="whitespace-pre-line">{c.notes}</span>, block: true },
   ];
   return list.filter((f): f is Fact => !!f);
 }
@@ -47,13 +49,13 @@ export function Aside({ v, max, card }: { v: CompanyView; max: number; card?: Co
   return (
     <div className="co-aside">
       <div className="co-panel">
-        <span className="co-panel-title">Bu firma sana</span>
+        <span className="co-panel-title">{m.aside.toYou}</span>
         <span className="co-big">{lira(money.won)}</span>
         <MoneyBar money={money} max={max} large />
         <div className="co-trio">
-          <span data-k="won"><small>Kazanılan</small><b>{lira(money.won)}</b></span>
-          <span data-k="due"><small>Bekleyen</small><b>{lira(money.due)}</b></span>
-          <span><small>Açık fırsat</small><b>{lira(money.open)}</b></span>
+          <span data-k="won"><small>{m.money.won}</small><b>{lira(money.won)}</b></span>
+          <span data-k="due"><small>{m.money.due}</small><b>{lira(money.due)}</b></span>
+          <span><small>{m.money.open}</small><b>{lira(money.open)}</b></span>
         </div>
       </div>
 
@@ -62,9 +64,9 @@ export function Aside({ v, max, card }: { v: CompanyView; max: number; card?: Co
       </div>
 
       <div className="co-panel is-work">
-        <span className="co-panel-title">Projeler ve fırsatlar</span>
+        <span className="co-panel-title">{m.aside.work}</span>
         <Slot name="company.overlay.work" props={{ projects: v.projects, opportunities: open }} />
-        {!v.projects.length && !open.length ? <span className="text-base-sm text-text-muted">Henüz proje ya da açık fırsat yok.</span> : null}
+        {!v.projects.length && !open.length ? <span className="text-base-sm text-text-muted">{m.aside.noWork}</span> : null}
         <Slot name="company.overlay.work.after" props={{ card }} />
       </div>
     </div>

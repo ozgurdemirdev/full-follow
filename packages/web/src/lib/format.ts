@@ -1,4 +1,5 @@
 // Biçimlendiriciler bir kez oluşturulur (her çizimde Intl nesnesi kurmak pahalı)
+import { format as m } from "../messages.lib";
 import { LOCALE } from "./i18n";
 const num = new Intl.NumberFormat(LOCALE);
 const dayMonth = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short" });
@@ -8,9 +9,9 @@ const monthYear = new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeri
 const monthShort = new Intl.DateTimeFormat(LOCALE, { month: "short" });
 const rel = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
 
-export const tl = (n: number | null | undefined) => (n == null ? "—" : `${num.format(n)} ₺`);
+export const tl = (n: number | null | undefined) => (n == null ? "—" : m.liraAfter(num.format(n)));
 /** Amount with the lira sign in front, as the boards write it: ₺84.500 */
-export const lira = (n: number) => `₺${num.format(n)}`;
+export const lira = (n: number) => m.liraBefore(num.format(n));
 export const fmtNum = (n: number) => num.format(n);
 export const pct = (r: number | null | undefined) => (r == null ? "—" : `%${Math.round(r * 100)}`);
 
@@ -44,7 +45,7 @@ export function daysFrom(iso: string, from = todayIso()): number {
 export function ago(iso: string): string {
   const diff = (new Date(iso).getTime() - Date.now()) / 1000;
   const abs = Math.abs(diff);
-  if (abs < 60) return "şimdi";
+  if (abs < 60) return m.now;
   if (abs < 3600) return rel.format(Math.round(diff / 60), "minute");
   if (abs < 86400) return rel.format(Math.round(diff / 3600), "hour");
   const days = daysFrom(iso);
@@ -56,10 +57,10 @@ export function ago(iso: string): string {
 export function followNote(iso: string | null | undefined): { text: string; late: boolean } | null {
   if (!iso) return null;
   const d = daysFrom(iso);
-  if (d === 0) return { text: "Bugün takip", late: false };
-  if (d < 0) return { text: `${-d} gün gecikti`, late: true };
-  if (d === 1) return { text: "Yarın takip", late: false };
-  return { text: `Takip ${fmtDay(iso)}`, late: false };
+  if (d === 0) return { text: m.followToday, late: false };
+  if (d < 0) return { text: m.followLate(-d), late: true };
+  if (d === 1) return { text: m.followTomorrow, late: false };
+  return { text: m.followOn(fmtDay(iso)), late: false };
 }
 
 export function initials(name: string): string {

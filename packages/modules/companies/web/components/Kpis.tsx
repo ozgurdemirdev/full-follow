@@ -1,5 +1,6 @@
 import { UNREACHED_NAMED, type Totals } from "../companies";
 import { lira } from "@kit/lib/format";
+import { m } from "../messages";
 
 interface Kpi {
   label: string;
@@ -10,23 +11,23 @@ interface Kpi {
 
 /** Sub line of the decision maker card: who is not reached, or what to do while nobody is marked */
 function unreachedSub(t: Totals): string {
-  if (!t.deciders) return "Kişilere karar rolü ver";
-  if (!t.unreached.length) return "Hepsine ulaşıldı";
+  if (!t.deciders) return m.kpis.giveRoles;
+  if (!t.unreached.length) return m.kpis.allReached;
   const extra = t.unreached.length - UNREACHED_NAMED;
   const named = t.unreached.slice(0, UNREACHED_NAMED).join(", ");
-  return extra > 0 ? `${named} ve ${extra} firma` : named;
+  return extra > 0 ? m.kpis.namedAndMore(named, extra) : named;
 }
 
 /** The numbers on top */
 export function Kpis({ t }: { t: Totals }) {
   const items: Kpi[] = [
-    { label: "Kazanılan", value: lira(t.won), sub: "tüm firmalardan", tone: "var(--color-accent)" },
-    { label: "Bekleyen tahsilat", value: lira(t.due), sub: `${t.dueCompanies} firmada`, tone: "var(--color-warning)" },
-    { label: "Açık fırsat", value: lira(t.open), sub: `${t.openCompanies} firmada`, tone: "var(--color-text-primary)" },
-    { label: "Karar vericiye ulaşılmamış", value: String(t.unreached.length), sub: unreachedSub(t), tone: "var(--color-claude-soft)" },
+    { label: m.money.won, value: lira(t.won), sub: m.kpis.allCompanies, tone: "var(--color-accent)" },
+    { label: m.kpis.dueTitle, value: lira(t.due), sub: m.kpis.inCompanies(t.dueCompanies), tone: "var(--color-warning)" },
+    { label: m.money.open, value: lira(t.open), sub: m.kpis.inCompanies(t.openCompanies), tone: "var(--color-text-primary)" },
+    { label: m.kpis.unreachedTitle, value: String(t.unreached.length), sub: unreachedSub(t), tone: "var(--color-claude-soft)" },
   ];
   return (
-    <section aria-label="Özet" className="co-kpi" style={{ ["--kpis" as string]: items.length }}>
+    <section aria-label={m.kpis.summary} className="co-kpi" style={{ ["--kpis" as string]: items.length }}>
       {items.map((k) => (
         <div key={k.label}>
           <span className="co-kpi-label">{k.label}</span>

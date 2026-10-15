@@ -1,5 +1,6 @@
-import type { RecordType } from "../constants";
+import { ALL_ROWS, LIST_PAGE_SIZE, RELATED_ROWS_DEFAULT, RELATED_ROWS_MAX, type RecordType } from "../constants";
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
+import { m } from "../messages";
 import { bool, has, tagsList } from "./directory";
 import { listThreads, threadOf } from "./comments";
 import { lastActorOf } from "./lastActor";
@@ -101,22 +102,22 @@ function queriesService(ctx: Ctx) {
   }
 
   function find(type: string, o: ListOpts = {}) {
-    const opts = { ...o, limit: o.limit ?? 20, offset: o.offset ?? 0 };
+    const opts = { ...o, limit: o.limit ?? LIST_PAGE_SIZE, offset: o.offset ?? 0 };
     return isCoreType(type) ? LISTS[type](opts) : entityHandler(ctx, type, "find")(ctx, opts);
   }
 
   // ---------- tek kayıt ----------
   /** Tek kayıt + isteğe bağlı ilişkili kayıtlar (with). Her ilişkili liste en fazla relLimit (varsayılan 10) satır. */
-  function get(type: string, id: number, withRel: string[] = [], relLimit = 10) {
+  function get(type: string, id: number, withRel: string[] = [], relLimit = RELATED_ROWS_DEFAULT) {
     const own = (r: any) => (r === undefined ? undefined : r);
     let rowData: any;
     if (!isCoreType(type)) rowData = entityHandler(ctx, type, "get")(ctx, id);
     else switch (type) {
-      case "source": rowData = own(find("source", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "sector": rowData = own(find("sector", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "tag": rowData = own(find("tag", { filter: { all: true }, limit: 100000 }).rows.find((p) => p.id === id)); break;
-      case "trash": throw new FFError("validation", "çöp kutusu için find(type: trash) kullan");
-      case "note": rowData = own(find("note", { limit: 100000 }).rows.find((p) => p.id === id)); break;
+      case "source": rowData = own(find("source", { filter: { all: true }, limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
+      case "sector": rowData = own(find("sector", { filter: { all: true }, limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
+      case "tag": rowData = own(find("tag", { filter: { all: true }, limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
+      case "trash": throw new FFError("validation", m.records.trashUseFind);
+      case "note": rowData = own(find("note", { limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "comment": {
         const c = requireRow(ctx, "comments", id);
@@ -124,9 +125,9 @@ function queriesService(ctx: Ctx) {
         rowData = threadOf(ctx, root, true);
         break;
       }
-      case "setting": throw new FFError("validation", "ayarlar için find(type: setting) kullan");
+      case "setting": throw new FFError("validation", m.records.settingUseFind);
     }
-    if (!rowData) throw new FFError("not_found", `${type} #${id} bulunamadı`);
+    if (!rowData) throw new FFError("not_found", m.notFound(type, id));
 
     const related: Record<string, any[]> = {};
     // relations the installed modules load (for example the tasks of a person)
@@ -138,10 +139,10 @@ function queriesService(ctx: Ctx) {
       ...(ctx.types.entity(type)?.related ?? []),
       ...moduleRelations.filter(([, r]) => r.on.includes(type)).map(([name]) => name),
     ];
-    const n = Math.min(Math.max(1, relLimit), 200);
+    const n = Math.min(Math.max(1, relLimit), RELATED_ROWS_MAX);
     const cap = (r: Rows) => r.rows.slice(0, n);
     for (const name of withRel) {
-      if (!allowed.includes(name)) throw new FFError("validation", `${type} için geçerli ilişkiler: ${allowed.join(", ") || "yok"}`);
+      if (!allowed.includes(name)) throw new FFError("validation", m.records.relationsInvalid(type, allowed.join(", ") || m.none));
       const by = { [`${type}_id`]: id };
       switch (name) {
         case "links": related.links = cap(linkList({ filter: by, limit: n })); break;

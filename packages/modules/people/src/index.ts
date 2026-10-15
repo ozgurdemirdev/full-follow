@@ -2,6 +2,8 @@ import { defineModule, row, type RecordTrashed } from "@fullfollow/core";
 import { peopleApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
+import { ALL_ROWS, CHAT_CARD_DRAFTS_LIMIT } from "./service/constants";
 import { peopleList } from "./service/list";
 
 /**
@@ -11,7 +13,7 @@ import { peopleList } from "./service/list";
  */
 export default defineModule({
   key: "people",
-  label: "Kişiler",
+  label: m.label,
   smoke: ["/api/people"],
   uses: ["companies", "network", "referrals", "drafts", "ideas"],
   api: peopleApi,
@@ -24,7 +26,7 @@ export default defineModule({
     },
   },
   contribute: {
-    trashTypes: [{ type: "person", label: "kişi" }],
+    trashTypes: [{ type: "person", label: m.noun }],
     // the people whose follow-up is due (the opportunities' part of `follow_ups` comes from the pipeline module)
     today: (ctx, { limit }) => ({ follow_ups: { people: ctx.mod("people")!.list({ limit, filter: { follow_up_due: true } }) } }),
     commentTargets: {
@@ -36,9 +38,9 @@ export default defineModule({
     },
     chatCards: {
       person: (ctx, id) => {
-        const r = peopleList(ctx, { limit: 100000 }).rows.find((p) => p.id === id);
+        const r = peopleList(ctx, { limit: ALL_ROWS }).rows.find((p) => p.id === id);
         if (!r) throw new Error("person not found");
-        const open = ctx.mod("drafts")?.list({ filter: { person_id: id }, limit: 10 }).rows.find((d) => d.status === "bekliyor" || d.status === "onaylandi");
+        const open = ctx.mod("drafts")?.list({ filter: { person_id: id }, limit: CHAT_CARD_DRAFTS_LIMIT }).rows.find((d) => d.status === "bekliyor" || d.status === "onaylandi");
         return { title: r.name, role: r.role, company: r.company_name, status: r.contact_status, next_follow_up_at: r.next_follow_up_at, draft_id: open?.id ?? null };
       },
     },

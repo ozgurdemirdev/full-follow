@@ -1,4 +1,6 @@
 // Structured parts of a reply: ```ff-cards and ```ff-suggest fenced blocks (see the chat system rules)
+import { T } from "./messages";
+
 export interface CardItem {
   type: string;
   id: number;
@@ -30,7 +32,7 @@ export function splitOpenFence(body: string): { text: string; open: boolean } {
 function warnOnce(what: string, src: string) {
   if (warned.has(src)) return;
   warned.add(src);
-  console.warn(`chat: ${what} bloğu geçersiz JSON, gösterilmedi`);
+  console.warn(T.blockInvalid(what));
 }
 
 /** null on anything that is not the documented shape (nothing is rendered, one console warning) */

@@ -3,7 +3,10 @@ import { useQuery } from "../../api/store";
 import type { Today } from "../../api/types";
 import { ControlSkeleton } from "../../components/settings/Fields";
 import { ago } from "../../lib/format";
-import type { SettingRow } from "../../lib/settings";
+import { words, type SettingRow } from "../../lib/settings";
+import { settings } from "../../messages.settings";
+
+const m = settings.claude;
 
 /** Connection line: derived from the latest thing Claude wrote, the same source as the sidebar user block */
 function Connection() {
@@ -13,7 +16,7 @@ function Connection() {
   return (
     <span className="set-status" data-on={at ? "" : undefined}>
       <i />
-      {at ? `Son istek ${ago(at)}` : "Claude henüz bağlanmadı"}
+      {at ? m.lastRequest(ago(at)) : m.never}
     </span>
   );
 }
@@ -21,6 +24,6 @@ function Connection() {
 /** The kit's row of the "Claude" category; the modules add theirs (drafts: sending without asking and the learned rules, chat: the pinned notes) */
 export function claudeRows(): SettingRow[] {
   return [
-    { id: "connection", name: "Bağlantı", hint: "Bilgisayarındaki MCP sunucusu (npm run mcp). Claude’un yazdığı her kayıt “Claude” etiketiyle görünür", keywords: ["mcp", "sunucu", "bağlı"], control: <Connection /> },
+    { id: "connection", name: m.connection, hint: m.connectionHint, keywords: words(m.connectionKeywords), control: <Connection /> },
   ];
 }

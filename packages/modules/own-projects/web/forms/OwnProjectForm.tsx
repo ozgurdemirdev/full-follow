@@ -10,6 +10,8 @@ import { OWN_PROJECTS_PATH } from "../paths";
 import { JOURNEY } from "../ownProjects";
 import { SectorTagsField } from "@kit/forms/pickers";
 import { errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 
 const SELL_OPTIONS = SELLABLES.map((s) => ({ value: s, label: SELLABLE[s] }));
 const STATUS_OPTIONS = OWN_STATUSES.map((s) => ({ value: s, label: OWN_STATUS[s] }));
@@ -48,19 +50,19 @@ export function OwnProjectForm(p: FormProps) {
       const res = await saveRecord<OwnProject>(p, editId, data);
       if (!editId && res.row) navigate(`${OWN_PROJECTS_PATH}/${res.row.id}`);
     },
-    () => errorsOf({ name: !name.trim() && "Proje adı gerekli" }),
+    () => errorsOf({ name: !name.trim() && m.form.nameRequired }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="name" label="Proje adı" req value={name} onChange={setName} placeholder="Örn. Full Follow" autoFocus />
-      <TextField label="Tek satırda" value={description} onChange={setDescription} placeholder="Ne işe yarar" />
-      <ChipsField label="Durum" value={status} onChange={(v) => v && setStatus(v)} options={STATUS_OPTIONS} />
-      <SegField label="Satılabilirlik" options={SELL_OPTIONS} value={sellable} onChange={setSellable} />
-      {sellable !== "hayir" ? <TextField label="Kime, nasıl satılabilir" opt value={sellableNote} onChange={setSellableNote} placeholder="Örn. Freelancer ve küçük ajanslara kişisel CRM" /> : null}
-      <SegField label="Aşama" options={STAGE_OPTIONS} value={stage} onChange={setStage} />
-      <SectorTagsField label="Uygun sektörler" value={sectors} onChange={setSectors} />
-      <AreaField label="Notlar" opt value={notes} onChange={setNotes} rows={3} />
+      <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
+      <TextField label={m.form.oneLine} value={description} onChange={setDescription} placeholder={m.form.oneLinePlaceholder} />
+      <ChipsField label={kit.fields.status} value={status} onChange={(v) => v && setStatus(v)} options={STATUS_OPTIONS} />
+      <SegField label={m.form.sellable} options={SELL_OPTIONS} value={sellable} onChange={setSellable} />
+      {sellable !== "hayir" ? <TextField label={m.form.sellableNote} opt value={sellableNote} onChange={setSellableNote} placeholder={m.form.sellableNotePlaceholder} /> : null}
+      <SegField label={kit.fields.stage} options={STAGE_OPTIONS} value={stage} onChange={setStage} />
+      <SectorTagsField label={m.form.sectors} value={sectors} onChange={setSectors} />
+      <AreaField label={kit.nouns.notes} opt value={notes} onChange={setNotes} rows={3} />
     </Form>
   );
 }

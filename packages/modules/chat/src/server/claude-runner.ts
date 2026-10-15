@@ -2,6 +2,8 @@ import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { APP_TOKEN, type ChatSession, type Core } from "@fullfollow/core";
+import { LOG_RAW_CHARS } from "../constants";
+import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
 import { attachmentBlocks } from "./chat-uploads";
 import { notesVersion, readBrief, SYSTEM_RULES, writeRuntimeFiles } from "./chat-files";
@@ -67,7 +69,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     this.notes = this.combined();
     writeRuntimeFiles(this.pinned, this.brief);
     const n = this.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
-    if (n) console.log(`  ${n} yarım kalan sohbet cevabı hataya çevrildi`);
+    if (n) console.log(m.log.danglingFailed(n));
   }
 
   onModuleDestroy() {
@@ -196,7 +198,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     const message_id = turn.messageId;
     switch (e.type) {
       case "ready":
-        if (!e.mcp_ok) console.warn("  chat: full-follow MCP bağlanamadı");
+        if (!e.mcp_ok) console.warn(m.log.mcpDown);
         this.chat.markCliStarted(sessionId);
         break;
       case "status":
@@ -222,7 +224,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
         break;
       case "error": {
         const code = errorCode(e.raw);
-        console.warn(`  chat: CLI hatası (${code}): ${e.raw.slice(0, 200)}`);
+        console.warn(m.log.cliError(code, e.raw.slice(0, LOG_RAW_CHARS)));
         this.finishTurn(slot, { state: "error", code });
         this.dropSlot(slot);
         break;
@@ -292,7 +294,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     slot.lastUsed = Date.now();
     this.hub.emit(slot.sessionId, "message", row);
     const s = chat.getSession(slot.sessionId);
-    const limit = CHAT_MODELS.find((m) => m.id === s.model)?.context ?? 0;
+    const limit = CHAT_MODELS.find((model) => model.id === s.model)?.context ?? 0;
     this.hub.emit(slot.sessionId, "usage", {
       context_tokens: s.context_tokens, context_limit: limit, input_tokens_total: s.input_tokens_total,
       output_tokens_total: s.output_tokens_total, cost_usd_micros_total: s.cost_usd_micros_total,
@@ -305,7 +307,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
 
   private onExit(slot: Slot) {
     if (slot.turn) {
-      console.warn(`  chat: CLI sonuçtan önce kapandı: ${slot.stderr.slice(-STDERR_LOG_CHARS)}`);
+      console.warn(m.log.cliClosed(slot.stderr.slice(-STDERR_LOG_CHARS)));
       this.finishTurn(slot, { state: "error", code: "cli_crash" });
     }
     clearTimeout(slot.idleTimer);

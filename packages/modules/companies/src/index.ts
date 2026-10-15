@@ -1,7 +1,9 @@
 import { defineModule, row } from "@fullfollow/core";
 import { companiesApi } from "./api";
 import { entities } from "./entities";
+import { m } from "./messages";
 import { mcp } from "./mcp";
+import { ALL_ROWS } from "./service/constants";
 import { companiesList } from "./service/list";
 
 /**
@@ -11,13 +13,13 @@ import { companiesList } from "./service/list";
  */
 export default defineModule({
   key: "companies",
-  label: "Firmalar",
+  label: m.label,
   smoke: ["/api/companies"],
   uses: ["people", "network", "pipeline", "projects"],
   api: companiesApi,
   entities,
   contribute: {
-    trashTypes: [{ type: "company", label: "firma" }],
+    trashTypes: [{ type: "company", label: m.noun }],
     commentTargets: {
       company: {
         table: "companies",
@@ -26,7 +28,7 @@ export default defineModule({
     },
     chatCards: {
       company: (ctx, id) => {
-        const r = companiesList(ctx, { limit: 100000 }).rows.find((c) => c.id === id);
+        const r = companiesList(ctx, { limit: ALL_ROWS }).rows.find((c) => c.id === id);
         if (!r) throw new Error("company not found");
         return { title: r.name, status: r.contact_status };
       },

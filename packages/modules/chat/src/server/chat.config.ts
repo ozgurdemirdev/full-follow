@@ -1,4 +1,5 @@
 import path from "node:path";
+import { m } from "../messages";
 
 export { CHAT_ATTACHMENT_TYPES } from "@fullfollow/core";
 export { CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, type ChatErrorCode } from "../constants";
@@ -18,7 +19,7 @@ export const MCP_TOOL_PREFIX = `mcp__${MCP_SERVER_NAME}__`;
 export const TOOL_SEARCH = "ToolSearch";
 /** Built-in web tools the panel Claude may use besides the Full Follow MCP tools (page content is untrusted, see the rules in chat-files.ts) */
 export const WEB_TOOLS = ["WebSearch", "WebFetch"] as const;
-export const TOOL_SEARCH_LABEL = "Araçlar hazırlanıyor";
+export const TOOL_SEARCH_LABEL = m.toolSearchLabel;
 export const TOOL_SUMMARY_CHARS = 80;
 /** After closing stdin, how long a process gets to exit before it is killed */
 export const GRACEFUL_EXIT_MS = 2_000;
@@ -28,7 +29,7 @@ export const ACK_MARKER = "[[ack]]";
 /** Name of the private brief in the chat working folder (outside the repo); appended to system.md when it exists */
 export const BRIEF_FILE = "panel-brief.md";
 /** Hidden block sent once when the pinned notes changed after a chat started (never stored, never shown) */
-export const NOTES_UPDATE = "Updated pinned notes from Özgür, apply them from now on:\n";
-export const NOTES_CLEARED = "Özgür cleared the pinned notes; disregard any earlier pinned notes.";
+export const NOTES_UPDATE = m.notesUpdate;
+export const NOTES_CLEARED = m.notesCleared;
 /** Hidden block added to the user message of a dictated message (never stored in body, never returned, never rendered) */
-export const VOICE_NOTE = "This message was dictated by voice and transcribed automatically, so some words may be misheard. Infer the intended meaning from context and ask if something important is unclear.";
+export const VOICE_NOTE = m.voiceNote;

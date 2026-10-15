@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Ref } from "react";
 import type { ChatLimits, ChatMessage, ChatMeta, ChatSession } from "../api";
-import { T } from "../chatText";
+import { T } from "../messages";
 import type { Connection } from "../useChatStream";
 import type { Live } from "../useThread";
 import { ChatHeader } from "./ChatHeader";

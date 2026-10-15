@@ -1,6 +1,7 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { m } from "../messages";
 import { CHAT_DATA_DIR, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, TOOL_SEARCH, WEB_TOOLS } from "./chat.config";
 
 export interface CliTarget {
@@ -56,7 +57,7 @@ export function resolveCli(): CliTarget | null {
 export function chatCwd(): string {
   const want = process.env[ENV.cwd] || DEFAULT_CHAT_CWD;
   if (fs.existsSync(want)) return want;
-  console.warn(`  Sohbet çalışma klasörü yok (${want}), ${CHAT_DATA_DIR} kullanılıyor`);
+  console.warn(m.log.noCwd(want, CHAT_DATA_DIR));
   return CHAT_DATA_DIR;
 }
 

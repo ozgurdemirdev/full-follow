@@ -1,5 +1,6 @@
 import { api, ApiError, qs } from "@kit/api/client";
 import type { ChatPhase } from "@kit/lib/chatStore";
+import { T } from "./messages";
 
 export type ChatState = "pending" | "streaming" | "done" | "error" | "stopped";
 export type { ChatPhase };
@@ -108,7 +109,7 @@ export const chatApi = {
     try {
       res = await fetch(`/api${base}/sessions/${id}/attachments`, { method: "POST", body: form, credentials: "same-origin" });
     } catch {
-      throw new ApiError("Sunucuya ulaşılamadı", 0, "network");
+      throw new ApiError(T.serverUnreachable, 0, "network");
     }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new ApiError(data?.error ?? res.statusText, res.status, data?.code);

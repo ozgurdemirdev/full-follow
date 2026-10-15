@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef } from "react";
 import type { ChatSession } from "../api";
 import { fmtDay } from "@kit/lib/format";
-import { T } from "../chatText";
+import { T } from "../messages";
 import { Icon } from "@kit/components/icons";
 
 const DAY_MS = 86_400_000;

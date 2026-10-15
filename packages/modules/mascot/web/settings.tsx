@@ -1,7 +1,7 @@
 import { SetPills, Switch } from "@kit/components/settings/Parts";
 import { toast } from "@kit/components/toast";
 import type { SettingRow } from "@kit/lib/settings";
-import { MASCOT_TEXT as T } from "./text";
+import { m as T } from "./messages";
 import { SIZE, VARIANTS, VARIANT_IDS } from "./config";
 import { mascotPrefs, useMascotPrefs } from "./mascotStore";
 import { PRESET_IDS, PRESET_NAMES } from "./palette";
@@ -10,6 +10,9 @@ import { PRESET_IDS, PRESET_NAMES } from "./palette";
 const swatchColor = (id: string) => `var(--color-mascot-${id}-bell)`;
 /** The colour picker starts at the amber token */
 const defaultCustom = () => getComputedStyle(document.documentElement).getPropertyValue("--color-mascot-amber-bell").trim();
+
+/** The search words of a row: a message lists them separated by "|" */
+const words = (list: string) => list.split("|");
 
 const ShowSwitch = () => <Switch label={T.show} on={useMascotPrefs().show} onChange={mascotPrefs.setShow} />;
 const WanderSwitch = () => <Switch label={T.wander} on={useMascotPrefs().wander} onChange={mascotPrefs.setWander} />;
@@ -62,10 +65,10 @@ const ResetPosition = () => (
 
 /** Every control changes the running mascot at once (mascotStore) and survives F5 */
 export const mascotRows = (): SettingRow[] => [
-  { id: "mascot-show", name: T.show, hint: T.showHint, keywords: ["maskot", "denizanası", "gizle"], control: <ShowSwitch /> },
-  { id: "mascot-wander", name: T.wander, hint: T.wanderHint, keywords: ["maskot", "gezinme"], control: <WanderSwitch /> },
-  { id: "mascot-model", name: T.model, keywords: ["maskot", "yuvarlak", "klasik", "etekli"], control: <ModelPills /> },
-  { id: "mascot-color", name: T.color, keywords: ["maskot", "özel renk"], control: <Swatches /> },
-  { id: "mascot-size", name: T.size, keywords: ["maskot", "boyut", "büyüklük"], control: <SizeRange /> },
-  { id: "mascot-position", name: "Konum", hint: "Maskotu varsayılan yerine geri koyar", keywords: ["maskot", "sıfırla"], control: <ResetPosition /> },
+  { id: "mascot-show", name: T.show, hint: T.showHint, keywords: words(T.keywords.show), control: <ShowSwitch /> },
+  { id: "mascot-wander", name: T.wander, hint: T.wanderHint, keywords: words(T.keywords.wander), control: <WanderSwitch /> },
+  { id: "mascot-model", name: T.model, keywords: words(T.keywords.model), control: <ModelPills /> },
+  { id: "mascot-color", name: T.color, keywords: words(T.keywords.color), control: <Swatches /> },
+  { id: "mascot-size", name: T.size, keywords: words(T.keywords.size), control: <SizeRange /> },
+  { id: "mascot-position", name: T.position, hint: T.positionHint, keywords: words(T.keywords.position), control: <ResetPosition /> },
 ];

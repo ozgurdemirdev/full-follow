@@ -1,9 +1,10 @@
 import { FFError, type Ctx } from "../context";
+import { m } from "../messages";
 import type { ChatCard, CommentTargetDef, EntityHandler, EventName, EventPayload, ModAccess, ModuleDef, ModuleRuntime, TrashTypeDef, TypeRegistry } from "./types";
 
 /** Identity helper: gives a module definition its type and checks the key shape. */
 export function defineModule<const D extends ModuleDef>(def: D): D {
-  if (!/^[a-z][a-z0-9-]*$/.test(def.key)) throw new FFError("validation", `module key "${def.key}" must be lower-case letters, digits and dashes`);
+  if (!/^[a-z][a-z0-9-]*$/.test(def.key)) throw new FFError("validation", m.registry.moduleKeyShape(def.key));
   return def;
 }
 
@@ -32,7 +33,7 @@ function buildTypes(installed: ModuleDef[]): TypeRegistry {
   for (const def of installed) {
     for (const [type, handler] of Object.entries(def.entities ?? {})) {
       for (const name of [type, ...(handler.aliases ?? [])]) {
-        if (names.has(name)) throw new FFError("validation", `record type name "${name}" is claimed twice (module "${def.key}")`);
+        if (names.has(name)) throw new FFError("validation", m.registry.typeNameTwice(name, def.key));
         names.set(name, type);
       }
       entities.set(type, handler);
@@ -66,7 +67,7 @@ function buildTypes(installed: ModuleDef[]): TypeRegistry {
 export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): ModuleRegistry {
   const seen = new Set<string>();
   for (const d of defs) {
-    if (seen.has(d.key)) throw new FFError("validation", `duplicate module key "${d.key}"`);
+    if (seen.has(d.key)) throw new FFError("validation", m.registry.duplicateModuleKey(d.key));
     seen.add(d.key);
   }
   const offSet = new Set(off);
@@ -109,7 +110,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
         return api as any;
       };
       const emit = <N extends EventName>(name: N, payload: EventPayload<N>): string[] => {
-        if (!ctx.sqlite.inTransaction) throw new Error(`emit("${name}") must run inside the caller's transaction`);
+        if (!ctx.sqlite.inTransaction) throw new Error(m.registry.emitOutsideTransaction(name));
         const effects: string[] = [];
         for (const def of hooksOf(name)) {
           const out = def.hooks![name](ctx, payload);

@@ -2,6 +2,7 @@ import { emit, FFError, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { trash } from "../db/schema";
 import { CORE_TRASH_TYPES } from "../constants";
+import { m } from "../messages";
 import { TABLE_LABEL } from "./shared";
 
 interface Part {
@@ -36,7 +37,7 @@ export class Bin {
         this.ctx.sqlite.prepare(`DELETE FROM ${table} WHERE ${where}`).run(...params);
       } catch (e) {
         // a row of a module that is not installed can still point at this one (nobody was there to clean it)
-        if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) throw new FFError("rule", `silinemedi: ${TABLE_LABEL[table] ?? table} kaydına bağlı başka kayıtlar var (ilgili modül kurulu değil)`);
+        if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) throw new FFError("rule", m.trash.deleteBlocked(TABLE_LABEL[table] ?? table));
         throw e;
       }
     }
@@ -107,10 +108,10 @@ export function trashList(ctx: Ctx): TrashItem[] {
 
 /** Turkish names of the record types core owns; module types bring theirs through the registry (`typeLabel`) */
 const CORE_TYPE_LABEL: Record<string, string> = {
-  note: "not",
-  comment: "yorum", link: "link",
-  file: "dosya",
-  tag: "etiket", sector: "sektör", source: "kaynak",
+  note: m.noun.note,
+  comment: m.noun.comment, link: m.noun.link,
+  file: m.noun.file,
+  tag: m.noun.tag, sector: m.noun.sector, source: m.noun.source,
 };
 
 /** Turkish name of a record type: core types, then the installed modules' types; the type itself when nobody names it */
@@ -127,7 +128,7 @@ export const isTrashType = (ctx: Ctx, type: string): boolean =>
  */
 export function restoreFromTrash(ctx: Ctx, type: string, recordId: number, check?: (keys: string[]) => void) {
   const t = row(ctx, "SELECT * FROM trash WHERE type = ? AND record_id = ? ORDER BY id DESC LIMIT 1", type, recordId);
-  if (!t) throw new FFError("not_found", `çöp kutusunda ${typeLabel(ctx, type)} #${recordId} yok`);
+  if (!t) throw new FFError("not_found", m.trash.missing(typeLabel(ctx, type), recordId));
   const keys: string[] = t.keys ? JSON.parse(t.keys) : [];
   check?.(keys);
   const { parts, links } = JSON.parse(t.payload) as { parts: Part[]; links: Unlink[] };
@@ -146,7 +147,7 @@ export function restoreFromTrash(ctx: Ctx, type: string, recordId: number, check
       }
       ctx.sqlite.prepare("DELETE FROM trash WHERE id = ?").run(t.id);
       emit(tx, ctx, {
-        type: `${type}.restored`, summary: `Geri yüklendi (${typeLabel(ctx, type)}): ${t.label}`,
+        type: `${type}.restored`, summary: m.trash.restored(typeLabel(ctx, type), t.label),
         ...personLinkOf(type, parts),
       });
       ctx.emit("record.restored", { type, id: recordId });
@@ -154,11 +155,11 @@ export function restoreFromTrash(ctx: Ctx, type: string, recordId: number, check
   } catch (e) {
     if (e instanceof FFError) throw e;
     if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) {
-      throw new FFError("rule", `${t.label} geri yüklenemedi: bağlı olduğu kayıt da silinmiş, önce onu geri yükle`);
+      throw new FFError("rule", m.trash.restoreBlocked(t.label));
     }
     throw e;
   }
-  return { label: t.label as string, effects: [`${t.label} geri yüklendi`] };
+  return { label: t.label as string, effects: [m.trash.restoredEffect(t.label)] };
 }
 
 /** Geri yüklenen kaydın olayı kişi/fırsat/proje zaman çizelgesinde de görünsün */
@@ -175,12 +176,12 @@ function personLinkOf(type: string, parts: Part[]) {
 export function softDelete(ctx: Ctx, type: keyof typeof DELETED_TABLES, id: number, extraWhere?: string) {
   const table = DELETED_TABLES[type];
   const cur = row(ctx, `SELECT * FROM ${table} WHERE id = ?`, id);
-  if (!cur) throw new FFError("not_found", `${CORE_TYPE_LABEL[type]} #${id} bulunamadı`);
+  if (!cur) throw new FFError("not_found", m.notFound(CORE_TYPE_LABEL[type], id));
   if (cur.deleted_at) return { effects: [] as string[], label: cur.name as string };
   const now = ctx.clock.now();
   ctx.db.transaction((tx) => {
     ctx.sqlite.prepare(`UPDATE ${table} SET deleted_at = ?, updated_at = ? WHERE id = ?${extraWhere ? ` OR (${extraWhere})` : ""}`).run(now, now, id, ...(extraWhere ? [id] : []));
-    emit(tx, ctx, { type: `${type}.deleted`, summary: `${cap(CORE_TYPE_LABEL[type])} silindi: ${cur.name}` });
+    emit(tx, ctx, { type: `${type}.deleted`, summary: m.trash.categoryDeleted(CORE_TYPE_LABEL[type], cur.name) });
   });
   return { effects: [] as string[], label: cur.name as string };
 }
@@ -188,17 +189,16 @@ export function softDelete(ctx: Ctx, type: keyof typeof DELETED_TABLES, id: numb
 export function restoreCategory(ctx: Ctx, type: keyof typeof DELETED_TABLES, id: number, extraWhere?: string) {
   const table = DELETED_TABLES[type];
   const cur = row(ctx, `SELECT * FROM ${table} WHERE id = ?`, id);
-  if (!cur) throw new FFError("not_found", `${CORE_TYPE_LABEL[type]} #${id} bulunamadı`);
+  if (!cur) throw new FFError("not_found", m.notFound(CORE_TYPE_LABEL[type], id));
   if (!cur.deleted_at) return { effects: [] as string[] };
   const now = ctx.clock.now();
   ctx.db.transaction((tx) => {
     // birlikte silinenler (ana sektörle alt sektörleri) birlikte döner
     ctx.sqlite.prepare(`UPDATE ${table} SET deleted_at = NULL, updated_at = ? WHERE id = ?${extraWhere ? ` OR (${extraWhere} AND deleted_at = ?)` : ""}`)
       .run(now, id, ...(extraWhere ? [id, cur.deleted_at] : []));
-    emit(tx, ctx, { type: `${type}.restored`, summary: `Geri yüklendi (${CORE_TYPE_LABEL[type]}): ${cur.name}` });
+    emit(tx, ctx, { type: `${type}.restored`, summary: m.trash.restored(CORE_TYPE_LABEL[type], cur.name) });
   });
-  return { effects: [`${cur.name} geri yüklendi`] };
+  return { effects: [m.trash.restoredEffect(cur.name)] };
 }
 
 export const isCategory = (t: string): t is keyof typeof DELETED_TABLES => t in DELETED_TABLES;
-const cap = (s: string) => s.charAt(0).toLocaleUpperCase("tr") + s.slice(1);

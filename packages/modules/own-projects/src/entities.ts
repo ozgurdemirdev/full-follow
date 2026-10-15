@@ -1,4 +1,5 @@
 import { resolveRef, type Ctx, type EntityHandler } from "@fullfollow/core";
+import { m } from "./messages";
 
 const projects = (ctx: Ctx) => ctx.mod("own-projects")!;
 
@@ -6,7 +7,7 @@ const projects = (ctx: Ctx) => ctx.mod("own-projects")!;
 export const entities: Record<string, EntityHandler> = {
   own_project: {
     aliases: ["own", "own_projects", "kendi_proje", "kendi projem", "projelerim", "urunum"],
-    ref: { table: "own_projects", col: "name", label: "kendi projesi" },
+    ref: { table: "own_projects", col: "name", label: m.project },
     // its ideas come from the relation the ideas module contributes
     related: ["links", "comments"],
     // `{ from_idea: "fikir adı" }` turns a general idea into a project instead of creating one

@@ -1,4 +1,4 @@
-import type { TaskKind } from "@fullfollow/core";
+import { LANG, type TaskKind } from "@fullfollow/core";
 import { DEFAULT_TASK_KIND, TASK_KIND_KEYWORDS } from "./constants";
 
 /** A leading or trailing time: "14:00", "9.30" (hour 0 to 23, minutes two digits) */
@@ -16,7 +16,7 @@ const hhmm = (h: string, m: string) => `${h.padStart(2, "0")}:${m}`;
 
 /** Kind of a task from its words (first matching keyword group wins, else the default kind) */
 export function taskKindOf(text: string): TaskKind {
-  const lower = text.toLocaleLowerCase("tr");
+  const lower = text.toLocaleLowerCase(LANG);
   return TASK_KIND_KEYWORDS.find((k) => k.words.some((w) => lower.includes(w)))?.kind ?? DEFAULT_TASK_KIND;
 }
 

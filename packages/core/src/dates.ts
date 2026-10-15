@@ -1,3 +1,6 @@
+import { LANG } from "./i18n";
+import { m } from "./messages";
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Yerel saate göre YYYY-MM-DD */
@@ -26,12 +29,12 @@ export const isIsoDateTime = (s: string) => ISO_DATE.test(s) || ISO_DATETIME.tes
  */
 export function resolveRelativeDate(input: unknown, today = localDate()): unknown {
   if (typeof input !== "string") return input;
-  const s = input.trim().toLocaleLowerCase("tr");
-  if (s === "bugün" || s === "bugun" || s === "today") return today;
-  if (s === "yarın" || s === "yarin" || s === "tomorrow") return addDays(today, 1);
-  if (s === "dün" || s === "dun" || s === "yesterday") return addDays(today, -1);
-  const m = /^([+-]\d+)\s*([gh]?)$/.exec(s);
-  if (m) return addDays(today, Number(m[1]) * (m[2] === "h" ? 7 : 1));
+  const s = input.trim().toLocaleLowerCase(LANG);
+  if (s === m.date.today || s === m.date.todayAscii || s === "today") return today;
+  if (s === m.date.tomorrow || s === m.date.tomorrowAscii || s === "tomorrow") return addDays(today, 1);
+  if (s === m.date.yesterday || s === m.date.yesterdayAscii || s === "yesterday") return addDays(today, -1);
+  const offset = /^([+-]\d+)\s*([gh]?)$/.exec(s);
+  if (offset) return addDays(today, Number(offset[1]) * (offset[2] === "h" ? 7 : 1));
   return input.trim();
 }
 

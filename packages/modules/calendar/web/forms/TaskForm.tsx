@@ -11,6 +11,8 @@ import { ASSIGNEE_ITEMS } from "../labels";
 import { emptyRef, type Ref } from "@kit/forms/helpers";
 import { errorsOf, saveRecord, useLinkOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 import { TASK_KIND_ITEMS } from "../labels";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 
 /** Task kinds in the board's order: Görüşme, Takip, Görev */
 const KINDS = (["gorusme", "takip", "gorev"] as const).map((v) => TASK_KIND_ITEMS.find((k) => k.value === v)!);
@@ -57,17 +59,17 @@ export function TaskForm(p: FormProps) {
         { title: title.trim(), assignee: who, due_date: due || undefined, due_time: time || undefined, kind, ...link },
       );
     },
-    () => errorsOf({ title: !title.trim() && "Başlık gerekli" }),
+    () => errorsOf({ title: !title.trim() && m.taskForm.titleRequired }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Örn. muhasebeci ile görüş, toplantı" autoFocus />
-      <DateField label="Gün" half quick value={due} onChange={setDue} />
-      <TimeField label="Saat" half opt value={time} onChange={setTime} placeholder="Gün içi" />
-      <SegField label="Tür" options={KINDS} value={kind} onChange={setKind} />
-      <SegField label="Kim yapacak" options={ASSIGNEE_ITEMS} value={who} onChange={setWho} />
-      <ComboField label="Neyle ilgili" opt value={target} onChange={setTarget} options={options} placeholder="Kişi, firma, fırsat ya da proje ara" />
+      <TextField name="title" label={kit.fields.title} req value={title} onChange={setTitle} placeholder={m.taskForm.titlePlaceholder} autoFocus />
+      <DateField label={m.taskForm.day} half quick value={due} onChange={setDue} />
+      <TimeField label={m.taskForm.time} half opt value={time} onChange={setTime} placeholder={m.anytime} />
+      <SegField label={kit.fields.type} options={KINDS} value={kind} onChange={setKind} />
+      <SegField label={m.taskForm.who} options={ASSIGNEE_ITEMS} value={who} onChange={setWho} />
+      <ComboField label={m.taskForm.about} opt value={target} onChange={setTarget} options={options} placeholder={m.taskForm.aboutPlaceholder} />
     </Form>
   );
 }
