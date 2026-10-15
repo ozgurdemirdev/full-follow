@@ -1,13 +1,12 @@
 import { eq } from "drizzle-orm";
-import { z } from "zod";
 import {
   assertOzgur, Bin, eventLink as link, FFError, parse, renderTemplate, requireRow, resolveSubject, sameSide, schema, stamp, truncate, writeEvent as emit,
   type Ctx, type DraftRecord, type TemplateRecord,
 } from "@fullfollow/core";
 import { m } from "../messages";
-import { EVENT_NOTE_LENGTH, EVENT_TEXT_LENGTH } from "./constants";
+import { EVENT_NOTE_LENGTH, EVENT_TEXT_LENGTH, REJECT_NO_REASON_NOTE } from "./constants";
 import { learnRule } from "./rules";
-import { draftCreate, draftUpdate } from "./schemas";
+import { draftCreate, draftReject, draftUpdate } from "./schemas";
 
 const { drafts } = schema;
 
@@ -77,12 +76,14 @@ export function draftsService(ctx: Ctx) {
     return { row: requireRow<DraftRecord>(ctx, "drafts", id), effects: [] as string[] };
   }
 
-  function reject(id: number, note: unknown) {
+  /** `input` is `{ note }` or `{ no_reason: true }` (a bare text counts as the note); only a real note becomes a learned rule */
+  function reject(id: number, input: unknown) {
     assertOzgur(ctx, m.who.reject);
-    const n = parse(z.string().trim().min(1, m.error.rejectNote), note);
+    const { note, no_reason } = parse(draftReject, input);
+    const n = note || REJECT_NO_REASON_NOTE;
     ctx.db.transaction(() => {
       setStatus(id, ["bekliyor", "onaylandi"], "reddedildi", "draft.rejected", m.event.rejected(truncate(n, EVENT_NOTE_LENGTH)), { reject_note: n });
-      learnRule(ctx, n);
+      if (note && !no_reason) learnRule(ctx, note);
     });
     return { row: requireRow<DraftRecord>(ctx, "drafts", id), effects: [] as string[] };
   }

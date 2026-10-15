@@ -31,6 +31,7 @@ export const m = defineMessages({
       lastWeek: (n: number) => `geçen hafta ${n}`,
       touches: "Temas",
       collected: "Tahsilat",
+      unknown: "-",
       payments: (n: number) => `${n} ödeme`,
       tasksDone: "Biten görev",
       claudeDrafts: "Claude taslağı",

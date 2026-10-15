@@ -9,7 +9,6 @@ export const m = defineMessages({
     addedTo: "Taslaklar’a onay için düşer",
     tabs: { pending: "Onay bekliyor", sent: "Gönderildi", rejected: "Reddedildi" },
     reasons: { tooLong: "Çok uzun", wrongTone: "Ton yanlış", notNow: "Zamanı değil", wrongInfo: "Bilgi yanlış" },
-    rejectFallback: "Neden yazılmadı",
     followup: (step: number) => `${step}. takip`,
     words: (n: number) => `${n} kelime`,
     copyText: (subject: string, text: string) => `Konu: ${subject}\n\n${text}`,

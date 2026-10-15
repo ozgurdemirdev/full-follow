@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
 import { assertOzgur, emit, FFError, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
 import { isIsoDate, resolveRelativeDate } from "../dates";
+import type { Q } from "../db/client";
 import { settings } from "../db/schema";
 
 export const readSetting = (ctx: Ctx, key: string): string | undefined =>
@@ -16,6 +17,12 @@ const templateSchema = z.array(z.object({
 })).min(1);
 
 export type PaymentTemplate = z.infer<typeof templateSchema>;
+
+/**
+ * What a template must be to be saved: exactly one deposit part, because a project is held at the deposit until it is paid and a plan without one would never release it.
+ * Reading stays lenient (`templateSchema`), so a template saved before this rule still loads and can be corrected.
+ */
+const templateInput = templateSchema.refine((t) => t.filter((x) => x.milestone === DEPOSIT_MILESTONE).length === 1, m.settings.templateDeposit);
 
 export function readTemplate(ctx: Ctx): PaymentTemplate {
   const raw = readSetting(ctx, "payment_template");
@@ -144,7 +151,8 @@ export function settingsService(ctx: Ctx) {
     return Object.assign({}, values, ...ctx.contrib("settingsView").map((extra) => extra(ctx, values)));
   }
 
-  function set(key: string, value: unknown): void {
+  /** The text a setting is stored as; a value that is not valid for its key is a validation error */
+  function validated(key: string, value: unknown): string {
     if (!(SETTING_KEYS as readonly string[]).includes(key)) {
       throw new FFError("validation", m.settings.unknown(key, SETTING_KEYS.join(", ")));
     }
@@ -152,7 +160,7 @@ export function settingsService(ctx: Ctx) {
     if (key === "chat_pinned_notes") assertOzgur(ctx, m.settings.pinnedNotesAction);
     let stored: string;
     if (key === "payment_template") {
-      const t = parse(templateSchema, typeof value === "string" ? JSON.parse(value) : value);
+      const t = parse(templateInput, typeof value === "string" ? JSON.parse(value) : value);
       const sum = t.reduce((a, x) => a + x.percent, 0);
       if (Math.abs(sum - 100) > 0.001) throw new FFError("validation", m.settings.templateTotal(sum));
       stored = JSON.stringify(t);
@@ -184,18 +192,24 @@ export function settingsService(ctx: Ctx) {
     } else {
       stored = String(parse(z.coerce.number().int().min(0), value));
     }
-    const t = ctx.clock.now();
-    ctx.db.transaction((tx) => {
-      tx.insert(settings).values({ key, value: stored, updated_at: t, updated_by: ctx.actor })
-        .onConflictDoUpdate({ target: settings.key, set: { value: stored, updated_at: t, updated_by: ctx.actor } }).run();
-      emit(tx, ctx, { type: "settings.updated", summary: m.settings.event(key), data: { key, value: stored } });
-    });
+    return stored;
   }
 
+  /** Writes one setting and its event inside the caller's transaction */
+  function store(tx: Q, key: string, value: string): void {
+    const t = ctx.clock.now();
+    tx.insert(settings).values({ key, value, updated_at: t, updated_by: ctx.actor })
+      .onConflictDoUpdate({ target: settings.key, set: { value, updated_at: t, updated_by: ctx.actor } }).run();
+    emit(tx, ctx, { type: "settings.updated", summary: m.settings.event(key), data: { key, value } });
+  }
+
+  const set = (key: string, value: unknown): void => ctx.db.transaction((tx) => store(tx, key, validated(key, value)));
+
+  /** Several settings in one transaction: one invalid value saves none of them */
   function setMany(data: Record<string, unknown>) {
     const keys = Object.keys(data);
     if (!keys.length) throw new FFError("validation", m.settings.empty);
-    for (const k of keys) set(k, data[k]);
+    ctx.db.transaction((tx) => { for (const k of keys) store(tx, k, validated(k, data[k])); });
     return { keys, effects: [] as string[] };
   }
 

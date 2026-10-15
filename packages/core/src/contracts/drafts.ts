@@ -98,7 +98,8 @@ export interface DraftsApi {
   /** only a waiting draft can be edited */
   update(id: number, input: unknown): { row: DraftRecord; effects: string[] };
   approve(id: number): { row: DraftRecord; effects: string[] };
-  reject(id: number, note: unknown): { row: DraftRecord; effects: string[] };
+  /** `{ note }` (the reason; it joins the learned rules) or `{ no_reason: true }` when none was given; a bare text counts as the note */
+  reject(id: number, input: unknown): { row: DraftRecord; effects: string[] };
   /** "sent": the draft becomes sent and the outgoing touch is written through the network module (inside the same transaction) */
   markSent(id: number): { row: DraftRecord; touch?: TouchRecord; effects: string[] };
   /** a sent draft cannot be deleted (its touch hangs on it) */

@@ -11,6 +11,16 @@ export const has = (q: string | undefined, ...fields: (string | null | undefined
 };
 export const bool = (v: unknown) => v === true || v === "true" || v === 1 || v === "1";
 
+/** SQL for "`col` is one of these ids": the ids travel as one JSON text bound to the `?`, so one statement serves any number of them */
+export const inIds = (col: string) => `${col} IN (SELECT value FROM json_each(?))`;
+
+/** The ids a list filter narrows to (`ids`: an array or a comma separated text); undefined when the filter does not narrow by id */
+export function idsOf(f: Record<string, any>): number[] | undefined {
+  const v = f.ids;
+  if (v === undefined || v === null || v === "") return undefined;
+  return (Array.isArray(v) ? v : String(v).split(",")).map(Number).filter(Number.isInteger);
+}
+
 /** Mükerrer anahtarları dışarı verilmez (ekranda ve MCP çıktısında gereksiz) */
 const KEY_COLS = ["email_key", "domain_key", "name_key", "instagram_key", "linkedin_key"];
 export const stripKeys = <T extends Record<string, any>>(r: T): T => {
@@ -55,9 +65,10 @@ export function labelFilter<T extends { tag_ids: number[]; sectors: { id: number
 /** Etiket listesi: kişi ve firma sayısıyla; silinenler sadece `all` ile (kayıtlarda görünmeye devam ettikleri için) */
 export function tagsList(ctx: Ctx, o: ListOpts): Rows {
   const f = o.filter ?? {};
+  const ids = idsOf(f);
   const list = rows(ctx, `SELECT t.*, (SELECT COUNT(*) FROM person_tags x WHERE x.tag_id = t.id) AS people_count,
       (SELECT COUNT(*) FROM company_tags x WHERE x.tag_id = t.id) AS company_count
-    FROM tags t ORDER BY t.name COLLATE NOCASE`)
+    FROM tags t ${ids ? `WHERE ${inIds("t.id")}` : ""} ORDER BY t.name COLLATE NOCASE`, ...(ids ? [JSON.stringify(ids)] : []))
     .filter((t) => (bool(f.all) || !t.deleted_at) && has(o.q, t.name, t.slug));
   return page(list, o.limit, o.offset);
 }

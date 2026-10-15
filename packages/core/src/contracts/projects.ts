@@ -137,6 +137,8 @@ export interface ProjectsApi {
   };
   /** money received in a month (YYYY-MM), every payment entry on its own date */
   collectedIn(ym: string): number;
+  /** money received from..to (dates, both included), every payment entry on its own date; the one definition of "collected" (reports and the week strip) */
+  collectedBetween(from: string, to: string): number;
   /** money still due in a month (YYYY-MM) */
   outstandingDue(ym: string): number;
   /** per person: projects and money received */

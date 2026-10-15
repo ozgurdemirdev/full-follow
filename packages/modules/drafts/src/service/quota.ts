@@ -1,14 +1,14 @@
 import {
-  addDays, CHANNELS, keptRows, label, marketingSettings, QUOTA_NEAR_RATIO,
+  addDays, CHANNELS, keptRows, label, localDay, marketingSettings, QUOTA_NEAR_RATIO,
   type Channel, type Ctx, type Quota, type QuotaOverDays, type QuotaState,
 } from "@fullfollow/core";
 import { m } from "../messages";
 
-/** Outgoing messages per channel and day ("channel|date" → count); daily goals and the daily quota both count from here */
+/** Outgoing messages per channel and local day ("channel|date" → count); daily goals and the daily quota both count from here */
 export function outgoingMessageCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
   const m = new Map<string, number>();
-  for (const r of keptRows<{ channel: string; d: string; n: number }>(ctx, `SELECT channel, substr(happened_at, 1, 10) AS d, COUNT(*) AS n
-      FROM touches WHERE direction = 'giden' AND kind = 'mesaj' AND substr(happened_at, 1, 10) BETWEEN ? AND ? GROUP BY channel, d`, from, to)) {
+  for (const r of keptRows<{ channel: string; d: string; n: number }>(ctx, `SELECT channel, ${localDay("happened_at")} AS d, COUNT(*) AS n
+      FROM touches WHERE direction = 'giden' AND kind = 'mesaj' AND ${localDay("happened_at")} BETWEEN ? AND ? GROUP BY channel, d`, from, to)) {
     m.set(`${r.channel}|${r.d}`, r.n);
   }
   return m;

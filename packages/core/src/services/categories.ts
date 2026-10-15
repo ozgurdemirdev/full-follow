@@ -6,6 +6,7 @@ import type { Q } from "../db/client";
 import { m } from "../messages";
 import { company_sectors, company_tags, person_sectors, person_tags, sources, tags } from "../db/schema";
 import { sourceCreate, sourceUpdate, tagCreate, tagUpdate } from "../schemas";
+import { inIds } from "./directory";
 import { duplicate } from "./dupes";
 import { ensureSector } from "./sectors";
 import { requireRow } from "./shared";
@@ -161,11 +162,11 @@ export function ensureSource(q: Q, ctx: Ctx, ref: string | number | null): numbe
   return r.id;
 }
 
-/** Kayıt başına etiketler ve sektörler (listeler tek sorguda alır) */
-export function tagsOf(ctx: Ctx, owner: Owner) {
+/** Kayıt başına etiketler ve sektörler (listeler tek sorguda alır); `ids` limits it to those owners */
+export function tagsOf(ctx: Ctx, owner: Owner, ids?: number[]) {
   const out = new Map<number, { id: number; name: string; slug: string; color: string; deleted: boolean }[]>();
   for (const r of rows(ctx, `SELECT x.${OWNER_COL[owner]} AS owner, t.id, t.name, t.slug, t.color, t.deleted_at FROM ${TAG_SQL[owner]} x
-    JOIN tags t ON t.id = x.tag_id ORDER BY t.name COLLATE NOCASE`)) {
+    JOIN tags t ON t.id = x.tag_id ${ids ? `WHERE ${inIds(`x.${OWNER_COL[owner]}`)}` : ""} ORDER BY t.name COLLATE NOCASE`, ...(ids ? [JSON.stringify(ids)] : []))) {
     const list = out.get(r.owner) ?? [];
     list.push({ id: r.id, name: r.name, slug: r.slug, color: r.color, deleted: !!r.deleted_at });
     out.set(r.owner, list);
@@ -173,10 +174,10 @@ export function tagsOf(ctx: Ctx, owner: Owner) {
   return out;
 }
 
-export function sectorsOf(ctx: Ctx, owner: Owner) {
+export function sectorsOf(ctx: Ctx, owner: Owner, ids?: number[]) {
   const out = new Map<number, { id: number; parent_id: number | null; path: string }[]>();
   for (const r of rows(ctx, `SELECT x.${OWNER_COL[owner]} AS owner, s.id, s.parent_id, s.name, p.name AS parent_name FROM ${SECTOR_SQL[owner]} x
-    JOIN sectors s ON s.id = x.sector_id LEFT JOIN sectors p ON p.id = s.parent_id ORDER BY COALESCE(p.name, s.name), s.name`)) {
+    JOIN sectors s ON s.id = x.sector_id LEFT JOIN sectors p ON p.id = s.parent_id ${ids ? `WHERE ${inIds(`x.${OWNER_COL[owner]}`)}` : ""} ORDER BY COALESCE(p.name, s.name), s.name`, ...(ids ? [JSON.stringify(ids)] : []))) {
     const list = out.get(r.owner) ?? [];
     list.push({ id: r.id, parent_id: r.parent_id, path: r.parent_name ? `${r.parent_name} > ${r.name}` : r.name });
     out.set(r.owner, list);

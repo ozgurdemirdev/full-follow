@@ -183,6 +183,7 @@ export const m = defineMessages({
       pickOpp: "Fırsatı seç",
       amountRequired: "Tutar ya da en az bir kalem gerekli",
       planTotal: (total: number) => `Yüzdelerin toplamı ${total} olmalı`,
+      planDeposit: "Planda peşinat olmalı",
       opp: "Fırsat",
       oppPlaceholder: "Fırsat ara",
       items: "Kalemler",

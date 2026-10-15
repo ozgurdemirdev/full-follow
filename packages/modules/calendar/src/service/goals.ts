@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import {
-  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, has, isIsoDate, isoWeekday, page, parse, requireRow, resolveRelativeDate, row, rows, schema, stamp,
+  addDays, Bin, BULK_SKIPPED_EVENT, dayOf, daysBetween, FFError, has, isIsoDate, isoWeekday, localDay, page, parse, requireRow, resolveRelativeDate, row, rows, schema, stamp,
   truncate, writeEvent as emit, type CalendarDay, type CalendarTask, type Ctx, type DayPlan, type GoalDay, type GoalRecord, type ListOpts,
 } from "@fullfollow/core";
 import { m } from "../messages";
@@ -13,22 +13,22 @@ type GoalRow = GoalRecord;
 
 const mondayOf = (date: string) => addDays(date, -(isoWeekday(date) - 1));
 /** A goal applies on a day if the weekday is in its repeat list and the goal already existed */
-const appliesOn = (g: GoalRow, date: string) => g.days.split(",").includes(String(isoWeekday(date))) && date >= g.created_at.slice(0, 10);
+const appliesOn = (g: GoalRow, date: string) => g.days.split(",").includes(String(isoWeekday(date))) && date >= dayOf(g.created_at);
 
-/** New people and companies created per day (date → count); deleted records are gone from the tables, so they do not count */
+/** New people and companies created per local day (date → count); deleted records are gone from the tables, so they do not count */
 // Reads the people and companies tables directly on purpose: tables always exist, so the count keeps working without those modules.
 function newRecordCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
   const list = rows<{ d: string; n: number }>(ctx, `SELECT d, SUM(n) AS n FROM (
-      SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM people GROUP BY d
-      UNION ALL SELECT substr(created_at, 1, 10), COUNT(*) FROM companies GROUP BY 1
+      SELECT ${localDay("created_at")} AS d, COUNT(*) AS n FROM people GROUP BY d
+      UNION ALL SELECT ${localDay("created_at")}, COUNT(*) FROM companies GROUP BY 1
     ) WHERE d BETWEEN ? AND ? GROUP BY d`, from, to);
   return new Map(list.map((r) => [r.d, r.n]));
 }
 
-/** Duplicates skipped by bulk saves per day (date → count), from the bulk skipped events */
+/** Duplicates skipped by bulk saves per local day (date → count), from the bulk skipped events */
 function skippedCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
-  const list = rows<{ d: string; n: number }>(ctx, `SELECT substr(created_at, 1, 10) AS d, SUM(json_extract(data, '$.count')) AS n FROM events
-    WHERE type = ? AND substr(created_at, 1, 10) BETWEEN ? AND ? GROUP BY d`, BULK_SKIPPED_EVENT, from, to);
+  const list = rows<{ d: string; n: number }>(ctx, `SELECT ${localDay("created_at")} AS d, SUM(json_extract(data, '$.count')) AS n FROM events
+    WHERE type = ? AND ${localDay("created_at")} BETWEEN ? AND ? GROUP BY d`, BULK_SKIPPED_EVENT, from, to);
   return new Map(list.map((r) => [r.d, r.n]));
 }
 
@@ -80,7 +80,7 @@ export function goalsService(ctx: Ctx) {
 
   /** Streak: consecutive days up to today with every goal complete; an unfinished today does not break it, days without goals are skipped */
   function streak(today: string): number {
-    const first = all().reduce((min, g) => (g.created_at.slice(0, 10) < min ? g.created_at.slice(0, 10) : min), today);
+    const first = all().reduce((min, g) => (dayOf(g.created_at) < min ? dayOf(g.created_at) : min), today);
     const span = Math.min(STREAK_LOOKBACK_DAYS, daysBetween(first, today));
     const list = days(addDays(today, -span), today).reverse();
     let n = 0;

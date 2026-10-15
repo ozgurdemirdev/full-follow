@@ -45,6 +45,7 @@ export const m = defineMessages({
       offerAmount: "teklif tutarı 0'dan büyük olmalı",
       offerDate: "teklif tarihi gerekli",
       planOnce: "ödeme planında bir aşama bir kez geçer",
+      planDeposit: "ödeme planında peşinat tam bir kez olmalı",
       planTotal: (total: number) => `ödeme planının yüzdeleri ${total} etmeli`,
     },
     mcp: {

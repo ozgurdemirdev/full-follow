@@ -38,6 +38,8 @@ export type DraftStatus = (typeof DRAFT_STATUSES)[number];
 
 export const PROJECT_STAGES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim", "iptal"] as const;
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
+/** The milestone every payment plan holds exactly once: a project starts there and cannot move past it until it is paid */
+export const DEPOSIT_MILESTONE = "pesinat";
 export const MILESTONES = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"] as const;
 
 /** A comment target type: a record type core owns (`TARGET_TABLE` in services/shared.ts) or one a module adds (`commentTargets` contribution) */
@@ -195,6 +197,8 @@ export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] 
 // ---- List sizes and text lengths
 /** A `limit` that means every row: lists the app builds in memory and filters itself */
 export const ALL_ROWS = 100_000;
+/** A list read that wants one record: a record by its id is a list narrowed by `ids` and cut to one row */
+export const ONE_ROW = 1;
 /** Rows of a list when the caller gives no limit */
 export const LIST_PAGE_SIZE = 20;
 /** Most rows one list request can ask for over HTTP (a bigger `limit` is cut to it) */

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MILESTONES, OFFER_ITEMS_MAX, OFFER_PLAN_PARTS_MAX, OFFER_PLAN_TOTAL_PCT, OPP_ROLES, OPP_STAGES, zodKit } from "@fullfollow/core";
+import { DEPOSIT_MILESTONE, MILESTONES, OFFER_ITEMS_MAX, OFFER_PLAN_PARTS_MAX, OFFER_PLAN_TOTAL_PCT, OPP_ROLES, OPP_STAGES, zodKit } from "@fullfollow/core";
 import { m } from "../messages";
 
 const { id, text, optText, tl, date, patch } = zodKit;
@@ -36,10 +36,11 @@ export const teamUpdate = patch({ role: z.enum(OPP_ROLES), note: optText });
 const offerAmount = z.coerce.number().int().positive(m.error.offerAmount);
 /** `amount` is the unit price; the line amount (qty x unit price) is computed on read */
 const offerItem = z.strictObject({ label: text, amount: tl, qty: z.coerce.number().int().min(1).default(1) });
-/** The payment plan of an offer: milestones, each at most once, whole percents adding up to 100 */
+/** The payment plan of an offer: milestones, each at most once and the deposit exactly once, whole percents adding up to 100 */
 const offerPlan = z.array(z.strictObject({ key: z.enum(MILESTONES), label: text, pct: z.coerce.number().int().min(1).max(OFFER_PLAN_TOTAL_PCT) }))
   .min(1).max(OFFER_PLAN_PARTS_MAX)
   .refine((parts) => new Set(parts.map((p) => p.key)).size === parts.length, m.error.planOnce)
+  .refine((parts) => parts.some((p) => p.key === DEPOSIT_MILESTONE), m.error.planDeposit)
   .refine((parts) => parts.reduce((s, p) => s + p.pct, 0) === OFFER_PLAN_TOTAL_PCT, m.error.planTotal(OFFER_PLAN_TOTAL_PCT));
 const offerDate = date.refine((v) => v !== null, m.error.offerDate);
 export const offerCreate = z.strictObject({
