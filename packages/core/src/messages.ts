@@ -137,6 +137,7 @@ export const m = defineMessages({
       warmupDate: "tarih YYYY-AA-GG olmalı",
       unknown: (key: string, valid: string) => `bilinmeyen ayar "${key}" (geçerli: ${valid})`,
       templateTotal: (sum: number) => `ödeme şablonu yüzdeleri toplamı 100 olmalı (şu an ${sum})`,
+      templateDeposit: "ödeme şablonunda peşinat tam bir kez olmalı",
       moduleNotInstalled: (unknown: string, installed: string) => `kurulu olmayan modül: ${unknown} (kurulu: ${installed})`,
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",

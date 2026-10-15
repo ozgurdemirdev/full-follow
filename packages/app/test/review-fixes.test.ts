@@ -195,4 +195,22 @@ suite("the fixes of the service review", () => {
     expect(reports.month("2026-09").collected).toBe(0);
     expect(app.mod("projects")!.collectedBetween("2026-10-12", "2026-10-18")).toBe(400);
   });
+
+  it("a payment plan, an offer's or the settings template, needs exactly one deposit so a project is never stuck at it", () => {
+    const src = (app.get("source", "R10") as any).row;
+    const ada = app.people.create({ name: "Ada" }).row;
+    const o = app.opportunities.create({ title: "O", person_id: ada.id, source_id: src.id, estimated_value: 10000 }).row;
+    const noDeposit = [{ key: "teslim", label: "Teslim", pct: 100 }];
+    expect(() => app.offers.create({ opportunity_id: o.id, amount: 10000, plan: noDeposit })).toThrow(/peşinat tam bir kez/);
+    const off = app.offers.create({ opportunity_id: o.id, amount: 10000, plan: [{ key: "pesinat", label: "Peşinat", pct: 40 }, { key: "teslim", label: "Teslim", pct: 60 }] }).row;
+    expect(() => app.offers.update(off.id, { plan: noDeposit })).toThrow(/peşinat tam bir kez/);
+    expect(app.offers.update(off.id, { plan: null }).row.plan).toBeNull();
+    expect(() => app.settings.set("payment_template", [{ milestone: "teslim", percent: 100, days: 0 }])).toThrow(/peşinat tam bir kez/);
+    expect(() => app.settings.set("payment_template", [{ milestone: "pesinat", percent: 50, days: 0 }, { milestone: "pesinat", percent: 50, days: 0 }])).toThrow(/peşinat tam bir kez/);
+    app.settings.set("payment_template", [{ milestone: "pesinat", percent: 50, days: 0 }, { milestone: "teslim", percent: 50, days: 10 }]);
+    expect(app.settings.all().payment_template).toHaveLength(2);
+    // a template saved before the rule still loads, so the settings screen can show it and the owner can correct it
+    h.sqlite.prepare("UPDATE settings SET value = ? WHERE key = 'payment_template'").run(JSON.stringify([{ milestone: "teslim", percent: 100, days: 0 }]));
+    expect(app.settings.all().payment_template).toEqual([{ milestone: "teslim", percent: 100, days: 0 }]);
+  });
 });

@@ -112,6 +112,7 @@ export const m = defineMessages({
       removeRow: "Satırı sil",
       addStage: "Aşama ekle",
       total: (sum: number) => `Toplam %${sum}`,
+      depositRequired: "Peşinat olmalı",
     },
     settingsKeywords: {
       bagkur: "bağ-kur,sigorta",
