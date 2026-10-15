@@ -1,16 +1,16 @@
-// The own projects module's web part (the manifest); pages, cards and forms are still loaded from the kit.
+// The own projects module's web part: the manifest the shell builds its route, nav item, dashboard card and form from.
 import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
-import { PATHS } from "@kit/app/routes";
 import { BOARD_ICON } from "@kit/components/boardIcons";
+import { OWN_PROJECTS_PATH } from "./paths";
 
 export default defineWebModule({
   key: "own-projects",
   label: "Kendi projelerim",
-  routes: [{ page: "ownProjects", path: PATHS.ownProjects, params: "/:id?", load: () => import("@kit/pages/OwnProjects") }],
-  nav: [{ group: "Satış ve projeler", order: 30, label: "Kendi projelerim", icon: "cube", path: PATHS.ownProjects }],
+  routes: [{ page: "ownProjects", path: OWN_PROJECTS_PATH, params: "/:id?", load: () => import("./pages/OwnProjects") }],
+  nav: [{ group: "Satış ve projeler", order: 30, label: "Kendi projelerim", icon: "cube", path: OWN_PROJECTS_PATH }],
   dashboard: [
-    // the same card as the projects module's (it lists both kinds): whichever module is there registers it, the first one wins
+    // the same card as the projects module's (it lists both kinds, so it stays in the kit): whichever module is there registers it, the first one wins
     { id: "projects", column: 2, order: 100, load: () => import("@kit/components/dash/ProjectsCard").then((m) => ({ default: m.ProjectsCard })) },
   ],
   quickAdd: [{
@@ -19,7 +19,8 @@ export default defineWebModule({
       noun: "Kendi projem", dest: "Kendi projelerim’e eklenir", icon: BOARD_ICON.cube, base: "/own-projects", editId: (p) => p.own_project_id,
       page: byRecord("own_project"),
     },
-    load: () => import("@kit/forms/OwnProjectForm").then((m) => ({ default: m.OwnProjectForm })),
+    load: () => import("./forms/OwnProjectForm").then((m) => ({ default: m.OwnProjectForm })),
   }],
-  links: { own_project: (id) => `${PATHS.ownProjects}/${id}` },
+  links: { own_project: (id) => `${OWN_PROJECTS_PATH}/${id}` },
+  invalidates: { "own-projects": ["/own-projects", "/ideas", "/links", "/comments", "/trash"] },
 });

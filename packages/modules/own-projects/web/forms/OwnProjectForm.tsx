@@ -1,15 +1,15 @@
 // Own product form: what it does, status, could it be sold later, which sectors suit it
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "../api/store";
-import type { Detail, OwnProject, OwnStage } from "../api/types";
-import { PATHS } from "../app/routes";
-import { Form } from "../components/forms/Form";
-import { AreaField, ChipsField, SegField, TextField } from "../components/forms/fields";
-import { OWN_STATUS, OWN_STATUSES, SELLABLE, SELLABLES } from "../lib/labels";
-import { JOURNEY } from "../lib/ownProjects";
-import { SectorTagsField } from "./pickers";
-import { errorsOf, saveRecord, useSubmit, type FormProps } from "./shared";
+import { useQuery } from "@kit/api/store";
+import type { Detail, OwnProject, OwnStage } from "@kit/api/types";
+import { Form } from "@kit/components/forms/Form";
+import { AreaField, ChipsField, SegField, TextField } from "@kit/components/forms/fields";
+import { OWN_STATUS, OWN_STATUSES, SELLABLE, SELLABLES } from "@kit/lib/labels";
+import { OWN_PROJECTS_PATH } from "../paths";
+import { JOURNEY } from "../ownProjects";
+import { SectorTagsField } from "@kit/forms/pickers";
+import { errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 
 const SELL_OPTIONS = SELLABLES.map((s) => ({ value: s, label: SELLABLE[s] }));
 const STATUS_OPTIONS = OWN_STATUSES.map((s) => ({ value: s, label: OWN_STATUS[s] }));
@@ -46,7 +46,7 @@ export function OwnProjectForm(p: FormProps) {
     async () => {
       const data = { name: name.trim(), description, status, sellable, sellable_note: sellable === "hayir" ? "" : sellableNote, stage: stage || null, sectors, notes };
       const res = await saveRecord<OwnProject>(p, editId, data);
-      if (!editId && res.row) navigate(`${PATHS.ownProjects}/${res.row.id}`);
+      if (!editId && res.row) navigate(`${OWN_PROJECTS_PATH}/${res.row.id}`);
     },
     () => errorsOf({ name: !name.trim() && "Proje adı gerekli" }),
   );

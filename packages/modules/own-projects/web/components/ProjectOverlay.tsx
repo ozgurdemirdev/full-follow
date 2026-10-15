@@ -1,16 +1,16 @@
-import { remove, run } from "../../api/actions";
-import { useQuery } from "../../api/store";
-import type { Detail, Idea, OwnProject, Thread } from "../../api/types";
-import { ratePct } from "../../lib/ideas";
-import { openSheet } from "../../app/ui";
-import { OWN_STATUS, OWN_STATUSES } from "../../lib/labels";
-import { rateNote, rateText, setStage } from "../../lib/ownProjects";
-import { usePopover } from "../../lib/usePopover";
-import { BoardIcon } from "../boardIcons";
-import { Comments } from "../contact";
-import { ExpandOverlay } from "../ExpandOverlay";
-import { ProjectIdeas } from "../ProjectIdeas";
-import { ErrorBox, Meter, Skeleton } from "../ui";
+import { Fragment } from "react";
+import { remove, run } from "@kit/api/actions";
+import { useQuery } from "@kit/api/store";
+import type { Detail, Idea, OwnProject, Thread } from "@kit/api/types";
+import { Slot } from "@kit/app/modules/Slot";
+import { openSheet } from "@kit/app/ui";
+import { OWN_STATUS, OWN_STATUSES } from "@kit/lib/labels";
+import { ratePct, rateNote, rateText, setStage } from "../ownProjects";
+import { usePopover } from "@kit/lib/usePopover";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Comments } from "@kit/components/contact";
+import { ExpandOverlay } from "@kit/components/ExpandOverlay";
+import { ErrorBox, Meter, Skeleton } from "@kit/components/ui";
 import { Journey, SellChip, StarIcon } from "./Bits";
 import { OwnLinks } from "./OwnLinks";
 
@@ -117,7 +117,7 @@ export function ProjectOverlay({ id, from, p, isFocus, onFocus, onClose }: {
         d.error && !d.data ? <ErrorBox error={d.error} retry={d.reload} /> : (
           <div className="opr-board">
             {d.data ? <Aside p={row} threads={d.data.related.comments ?? []} /> : <Skeleton className="h-chart-height" />}
-            {d.data ? <ProjectIdeas key={row.id} projectId={row.id} ideas={d.data.related.ideas ?? []} detailKey={key!} /> : <Skeleton className="h-chart-height" />}
+            {d.data ? <Fragment key={row.id}><Slot name="own-project.overlay.ideas" props={{ projectId: row.id, ideas: d.data.related.ideas ?? [], detailKey: key }} /></Fragment> : <Skeleton className="h-chart-height" />}
           </div>
         )
       ) : null}

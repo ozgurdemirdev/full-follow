@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow own projects module: own products, their status, sellability and sectors",
-  "fullfollow": { "module": "own-projects", "endpoints": ["/own-projects"] },
+  "fullfollow": { "module": "own-projects", "endpoints": ["/own-projects"], "webMarkers": ["/projelerim"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

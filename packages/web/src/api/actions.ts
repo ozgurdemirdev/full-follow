@@ -30,7 +30,6 @@ const AFFECTS: Record<string, string[]> = {
   posts: ["/posts", "/today", "/people", "/ideas", "/report", "/trash"],
   templates: ["/templates", "/trash"],
   ideas: ["/ideas", "/own-projects", "/people", "/posts", "/touches", "/timeline", "/trash"],
-  "own-projects": ["/own-projects", "/ideas", "/links", "/comments", "/trash"],
   followups: ["/followups", "/drafts", "/today", "/people", "/companies"],
   // geri yükleme her şeyi etkileyebilir
   trash: ["/"],

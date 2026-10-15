@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { run } from "../../api/actions";
-import type { OwnProject } from "../../api/types";
-import { rateNote, rateText, setStage, updatedText } from "../../lib/ownProjects";
-import { BoardIcon } from "../boardIcons";
+import { run } from "@kit/api/actions";
+import type { OwnProject } from "@kit/api/types";
+import { rateNote, rateText, setStage, updatedText } from "../ownProjects";
+import { BoardIcon } from "@kit/components/boardIcons";
 import { Journey, SellChip, StarIcon } from "./Bits";
 
 /** Focus project: name, one line, journey, next step with its check, interest and idea counts, top ideas */

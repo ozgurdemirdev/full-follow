@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useLinks } from "../LinksCard";
-import { BoardIcon } from "../boardIcons";
+import { useLinks } from "@kit/components/LinksCard";
+import { BoardIcon } from "@kit/components/boardIcons";
 
 /** "Linkler" panel of the project overlay: link rows, and a dashed "Link ekle" that opens the add form */
 export function OwnLinks({ id }: { id: number }) {

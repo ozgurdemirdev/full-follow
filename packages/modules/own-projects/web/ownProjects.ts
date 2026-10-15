@@ -1,10 +1,9 @@
 // Own projects screen: journey, interest text, shelf split, focus
 import { useEffect } from "react";
-import { run } from "../api/actions";
-import type { OwnProject, OwnStage, Sellable } from "../api/types";
-import { ago, daysFrom } from "./format";
-import { ratePct } from "./ideas";
-import { useSettings } from "./settings";
+import { run } from "@kit/api/actions";
+import type { OwnProject, OwnStage, Sellable } from "@kit/api/types";
+import { ago, daysFrom } from "@kit/lib/format";
+import { useSettings } from "@kit/lib/settings";
 
 /** Journey steps in order; the bar of a step is done before the project's stage, current at it, hatched after it */
 export const JOURNEY: { key: OwnStage; label: string }[] = [
@@ -34,19 +33,15 @@ export const onShelf = (p: OwnProject) => SHELF_STATUSES.includes(p.status);
 export const STATUS_DOT: Record<string, string> = {
   aktif: "bg-success", beklemede: "bg-warning", tamamlandi: "bg-info", birakildi: "bg-text-disabled",
 };
-/** Chip colours of the sellability and the idea stage (board values, reused chip tokens) */
+/** Chip colours of the sellability (board values, reused chip tokens) */
 export const SELLABLE_CLS: Record<Sellable, string> = {
   evet: "bg-chip-success-bg text-chip-success-fg",
   belki: "bg-chip-ask-bg text-chip-ask-fg",
   hayir: "bg-chip-neutral-bg text-chip-neutral-fg",
 };
-export const IDEA_STAGE_CLS: Record<string, string> = {
-  fikir: "bg-chip-neutral-bg text-chip-neutral-fg",
-  dogrulaniyor: "bg-chip-ask-bg text-chip-ask-fg",
-  demo: "bg-chip-opportunity-bg text-chip-opportunity-fg",
-  urun: "bg-chip-success-bg text-chip-success-fg",
-};
-export const PRIORITY_DOT: Record<string, string> = { yuksek: "bg-danger", orta: "bg-warning", dusuk: "bg-text-muted" };
+
+/** The share of people who were interested, as a whole percent */
+export const ratePct = (rate: number) => Math.round(rate * 100);
 
 type Interest = Pick<OwnProject, "told" | "interested" | "interest_share">;
 export const rateText = (p: Interest) => (p.interest_share === null ? "–" : `%${ratePct(p.interest_share)}`);

@@ -1,19 +1,19 @@
 // Kendi projelerim: odaktaki proje, üzerinde çalışılanlar, raf, proje penceresi (fikirler, satılabilirlik, linkler)
 import { useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { run } from "../api/actions";
-import { useOwnProjects } from "../api/keys";
-import type { OwnProject } from "../api/types";
-import { Page } from "../app/Page";
-import { PATHS } from "../app/routes";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { Gallery } from "../components/own-projects/Gallery";
-import { Hero } from "../components/own-projects/Hero";
-import { ProjectOverlay } from "../components/own-projects/ProjectOverlay";
-import { Shelf } from "../components/own-projects/Shelf";
-import { Empty, ErrorBox, PageSkeleton } from "../components/ui";
-import { onShelf, useFocusId } from "../lib/ownProjects";
+import { run } from "@kit/api/actions";
+import { useOwnProjects } from "@kit/api/keys";
+import type { OwnProject } from "@kit/api/types";
+import { Page } from "@kit/app/Page";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Gallery } from "../components/Gallery";
+import { Hero } from "../components/Hero";
+import { ProjectOverlay } from "../components/ProjectOverlay";
+import { Shelf } from "../components/Shelf";
+import { Empty, ErrorBox, PageSkeleton } from "@kit/components/ui";
+import { OWN_PROJECTS_PATH } from "../paths";
+import { onShelf, useFocusId } from "../ownProjects";
 
 /** Size of the box the overlay grows from when a project is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -37,7 +37,7 @@ export default function OwnProjects() {
 
   const open = (id: number, rect: DOMRect) => {
     setFrom(rect);
-    navigate(`${PATHS.ownProjects}/${id}`, { replace: true });
+    navigate(`${OWN_PROJECTS_PATH}/${id}`, { replace: true });
   };
   const revive = (p: OwnProject) => run("patch", `/own-projects/${p.id}`, { status: "aktif" }, { ok: `Raftan indirildi: ${p.name}` }).catch(() => {});
   const makeFocus = (p: OwnProject) => {
@@ -66,7 +66,7 @@ export default function OwnProjects() {
           <Gallery rows={others} onOpen={open} />
           <Shelf rows={shelf} onRevive={revive} />
           <ProjectOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} p={openId ? rows.find((p) => p.id === openId) : undefined}
-            isFocus={!!focus && focus.id === openId} onFocus={makeFocus} onClose={() => navigate(PATHS.ownProjects, { replace: true })} />
+            isFocus={!!focus && focus.id === openId} onFocus={makeFocus} onClose={() => navigate(OWN_PROJECTS_PATH, { replace: true })} />
         </>
       )}
     </Page>

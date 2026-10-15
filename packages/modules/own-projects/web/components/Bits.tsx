@@ -1,7 +1,7 @@
-import type { OwnProject, OwnStage } from "../../api/types";
-import { SELLABLE } from "../../lib/labels";
-import { JOURNEY, journeyState, SELLABLE_CLS, stageLabel } from "../../lib/ownProjects";
-import { BOARD_ICON } from "../boardIcons";
+import type { OwnProject, OwnStage } from "@kit/api/types";
+import { SELLABLE } from "@kit/lib/labels";
+import { JOURNEY, journeyState, SELLABLE_CLS, stageLabel } from "../ownProjects";
+import { BOARD_ICON } from "@kit/components/boardIcons";
 
 /** Filled star of the focus chip and button */
 export function StarIcon({ className }: { className: string }) {

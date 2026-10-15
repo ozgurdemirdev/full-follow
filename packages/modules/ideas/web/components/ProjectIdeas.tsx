@@ -6,15 +6,23 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState, type ReactNode } from "react";
-import { run } from "../api/actions";
-import { mutate } from "../api/store";
-import type { Detail, Idea, IdeaPriority, OwnProject, Thread } from "../api/types";
-import { openSheet } from "../app/ui";
-import { IDEA_STAGE, PRIORITIES, PRIORITY } from "../lib/labels";
-import { useIsDesktop } from "../lib/media";
-import { IDEA_STAGE_CLS, PRIORITY_DOT } from "../lib/ownProjects";
-import { BoardIcon } from "./boardIcons";
-import { Icon } from "./icons";
+import { run } from "@kit/api/actions";
+import { mutate } from "@kit/api/store";
+import type { Detail, Idea, IdeaPriority, OwnProject, Thread } from "@kit/api/types";
+import { openSheet } from "@kit/app/ui";
+import { IDEA_STAGE, PRIORITIES, PRIORITY } from "@kit/lib/labels";
+import { useIsDesktop } from "@kit/lib/media";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Icon } from "@kit/components/icons";
+
+/** Chip colours of the idea stage (board values, reused chip tokens) */
+const IDEA_STAGE_CLS: Record<string, string> = {
+  fikir: "bg-chip-neutral-bg text-chip-neutral-fg",
+  dogrulaniyor: "bg-chip-ask-bg text-chip-ask-fg",
+  demo: "bg-chip-opportunity-bg text-chip-opportunity-fg",
+  urun: "bg-chip-success-bg text-chip-success-fg",
+};
+const PRIORITY_DOT: Record<string, string> = { yuksek: "bg-danger", orta: "bg-warning", dusuk: "bg-text-muted" };
 
 type Cols = Record<string, number[]>;
 type Dt = Detail<OwnProject, { ideas: Idea[]; comments: Thread[] }>;

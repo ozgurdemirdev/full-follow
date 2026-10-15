@@ -1,10 +1,10 @@
 import { useRef } from "react";
-import type { OwnProject } from "../../api/types";
-import { OWN_STATUS } from "../../lib/labels";
-import { rateText, STATUS_DOT } from "../../lib/ownProjects";
-import { BoardIcon } from "../boardIcons";
-import { Masonry } from "../layout";
-import { order } from "../ui";
+import type { OwnProject } from "@kit/api/types";
+import { OWN_STATUS } from "@kit/lib/labels";
+import { rateText, STATUS_DOT } from "../ownProjects";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Masonry } from "@kit/components/layout";
+import { order } from "@kit/components/ui";
 import { Journey, SellChip } from "./Bits";
 
 function ProjectCard({ p, i, onOpen }: { p: OwnProject; i: number; onOpen: (from: DOMRect) => void }) {
