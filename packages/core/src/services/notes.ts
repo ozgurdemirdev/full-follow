@@ -1,5 +1,7 @@
 import { eq } from "drizzle-orm";
+import { SUMMARY_PREVIEW_CHARS } from "../constants";
 import { emit, FFError, parse, stamp, type Ctx } from "../context";
+import { m } from "../messages";
 import { notes } from "../db/schema";
 import { noteCreate, noteUpdate } from "../schemas";
 import { requireRow, truncate } from "./shared";
@@ -12,7 +14,7 @@ export function notesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const p = requireRow(ctx, "people", d.person_id);
       const r = tx.insert(notes).values({ ...d, ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "note.created", person_id: p.id, summary: `Not: ${truncate(d.body, 60)}`, data: { note_id: r.id } });
+      emit(tx, ctx, { type: "note.created", person_id: p.id, summary: m.notes.entry(truncate(d.body, SUMMARY_PREVIEW_CHARS)), data: { note_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
@@ -21,7 +23,7 @@ export function notesService(ctx: Ctx) {
     const d = parse(noteUpdate, input);
     const cur = requireRow(ctx, "notes", id);
     if (d.body !== undefined) {
-      if (cur.created_by !== ctx.actor) throw new FFError("forbidden", "Notu sadece yazarı düzenleyebilir");
+      if (cur.created_by !== ctx.actor) throw new FFError("forbidden", m.notes.authorOnlyEdit);
       ctx.db.update(notes).set({ body: d.body, updated_at: ctx.clock.now() }).where(eq(notes.id, id)).run();
     }
     return { row: requireRow(ctx, "notes", id), effects: [] as string[] };
@@ -29,12 +31,12 @@ export function notesService(ctx: Ctx) {
 
   function remove(id: number) {
     const cur = requireRow(ctx, "notes", id);
-    if (ctx.actor !== "ozgur" && cur.created_by !== ctx.actor) throw new FFError("forbidden", "Claude sadece kendi notlarını silebilir");
+    if (ctx.actor !== "ozgur" && cur.created_by !== ctx.actor) throw new FFError("forbidden", m.notes.claudeOnlyOwn);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("notes", "id = ?", id);
-      bin.commit(tx, "note", id, `Not: ${truncate(cur.body, 60)}`);
-      emit(tx, ctx, { type: "note.deleted", person_id: cur.person_id, summary: `Not silindi: ${truncate(cur.body, 60)}` });
+      bin.commit(tx, "note", id, m.notes.entry(truncate(cur.body, SUMMARY_PREVIEW_CHARS)));
+      emit(tx, ctx, { type: "note.deleted", person_id: cur.person_id, summary: m.notes.deleted(truncate(cur.body, SUMMARY_PREVIEW_CHARS)) });
       return { effects: [] as string[], trash: { type: "note", id } };
     });
   }

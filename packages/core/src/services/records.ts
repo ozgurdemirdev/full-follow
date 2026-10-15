@@ -1,5 +1,6 @@
 import { MODULE_TYPE_OWNER, RECORD_TYPES, TYPE_ALIASES, type RecordType } from "../constants";
 import { FFError, type Ctx } from "../context";
+import { m } from "../messages";
 import type { EntityHandler } from "../modules/types";
 import { resolveInput, resolveRef, isRefType } from "./shared";
 
@@ -12,22 +13,22 @@ export function normalizeType(ctx: Ctx, t: string): string {
   const type = TYPE_ALIASES[k] ?? ctx.types.canonical(k) ?? k;
   if (isCoreType(type) || ctx.types.entity(type)) return type;
   const owner = (MODULE_TYPE_OWNER as Record<string, string>)[type];
-  if (owner) throw new FFError("validation", `"${type}" türü için "${owner}" modülü kurulu değil`);
-  throw new FFError("validation", `bilinmeyen tür "${t}" (geçerli: ${[...RECORD_TYPES, ...ctx.types.entityTypes()].join(", ")})`);
+  if (owner) throw new FFError("validation", m.moduleNotInstalled(type, owner));
+  throw new FFError("validation", m.unknownType(t, [...RECORD_TYPES, ...ctx.types.entityTypes()].join(", ")));
 }
 
 /** id ya da isim → id (kişi, firma, fırsat, proje, kaynak için isim kabul edilir) */
 export function resolveId(ctx: Ctx, type: string, id: string | number): number {
   if (isRefType(ctx, type)) return resolveRef(ctx, type, id);
   const n = Number(String(id).replace(/^#/, ""));
-  if (!Number.isInteger(n) || n <= 0) throw new FFError("validation", `geçersiz id "${id}"`);
+  if (!Number.isInteger(n) || n <= 0) throw new FFError("validation", m.invalidId(id));
   return n;
 }
 
 /** One method of a module-owned type's handler; a type without it does not support the operation */
 export function entityHandler<M extends "save" | "get" | "find" | "delete">(ctx: Ctx, type: string, method: M): NonNullable<EntityHandler[M]> {
   const fn = ctx.types.entity(type)?.[method];
-  if (!fn) throw new FFError("validation", `${type} için ${method} desteklenmiyor`);
+  if (!fn) throw new FFError("validation", m.unsupportedOperation(type, method));
   return fn;
 }
 

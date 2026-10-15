@@ -2,6 +2,7 @@
 // Shared by the network, drafts and templates modules, so it stays in core.
 import { FFError, row, rows, type Ctx } from "../context";
 import { contactKey } from "../keys";
+import { m } from "../messages";
 import { requireRow } from "./shared";
 
 export interface Subject {
@@ -24,7 +25,7 @@ export function resolveSubject(ctx: Ctx, s: Subject): ResolvedSubject {
   if (s.person_id) return { person_id: requireRow(ctx, "people", s.person_id).id, company_id: null, contact: null, contact_key: null };
   if (s.company_id) return { person_id: null, company_id: requireRow(ctx, "companies", s.company_id).id, contact: null, contact_key: null };
   const contact = s.contact?.trim();
-  if (!contact) throw new FFError("validation", "kişi, firma ya da adres (contact) gerekli");
+  if (!contact) throw new FFError("validation", m.schema.subjectNeeded);
   const key = contactKey(contact)!;
   const [kind, value] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)];
   if (kind === "email" || kind === "instagram" || kind === "linkedin") {

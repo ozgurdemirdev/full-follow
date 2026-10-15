@@ -191,3 +191,24 @@ export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_ROLES = ["user", "assistant"] as const;
 export const CHAT_INPUT_MODES = ["text", "voice"] as const;
 export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] as const;
+
+// ---- List sizes and text lengths
+/** A `limit` that means every row: lists the app builds in memory and filters itself */
+export const ALL_ROWS = 100_000;
+/** Rows of a list when the caller gives no limit */
+export const LIST_PAGE_SIZE = 20;
+/** Related rows per relation in `get` (default and ceiling) */
+export const RELATED_ROWS_DEFAULT = 10;
+export const RELATED_ROWS_MAX = 200;
+/** Candidates an "ambiguous" error and a bulk label list name */
+export const AMBIGUOUS_SHOWN = 8;
+/** Characters of a record's text kept in an event summary, a trash label and a bulk label */
+export const SUMMARY_PREVIEW_CHARS = 60;
+
+// ---- Database
+/** How long a locked database is waited for before a write fails */
+export const DB_BUSY_TIMEOUT_MS = 5000;
+/** Daily backups kept (the newest ones) */
+export const BACKUPS_KEPT = 14;
+/** Broken foreign keys quoted in the error a migration raises */
+export const BROKEN_KEYS_SHOWN = 3;
