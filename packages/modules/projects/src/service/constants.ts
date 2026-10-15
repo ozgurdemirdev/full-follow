@@ -7,3 +7,7 @@ export const PAYMENTS_DUE_DAYS = 7;
 export const DETAIL_RELATED_LIMIT = 50;
 /** MCP output: the longest task title on a project line */
 export const MCP_TASK_LENGTH = 40;
+/** The stage of a cancelled project: the money still unpaid on it is not due, not overdue and not waited for */
+export const CANCELLED_STAGE = "iptal";
+/** SQL for "the project (alias `pr`) is not cancelled": every due, overdue and unpaid figure takes its payments through this one condition */
+export const NOT_CANCELLED = `pr.stage <> '${CANCELLED_STAGE}'`;

@@ -100,4 +100,32 @@ suite("the fixes of the service review", () => {
     expect(app.get("tag", tag.id).row.id).toBe(tag.id);
     expect(() => app.get("note", 9999)).toThrow(/bulunamadı/);
   });
+
+  it("a cancelled project's unpaid payments are not due, overdue, waited for or on the calendar", () => {
+    const src = (app.get("source", "R10") as any).row;
+    const co = app.companies.create({ name: "Acme" }).row;
+    const ada = app.people.create({ name: "Ada", company_id: co.id }).row;
+    const o = app.opportunities.create({ title: "X", person_id: ada.id, source_id: src.id, estimated_value: 10000 }).row;
+    app.opportunities.move(o.id, { stage: "kazanildi" });
+    const pr = sql("SELECT id FROM projects")[0];
+    h.sqlite.prepare("UPDATE payments SET due_date = '2026-10-10' WHERE project_id = ?").run(pr.id);
+    const projects = app.mod("projects")!;
+    const figures = () => ({
+      outstanding: projects.outstandingDue("2026-10"),
+      overdue: projects.payments.list({ filter: { overdue: true } }).total,
+      unpaid: projects.payments.list({ filter: { unpaid: true } }).total,
+      soon: projects.payments.list({ filter: { due_within_days: 30 } }).total,
+      late: projects.payments.list({ filter: { status: "gecikmis" } }).total,
+      calendar: projects.payments.due("2026-10-01", "2026-10-31").length,
+      companyDue: projects.moneyByCompany().get(co.id)!.due,
+      waiting: projects.projects.get(pr.id)!.waiting,
+    });
+    const before = figures();
+    expect(before).toMatchObject({ outstanding: 10000, companyDue: 10000, waiting: "gecikti" });
+    expect(before.overdue).toBeGreaterThan(0);
+    app.projects.move(pr.id, { stage: "iptal" });
+    expect(figures()).toEqual({ outstanding: 0, overdue: 0, unpaid: 0, soon: 0, late: 0, calendar: 0, companyDue: 0, waiting: null });
+    expect(projects.payments.list({ filter: { project_id: pr.id } }).total).toBe(before.unpaid);
+    expect(projects.projects.get(pr.id)!.next_payment).toBeNull();
+  });
 });
