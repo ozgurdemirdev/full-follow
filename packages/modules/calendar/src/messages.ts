@@ -16,6 +16,7 @@ export const m = defineMessages({
     errors: {
       logNotDeletable: "ilerleme silinmez; count:0 ile sıfırla",
       oneCounter: "hedef ya kanaldan ya da yeni kayıttan kendiliğinden sayar, ikisinden birden değil",
+      badDate: "tarih YYYY-MM-DD olmalı (ya da bugün, yarın, +3g gibi)",
       rangeTooLong: (days: number) => `takvim aralığı en fazla ${days} gün olabilir`,
       logNeedsValue: "add, count ya da note gerekli",
       logAddAndCount: "add ve count birlikte verilmez",

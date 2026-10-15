@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import {
-  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, has, isoWeekday, page, parse, requireRow, row, rows, schema, stamp,
+  addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, has, isIsoDate, isoWeekday, page, parse, requireRow, resolveRelativeDate, row, rows, schema, stamp,
   truncate, writeEvent as emit, type CalendarDay, type CalendarTask, type Ctx, type DayPlan, type GoalDay, type GoalRecord, type ListOpts,
 } from "@fullfollow/core";
 import { m } from "../messages";
@@ -32,6 +32,13 @@ function skippedCounts(ctx: Ctx, from: string, to: string): Map<string, number> 
   return new Map(list.map((r) => [r.d, r.n]));
 }
 
+/** A date the caller gave ("bugün", "+3g" or YYYY-MM-DD) as a real ISO day; anything else is a validation error, never a loop bound */
+const asDay = (input: unknown, today: string): string => {
+  const v = resolveRelativeDate(input, today);
+  if (typeof v !== "string" || !isIsoDate(v) || addDays(v, 0) !== v) throw new FFError("validation", m.errors.badDate);
+  return v;
+};
+
 /** A goal counts by itself from a channel or from a metric, never both */
 const assertOneCounter = (channel?: string | null, metric?: string | null) => {
   if (channel && metric) throw new FFError("validation", m.errors.oneCounter);
@@ -50,6 +57,7 @@ export function goalsService(ctx: Ctx) {
 
   /** Goal state per day (from..to); days without applicable goals have an empty list */
   function days(from: string, to: string): { date: string; goals: GoalDay[] }[] {
+    if (!isIsoDate(from) || !isIsoDate(to)) return [];
     const goals = all();
     // outgoing messages on the goal's channel (from the drafts module: none without it) and new records count by themselves
     const auto = ctx.mod("drafts")?.outgoingMessageCounts(from, to) ?? new Map<string, number>();
@@ -95,7 +103,7 @@ export function goalsService(ctx: Ctx) {
   /** The day's plan: goals plus tasks due that day (today also lists overdue open tasks) */
   function plan(date?: string): DayPlan {
     const today = ctx.clock.today();
-    const d = date ?? today;
+    const d = date ? asDay(date, today) : today;
     const goals = days(d, d)[0].goals;
     const tasks = rows(ctx, `SELECT id, title, assignee, due_date, due_time, kind, done_at FROM tasks
       WHERE due_date = ? OR (? = ? AND due_date < ? AND done_at IS NULL) ORDER BY done_at IS NOT NULL, due_date, ${TASK_ORDER_SQL}`, d, d, today, d);
@@ -103,7 +111,10 @@ export function goalsService(ctx: Ctx) {
   }
 
   /** Calendar: goal fill rate, tasks (timed first), payments due and follow-ups due for every day in the range */
-  function calendar(from: string, to: string): CalendarDay[] {
+  function calendar(fromInput: string, toInput: string): CalendarDay[] {
+    const today = ctx.clock.today();
+    const from = asDay(fromInput, today);
+    const to = asDay(toInput, today);
     if (from > to || daysBetween(from, to) >= MAX_CALENDAR_DAYS) throw new FFError("validation", m.errors.rangeTooLong(MAX_CALENDAR_DAYS));
     const taskRows = rows<CalendarTask & { due_date: string }>(ctx,
       `SELECT id, title, due_date, due_time, kind, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY ${TASK_ORDER_SQL}`, from, to);

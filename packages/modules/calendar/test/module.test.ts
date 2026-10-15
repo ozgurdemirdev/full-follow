@@ -30,4 +30,14 @@ describe("calendar as a module", () => {
     expect(today.plan).toMatchObject({ date: "2026-10-14", goals: [] });
     expect(today.tasks).toMatchObject({ total: 1, rows: [{ title: "bugün" }] });
   });
+
+  it("plan and calendar take short dates and reject garbage at once instead of looping", () => {
+    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    expect(app.goals.plan("bugün").date).toBe("2026-10-14");
+    expect(app.goals.plan("+3g").date).toBe("2026-10-17");
+    expect(() => app.goals.plan("garbage")).toThrow(/YYYY-MM-DD/);
+    expect(() => app.goals.plan("99999-01-01")).toThrow(/YYYY-MM-DD/);
+    expect(() => app.goals.calendar("garbage", "2026-10-20")).toThrow(/YYYY-MM-DD/);
+    expect(app.goals.calendar("bugün", "+2g")).toHaveLength(3);
+  });
 });
