@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@kit/api/store";
+import { drained } from "@kit/api/paged";
 import type { List, MonthReport, Payment, Report as ReportData } from "@kit/api/types";
 import { Slot } from "@kit/app/modules/Slot";
 import { Page } from "@kit/app/Page";
@@ -11,7 +12,6 @@ import { SourcesCard } from "../components/SourcesCard";
 import { ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { Icon } from "@kit/components/icons";
 import { todayIso } from "@kit/lib/format";
-import { PAYMENTS_LIMIT } from "../constants";
 import { m } from "../messages";
 import { REVIEW_PATH } from "../paths";
 import { expectedOf, floorHint, heroOf, incomingOf, monthsAbove, REPORT_MONTHS, scaleTop } from "../report";
@@ -20,7 +20,7 @@ import { useFloorCosts } from "../useFloorCosts";
 export default function Report() {
   const months = useQuery<MonthReport[]>(`/report/months?count=${REPORT_MONTHS}`);
   const report = useQuery<ReportData>("/report");
-  const payments = useQuery<List<Payment>>(`/payments?unpaid=true&limit=${PAYMENTS_LIMIT}`);
+  const payments = useQuery<List<Payment>>("/payments?unpaid=true", drained);
   const [sel, setSel] = useState<number | null>(null);
 
   const list = months.data;

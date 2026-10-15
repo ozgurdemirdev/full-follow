@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useSectors } from "@kit/api/keys";
+import { qs } from "@kit/api/client";
+import { usePaged } from "@kit/api/paged";
+import { useQuery } from "@kit/api/store";
+import type { CompaniesOverview, CompanyOverviewRow, CompanyTotals } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
@@ -9,16 +12,22 @@ import { CompanyOverlay } from "../components/CompanyOverlay";
 import { CompanyTile } from "../components/CompanyTile";
 import { FilterBar } from "../components/FilterBar";
 import { Kpis } from "../components/Kpis";
-import { matchLabels, noFilter, type LabelFilter } from "@kit/components/filters";
+import { LoadMore } from "@kit/components/LoadMore";
+import { noFilter, type LabelFilter } from "@kit/components/filters";
 import { TileColumns } from "@kit/components/layout";
 import { ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { COMPANIES_PATH } from "../paths";
-import { searchText, SORT, TILE_PAGE, totalsOf, useCompanyViews, type SegmentFilter, type SortKey } from "../companies";
-import { norm } from "@kit/lib/format";
+import { TILE_PAGE, viewOf, type SegmentFilter, type SortKey } from "../companies";
+import { ONE_ROW, SEARCH_DEBOUNCE_MS } from "@kit/lib/constants";
+import { useDebounced } from "@kit/lib/useDebounced";
 import { m as kit } from "@kit/messages";
 
 import { m } from "../messages";
 import { stroke as STROKE } from "@kit/styles/tokens.json";
+
+const OVERVIEW = "/companies/overview";
+const TOTALS = "/companies/totals";
+const ZERO_COUNTS: Record<SegmentFilter, number> = { all: 0, client: 0, lead: 0, partner: 0 };
 
 /** Size of the box the overlay grows from when a company is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -26,37 +35,35 @@ const fallbackRect = () => new DOMRect((innerWidth - FALLBACK_BOX.width) / 2, (i
 
 /** Companies: the KPI row, segment and sort pills, the tiles, the loose touches and the company overlay (the address /firmalar/:id opens it) */
 export default function Companies() {
-  const { views, byId, companies, ready } = useCompanyViews();
-  const sectors = useSectors();
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [seg, setSeg] = useState<SegmentFilter>("all");
   const [sort, setSort] = useState<SortKey>("value");
   const [labels, setLabels] = useState<LabelFilter>(noFilter);
   const [q, setQ] = useState("");
-  const [shown, setShown] = useState(TILE_PAGE);
   const [from, setFrom] = useState<DOMRect | null>(null);
   const openId = Number(params.id) || null;
 
-  const totals = useMemo(() => totalsOf(views), [views]);
-  const max = useMemo(() => Math.max(1, ...views.map((v) => v.total)), [views]);
-  const base = useMemo(() => {
-    const n = norm(q.trim());
-    return views.filter((v) => matchLabels(v.c, labels, sectors.rows) && (!n || searchText(v).includes(n)));
-  }, [views, sectors.rows, labels, q]);
-  const counts = useMemo(() => {
-    const c: Record<SegmentFilter, number> = { all: base.length, client: 0, lead: 0, partner: 0 };
-    for (const v of base) c[v.segment]++;
-    return c;
-  }, [base]);
-  const rows = useMemo(() => base.filter((v) => seg === "all" || v.segment === seg).sort(SORT[sort]), [base, seg, sort]);
+  // filters, segment, sort and search go to the server; the tiles come a page at a time as the end is scrolled into view
+  const search = useDebounced(q.trim(), SEARCH_DEBOUNCE_MS);
+  const list = usePaged<CompanyOverviewRow, Pick<CompaniesOverview, "counts">>(
+    `${OVERVIEW}${qs({ q: search, segment: seg === "all" ? undefined : seg, sort, ...labels })}`,
+    TILE_PAGE,
+  );
+  const totals = useQuery<CompanyTotals>(TOTALS);
+  const views = useMemo(() => list.rows.map(viewOf), [list.rows]);
+  const max = Math.max(1, totals.data?.top_worth ?? 0);
+  const counts: Record<SegmentFilter, number> = list.extra?.counts ?? ZERO_COUNTS;
+  // a company opened by address that is not on a loaded page is read by its id
+  const loaded = openId ? views.find((v) => v.c.id === openId) : undefined;
+  const byAddress = useQuery<{ rows: CompanyOverviewRow[] }>(openId && !loaded ? `${OVERVIEW}${qs({ ids: openId, limit: ONE_ROW })}` : null);
+  const openView = useMemo(() => loaded ?? (byAddress.data?.rows[0] ? viewOf(byAddress.data.rows[0]) : undefined), [loaded, byAddress.data]);
 
-  // any change of the list starts the incremental rendering over
-  const reset = <T,>(set: (v: T) => void) => (v: T) => (set(v), setShown(TILE_PAGE));
   const open = useCallback((id: number, el: HTMLElement) => {
     setFrom(el.getBoundingClientRect());
     navigate(`${COMPANIES_PATH}/${id}`, { replace: true });
   }, [navigate]);
+  const started = (list.rows.length > 0 || !list.pending) && !!totals.data;
 
   return (
     <Page
@@ -68,7 +75,7 @@ export default function Companies() {
           <label className="ppl-search co-search">
             <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
             <span className="sr-only">{m.page.searchLabel}</span>
-            <input type="search" value={q} onChange={(e) => reset(setQ)(e.target.value)} placeholder={m.page.searchPlaceholder} />
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.page.searchPlaceholder} />
           </label>
           <button type="button" className="dash-new" onClick={() => openSheet("company")}>
             <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
@@ -77,22 +84,23 @@ export default function Companies() {
         </div>
       }
     >
-      {companies.error && !companies.data ? <ErrorBox error={companies.error} retry={companies.reload} /> : null}
-      {!ready ? (
-        !companies.error && <PageSkeleton />
+      {list.error && !list.rows.length ? <ErrorBox error={list.error} retry={list.reload} /> : null}
+      {!started ? (
+        !list.error && <PageSkeleton />
       ) : (
         <>
-          <Kpis t={totals} />
-          <FilterBar seg={seg} onSeg={reset(setSeg)} counts={counts} labels={labels} onLabels={reset(setLabels)} sort={sort} onSort={reset(setSort)} />
+          {totals.data ? <Kpis t={totals.data} /> : null}
+          <FilterBar seg={seg} onSeg={setSeg} counts={counts} labels={labels} onLabels={setLabels} sort={sort} onSort={setSort} />
           <TileColumns>
-            {rows.slice(0, shown).map((v) => <CompanyTile key={v.c.id} v={v} max={max} onOpen={open} />)}
+            {views.map((v) => <CompanyTile key={v.c.id} v={v} max={max} onOpen={open} />)}
           </TileColumns>
-          {rows.length === 0 ? <p className="co-empty">{m.page.empty}</p> : null}
-          {rows.length > shown ? (
-            <button type="button" className="co-btn co-more" onClick={() => setShown((n) => n + TILE_PAGE)}>{m.page.showMore(rows.length - shown)}</button>
+          {views.length === 0 && !list.pending ? <p className="co-empty">{m.page.empty}</p> : null}
+          <LoadMore hasMore={list.hasMore} loaded={views.length} onMore={list.loadMore} />
+          {list.hasMore ? (
+            <button type="button" className="co-btn co-more" onClick={list.loadMore}>{m.page.showMore(list.total - views.length)}</button>
           ) : null}
           <Slot name="companies.page.after" />
-          <CompanyOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} v={openId ? byId.get(openId) : undefined} max={max}
+          <CompanyOverlay id={openId} from={openId ? (from ?? fallbackRect()) : from} v={openView} max={max}
             onClose={() => navigate(COMPANIES_PATH, { replace: true })} />
         </>
       )}

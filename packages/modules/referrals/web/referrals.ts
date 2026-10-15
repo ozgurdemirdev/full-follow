@@ -1,12 +1,11 @@
 // Referrals screen: KPI numbers, the referral tree and its layout, and the requests for the two suggestion lists the API sends.
-// The KPI numbers and the tree are derived here from the people and opportunities the page already loads.
+// The KPI numbers and the tree come from the server; only the tree's layout is worked out here.
 import { run } from "@kit/api/actions";
-import type { Opportunity, Person, ReferralValue } from "@kit/api/types";
-import type { RefEdge, RefKpi, RefLayout, RefNode, RefNet, RefOwn, RefPlaced, RefSuggestion, RefTone } from "./types";
+import type { ReferralValue } from "@kit/api/types";
+import type { RefEdge, RefKpi, RefLayout, RefNode, RefPlaced, RefSuggestion, RefTone } from "./types";
+import type { ReferralKpis } from "./types";
 import { layout as layoutTokens, space } from "@kit/styles/tokens.json";
 import { lira, pct, todayIso } from "@kit/lib/format";
-import { LOCALE } from "@kit/lib/i18n";
-import { OPEN_STAGES } from "@kit/lib/labels";
 import { m } from "./messages";
 
 // ------------------------------------------------------------ tree geometry (percent of the tree width, px for the rows)
@@ -29,71 +28,18 @@ const PX_PER_PERCENT = 12;
 const EDGE_DASH_SLACK = 1.25;
 
 // ------------------------------------------------------------ values
-const ZERO: RefOwn = { won: 0, open: 0 };
-const isOpen = (o: Opportunity) => (OPEN_STAGES as string[]).includes(o.stage);
-
-/** Won and open value each person brought as the contact of an opportunity */
-export function ownValues(opps: readonly Opportunity[]): Map<number, RefOwn> {
-  const out = new Map<number, RefOwn>();
-  for (const o of opps) {
-    const won = o.stage === "kazanildi";
-    if (!won && !isOpen(o)) continue;
-    const cur = out.get(o.person_id) ?? { won: 0, open: 0 };
-    if (won) cur.won += o.estimated_value ?? 0;
-    else cur.open += o.estimated_value ?? 0;
-    out.set(o.person_id, cur);
-  }
-  return out;
-}
-
-/** Page KPIs: what referred people brought, the close rate against the rest, and how many people were introduced */
-export function referralKpis(people: readonly Person[], opps: readonly Opportunity[], leaders: readonly ReferralValue[]): RefKpi[] {
-  const referred = new Set(people.filter((p) => p.referred_by_id).map((p) => p.id));
-  const side = { ref: { won: 0, lost: 0, wonValue: 0, openValue: 0 }, other: { won: 0, lost: 0, wonValue: 0, openValue: 0 } };
-  for (const o of opps) {
-    const s = referred.has(o.person_id) ? side.ref : side.other;
-    if (o.stage === "kazanildi") { s.won++; s.wonValue += o.estimated_value ?? 0; }
-    else if (o.stage === "kaybedildi") s.lost++;
-    else if (isOpen(o)) s.openValue += o.estimated_value ?? 0;
-  }
+/** Page KPIs from the server's numbers: what referred people brought, the close rate against the rest, and how many people were introduced */
+export function referralKpis(k: ReferralKpis, leaders: readonly ReferralValue[]): RefKpi[] {
   const rate = (s: { won: number; lost: number }) => (s.won + s.lost ? s.won / (s.won + s.lost) : null);
   return [
-    { label: m.kpis.wonTitle, value: lira(side.ref.wonValue), sub: m.kpis.wonSub, accent: true },
-    { label: m.kpis.openTitle, value: lira(side.ref.openValue), sub: m.kpis.openSub },
-    { label: m.kpis.rateTitle, value: pct(rate(side.ref)), sub: m.kpis.rateSub(pct(rate(side.other))) },
-    { label: m.kpis.peopleTitle, value: String(referred.size), sub: m.kpis.peopleSub(leaders.length) },
+    { label: m.kpis.wonTitle, value: lira(k.referred_side.won_value), sub: m.kpis.wonSub, accent: true },
+    { label: m.kpis.openTitle, value: lira(k.referred_side.open_value), sub: m.kpis.openSub },
+    { label: m.kpis.rateTitle, value: pct(rate(k.referred_side)), sub: m.kpis.rateSub(pct(rate(k.other_side))) },
+    { label: m.kpis.peopleTitle, value: String(k.referred), sub: m.kpis.peopleSub(leaders.length) },
   ];
 }
 
-// ------------------------------------------------------------ tree
-const addNet = (a: RefNet, k: RefNode): RefNet => ({
-  won: a.won + k.own.won + k.net.won,
-  open: a.open + k.own.open + k.net.open,
-  people: a.people + 1 + k.net.people,
-  wonCount: a.wonCount + (k.own.won ? 1 : 0) + k.net.wonCount,
-});
-
-/** The tree under one person: whoever has `referred_by_id` pointing up, each person once; bigger branches first */
-export function buildTree(rootId: number, people: readonly Person[], own: ReadonlyMap<number, RefOwn>): RefNode | null {
-  const kids = new Map<number, Person[]>();
-  let root: Person | undefined;
-  for (const p of people) {
-    if (p.id === rootId) root = p;
-    if (p.referred_by_id) kids.set(p.referred_by_id, [...(kids.get(p.referred_by_id) ?? []), p]);
-  }
-  if (!root) return null;
-  const seen = new Set<number>([rootId]);
-  const make = (p: Person): RefNode => {
-    const children = (kids.get(p.id) ?? []).filter((k) => !seen.has(k.id));
-    children.forEach((k) => seen.add(k.id));
-    const sub = children.map(make);
-    const weight = (n: RefNode) => n.own.won + n.own.open + n.net.won + n.net.open;
-    sub.sort((a, b) => weight(b) - weight(a) || a.person.name.localeCompare(b.person.name, LOCALE));
-    return { person: { id: p.id, name: p.name, company_name: p.company_name }, own: own.get(p.id) ?? ZERO, kids: sub, net: sub.reduce(addNet, { won: 0, open: 0, people: 0, wonCount: 0 }) };
-  };
-  return make(root);
-}
-
+// ------------------------------------------------------------ tree (the server builds it: see ReferralsApi.tree; the layout is drawn here)
 const toneOf = (n: RefNode): RefTone => (n.own.won ? "won" : n.own.open ? "open" : "none");
 
 /** Leaves take consecutive rows, a parent sits at the middle of its children; edges are curves from the parent's right edge to the child's left edge */

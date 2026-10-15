@@ -20,7 +20,7 @@ export const core = defineWebModule({
   ],
   nav: [
     { group: kit.navGroups.network, order: 10, label: m.dashboard, icon: "grid", path: PATHS.today },
-    { group: kit.navGroups.network, order: 70, label: kit.nouns.comments, icon: "comment", path: COMMENTS, useBadge: () => useThreads().rows.length },
+    { group: kit.navGroups.network, order: 70, label: kit.nouns.comments, icon: "comment", path: COMMENTS, useBadge: () => useThreads().total },
   ],
   dashboard: [
     { id: "comments", column: 2, order: 140, load: () => import("../../components/dash/CommentsCard").then((m) => ({ default: m.CommentsCard })) },

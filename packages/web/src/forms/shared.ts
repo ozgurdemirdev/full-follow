@@ -1,10 +1,10 @@
 // What every form of the sheet shares: its props, the submit guard with validation, saving a record, option lists
 import { useMemo, useState, type FormEvent } from "react";
 import { report, run } from "../api/actions";
-import { useCompanies, useOpps, usePeople, useProjects } from "../api/keys";
-import type { Mutation } from "../api/types";
+import { useQuery } from "../api/store";
+import type { Company, Detail, Mutation, Opportunity, Person, Project } from "../api/types";
 import { closeSheet, type SheetState } from "../app/ui";
-import type { Option } from "../components/Combo";
+import type { Option, RemoteSource } from "../components/Combo";
 import { CHANNEL, CHANNELS } from "../lib/labels";
 import { createSingleFlight } from "../lib/singleFlight";
 import { forms } from "../messages.forms";
@@ -61,35 +61,36 @@ export function saveRecord<T>(p: FormProps, editId: number | null | undefined, b
   return run<T>("post", base, createBody, { ok: m.created(noun), open: (r: Mutation<T>) => page((r.row as { id?: number } | undefined)?.id, p.sheet.preset) });
 }
 
-/** Anything a task or comment can be about: opportunity, project, person, company (one list, typed options) */
-export type LinkOption = Option & { type: "opportunity" | "project" | "person" | "company"; tid: number };
-export function useLinkOptions(): LinkOption[] {
-  const people = usePeople();
-  const companies = useCompanies();
-  const opps = useOpps();
-  const projects = useProjects();
-  return useMemo(() => {
-    const list: LinkOption[] = [];
-    let n = 0;
-    for (const o of opps.rows) list.push({ id: ++n, label: o.title, sub: m.opportunitySub(o.person_name), type: "opportunity", tid: o.id });
-    for (const x of projects.rows) list.push({ id: ++n, label: x.name, sub: m.project, type: "project", tid: x.id });
-    for (const x of people.rows) list.push({ id: ++n, label: x.name, sub: x.company_name ?? m.person, type: "person", tid: x.id });
-    for (const x of companies.rows) list.push({ id: ++n, label: x.name, sub: m.company, type: "company", tid: x.id });
-    return list;
-  }, [opps.rows, projects.rows, people.rows, companies.rows]);
-}
+/** The records a task or comment can be about, in the order the picker lists them */
+const LINK_TYPES = ["opportunity", "project", "person", "company"] as const;
+export type LinkType = (typeof LINK_TYPES)[number];
+/** One number for a record of any of those types, so a picker option can stand for it (`linkOf` takes it apart) */
+export const linkId = (type: LinkType, tid: number) => tid * LINK_TYPES.length + LINK_TYPES.indexOf(type);
+export const linkOf = (id: number | null): { type: LinkType; tid: number } | null => (id ? { type: LINK_TYPES[id % LINK_TYPES.length], tid: Math.floor(id / LINK_TYPES.length) } : null);
+const LINK_PATH: Record<LinkType, string> = { opportunity: "/opportunities", project: "/projects", person: "/people", company: "/companies" };
 
-export function usePersonOptions(): Option[] {
-  const people = usePeople();
-  return useMemo(() => people.rows.map((x) => ({ id: x.id, label: x.name, sub: x.company_name ?? undefined })), [people.rows]);
-}
+// The pickers ask the server as the text is typed (see Combo `remote`); nothing is held in the browser to filter.
+/** Person picker: `/people`, the company as the sub line, the row for the form */
+export const PERSON_REMOTE: RemoteSource[] = [{ path: "/people", toOption: (x: Person) => ({ id: x.id, label: x.name, sub: x.company_name ?? undefined, row: x }) }];
+/** Company picker: `/companies` */
+export const COMPANY_REMOTE: RemoteSource[] = [{ path: "/companies", toOption: (c: Company) => ({ id: c.id, label: c.name, row: c }) }];
+/** Company picker of a message: the address as the sub line */
+export const COMPANY_CONTACT_REMOTE: RemoteSource[] = [{ path: "/companies", toOption: (c: Company) => ({ id: c.id, label: c.name, sub: c.email ?? c.website ?? undefined, row: c }) }];
+/** Anything a task or comment can be about: opportunity, project, person, company (one picker, typed options) */
+export const LINK_REMOTE: RemoteSource[] = [
+  { path: "/opportunities", toOption: (o: Opportunity) => ({ id: linkId("opportunity", o.id), label: o.title, sub: m.opportunitySub(o.person_name) }) },
+  { path: "/projects", toOption: (x: Project) => ({ id: linkId("project", x.id), label: x.name, sub: m.project }) },
+  { path: "/people", toOption: (x: Person) => ({ id: linkId("person", x.id), label: x.name, sub: x.company_name ?? m.person }) },
+  { path: "/companies", toOption: (x: Company) => ({ id: linkId("company", x.id), label: x.name, sub: m.company }) },
+];
 
-export function useCompanyOptions(withContact = false): Option[] {
-  const companies = useCompanies();
-  return useMemo(
-    () => companies.rows.map((c) => ({ id: c.id, label: c.name, sub: withContact ? (c.email ?? c.website ?? undefined) : undefined })),
-    [companies.rows, withContact],
-  );
+/** The option for the record a task or comment is already tied to (edit, or opened from a record): one read of that record; null when it is tied to none */
+export function useLinkedOption(linked: Partial<Record<LinkType, number | null | undefined>>): Option | null {
+  const type = LINK_TYPES.find((t) => linked[t]);
+  const tid = type ? linked[type]! : null;
+  const rec = useQuery<Detail<{ title?: string; name?: string }>>(type && tid ? `${LINK_PATH[type]}/${tid}` : null);
+  const label = rec.data?.row.title ?? rec.data?.row.name;
+  return useMemo(() => (type && tid && label ? { id: linkId(type, tid), label } : null), [type, tid, label]);
 }
 
 /** A typed e-mail that is not empty and does not look like one */

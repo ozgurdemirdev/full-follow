@@ -4,7 +4,6 @@ import type { BoardIconName } from "@kit/components/boardIcons";
 import { drafts as T } from "@kit/styles/tokens.json";
 import { daysFrom } from "@kit/lib/format";
 import { CHANNELS as PERSON_CHANNELS } from "@kit/lib/people";
-import { DRAFTS_LIMIT } from "./constants";
 import { m } from "./messages";
 
 /** The part of GET /settings the screen reads (learned rules from reject notes) */
@@ -90,5 +89,5 @@ export const STACK = {
   peeks: [T["peek-near"], T["peek-far"]],
 };
 
-/** The drafts list the screen reads: every draft, one request (the same list the dashboard card is built from) */
-export const DRAFTS_KEY = `/drafts?limit=${DRAFTS_LIMIT}`;
+/** The drafts of one status (the screen reads the waiting and approved ones whole, the sent and rejected ones page by page) */
+export const draftsOf = (status: Draft["status"]) => `/drafts?status=${status}`;

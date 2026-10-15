@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { run } from "@kit/api/actions";
-import { useOpps } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
 import type { Detail, FileRow, Offer, OfferItem, OfferPlanPart, Opportunity, PriceFloor } from "@kit/api/types";
 import { linkTo } from "@kit/app/modules/links";
 import { Form } from "@kit/components/forms/Form";
 import { AreaField, ChipsField, DateField, NumField } from "@kit/components/forms/fields";
 import { ComboField, ItemsField, itemsTotal, newItemRow, PlanField, planSum, type ItemRow, type PlanRow } from "@kit/components/forms/fields-rich";
-import type { Ref } from "@kit/forms/helpers";
+import type { RemoteSource } from "@kit/components/Combo";
+import { useRefText, type Ref } from "@kit/forms/helpers";
 import { errorsOf, useSubmit, type FormProps } from "@kit/forms/shared";
 import { todayIso } from "@kit/lib/format";
 import { PROJECT_STAGE, STAGE } from "@kit/lib/labels";
@@ -28,6 +28,13 @@ function planFromTemplate(template: PriceFloor["payment_template"] | undefined):
   return rows;
 }
 
+/** The opportunities an offer can be made for: the open ones, searched on the server */
+const OPEN_OPPS: RemoteSource[] = [{
+  path: "/opportunities",
+  params: { open: true },
+  toOption: (o: Opportunity) => ({ id: o.id, label: o.title, sub: `${o.company_name ?? o.person_name} · ${STAGE[o.stage]}` }),
+}];
+
 /**
  * Offer form of the sheet (new version or edit): the opportunity, lines with quantity and unit price (or a plain amount),
  * the payment plan (how the project's payments split once the opportunity is won; starts from the settings template),
@@ -36,18 +43,9 @@ function planFromTemplate(template: PriceFloor["payment_template"] | undefined):
 export function OfferForm(p: FormProps) {
   const pre = p.sheet.preset;
   const editId = pre?.edit;
-  const opps = useOpps();
   const [opp, setOpp] = useState<Ref>(() => ({ id: pre?.opportunity_id ?? null, text: "" }));
-  const oppOptions = useMemo(
-    () => opps.rows.filter((o) => !["kazanildi", "kaybedildi"].includes(o.stage) || o.id === opp.id).map((o) => ({ id: o.id, label: o.title, sub: `${o.company_name ?? o.person_name} · ${STAGE[o.stage]}` })),
-    [opps.rows, opp.id],
-  );
-  useEffect(() => {
-    if (opp.id && !opp.text) {
-      const o = opps.byId.get(opp.id);
-      if (o) setOpp({ id: o.id, text: o.title });
-    }
-  }, [opps.byId, opp]);
+  // the text of an opportunity the form was opened for comes from its own read
+  useRefText(opp, setOpp, "/opportunities");
 
   const detail = useQuery<Detail<Opportunity, Related>>(opp.id ? `/opportunities/${opp.id}?with=offers,files` : null);
   const files = detail.data?.related.files ?? [];
@@ -96,7 +94,7 @@ export function OfferForm(p: FormProps) {
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <ComboField name="opp" label={m.offerForm.opp} req value={opp} onChange={setOpp} options={oppOptions} placeholder={m.offerForm.oppPlaceholder} />
+      <ComboField name="opp" label={m.offerForm.opp} req value={opp} onChange={setOpp} remote={OPEN_OPPS} placeholder={m.offerForm.oppPlaceholder} />
       <ItemsField name="amount" label={m.offerForm.items} opt items={items} onChange={setItems} />
       {total === 0 ? <NumField label={m.offerForm.amount} hint={m.offerForm.amountHint} half prefix={kit.lira} step={AMOUNT_STEP} value={amount} onChange={setAmount} /> : null}
       {planRows.length ? <PlanField name="plan" label={m.offerForm.plan} req hint={m.offerForm.planHint} rows={planRows} total={value > 0 ? value : 0} onChange={setPlan} /> : null}

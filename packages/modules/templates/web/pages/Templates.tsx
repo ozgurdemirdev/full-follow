@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { usePeople } from "@kit/api/keys";
 import { Page } from "@kit/app/Page";
 import { TEMPLATES_PATH } from "../paths";
 import { openSheet } from "@kit/app/ui";
@@ -25,7 +24,6 @@ const KIND_ITEMS = [{ value: "", label: kit.all }, ...TEMPLATE_KINDS.map((k) => 
 /** Message templates: tiles by reply rate, the template overlay (the address /sablonlar/:id opens it) */
 export default function Templates() {
   const templates = useTemplates();
-  const people = usePeople();
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const [kind, setKind] = useState("");
@@ -67,7 +65,7 @@ export default function Templates() {
               <TileColumns>{shown.map((t) => <TemplateTile key={t.id} t={t} onOpen={open} />)}</TileColumns>
             </div>
           )}
-          <TemplateOverlay t={current} from={openId ? (from ?? fallbackRect()) : from} people={people.rows}
+          <TemplateOverlay t={current} from={openId ? (from ?? fallbackRect()) : from}
             onClose={() => navigate(TEMPLATES_PATH, { replace: true })} />
         </>
       )}

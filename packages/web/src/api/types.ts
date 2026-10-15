@@ -3,12 +3,12 @@ import type { Actor, PostFormat, ProjectStage, TaskAssignee } from "../lib/label
 import type { ContactStatus } from "../../../core/src/constants";
 import type {
   ActivityBucket, FollowupDue, GoalDay, InterestRow, IdeaStats, OfferItem, OpportunityRow, OwnProjectStats, PersonRow, PipelineMeta,
-  PostPlatform, QuotaState, ReferralValue, TaskKind, CompanyRow,
+  PostPlatform, QuotaState, ReferralValue, TaskKind, CompanyRow, CompaniesOverview, CompanyOverviewRow, CompanyTotals, PeopleOverview, ReferralKpis,
 } from "../../../core/src/contracts";
 
 // Types that have exactly the shape of a core contract come from it (type only imports: nothing of core reaches the bundle).
 // The rest of this file is the REST shape the web reads, which differs from the contract (narrower unions, extra fields).
-export type { ActivityBucket, ContactStatus, FollowupDue, GoalDay, OfferItem, PipelineMeta, QuotaState, ReferralValue, TaskKind };
+export type { ActivityBucket, CompaniesOverview, CompanyOverviewRow, CompanyTotals, ContactStatus, PeopleOverview, ReferralKpis, FollowupDue, GoalDay, OfferItem, PipelineMeta, QuotaState, ReferralValue, TaskKind };
 export type Person = PersonRow;
 export type Company = CompanyRow;
 export type Opportunity = OpportunityRow;

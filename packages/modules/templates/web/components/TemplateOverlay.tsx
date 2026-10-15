@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { remove, run } from "@kit/api/actions";
+import { useQuery } from "@kit/api/store";
 import type { Person, Template } from "@kit/api/types";
 import { openSheet } from "@kit/app/ui";
 import { pct } from "@kit/lib/format";
 import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { defaultChannel } from "@kit/lib/people";
 import { m } from "../messages";
-import { filledSegments, meta, openSegments, rateTone, recipients, TONE_TEXT, useRendered } from "../templates";
+import { filledSegments, meta, openSegments, rateTone, RECIPIENTS_PATH, TONE_TEXT, useRendered } from "../templates";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
@@ -32,10 +33,12 @@ function HeaderMenu({ t, onClose }: { t: Template; onClose: () => void }) {
   );
 }
 
+const NO_PICKS: Person[] = [];
+
 /** Both columns: recipient pills and the text on the left, the numbers and the tip on the right */
-function Body({ t, people }: { t: Template; people: Person[] }) {
+function Body({ t }: { t: Template }) {
   const [who, setWho] = useState<Person | null>(null);
-  const picks = useMemo(() => recipients(people), [people]);
+  const picks = useQuery<{ rows: Person[] }>(RECIPIENTS_PATH).data?.rows ?? NO_PICKS;
   const rendered = useRendered(t.id, who?.id ?? null);
   const parts = useMemo(() => (rendered === null ? openSegments(t.body) : filledSegments(t.body, rendered)), [t.body, rendered]);
   const text = rendered ?? t.body;
@@ -84,7 +87,7 @@ function Body({ t, people }: { t: Template; people: Person[] }) {
 }
 
 /** A template as the board's dialog: grows from its tile; recipient pills fill the placeholders live */
-export function TemplateOverlay({ t, from, people, onClose }: { t: Template | undefined; from: DOMRect | null; people: Person[]; onClose: () => void }) {
+export function TemplateOverlay({ t, from, onClose }: { t: Template | undefined; from: DOMRect | null; onClose: () => void }) {
   return (
     <ExpandOverlay
       open={!!t}
@@ -107,7 +110,7 @@ export function TemplateOverlay({ t, from, people, onClose }: { t: Template | un
         </>
       ) : null}
     >
-      {t ? <Body key={t.id} t={t} people={people} /> : null}
+      {t ? <Body key={t.id} t={t} /> : null}
     </ExpandOverlay>
   );
 }

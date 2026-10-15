@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { run } from "@kit/api/actions";
 import { useProjects, useThreads } from "@kit/api/keys";
+import { drained } from "@kit/api/paged";
 import { useQuery } from "@kit/api/store";
 import type { List, Payment, ProjectTask, ProjectTaskGroup, Thread } from "@kit/api/types";
 import type { ProjectRow, WaitKey } from "./types";
@@ -10,7 +11,6 @@ import { ACTIVE_PROJECT_STAGES, lateDays, remaining } from "@kit/lib/dashboard";
 import { daysFrom, lira, todayIso } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { MILESTONE, PROJECT_STEPS, type ProjectStage } from "@kit/lib/labels";
-import { PAYMENTS_LIMIT } from "./constants";
 import { m } from "./messages";
 
 export type TabKey = "aktif" | "bakim" | "teslim" | "iptal";
@@ -168,12 +168,12 @@ export function buildViews(projects: ProjectRow[], payments: Payment[], tasks: P
 
 /** The tasks of every project, open and done (the screen shows both), grouped by project: the calendar module's endpoint, no list cap */
 const TASKS_KEY = "/tasks/by-project?done=true";
-const PAYMENTS_KEY = `/payments?limit=${PAYMENTS_LIMIT}`;
+const PAYMENTS_KEY = "/payments";
 
 /** The whole screen's data in one place: four shared lists, joined once per change */
 export function useProjectViews() {
   const projects = useProjects();
-  const payments = useQuery<List<Payment>>(PAYMENTS_KEY);
+  const payments = useQuery<List<Payment>>(PAYMENTS_KEY, drained);
   const tasks = useQuery<{ rows: ProjectTaskGroup[] }>(TASKS_KEY);
   const threads = useThreads();
   const views = useMemo(

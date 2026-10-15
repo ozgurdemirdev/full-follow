@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { run } from "@kit/api/actions";
 import { qs } from "@kit/api/client";
 import { useQuery } from "@kit/api/store";
+import { drained } from "@kit/api/paged";
 import type { List, Thread, Touch } from "@kit/api/types";
-import { RECORD_EVENTS_LIMIT, THREADS_LIMIT, TOUCHES_LIMIT } from "../constants";
+import { RECORD_EVENTS_LIMIT } from "../constants";
 import { m } from "../messages";
 import type { TimelineEvent } from "../types";
 import { fmtDay } from "@kit/lib/format";
@@ -75,8 +76,8 @@ export function describe(e: TimelineEvent, touches: Map<number, Touch>): Describ
 /** Akışın verisi: olaylar, temaslar, yorum konuları ve filtre için açıklanmış satırlar */
 export function useFeed(type: FeedKind, id: number) {
   const events = useQuery<TimelineEvent[]>(`/timeline/${type}/${id}?limit=${RECORD_EVENTS_LIMIT}`);
-  const touches = useQuery<List<Touch>>(`/touches${qs({ [`${type}_id`]: id, limit: TOUCHES_LIMIT })}`);
-  const threads = useQuery<List<Thread>>(`/comments${qs({ target_type: type, target_id: id, resolved: "all", messages: true, limit: THREADS_LIMIT })}`);
+  const touches = useQuery<List<Touch>>(`/touches${qs({ [`${type}_id`]: id })}`, drained);
+  const threads = useQuery<List<Thread>>(`/comments${qs({ target_type: type, target_id: id, resolved: "all", messages: true })}`, drained);
   const commentById = useMemo(() => new Map((threads.data?.rows ?? []).flatMap((t) => t.comments ?? []).map((c) => [c.id, c.body])), [threads.data]);
   const touchById = useMemo(() => new Map((touches.data?.rows ?? []).map((t) => [t.id, t])), [touches.data]);
   const items = useMemo<FeedItem[]>(() => (events.data ?? []).map((e) => ({ e, k: describe(e, touchById) })), [events.data, touchById]);

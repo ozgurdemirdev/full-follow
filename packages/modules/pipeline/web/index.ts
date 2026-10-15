@@ -1,12 +1,11 @@
 // The pipeline module's web part: the manifest the shell builds its routes, nav item, dashboard card, forms and search from.
 import { lazy } from "react";
-import { K, useBoard } from "@kit/api/keys";
+import { useBoard } from "@kit/api/keys";
 import type { Opportunity } from "@kit/api/types";
 import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord, linkTo } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { FORM_ICON } from "@kit/components/forms/icons";
-import { norm } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE } from "@kit/lib/labels";
 import { CompanyOpportunities, PersonOpenDeal, PersonOpportunities } from "./components/PersonDeals";
 import { m } from "./messages";
@@ -44,12 +43,8 @@ export default defineWebModule({
   ],
   links: { opportunity: opportunityPath },
   search: [{
-    id: "opportunities", order: 20, dataKey: K.opps,
-    match: (o: Opportunity, q) => (
-      norm(o.title).includes(q) || norm(o.person_name).includes(q)
-        ? { key: `o${o.id}`, label: o.title, sub: m.searchSub(STAGE[o.stage], o.person_name), href: opportunityPath(o.id) }
-        : null
-    ),
+    id: "opportunities", order: 20, path: "/opportunities",
+    hit: (o: Opportunity) => ({ key: `o${o.id}`, label: o.title, sub: m.searchSub(STAGE[o.stage], o.person_name), href: opportunityPath(o.id) }),
   }],
   // the opportunities on a person's and a company's overlay (rows, and the open deal fact); the funnel report section; the side cards of the timeline and the posts
   slots: {

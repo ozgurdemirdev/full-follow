@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { pickable,useBoard, useOpenTasks, useOpps, useSources, useThreads } from "@kit/api/keys";
+import { pickable, useBoard, useLostOpps, useOpenTasks, useSources, useThreads } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
 import type { Report } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
@@ -24,7 +24,7 @@ const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
 /** Satış hunisi: forecast, where deals are lost, the kanban board, lost reasons and sources */
 export default function Pipeline() {
   const board = useBoard();
-  const all = useOpps();
+  const lost = useLostOpps();
   const sources = useSources();
   const threads = useThreads();
   const tasks = useOpenTasks();
@@ -86,7 +86,7 @@ export default function Pipeline() {
             <Board visible={visible} all={board.rows} byId={board.byId} stages={stages} desk={desk} exp={exp} hints={hints} nexts={nexts} onToggle={onToggle} />
           </div>
           <div className="pipe-below">
-            <LostReasons rows={all.rows} />
+            <LostReasons rows={lost.rows} />
             <SourceWins sources={report.data?.sources ?? []} />
           </div>
         </StageRulesProvider>

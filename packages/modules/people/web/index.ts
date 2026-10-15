@@ -9,7 +9,6 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { FORM_ICON } from "@kit/components/forms/icons";
-import { norm } from "@kit/lib/format";
 import { m as kit } from "@kit/messages";
 import { m } from "./messages";
 import { OrgPeople } from "./components/OrgPeople";
@@ -35,12 +34,8 @@ export default defineWebModule({
   }],
   links: { person: (id) => `${PEOPLE_PATH}/${id}` },
   search: [{
-    id: "people", order: 10, dataKey: K.people,
-    match: (p: Person, q, ctx) => (
-      norm(p.name).includes(q) || norm(p.company_name).includes(q) || norm(p.email).includes(q) || norm(p.handle).includes(q)
-        ? { key: `p${p.id}`, label: p.name, sub: p.company_name ?? kit.nouns.person, href: ctx.recordHref("person", p.id) }
-        : null
-    ),
+    id: "people", order: 10, path: "/people",
+    hit: (p: Person, ctx) => ({ key: `p${p.id}`, label: p.name, sub: p.company_name ?? kit.nouns.person, href: ctx.recordHref("person", p.id) }),
   }],
   slots: {
     "company.overlay.main": { order: 10, Component: OrgPeople },

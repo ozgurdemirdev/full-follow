@@ -1,14 +1,16 @@
 // The touch form of the sheet (a touch to a person, a company or an address only; editing one)
 import { useEffect, useMemo, useState } from "react";
-import { useCompanies, useIdeas, useOpps, usePeople } from "@kit/api/keys";
+import { qs } from "@kit/api/client";
+import { useIdeas } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
-import type { Detail, Touch } from "@kit/api/types";
+import type { Detail, List, Opportunity, Touch } from "@kit/api/types";
 import { Form, Note } from "@kit/components/forms/Form";
 import { AreaField, ChipsField, DateField, SegField, TextField, ToggleField } from "@kit/components/forms/fields";
 import { ComboField } from "@kit/components/forms/fields-rich";
+import { PERSON_OPPS_LIMIT } from "@kit/lib/constants";
 import { STAGE } from "@kit/lib/labels";
 import { ensureCompany, ensurePerson, localToIso, nowLocal, toLocal, useRefText, type Ref } from "@kit/forms/helpers";
-import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { CHANNEL_OPTIONS, COMPANY_CONTACT_REMOTE, errorsOf, PERSON_REMOTE, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
 import { m as kit } from "@kit/messages";
 
@@ -25,18 +27,13 @@ export function TouchForm(p: FormProps) {
 }
 
 function TouchCreate(p: FormProps) {
-  const personOptions = usePersonOptions();
-  const companies = useCompanies();
-  const companyOptions = useCompanyOptions(true);
-  const opps = useOpps();
-  const people = usePeople();
   const pre = p.sheet.preset;
   const [target, setTarget] = useState<Target>(pre?.company_id ? "company" : pre?.contact ? "contact" : "person");
   const [person, setPerson] = useState<Ref>(() => ({ id: pre?.person_id ?? null, text: "" }));
   const [company, setCompany] = useState<Ref>(() => ({ id: pre?.company_id ?? null, text: "" }));
   const [contact, setContact] = useState(pre?.contact ?? "");
-  useRefText(person, setPerson, (id) => people.byId.get(id)?.name);
-  useRefText(company, setCompany, (id) => companies.byId.get(id)?.name);
+  useRefText(person, setPerson, "/people");
+  useRefText(company, setCompany, "/companies");
   const [oppId, setOppId] = useState<string>(pre?.opportunity_id ? String(pre.opportunity_id) : "");
   const [channel, setChannel] = useState("email");
   const [direction, setDirection] = useState<Touch["direction"]>("giden");
@@ -46,10 +43,11 @@ function TouchCreate(p: FormProps) {
   const [at, setAt] = useState(nowLocal());
   const ideas = useIdeas();
   const [idea, setIdea] = useState<Ref>(() => ({ id: pre?.idea_id ?? null, text: "" }));
-  useRefText(idea, setIdea, (id) => ideas.byId.get(id)?.title);
+  useRefText(idea, setIdea, "/ideas");
   const ideaOptions = useMemo(() => ideas.rows.map((x) => ({ id: x.id, label: x.title })), [ideas.rows]);
 
-  const personOpps = target === "person" && person.id ? opps.rows.filter((o) => o.person_id === person.id) : [];
+  const oppsOfPerson = useQuery<List<Opportunity>>(target === "person" && person.id ? `/opportunities${qs({ person_id: person.id, limit: PERSON_OPPS_LIMIT })}` : null);
+  const personOpps = target === "person" && person.id ? oppsOfPerson.data?.rows ?? [] : [];
 
   const submit = useSubmit(
     p,
@@ -76,9 +74,9 @@ function TouchCreate(p: FormProps) {
     <Form id={p.formId} onSubmit={submit}>
       <SegField label={m.form.to} options={TARGETS} value={target} onChange={setTarget} />
       {target === "person" ? (
-        <ComboField name="who" label={kit.nouns.person} req value={person} onChange={(v) => (setPerson(v), setOppId(""))} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
+        <ComboField name="who" label={kit.nouns.person} req value={person} onChange={(v) => (setPerson(v), setOppId(""))} remote={PERSON_REMOTE} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
       ) : target === "company" ? (
-        <ComboField name="who" label={kit.nouns.company} req value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
+        <ComboField name="who" label={kit.nouns.company} req value={company} onChange={setCompany} remote={COMPANY_CONTACT_REMOTE} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
       ) : (
         <TextField name="who" label={m.form.contact} req value={contact} onChange={setContact} placeholder={m.form.contactPlaceholder}
           hint={m.form.contactHint} />

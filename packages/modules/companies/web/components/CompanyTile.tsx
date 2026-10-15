@@ -12,6 +12,7 @@ import { stroke as STROKE } from "@kit/styles/tokens.json";
 /** One tile of the list: name, money bar, people, last touch and the hint line of Claude */
 export const CompanyTile = memo(function CompanyTile({ v, max, onOpen }: { v: CompanyView; max: number; onOpen: (id: number, from: HTMLElement) => void }) {
   const { c, money, people } = v;
+  const count = c.people_count;
   const seg = SEGMENT_LABEL[v.segment];
   const sub = [c.sector_path, c.city].filter(Boolean).join(m.sep) || (c.website ? siteLabel(c.website) : m.tile.noInfo);
   const note = money.won > 0 ? (v.since ? m.tile.since(seg, v.since) : seg) : v.total > 0 ? m.tile.potential(lira(v.total)) : seg;
@@ -45,7 +46,7 @@ export const CompanyTile = memo(function CompanyTile({ v, max, onOpen }: { v: Co
             <span key={p.id} title={p.name} className={`co-pa ${avatarPair(p.name, p.id)} ${p.last_touch_at ? "" : "is-off"}`}>{initials(p.name)}</span>
           ))}
         </span>
-        <span className="co-people-text">{people.length === 1 ? people[0].name : people.length ? m.tile.people(people.length) : m.tile.noPeople}</span>
+        <span className="co-people-text">{count === 1 && people[0] ? people[0].name : count ? m.tile.people(count) : m.tile.noPeople}</span>
         <span className={`co-last ${v.days !== null && v.days > COLD_DAYS ? "is-cold" : ""}`}>{lastText(v.days)}</span>
       </div>
 

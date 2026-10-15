@@ -3,7 +3,7 @@
 // - useSyncExternalStore ile sadece ilgili anahtar değişince yeniden çizim
 // - pencereye dönünce ve görünürken belirli aralıkla tazeleme (Claude MCP'den yazınca ekran güncellensin)
 // - abonesi kalmayan kayıtlar bir süre sonra silinir (bellek sınırlı kalır)
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { api, ApiError } from "./client";
 import { endpointOn } from "./modules";
 
@@ -20,7 +20,10 @@ interface Entry {
   /** invalidate() came while a request was in flight: its answer may predate the change, so ask again once it lands */
   stale?: boolean;
   lastUsed: number;
+  /** how the key is read when it is not one plain GET (a list read page by page: see `drainPages`) */
+  fetcher?: Fetcher;
 }
+type Fetcher = (key: string) => Promise<unknown>;
 
 const STALE_MS = 10_000;
 const REFRESH_MS = 60_000;
@@ -31,12 +34,13 @@ const cache = new Map<string, Entry>();
 const EMPTY: State<unknown> = { loading: true };
 const ABSENT: State<unknown> = { loading: false };
 
-function entry(key: string): Entry {
+function entry(key: string, fetcher?: Fetcher): Entry {
   let e = cache.get(key);
   if (!e) {
     e = { state: EMPTY, subs: new Set(), fetchedAt: 0, lastUsed: Date.now() };
     cache.set(key, e);
   }
+  if (fetcher && !e.fetcher) e.fetcher = fetcher;
   return e;
 }
 
@@ -49,8 +53,7 @@ function load(key: string): Promise<void> {
   const e = entry(key);
   if (e.inflight) return e.inflight;
   if (e.state.error) set(e, { ...e.state, loading: true, error: undefined });
-  e.inflight = api
-    .get<unknown>(key)
+  e.inflight = (e.fetcher ?? ((k) => api.get<unknown>(k)))(key)
     .then(
       (data) => set(e, { data, loading: false }),
       (error: ApiError) => set(e, { data: e.state.data, error, loading: false }),
@@ -75,13 +78,13 @@ function evict() {
 }
 
 /** GET /api{key}. key null ise istek yapılmaz. */
-export function useQuery<T>(wanted: string | null): State<T> & { reload: () => Promise<void> } {
+export function useQuery<T>(wanted: string | null, fetcher?: Fetcher): State<T> & { reload: () => Promise<void> } {
   // an endpoint whose module is not installed is never asked for: its answer is "nothing", settled
   const key = wanted && endpointOn(wanted) ? wanted : null;
   const subscribe = useCallback(
     (fn: () => void) => {
       if (!key) return () => {};
-      const e = entry(key);
+      const e = entry(key, fetcher);
       e.subs.add(fn);
       e.lastUsed = Date.now();
       return () => {
@@ -91,17 +94,57 @@ export function useQuery<T>(wanted: string | null): State<T> & { reload: () => P
     },
     [key],
   );
-  const snap = useCallback(() => (key ? entry(key).state : wanted ? ABSENT : EMPTY), [key, wanted]);
+  const snap = useCallback(() => (key ? entry(key, fetcher).state : wanted ? ABSENT : EMPTY), [key, wanted, fetcher]);
   const state = useSyncExternalStore(subscribe, snap) as State<T>;
 
   useEffect(() => {
     if (!key) return;
-    const e = entry(key);
+    const e = entry(key, fetcher);
     if (!e.inflight && Date.now() - e.fetchedAt > STALE_MS) void load(key);
-  }, [key]);
+  }, [key, fetcher]);
 
-  const reload = useCallback(() => (key ? load(key) : Promise.resolve()), [key]);
+  const reload = useCallback(() => {
+    if (!key) return Promise.resolve();
+    entry(key, fetcher);
+    return load(key);
+  }, [key, fetcher]);
   return { ...state, reload };
+}
+
+/** Several keys at once (the pages of one list): one state per key, the same array while none of them changed */
+export function useQueries<T>(wanted: readonly string[]): State<T>[] {
+  const joined = wanted.map((w) => (endpointOn(w) ? w : "")).join("\n");
+  const count = wanted.length;
+  const last = useRef<State<unknown>[]>([]);
+  const subscribe = useCallback(
+    (fn: () => void) => {
+      const live = joined.split("\n").filter(Boolean).map((k) => entry(k));
+      for (const e of live) {
+        e.subs.add(fn);
+        e.lastUsed = Date.now();
+      }
+      return () => {
+        for (const e of live) {
+          e.subs.delete(fn);
+          e.lastUsed = Date.now();
+        }
+      };
+    },
+    [joined, count],
+  );
+  const snap = useCallback(() => {
+    const next = count ? joined.split("\n").map((k) => (k ? entry(k).state : ABSENT)) : [];
+    if (next.length === last.current.length && next.every((s, i) => s === last.current[i])) return last.current;
+    return (last.current = next);
+  }, [joined, count]);
+  const states = useSyncExternalStore(subscribe, snap) as State<T>[];
+  useEffect(() => {
+    for (const k of joined.split("\n").filter(Boolean)) {
+      const e = entry(k);
+      if (!e.inflight && Date.now() - e.fetchedAt > STALE_MS) void load(k);
+    }
+  }, [joined, count]);
+  return states;
 }
 
 /** Önbellekteki veriyi elle değiştir (iyimser güncelleme). Geri almak için önceki değeri döner. */

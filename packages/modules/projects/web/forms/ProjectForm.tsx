@@ -6,7 +6,7 @@ import { ComboField } from "@kit/components/forms/fields-rich";
 import { todayIso } from "@kit/lib/format";
 import { PROJECT_STEPS, PROJECT_STAGE, type ProjectStage } from "@kit/lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
-import { errorsOf, saveRecord, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { errorsOf, PERSON_REMOTE, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
 import { m as kit } from "@kit/messages";
 
@@ -15,7 +15,6 @@ const FEE_STEP = 100;
 const STAGE_OPTIONS = PROJECT_STEPS.map((s) => ({ value: s, label: PROJECT_STAGE[s] }));
 
 export function ProjectForm(p: FormProps) {
-  const personOptions = usePersonOptions();
   const [name, setName] = useState("");
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [price, setPrice] = useState<number | null>(null);
@@ -37,7 +36,7 @@ export function ProjectForm(p: FormProps) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
-      <ComboField name="person" label={m.form.customer} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.customerPlaceholder} newLabel={m.form.newPerson} />
+      <ComboField name="person" label={m.form.customer} req value={person} onChange={setPerson} remote={PERSON_REMOTE} placeholder={m.form.customerPlaceholder} newLabel={m.form.newPerson} />
       <NumField label={m.form.total} half prefix={kit.lira} step={PRICE_STEP} value={price} onChange={setPrice} />
       <NumField label={m.form.maintenanceFee} half opt prefix={kit.lira} suffix={m.form.perMonth} step={FEE_STEP} value={fee} onChange={setFee} />
       <ChipsField label={kit.fields.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />

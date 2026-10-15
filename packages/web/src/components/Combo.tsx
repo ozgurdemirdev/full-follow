@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
-import { BLUR_CLOSE_MS } from "../lib/constants";
+import { BLUR_CLOSE_MS, PICKER_HITS } from "../lib/constants";
 import { initials, norm } from "../lib/format";
+import { useSearchRows, type SearchPath } from "../lib/useSearchRows";
 import { parts } from "../messages.parts";
 import { FORM_ICON, PathIcon } from "./forms/icons";
 import { stroke as STROKE } from "../styles/tokens.json";
@@ -9,21 +10,37 @@ export interface Option {
   id: number;
   label: string;
   sub?: string;
+  /** the record the option stands for, when it came from the server (so a form can read its other fields) */
+  row?: unknown;
+}
+
+/** A list the server searches for the options (`GET path?q=`), and how a row of it reads as an option */
+export interface RemoteSource {
+  path: string;
+  params?: SearchPath["params"];
+  toOption: (row: any) => Option;
+  /** rows to leave out of the list (a person already on the team) */
+  keep?: (row: any) => boolean;
 }
 
 const m = parts.combo;
 const MAX_HITS = 7;
+const NO_OPTIONS: Option[] = [];
+const KEEP_ALL = () => true;
 
 /**
  * Yazarken öneren alan. Listeden seçilirse id döner; serbest metin bırakılırsa id null (yeni kayıt açılabilir).
  * `form` is the form sheet board's control: search icon, list toggle, initials in front of each hit and, with `newLabel`,
  * a "Yeni firma: “X”" row for text that matches nothing (the record is then created by name on submit).
  */
-export function Combo({ id, value, options, onChange, placeholder, allowNew = true, form, newLabel, invalid }: {
+export function Combo({ id, value, options = NO_OPTIONS, remote, onChange, placeholder, allowNew = true, form, newLabel, invalid }: {
   id?: string;
   value: { id: number | null; text: string };
-  options: Option[];
-  onChange: (v: { id: number | null; text: string }) => void;
+  /** a fixed list, filtered here as the text is typed */
+  options?: Option[];
+  /** or lists the server searches as the text is typed (asked only while the list is open); the text is not filtered again here */
+  remote?: RemoteSource[];
+  onChange: (v: { id: number | null; text: string }, picked?: Option) => void;
   placeholder?: string;
   allowNew?: boolean;
   form?: boolean;
@@ -39,17 +56,23 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
   useEffect(() => () => clearTimeout(blurTimer.current), []);
   const q = useDeferredValue(value.text);
 
+  // the server's rows: a chosen record shows the first rows again (the form variant lets it be switched)
+  const paths = useMemo<SearchPath[]>(() => (remote ?? []).map((r) => ({ path: r.path, params: r.params, limit: PICKER_HITS })), [remote]);
+  const found = useSearchRows(paths, form && value.id ? "" : value.text, !!remote && open);
+  const fromServer = useMemo(() => (remote ? remote.flatMap((r, i) => (found[i] ?? []).filter(r.keep ?? KEEP_ALL).map(r.toOption)) : null), [remote, found]);
+
   const hits = useMemo(() => {
+    if (fromServer) return fromServer.slice(0, MAX_HITS);
     const n = norm(q.trim());
     // a chosen record shows the whole list again (the form variant lets it be switched)
     const list = n && !(form && value.id) ? options.filter((o) => norm(o.label).includes(n) || norm(o.sub).includes(n)) : options;
     return list.slice(0, MAX_HITS);
-  }, [q, options, form, value.id]);
+  }, [fromServer, q, options, form, value.id]);
 
   const exact = hits.find((h) => norm(h.label) === norm(value.text.trim()));
   const showNew = !!form && !!newLabel && !value.id && !!value.text.trim() && !exact;
   const pick = (o: Option) => {
-    onChange({ id: o.id, text: o.label });
+    onChange({ id: o.id, text: o.label }, o);
     setOpen(false);
   };
   const listing = open && (hits.length > 0 || showNew) && (form || !value.id);

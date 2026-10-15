@@ -1,9 +1,10 @@
 // Opportunity form of the sheet: create (person, company, source, stage, first step and comment) and edit
 import { useEffect, useMemo, useState } from "react";
 import { run } from "@kit/api/actions";
-import { pickable, usePeople, useSources } from "@kit/api/keys";
+import { pickable, useSources } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
-import type { Detail, Opportunity, Source } from "@kit/api/types";
+import type { Detail, Opportunity, Person, Source } from "@kit/api/types";
+import type { Option } from "@kit/components/Combo";
 import { Form, Note } from "@kit/components/forms/Form";
 import { AreaField, ChipsField, DateField, NumField, TextField } from "@kit/components/forms/fields";
 import { ComboField } from "@kit/components/forms/fields-rich";
@@ -11,7 +12,7 @@ import { addDaysIso, todayIso } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { emptyRef, ensurePerson, optionalStep, type Ref } from "@kit/forms/helpers";
-import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { COMPANY_REMOTE, errorsOf, PERSON_REMOTE, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
 import { m as kit } from "@kit/messages";
 
@@ -42,7 +43,6 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   const d = useQuery<Detail<Opportunity>>(`/opportunities/${p.id}`);
   const o = d.data?.row;
   const sources = useSources();
-  const personOptions = usePersonOptions();
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [title, setTitle] = useState("");
   const [value, setValue] = useState<number | null>(null);
@@ -74,7 +74,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <Note>{m.form.stageNote(STAGE[o.stage])}</Note>
-      <ComboField name="person" label={m.form.contact} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.common.newPerson} />
+      <ComboField name="person" label={m.form.contact} req value={person} onChange={setPerson} remote={PERSON_REMOTE} placeholder={m.form.personPlaceholder} newLabel={m.common.newPerson} />
       <TextField name="title" label={kit.fields.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} />
       <ChipsField label={kit.nouns.source} value={sourceId} onChange={(v) => v && setSourceId(v)} options={pickable(sources.rows, [o.source_id]).map((s) => ({ value: String(s.id), label: s.name }))} />
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
@@ -86,17 +86,14 @@ function OpportunityEdit(p: FormProps & { id: number }) {
 
 function OpportunityCreate(p: FormProps) {
   const sources = useSources();
-  const people = usePeople();
-  const personOptions = usePersonOptions();
-  const companyOptions = useCompanyOptions();
   const tasksOn = useTasksOn();
 
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [company, setCompany] = useState<Ref>(emptyRef);
-  // Mevcut kişi seçilince firması da gelir
-  const pickPerson = (v: Ref) => {
+  // Mevcut kişi seçilince firması da gelir (the picked option carries the person)
+  const pickPerson = (v: Ref, picked?: Option) => {
     setPerson(v);
-    const x = v.id ? people.byId.get(v.id) : undefined;
+    const x = picked?.row as Person | undefined;
     if (x?.company_id) setCompany({ id: x.company_id, text: x.company_name ?? "" });
   };
   const [title, setTitle] = useState("");
@@ -145,14 +142,14 @@ function OpportunityCreate(p: FormProps) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <TextField label={kit.fields.title} hint={m.form.titleHint} value={title} onChange={setTitle} placeholder={m.form.createTitlePlaceholder} />
-      <ComboField name="person" label={kit.nouns.person} req half value={person} onChange={pickPerson} options={personOptions} placeholder={m.form.personNamePlaceholder} newLabel={m.common.newPerson} />
-      <ComboField label={kit.nouns.company} half value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
+      <ComboField name="person" label={kit.nouns.person} req half value={person} onChange={pickPerson} remote={PERSON_REMOTE} placeholder={m.form.personNamePlaceholder} newLabel={m.common.newPerson} />
+      <ComboField label={kit.nouns.company} half value={company} onChange={setCompany} remote={COMPANY_REMOTE} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
       {live.length ? (
         <ChipsField label={kit.nouns.source} value={String(src?.id ?? "")} onChange={(v) => v && setSourceId(v)} options={live.map((s) => ({ value: String(s.id), label: s.name }))} />
       ) : (
         <TextField label={kit.nouns.source} value={newSource} onChange={setNewSource} placeholder={m.form.noSource} />
       )}
-      {isRef ? <ComboField label={m.form.referrer} value={referrer} onChange={setReferrer} options={personOptions} placeholder={m.form.personPlaceholder} /> : null}
+      {isRef ? <ComboField label={m.form.referrer} value={referrer} onChange={setReferrer} remote={PERSON_REMOTE} placeholder={m.form.personPlaceholder} /> : null}
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
       <ChipsField label={kit.fields.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
       <NumField label={m.form.value} half prefix={kit.lira} step={VALUE_STEP} value={value} onChange={setValue} />

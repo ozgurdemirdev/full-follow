@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { run } from "@kit/api/actions";
 import { isMissing } from "@kit/api/modules";
+import { drained } from "@kit/api/paged";
 import { useQuery } from "@kit/api/store";
 import type { List, Payment, Report } from "@kit/api/types";
 import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
@@ -8,7 +9,7 @@ import { fmtDay, fmtNum, initials, lira, todayIso } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { MILESTONE } from "@kit/lib/labels";
-import { MIN_PAYMENT, PAYMENTS_LIMIT } from "../constants";
+import { MIN_PAYMENT } from "../constants";
 import { m } from "../messages";
 import { PROJECTS_PATH } from "../paths";
 import { requestReminder } from "../projects";
@@ -56,7 +57,7 @@ function PayForm({ list, onDone }: { list: Payment[]; onDone: () => void }) {
 /** "Tahsilat": what is waiting, what is late, the next payments, record a payment, ask for a reminder draft */
 export function PaymentsCard() {
   const ex = useExpand();
-  const payments = useQuery<List<Payment>>(`/payments?unpaid=true&limit=${PAYMENTS_LIMIT}`);
+  const payments = useQuery<List<Payment>>("/payments?unpaid=true", drained);
   const report = useQuery<Report>("/report");
   const tasksOn = useTasksOn();
   const [group, setGroup] = useState<PaymentGroup | null>(null);

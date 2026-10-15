@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { remove, run } from "../api/actions";
 import { useQuery } from "../api/store";
+import { drained } from "../api/paged";
 import type { LinkRow, List } from "../api/types";
-import { LINKS_LIMIT } from "../lib/constants";
 import { m as kit } from "../messages";
 import { parts } from "../messages.parts";
 import { Empty, SideSection } from "./ui";
@@ -13,7 +13,7 @@ export type LinkTarget = "opportunity" | "project" | "own_project";
 
 /** Links of a record plus the add form state: shared by the old card and the own projects overlay panel */
 export function useLinks(type: LinkTarget, id: number) {
-  const links = useQuery<List<LinkRow>>(`/links?${type}_id=${id}&limit=${LINKS_LIMIT}`);
+  const links = useQuery<List<LinkRow>>(`/links?${type}_id=${id}`, drained);
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);

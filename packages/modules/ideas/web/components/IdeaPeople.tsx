@@ -3,7 +3,7 @@ import { remove, run } from "@kit/api/actions";
 import type { Interest } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { emptyRef, type Ref } from "@kit/forms/helpers";
-import { usePersonOptions } from "@kit/forms/shared";
+import { PERSON_REMOTE } from "@kit/forms/shared";
 import { NEXT_INTEREST } from "../ideas";
 import { INTEREST } from "../labels";
 import { m } from "../messages";
@@ -35,7 +35,6 @@ function PersonRow({ x }: { x: Interest }) {
 
 /** Pick a person from the list and link them to the idea (as told, no answer yet) */
 function AddPerson({ ideaId }: { ideaId: number }) {
-  const options = usePersonOptions();
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [busy, setBusy] = useState(false);
   const add = async () => {
@@ -53,7 +52,7 @@ function AddPerson({ ideaId }: { ideaId: number }) {
   return (
     <label className="ideas-add">
       <span className="sr-only">{m.people.link}</span>
-      <Combo value={person} onChange={setPerson} options={options} placeholder={m.people.placeholder} allowNew={false} />
+      <Combo value={person} onChange={setPerson} remote={PERSON_REMOTE} placeholder={m.people.placeholder} allowNew={false} />
       <button type="button" className="ideas-add-go" aria-label={m.people.linkButton} disabled={busy || !person.id} onClick={() => void add()}>
         <BoardIcon name="plus" className="size-icon-chip" stroke={STROKE.bold} />
       </button>

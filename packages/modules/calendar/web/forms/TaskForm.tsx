@@ -9,7 +9,7 @@ import { todayIso } from "@kit/lib/format";
 import { type TaskAssignee } from "@kit/lib/labels";
 import { ASSIGNEE_ITEMS } from "../labels";
 import { emptyRef, type Ref } from "@kit/forms/helpers";
-import { errorsOf, saveRecord, useLinkOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { errorsOf, LINK_REMOTE, linkOf, saveRecord, useLinkedOption, useSubmit, type FormProps } from "@kit/forms/shared";
 import { TASK_KIND_ITEMS } from "../labels";
 import { m as kit } from "@kit/messages";
 import { m } from "../messages";
@@ -19,7 +19,6 @@ const KINDS = (["gorusme", "takip", "gorev"] as const).map((v) => TASK_KIND_ITEM
 
 // ---------------------------------------------------------------- görev
 export function TaskForm(p: FormProps) {
-  const options = useLinkOptions();
   const pre = p.sheet.preset;
   const editId = pre?.edit;
   const existing = useQuery<Detail<Task>>(editId ? `/tasks/${editId}` : null);
@@ -42,16 +41,17 @@ export function TaskForm(p: FormProps) {
       setKind(row.kind);
       setWho(row.assignee);
     }
-    const hit = options.find((o) => linked[o.type] === o.tid);
-    if (hit) setTarget({ id: hit.id, text: hit.label });
-    // options arrive after the first render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [row, options]);
+  }, [row]);
+  // the record the task is already tied to arrives after the first render: it fills the field once, unless something was picked meanwhile
+  const tied = useLinkedOption(linked);
+  useEffect(() => {
+    if (tied) setTarget((cur) => (cur.id ? cur : { id: tied.id, text: tied.label }));
+  }, [tied]);
 
   const submit = useSubmit(
     p,
     async () => {
-      const t = options.find((o) => o.id === target.id);
+      const t = linkOf(target.id);
       const link = { person_id: null, company_id: null, opportunity_id: null, project_id: null, ...(t ? { [`${t.type}_id`]: t.tid } : {}) };
       await saveRecord(
         p, editId,
@@ -69,7 +69,7 @@ export function TaskForm(p: FormProps) {
       <TimeField label={m.taskForm.time} half opt value={time} onChange={setTime} placeholder={m.anytime} />
       <SegField label={kit.fields.type} options={KINDS} value={kind} onChange={setKind} />
       <SegField label={m.taskForm.who} options={ASSIGNEE_ITEMS} value={who} onChange={setWho} />
-      <ComboField label={m.taskForm.about} opt value={target} onChange={setTarget} options={options} placeholder={m.taskForm.aboutPlaceholder} />
+      <ComboField label={m.taskForm.about} opt value={target} onChange={setTarget} remote={LINK_REMOTE} placeholder={m.taskForm.aboutPlaceholder} />
     </Form>
   );
 }

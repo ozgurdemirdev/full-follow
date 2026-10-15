@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useParams } from "wouter";
 import { qs } from "@kit/api/client";
-import { useCompanies, useOwnProjects } from "@kit/api/keys";
+import { useOwnProjects } from "@kit/api/keys";
 import { useModules } from "@kit/api/modules";
 import { useQuery } from "@kit/api/store";
+import { drained } from "@kit/api/paged";
 import type { Detail, List, Thread, Touch } from "@kit/api/types";
-import { LATEST_LIMIT, THREADS_LIMIT, TOUCHES_LIMIT } from "../constants";
+import { LATEST_LIMIT } from "../constants";
 import { m } from "../messages";
 import type { TimelineEvent, TlPage, TlRec, TlType, TlWeekData } from "../types";
 import { Page } from "@kit/app/Page";
@@ -51,18 +52,19 @@ export default function Timeline() {
   const latest = useQuery<TlPage>(focusKey ? `/timeline${qs({ record: focusKey, limit: LATEST_LIMIT })}` : null);
   const detail = useQuery<Detail<any>>(aside ? detailKey(aside, id, has) : null);
   const stageEvents = useQuery<TimelineEvent[]>(aside ? `/timeline/${aside}/${id}?limit=${STAGE_EVENTS_LIMIT}` : null);
-  const touches = useQuery<List<Touch>>(aside === "person" ? `/touches${qs({ person_id: id, limit: TOUCHES_LIMIT })}` : null);
-  const threads = useQuery<List<Thread>>(aside ? `/comments${qs({ target_type: aside, target_id: id, resolved: "all", limit: THREADS_LIMIT })}` : null);
-  const companies = useCompanies(kind === "company" && !!focusKey);
+  const touches = useQuery<List<Touch>>(aside === "person" ? `/touches${qs({ person_id: id })}` : null, drained);
+  const threads = useQuery<List<Thread>>(aside ? `/comments${qs({ target_type: aside, target_id: id, resolved: "all" })}` : null, drained);
+  // a company is read by its own id: the company book is not loaded here
+  const company = useQuery<Detail<{ name: string }>>(kind === "company" && focusKey ? `/companies/${id}` : null);
   const ownProjects = useOwnProjects(kind === "own_project" && !!focusKey);
 
   const focus = useMemo<TlRec | null>(() => {
     if (!focusKey || !kind) return null;
     const row = detail.data?.row as AnyRow | undefined;
     const name = aside ? (kind === "opportunity" ? row?.title : row?.name)
-      : kind === "company" ? companies.byId.get(id)?.name : ownProjects.byId.get(id)?.name;
+      : kind === "company" ? company.data?.row.name : ownProjects.byId.get(id)?.name;
     return name ? { kind, id, name } : null;
-  }, [focusKey, kind, id, aside, detail.data, companies.byId, ownProjects.byId]);
+  }, [focusKey, kind, id, aside, detail.data, company.data, ownProjects.byId]);
 
   const days = useMemo(() => groupDays(feed.rows, feed.counts), [feed.rows, feed.counts]);
   const weekTiles = useMemo(() => (week.data ? weekView(week.data) : null), [week.data]);
@@ -88,7 +90,7 @@ export default function Timeline() {
 
   if (feed.error && !feed.ready) return frame(<ErrorBox error={feed.error} retry={feed.reload} />);
   if (aside && detail.error && !detail.data) return frame(<ErrorBox error={detail.error} retry={detail.reload} />);
-  const lookedUp = aside ? !!detail.data : kind === "company" ? !!companies.data : kind === "own_project" ? !!ownProjects.data : true;
+  const lookedUp = aside ? !!detail.data : kind === "company" ? !!company.data || !!company.error : kind === "own_project" ? !!ownProjects.data : true;
   if (focusKey && !focus && lookedUp) return frame(<Empty>{m.notFound}</Empty>);
   if (!feed.ready || (!week.data && !week.error) || (focusKey && !focus)) return frame(<PageSkeleton />);
 

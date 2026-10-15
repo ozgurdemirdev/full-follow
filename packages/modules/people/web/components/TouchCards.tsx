@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { qs } from "@kit/api/client";
+import { useQuery } from "@kit/api/store";
 import type { Person } from "@kit/api/types";
-import { askDraft, compareTouch, draftKind, statusOf, useDayMarks, type PStatus } from "@kit/lib/people";
+import { askDraft, draftKind, statusOf, useDayMarks } from "@kit/lib/people";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { STATUS_LABEL, TOUCH_CARDS, whyText } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
@@ -10,21 +12,18 @@ import { Avatar } from "@kit/components/ui";
 import { m } from "../messages";
 import { stroke as STROKE } from "@kit/styles/tokens.json";
 
-/** The statuses that become a card: a follow-up that came due, a reply that is awaited, a cooling relation */
-const CARD_STATUSES: PStatus[] = ["due", "wait", "cold"];
+/** People asked of the touch queue: the cards show the first TOUCH_CARDS of them that are not marked done today in this browser */
+const QUEUE_FETCH = 24;
 
 /** "Bugün dokun": up to four people to reach out to today; "Yaptım" hides a card for today in this browser */
-export function TouchCards({ people, today, onOpen }: { people: Person[]; today: string; onOpen: (id: number, from: HTMLElement) => void }) {
+export function TouchCards({ today, onOpen }: { today: string; onOpen: (id: number, from: HTMLElement) => void }) {
   const [gone, markGone] = useDayMarks("gone");
   const [drafted, markDrafted] = useDayMarks("drafted");
   const tasksOn = useTasksOn();
-  const cards = useMemo(
-    () => people
-      .filter((p) => CARD_STATUSES.includes(statusOf(p, today)) && !gone.has(p.id))
-      .sort((a, b) => compareTouch(a, b, today))
-      .slice(0, TOUCH_CARDS),
-    [people, today, gone],
-  );
+  // the server orders the people that need a touch (due follow-ups, awaited replies, cooling relations); the cards take the first ones not done today
+  const queue = useQuery<{ rows: Person[] }>(`/people/touch-queue${qs({ limit: QUEUE_FETCH })}`);
+  const people = queue.data?.rows;
+  const cards = useMemo(() => (people ?? []).filter((p) => !gone.has(p.id)).slice(0, TOUCH_CARDS), [people, gone]);
 
   return (
     <section aria-label={m.touch.title} className="flex flex-col gap-6">

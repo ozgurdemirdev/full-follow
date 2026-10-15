@@ -3,7 +3,7 @@ import { useId, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { fmtNum, lira } from "../../lib/format";
 import { m as kit } from "../../messages";
 import { forms } from "../../messages.forms";
-import { Combo, type Option } from "../Combo";
+import { Combo, type Option, type RemoteSource } from "../Combo";
 import { NumberField } from "../NumberField";
 import { useFieldError } from "./context";
 import { Field, type FieldProps } from "./fields";
@@ -15,10 +15,12 @@ const m = forms.rich;
 // ---------------------------------------------------------------- combo
 
 /** Search with a dropdown; free text stays free (id null) and is created by name on submit when `newLabel` is set */
-export function ComboField({ name, label, req, opt, hint, half, value, onChange, options, placeholder, newLabel }: FieldProps & {
+export function ComboField({ name, label, req, opt, hint, half, value, onChange, options, remote, placeholder, newLabel }: FieldProps & {
   value: { id: number | null; text: string };
-  onChange: (v: { id: number | null; text: string }) => void;
-  options: Option[];
+  onChange: (v: { id: number | null; text: string }, picked?: Option) => void;
+  options?: Option[];
+  /** lists the server searches as the text is typed, instead of a fixed `options` */
+  remote?: RemoteSource[];
   placeholder?: string;
   /** "Yeni firma": the row that offers the typed text as a new record */
   newLabel?: string;
@@ -27,7 +29,7 @@ export function ComboField({ name, label, req, opt, hint, half, value, onChange,
   const { error, touch } = useFieldError(name);
   return (
     <Field id={id} label={label} req={req} opt={opt} hint={hint} half={half} error={error}>
-      <Combo form id={id} value={value} options={options} placeholder={placeholder} newLabel={newLabel} invalid={!!error} onChange={(v) => (touch(), onChange(v))} />
+      <Combo form id={id} value={value} options={options} remote={remote} placeholder={placeholder} newLabel={newLabel} invalid={!!error} onChange={(v, picked) => (touch(), onChange(v, picked))} />
     </Field>
   );
 }

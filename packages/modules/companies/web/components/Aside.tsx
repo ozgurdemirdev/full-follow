@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { CompanyCard } from "@kit/api/types";
 import { Slot } from "@kit/app/modules/Slot";
+import type { Project } from "@kit/api/types";
 import type { CompanyView } from "../companies";
 import { fmtDayLong, lira } from "@kit/lib/format";
 import { CONTACT_STATUS, OPEN_STAGES } from "@kit/lib/labels";
@@ -43,7 +44,7 @@ function facts(v: CompanyView, card?: CompanyCard): Fact[] {
 }
 
 /** Left column of the company overlay: money block, facts, projects and open opportunities */
-export function Aside({ v, max, card }: { v: CompanyView; max: number; card?: CompanyCard }) {
+export function Aside({ v, max, card, projects }: { v: CompanyView; max: number; card?: CompanyCard; projects: Project[] }) {
   const { money } = v;
   const open = (card?.opportunities ?? []).filter((o) => OPEN_STAGES.includes(o.stage));
   return (
@@ -65,8 +66,8 @@ export function Aside({ v, max, card }: { v: CompanyView; max: number; card?: Co
 
       <div className="co-panel is-work">
         <span className="co-panel-title">{m.aside.work}</span>
-        <Slot name="company.overlay.work" props={{ projects: v.projects, opportunities: open }} />
-        {!v.projects.length && !open.length ? <span className="text-base-sm text-text-muted">{m.aside.noWork}</span> : null}
+        <Slot name="company.overlay.work" props={{ projects, opportunities: open }} />
+        {!projects.length && !open.length ? <span className="text-base-sm text-text-muted">{m.aside.noWork}</span> : null}
         <Slot name="company.overlay.work.after" props={{ card }} />
       </div>
     </div>

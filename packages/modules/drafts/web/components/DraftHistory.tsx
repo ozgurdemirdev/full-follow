@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { usePaged } from "@kit/api/paged";
 import type { Draft } from "@kit/api/types";
+import { LoadMore } from "@kit/components/LoadMore";
 import { CHANNEL } from "@kit/lib/labels";
-import { historyAge, HISTORY_PAGE } from "../drafts";
+import { draftsOf, historyAge, HISTORY_PAGE } from "../drafts";
 import { Avatar } from "@kit/components/ui";
 import { m } from "../messages";
 
-/** Sent and rejected drafts, newest change first */
-export function DraftHistory({ rows, rejected }: { rows: Draft[]; rejected: boolean }) {
-  const [shown, setShown] = useState(HISTORY_PAGE);
+/** Sent and rejected drafts, newest first; the server pages them as the end of the list scrolls into view */
+export function DraftHistory({ status }: { status: "gonderildi" | "reddedildi" }) {
+  const rejected = status === "reddedildi";
+  const list = usePaged<Draft>(draftsOf(status), HISTORY_PAGE);
+  const rows = list.rows;
   return (
     <section className="drf-hist">
       <div className="drf-list">
-        {rows.slice(0, shown).map((d) => (
+        {rows.map((d) => (
           <div key={d.id} className="drf-hrow">
             <Avatar name={d.to_name} id={d.person_id ?? undefined} size="list" />
             <div className="drf-hbody">
@@ -26,8 +29,9 @@ export function DraftHistory({ rows, rejected }: { rows: Draft[]; rejected: bool
           </div>
         ))}
       </div>
-      {rows.length > shown ? <button type="button" className="drf-more" onClick={() => setShown((n) => n + HISTORY_PAGE)}>{m.history.more}</button> : null}
-      {rows.length === 0 ? <p className="drf-empty">{m.history.empty}</p> : null}
+      <LoadMore hasMore={list.hasMore} loaded={rows.length} onMore={list.loadMore} />
+      {list.hasMore ? <button type="button" className="drf-more" onClick={list.loadMore}>{m.history.more}</button> : null}
+      {rows.length === 0 && !list.pending ? <p className="drf-empty">{m.history.empty}</p> : null}
     </section>
   );
 }

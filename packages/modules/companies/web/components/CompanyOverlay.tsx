@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { remove } from "@kit/api/actions";
+import { qs } from "@kit/api/client";
 import { companyCardKey } from "@kit/api/keys";
+import { drained } from "@kit/api/paged";
 import { useQuery } from "@kit/api/store";
-import type { CompanyCard } from "@kit/api/types";
+import type { CompanyCard, List, Person, Project } from "@kit/api/types";
 import { useRegistry } from "@kit/app/modules/registry";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
@@ -50,14 +52,21 @@ function HeaderMenu({ v, onClaude, onClose }: { v: CompanyView; onClaude: () => 
   );
 }
 
-/** Both columns once the card is loaded; the list data (money, people, projects) is already there. The right column is filled by other modules (the people inside, the touches) */
+const NO_PEOPLE: Person[] = [];
+const NO_PROJECTS: Project[] = [];
+
+/** Both columns once the card is loaded; the money is already there. The people inside and their projects come with the card. The right column is filled by other modules (the people inside, the touches) */
 function Body({ v, max, card, claude, onClaude }: { v: CompanyView; max: number; card?: CompanyCard; claude: ClaudeMode | null; onClaude: (m: ClaudeMode | null) => void }) {
   const on = claude?.id === v.c.id;
+  const people = card?.people ?? NO_PEOPLE;
+  // the projects of the company are the projects of its people: one read, asked once the card has told who they are
+  const ids = people.map((p) => p.id).join(",");
+  const projects = useQuery<List<Project>>(ids ? `/projects${qs({ person_ids: ids })}` : null, drained).data?.rows ?? NO_PROJECTS;
   return (
     <>
-      <Aside v={v} max={max} card={card} />
+      <Aside v={v} max={max} card={card} projects={projects} />
       <div className="co-main">
-        <Slot name="company.overlay.main" props={{ people: v.people, company: v.c, card, claude: on ? claude : null, onClaude }} />
+        <Slot name="company.overlay.main" props={{ people, company: v.c, card, claude: on ? claude : null, onClaude }} />
       </div>
     </>
   );

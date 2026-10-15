@@ -1,14 +1,13 @@
 // The draft form of the sheet (with template suggestions)
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@kit/api/client";
-import { useCompanies, usePeople } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
-import type { Detail, Template } from "@kit/api/types";
+import type { Company, Detail, Person, Template } from "@kit/api/types";
 import { Form, Note } from "@kit/components/forms/Form";
 import { AreaField, ChipsField, Field, SegField, TextField } from "@kit/components/forms/fields";
 import { ComboField, SuggField, type Suggestion } from "@kit/components/forms/fields-rich";
-import { emptyRef, ensureCompany, ensurePerson, type Ref } from "@kit/forms/helpers";
-import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { emptyRef, ensureCompany, ensurePerson, useRefText, type Ref } from "@kit/forms/helpers";
+import { CHANNEL_OPTIONS, COMPANY_CONTACT_REMOTE, errorsOf, PERSON_REMOTE, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { TEMPLATES_LIMIT } from "../constants";
 import { m } from "../messages";
@@ -22,21 +21,13 @@ const TO_KINDS = [{ value: "person" as const, label: m.form.person }, { value: "
 export function DraftForm(p: FormProps) {
   const pre = p.sheet.preset;
   // firmaya giden taslak (info@ gibi): {ad} ve {firma} firma adıyla dolar
-  const companies = useCompanies();
-  const company = pre?.company_id ? companies.byId.get(pre.company_id) : undefined;
-  const people = usePeople();
-  const personOptions = usePersonOptions();
-  const companyOptions = useCompanyOptions(true);
+  const company = useQuery<Detail<Company>>(pre?.company_id ? `/companies/${pre.company_id}` : null).data?.row;
   const [toKind, setToKind] = useState<"person" | "company">("person");
   const [toCompany, setToCompany] = useState<Ref>(emptyRef);
   const [person, setPerson] = useState<Ref>(() => ({ id: pre?.person_id ?? null, text: "" }));
-  useEffect(() => {
-    if (person.id && !person.text) {
-      const x = people.byId.get(person.id);
-      if (x) setPerson({ id: x.id, text: x.name });
-    }
-  }, [people.byId, person]);
-  const known = person.id ? people.byId.get(person.id) : undefined;
+  useRefText(person, setPerson, "/people");
+  // the person as the list knows them (the channel last used), read once chosen
+  const known = useQuery<Detail<Person>>(person.id ? `/people/${person.id}` : null).data?.row;
   const [channel, setChannel] = useState(pre?.channel ?? "");
   const ch = channel || known?.last_channel || "email";
   const [templateId, setTemplateId] = useState<number | null>(null);
@@ -103,9 +94,9 @@ export function DraftForm(p: FormProps) {
         <>
           <SegField label={m.form.to} options={TO_KINDS} value={toKind} onChange={(v) => (setToKind(v), setTemplateId(null))} />
           {toKind === "person" ? (
-            <ComboField name="to" label={m.form.recipient} req value={person} onChange={(v) => (setPerson(v), setTemplateId(null))} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
+            <ComboField name="to" label={m.form.recipient} req value={person} onChange={(v) => (setPerson(v), setTemplateId(null))} remote={PERSON_REMOTE} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
           ) : (
-            <ComboField name="to" label={m.form.recipient} req value={toCompany} onChange={(v) => (setToCompany(v), setTemplateId(null))} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
+            <ComboField name="to" label={m.form.recipient} req value={toCompany} onChange={(v) => (setToCompany(v), setTemplateId(null))} remote={COMPANY_CONTACT_REMOTE} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
           )}
         </>
       )}

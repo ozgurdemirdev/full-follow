@@ -1,5 +1,7 @@
 // Referrals screen: the tree and its layout (derived in the web) and the shapes of the suggestion lists the API sends
-import type { Person, ReferralValue } from "@kit/api/types";
+import type { Person, ReferralKpis, ReferralValue } from "@kit/api/types";
+
+export type { ReferralKpis };
 
 /** Opportunity value a person brought as the contact of the opportunity */
 export interface RefOwn {
@@ -60,9 +62,10 @@ export interface RefSuggestion {
   /** the title of the task that asks Claude for the draft */
   request_title: string;
 }
-/** `GET /report/referrals`: the leaders and the two suggestion lists */
+/** `GET /report/referrals`: the leaders, the numbers on top and the two suggestion lists */
 export interface ReferralReport {
   leaders: ReferralValue[];
+  kpis: ReferralKpis;
   thanks: RefSuggestion[];
   asks: RefSuggestion[];
 }

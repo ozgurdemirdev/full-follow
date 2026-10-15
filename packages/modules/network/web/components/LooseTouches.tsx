@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { run } from "@kit/api/actions";
 import { useQuery } from "@kit/api/store";
+import { drained } from "@kit/api/paged";
 import type { List, Touch } from "@kit/api/types";
 import { openSheet } from "@kit/app/ui";
-import { LOOSE_LIMIT } from "../constants";
 import { m } from "../messages";
 import { groupLoose, namedAddresses } from "../stream";
 import { ago } from "@kit/lib/format";
@@ -19,7 +19,7 @@ const adopt = (contact?: string) => void run("post", "/touches/adopt-suggested",
  * links them on its own; the ones whose address belongs to a person or company that exists carry a suggestion that applies in one click.
  */
 export function LooseTouches() {
-  const loose = useQuery<List<Touch>>(`/touches?loose=true&limit=${LOOSE_LIMIT}`);
+  const loose = useQuery<List<Touch>>("/touches?loose=true", drained);
   const groups = useMemo(() => groupLoose(loose.data?.rows ?? []), [loose.data]);
   const [open, setOpen] = useState(false);
   if (!groups.length) return null;

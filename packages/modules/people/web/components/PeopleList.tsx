@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Person, Task } from "@kit/api/types";
+import { LoadMore } from "@kit/components/LoadMore";
 import { FilterBar, type StatusFilter } from "./FilterBar";
 import { PersonRow } from "./PersonRow";
 import type { LabelFilter } from "@kit/components/filters";
@@ -8,9 +9,14 @@ import { m } from "../messages";
 
 const NO_TASKS: Task[] = [];
 
-/** The list card: filter bar, column heads, one row per person, and the legend */
-export function PeopleList({ rows, tasks, today, counts, status, onStatus, chan, onChan, labels, onLabels, onOpen }: {
+/** The list card: filter bar, column heads, one row per person (more as the end scrolls into view), and the legend */
+export function PeopleList({ rows, total, more, empty, tasks, today, counts, status, onStatus, chan, onChan, labels, onLabels, onOpen }: {
   rows: Person[];
+  /** people the filters match, loaded or not */
+  total: number;
+  more: { hasMore: boolean; onMore: () => void };
+  /** the answer for the filters is in and holds nobody */
+  empty: boolean;
   tasks: Task[];
   today: string;
   counts: Record<StatusFilter, number>;
@@ -35,9 +41,10 @@ export function PeopleList({ rows, tasks, today, counts, status, onStatus, chan,
         <span>{kit.nouns.person}</span><span>{m.list.lastTouch}</span><span className="ppl-rhythm">{m.list.rhythm}</span><span className="ppl-next">{m.list.next}</span>
       </div>
       {rows.map((p) => <PersonRow key={p.id} p={p} tasks={byPerson.get(p.id) ?? NO_TASKS} today={today} onOpen={onOpen} />)}
-      {rows.length === 0 ? <p className="m-0 border-t border-border-subtle px-8 py-11 text-base text-text-muted">{m.list.empty}</p> : null}
+      {rows.length === 0 && empty ? <p className="m-0 border-t border-border-subtle px-8 py-11 text-base text-text-muted">{m.list.empty}</p> : null}
+      <LoadMore hasMore={more.hasMore} loaded={rows.length} onMore={more.onMore} />
       <div className="ppl-foot">
-        <span>{m.list.showing(rows.length)}</span>
+        <span>{m.list.showing(total)}</span>
         <span className="flex items-center gap-6">
           <span className="ppl-key" data-warm="hot"><i />{m.list.hot}</span>
           <span className="ppl-key" data-warm="mid"><i />{m.list.mid}</span>

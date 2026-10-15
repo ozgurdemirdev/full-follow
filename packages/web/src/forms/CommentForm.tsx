@@ -6,23 +6,20 @@ import { AreaField } from "../components/forms/fields";
 import { ComboField } from "../components/forms/fields-rich";
 import { comments } from "../messages.comments";
 import { emptyRef, type Ref } from "./helpers";
-import { errorsOf, useLinkOptions, useSubmit, type FormProps } from "./shared";
+import { errorsOf, LINK_REMOTE, linkOf, useSubmit, type FormProps } from "./shared";
 
 const m = comments.form;
 
 export function CommentForm(p: FormProps) {
   const preTarget = p.sheet.preset?.target;
-  const options = useLinkOptions();
   const [target, setTarget] = useState<Ref>(emptyRef);
   const [body, setBody] = useState("");
 
   const submit = useSubmit(
     p,
     async () => {
-      const t = preTarget ?? (() => {
-        const o = options.find((x) => x.id === target.id);
-        return o ? { type: o.type, id: o.tid } : null;
-      })();
+      const picked = linkOf(target.id);
+      const t = preTarget ?? (picked ? { type: picked.type, id: picked.tid } : null);
       if (!t) throw new Error(m.noTarget);
       await run("post", "/comments", { target_type: t.type, target_id: t.id, body: body.trim() }, { ok: m.added });
     },
@@ -34,7 +31,7 @@ export function CommentForm(p: FormProps) {
       {preTarget ? (
         <Note>{preTarget.label}</Note>
       ) : (
-        <ComboField name="target" label={m.about} req value={target} onChange={setTarget} options={options} placeholder={m.aboutPlaceholder} />
+        <ComboField name="target" label={m.about} req value={target} onChange={setTarget} remote={LINK_REMOTE} placeholder={m.aboutPlaceholder} />
       )}
       <AreaField name="body" label={m.body} req value={body} onChange={setBody} placeholder={m.bodyPlaceholder} rows={5} hint={m.bodyHint} />
     </Form>

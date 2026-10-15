@@ -1,11 +1,9 @@
 // The projects module's web part: the manifest the shell builds its route, nav item, dashboard cards, form and search from.
 import { lazy } from "react";
-import { K } from "@kit/api/keys";
 import type { Project } from "@kit/api/types";
 import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
-import { norm } from "@kit/lib/format";
 import { PROJECT_STAGE } from "@kit/lib/labels";
 import { CompanyProjects, PersonProjects } from "./components/ProjectRows";
 import { m } from "./messages";
@@ -29,12 +27,8 @@ export default defineWebModule({
   }],
   links: { project: (id) => `${PROJECTS_PATH}/${id}` },
   search: [{
-    id: "projects", order: 30, dataKey: K.projects,
-    match: (p: Project, q, ctx) => (
-      norm(p.name).includes(q) || norm(p.person_name).includes(q)
-        ? { key: `r${p.id}`, label: p.name, sub: m.searchSub(PROJECT_STAGE[p.stage]), href: ctx.recordHref("project", p.id) }
-        : null
-    ),
+    id: "projects", order: 30, path: "/projects",
+    hit: (p: Project, ctx) => ({ key: `r${p.id}`, label: p.name, sub: m.searchSub(PROJECT_STAGE[p.stage]), href: ctx.recordHref("project", p.id) }),
   }],
   // the projects on a person's and a company's overlay, and the side card of the timeline
   slots: {

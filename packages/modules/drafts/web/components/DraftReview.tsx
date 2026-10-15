@@ -1,6 +1,7 @@
 import { AnimatePresence } from "motion/react";
 import { useState } from "react";
-import type { Draft, Person } from "@kit/api/types";
+import { useQuery } from "@kit/api/store";
+import type { Detail, Draft, Person } from "@kit/api/types";
 import { STACK, draftKind, type DraftResult } from "../drafts";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { m } from "../messages";
@@ -24,15 +25,16 @@ function Dots({ handled, pending }: { handled: Handled[]; pending: Draft[] }) {
 }
 
 /** The approval queue: progress, the card stack (next two drafts peek out behind) and the side context */
-export function DraftReview({ pending, handled, onHandled, personOf, rules }: {
+export function DraftReview({ pending, handled, onHandled, rules }: {
   pending: Draft[];
   handled: Handled[];
   onHandled: (h: Handled) => void;
-  personOf: (id: number | null) => Person | undefined;
   rules: string[];
 }) {
   const [dir, setDir] = useState<DraftResult>("sent");
   const cur = pending[0];
+  // the person the draft in front is for (the people book is not loaded: one read of this person)
+  const person = useQuery<Detail<Person>>(cur?.person_id ? `/people/${cur.person_id}` : null).data?.row;
   const total = handled.length + pending.length;
 
   return (
@@ -49,7 +51,7 @@ export function DraftReview({ pending, handled, onHandled, personOf, rules }: {
           {pending.length > 1 ? <div className="drf-peek" data-near aria-hidden="true" style={peekStyle(0)} /> : null}
           <AnimatePresence mode="wait" custom={dir}>
             {cur ? (
-              <DraftCard key={cur.id} d={cur} person={personOf(cur.person_id)} onResult={(result) => { setDir(result); onHandled({ id: cur.id, result }); }} />
+              <DraftCard key={cur.id} d={cur} person={person} onResult={(result) => { setDir(result); onHandled({ id: cur.id, result }); }} />
             ) : (
               <div key="done" className="drf-done">
                 <span className="drf-done-mark"><BoardIcon name="check" className="size-icon-2xl" stroke={STROKE.bold} /></span>
@@ -60,7 +62,7 @@ export function DraftReview({ pending, handled, onHandled, personOf, rules }: {
           </AnimatePresence>
         </div>
       </div>
-      {cur ? <DraftSide d={cur} person={personOf(cur.person_id)} rules={rules} /> : null}
+      {cur ? <DraftSide d={cur} person={person} rules={rules} /> : null}
     </div>
   );
 }

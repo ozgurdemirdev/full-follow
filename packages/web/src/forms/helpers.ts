@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { run } from "../api/actions";
+import { useQuery } from "../api/store";
 import { toast } from "../components/toast";
-import type { Company, Person } from "../api/types";
+import type { Company, Detail, Person } from "../api/types";
 import { forms } from "../messages.forms";
 
 export interface Ref {
@@ -20,14 +21,14 @@ export function fromContact(contact?: string) {
   return { handle: c };
 }
 
-/** Fill the text of a chosen record's reference once the list has loaded (opened with an id preset) */
-export function useRefText(ref: Ref, set: (r: Ref) => void, nameOf: (id: number) => string | undefined) {
+/** Fill the text of a chosen record's reference (opened with an id preset): one read of that record at `path` (`/people`), no list needed */
+export function useRefText(ref: Ref, set: (r: Ref) => void, path: string) {
+  const id = ref.id && !ref.text ? ref.id : null;
+  const record = useQuery<Detail<{ name?: string; title?: string }>>(id ? `${path}/${id}` : null);
+  const name = record.data?.row.name ?? record.data?.row.title;
   useEffect(() => {
-    if (ref.id && !ref.text) {
-      const name = nameOf(ref.id);
-      if (name) set({ id: ref.id, text: name });
-    }
-  }, [ref, set, nameOf]);
+    if (id && name) set({ id, text: name });
+  }, [id, name, set]);
 }
 
 /**

@@ -1,53 +1,40 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "../api/store";
-import type { List } from "../api/types";
 import { BoardIcon } from "../components/boardIcons";
 import { Icon } from "../components/icons";
-import { BLUR_CLOSE_MS, SEARCH_HITS } from "../lib/constants";
-import { norm } from "../lib/format";
+import { BLUR_CLOSE_MS, SEARCH_HITS, SEARCH_SOURCE_HITS } from "../lib/constants";
+import { useSearchRows } from "../lib/useSearchRows";
 import { useRecordHref } from "../lib/useRecordHref";
 import { m as kit } from "../messages";
 import { shell } from "../messages.shell";
 import { useRegistry } from "./modules/registry";
-import type { SearchCtx, SearchHit, SearchSource } from "./modules/types";
+import type { SearchCtx, SearchHit } from "./modules/types";
 import { stroke as STROKE } from "../styles/tokens.json";
 
 const m = shell.search;
 
 const NO_HITS: SearchHit[] = [];
 
-/** Reads one source's list (the data key the screens share, so it is one request) and reports its matching rows; renders nothing */
-function SourceRunner({ source, armed, q, ctx, report }: { source: SearchSource; armed: boolean; q: string; ctx: SearchCtx; report: (id: string, hits: SearchHit[]) => void }) {
-  const rows = useQuery<List<unknown>>(armed ? source.dataKey : null).data?.rows;
-  const hits = useMemo(() => (armed && q && rows ? rows.flatMap((r) => source.match(r, q, ctx) ?? []) : NO_HITS), [armed, q, rows, source, ctx]);
-  useEffect(() => {
-    report(source.id, hits);
-    return () => report(source.id, NO_HITS);
-  }, [source.id, hits, report]);
-  return null;
-}
-
-/** Üst çubuktaki arama: modüllerin kayıtlı kaynakları (kişi, fırsat, proje ...). ⌘K / Ctrl+K ile odaklanır. Listeler ilk odakta yüklenir. */
+/** Üst çubuktaki arama: modüllerin kayıtlı kaynakları (kişi, fırsat, proje ...). ⌘K / Ctrl+K ile odaklanır. Yazılan metin sunucuya sorulur (kaynak başına birkaç satır); kapalıyken hiçbir şey çekilmez. */
 export function GlobalSearch({ board = false }: { board?: boolean }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const [armed, setArmed] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   /** closes the list shortly after blur so a click on a hit still lands */
   const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [, navigate] = useLocation();
-  const dq = useDeferredValue(q);
 
   const recordHref = useRecordHref();
   const ctx = useMemo<SearchCtx>(() => ({ recordHref }), [recordHref]);
   const { search: sources } = useRegistry();
-  const [byId, setById] = useState<Record<string, SearchHit[]>>({});
-  const report = useCallback((id: string, found: SearchHit[]) => setById((prev) => (prev[id] === found ? prev : { ...prev, [id]: found })), []);
-  const folded = dq.trim() ? norm(dq.trim()) : "";
-  // the sources report in their own order; the list is the first eight
-  const hits = useMemo(() => sources.flatMap((src) => byId[src.id] ?? NO_HITS).slice(0, SEARCH_HITS), [sources, byId]);
+  const paths = useMemo(() => sources.map((src) => ({ path: src.path, limit: SEARCH_SOURCE_HITS })), [sources]);
+  // asked only while something is typed; the sources answer in their own order and the list is the first eight
+  const found = useSearchRows(paths, q, q.trim().length > 0);
+  const hits = useMemo(
+    () => (q.trim() ? sources.flatMap((src, i) => (found[i] ?? []).map((row) => src.hit(row, ctx))).slice(0, SEARCH_HITS) : NO_HITS),
+    [sources, found, ctx, q],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -72,7 +59,6 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
 
   return (
     <div className={board ? "relative flex-none" : "relative hidden flex-none desk:block"}>
-      {sources.map((src) => <SourceRunner key={src.id} source={src} armed={armed} q={folded} ctx={ctx} report={report} />)}
       <label className={board ? "dash-search" : "flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
         {board ? <BoardIcon name="search" className="size-icon-btn" stroke={STROKE.thin} /> : <Icon name="search" className="size-icon-md" />}
         <input
@@ -86,7 +72,6 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
           value={q}
           onFocus={() => {
             clearTimeout(blurTimer.current);
-            setArmed(true);
             setOpen(true);
           }}
           onBlur={() => {

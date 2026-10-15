@@ -1,6 +1,6 @@
 // The person form of the sheet (add, edit the accounts, convert an address into a person)
 import { useEffect, useMemo, useState } from "react";
-import { useCompanies, usePosts, useTags } from "@kit/api/keys";
+import { usePosts, useTags } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
 import type { Detail, Person } from "@kit/api/types";
 import { Form } from "@kit/components/forms/Form";
@@ -12,7 +12,7 @@ import { todayIso } from "@kit/lib/format";
 import { emptyRef, ensureCompany, fromContact, useRefText, type Ref } from "@kit/forms/helpers";
 import { instagram as ig, leadFor, personLinkedin } from "@kit/forms/handles";
 import { useLabels } from "@kit/forms/pickers";
-import { badEmail, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { badEmail, COMPANY_REMOTE, errorsOf, PERSON_REMOTE, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m as kit } from "@kit/messages";
 import { m } from "../messages";
 
@@ -22,9 +22,6 @@ export function PersonForm(p: FormProps) {
   const pre = p.sheet.preset;
   const editId = pre?.person_id;
   const existing = useQuery<Detail<Person>>(editId ? `/people/${editId}` : null);
-  const companies = useCompanies();
-  const companyOptions = useCompanyOptions();
-  const personOptions = usePersonOptions();
   const conv = fromContact(pre?.contact);
 
   const [name, setName] = useState("");
@@ -45,11 +42,12 @@ export function PersonForm(p: FormProps) {
   const tags = useTags();
   const aday = tags.rows.find((t) => t.slug === "aday" && !t.deleted_at)?.id;
   const labels = useLabels(row, { tags: aday ? [aday] : [] });
-  const referrerOptions = useMemo(() => personOptions.filter((o) => o.id !== editId), [personOptions, editId]);
+  // anyone but the person being edited can have introduced them
+  const referrerRemote = useMemo(() => [{ ...PERSON_REMOTE[0], keep: (x: Person) => x.id !== editId }], [editId]);
   const postOptions = useMemo(() => posts.rows.map((x) => ({ id: x.id, label: x.title, sub: PLATFORM[x.platform] })), [posts.rows]);
 
-  useRefText(company, setCompany, (id) => companies.byId.get(id)?.name);
-  useRefText(postRef, setPostRef, (id) => posts.byId.get(id)?.title);
+  useRefText(company, setCompany, "/companies");
+  useRefText(postRef, setPostRef, "/posts");
   useEffect(() => {
     if (pre?.post_id) setPostRef({ id: pre.post_id, text: "" });
   }, [pre?.post_id]);
@@ -87,14 +85,14 @@ export function PersonForm(p: FormProps) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
-      <ComboField label={kit.nouns.company} half value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.searchCompany} newLabel={m.form.newCompany} />
+      <ComboField label={kit.nouns.company} half value={company} onChange={setCompany} remote={COMPANY_REMOTE} placeholder={m.form.searchCompany} newLabel={m.form.newCompany} />
       <TextField label={m.fields.role} half value={role} onChange={setRole} placeholder={m.form.rolePlaceholder} />
       <TextField name="email" label={m.fields.email} half type="email" value={email} onChange={setEmail} placeholder={m.form.emailPlaceholder} />
       <TextField label={m.fields.phone} half type="tel" value={phone} onChange={setPhone} placeholder={m.form.phonePlaceholder} />
       <TextField label={m.fields.instagram} half prefix={leadFor(instagram, "@")} value={instagram} onChange={setInstagram} />
       <TextField label={m.fields.linkedin} half opt prefix={leadFor(linkedin, "in/")} value={linkedin} onChange={setLinkedin} placeholder={m.form.handlePlaceholder} />
       {labels.sourceField}
-      <ComboField label={m.form.whoIntroduced} opt value={referrer} onChange={setReferrer} options={referrerOptions} placeholder={m.searchPerson} />
+      <ComboField label={m.form.whoIntroduced} opt value={referrer} onChange={setReferrer} remote={referrerRemote} placeholder={m.searchPerson} />
       <DateField name="follow" label={m.form.nextFollowUp} half opt quick value={follow} onChange={setFollow} placeholder={m.form.followPlaceholder} />
       <TextField label={m.form.otherAccount} half opt value={handle} onChange={setHandle} />
       {labels.statusField}

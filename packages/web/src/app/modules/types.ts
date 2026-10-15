@@ -118,13 +118,13 @@ export interface SearchHit {
 export interface SearchCtx {
   recordHref: (type: string, id: number) => string;
 }
-/** A list the global search reads (a data key shared with the screens, so it is one request) and how a row of it matches */
+/** A list the global search asks the server about (`GET path?q=...`: the server does the matching) and how a row of it reads as a hit */
 export interface SearchSource {
   id: string;
   order: number;
-  dataKey: string;
-  /** `q` is folded (lower case, Turkish letters folded); null when the row does not match */
-  match: (row: any, q: string, ctx: SearchCtx) => SearchHit | null;
+  /** the list endpoint, which takes `q` and `limit` */
+  path: string;
+  hit: (row: any, ctx: SearchCtx) => SearchHit;
 }
 
 /** A component another module's screen renders by slot name (`<Slot name="person.overlay.side" props={...} />`) */

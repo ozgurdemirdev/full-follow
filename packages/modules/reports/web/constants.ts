@@ -2,7 +2,6 @@
 export const PERCENT = 100;
 export const THOUSAND = 1000;
 /** Unpaid payments the report asks for: all of them (a request has no "all", so a ceiling no list passes) */
-export const PAYMENTS_LIMIT = 1000;
 /** Step of the money settings, and the tax rate setting's ceiling (percent) */
 export const MONEY_STEP = 100;
 export const TAX_MAX = 99;

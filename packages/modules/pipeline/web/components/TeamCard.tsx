@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { remove, run } from "@kit/api/actions";
-import { usePeople } from "@kit/api/keys";
-import type { OppPerson, Opportunity } from "@kit/api/types";
+import type { OppPerson, Opportunity, Person } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { emptyRef, type Ref } from "@kit/forms/helpers";
+import { PERSON_REMOTE } from "@kit/forms/shared";
 import { OPP_ROLE, OPP_ROLES } from "../labels";
 import { Combo } from "@kit/components/Combo";
 import { Avatar, Card, Chip } from "@kit/components/ui";
@@ -12,13 +12,14 @@ import { m as kit } from "@kit/messages";
 
 /** The people on an opportunity: the main contact first, then the team with a role each */
 export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] }) {
-  const people = usePeople();
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [role, setRole] = useState("diger");
   const [note, setNote] = useState("");
-  const options = people.rows
-    .filter((p) => p.id !== opp.person_id && !team.some((t) => t.person_id === p.id))
-    .map((p) => ({ id: p.id, label: p.name, sub: p.company_name ?? undefined }));
+  // the main contact and whoever is on the team already are not offered
+  const remote = useMemo(
+    () => [{ ...PERSON_REMOTE[0], keep: (p: Person) => p.id !== opp.person_id && !team.some((t) => t.person_id === p.id) }],
+    [opp.person_id, team],
+  );
   const add = async () => {
     if (!person.id) return;
     try {
@@ -54,7 +55,7 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
         </div>
       ))}
       <div className="flex flex-col gap-3">
-        <Combo id="team-person" value={person} onChange={setPerson} options={options} placeholder={m.team.searchPlaceholder} allowNew={false} />
+        <Combo id="team-person" value={person} onChange={setPerson} remote={remote} placeholder={m.team.searchPlaceholder} allowNew={false} />
         <div className="flex flex-wrap gap-3">
           <select className="inp w-auto" aria-label={m.team.role} value={role} onChange={(e) => setRole(e.target.value)}>
             {OPP_ROLES.map((r) => <option key={r} value={r}>{OPP_ROLE[r]}</option>)}
