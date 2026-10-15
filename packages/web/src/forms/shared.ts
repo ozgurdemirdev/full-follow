@@ -5,7 +5,7 @@ import { useCompanies, useOpps, usePeople, useProjects } from "../api/keys";
 import type { Mutation } from "../api/types";
 import { closeSheet, type SheetState } from "../app/ui";
 import type { Option } from "../components/Combo";
-import { FORM_META } from "./meta";
+import { formMeta } from "./meta";
 
 export interface FormProps {
   sheet: SheetState;
@@ -47,7 +47,7 @@ export function useSubmit(p: FormProps, fn: () => Promise<unknown>, validate?: (
  * The toast reads "<Tür> eklendi" / "<Tür> güncellendi" and carries the "Aç" pill to the record.
  */
 export function saveRecord<T>(p: FormProps, editId: number | null | undefined, body: unknown, createBody: unknown = body) {
-  const { noun, base, page } = FORM_META[p.sheet.kind];
+  const { noun, base, page } = formMeta(p.sheet.kind)!;
   if (editId) return run<T>("patch", `${base}/${editId}`, body, { ok: `${noun} güncellendi`, open: page(editId, p.sheet.preset) });
   return run<T>("post", base, createBody, { ok: `${noun} eklendi`, open: (r: Mutation<T>) => page((r.row as { id?: number } | undefined)?.id, p.sheet.preset) });
 }

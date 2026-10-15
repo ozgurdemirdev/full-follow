@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow ideas module: money ideas, the people they were told to and their interest",
-  "fullfollow": { "module": "ideas" },
+  "fullfollow": { "module": "ideas", "endpoints": ["/ideas"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

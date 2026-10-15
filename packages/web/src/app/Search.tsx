@@ -1,22 +1,28 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { useOpps, usePeople, useProjects } from "../api/keys";
-import { useModules } from "../api/modules";
+import { useQuery } from "../api/store";
+import type { List } from "../api/types";
 import { BoardIcon } from "../components/boardIcons";
 import { Icon } from "../components/icons";
 import { norm } from "../lib/format";
-import { STAGE, PROJECT_STAGE } from "../lib/labels";
 import { useRecordHref } from "../lib/useRecordHref";
-import { opportunityPath } from "./routes";
+import { useRegistry } from "./modules/registry";
+import type { SearchCtx, SearchHit, SearchSource } from "./modules/types";
 
-interface Hit {
-  key: string;
-  label: string;
-  sub: string;
-  href: string;
+const NO_HITS: SearchHit[] = [];
+
+/** Reads one source's list (the data key the screens share, so it is one request) and reports its matching rows; renders nothing */
+function SourceRunner({ source, armed, q, ctx, report }: { source: SearchSource; armed: boolean; q: string; ctx: SearchCtx; report: (id: string, hits: SearchHit[]) => void }) {
+  const rows = useQuery<List<unknown>>(armed ? source.dataKey : null).data?.rows;
+  const hits = useMemo(() => (armed && q && rows ? rows.flatMap((r) => source.match(r, q, ctx) ?? []) : NO_HITS), [armed, q, rows, source, ctx]);
+  useEffect(() => {
+    report(source.id, hits);
+    return () => report(source.id, NO_HITS);
+  }, [source.id, hits, report]);
+  return null;
 }
 
-/** Üst çubuktaki arama: kişi, firma, fırsat, proje. ⌘K / Ctrl+K ile odaklanır. Listeler ilk odakta yüklenir. */
+/** Üst çubuktaki arama: modüllerin kayıtlı kaynakları (kişi, fırsat, proje ...). ⌘K / Ctrl+K ile odaklanır. Listeler ilk odakta yüklenir. */
 export function GlobalSearch({ board = false }: { board?: boolean }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -28,11 +34,14 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
   const [, navigate] = useLocation();
   const dq = useDeferredValue(q);
 
-  const { has } = useModules();
   const recordHref = useRecordHref();
-  const people = usePeople(armed && has("people"));
-  const opps = useOpps(armed && has("pipeline"));
-  const projects = useProjects(armed && has("projects"));
+  const ctx = useMemo<SearchCtx>(() => ({ recordHref }), [recordHref]);
+  const { search: sources } = useRegistry();
+  const [byId, setById] = useState<Record<string, SearchHit[]>>({});
+  const report = useCallback((id: string, found: SearchHit[]) => setById((prev) => (prev[id] === found ? prev : { ...prev, [id]: found })), []);
+  const folded = dq.trim() ? norm(dq.trim()) : "";
+  // the sources report in their own order; the list is the first eight
+  const hits = useMemo(() => sources.flatMap((src) => byId[src.id] ?? NO_HITS).slice(0, 8), [sources, byId]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -48,26 +57,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
     };
   }, []);
 
-  const hits = useMemo<Hit[]>(() => {
-    if (!armed || !dq.trim()) return [];
-    const n = norm(dq.trim());
-    const out: Hit[] = [];
-    for (const p of people.rows) {
-      if (norm(p.name).includes(n) || norm(p.company_name).includes(n) || norm(p.email).includes(n) || norm(p.handle).includes(n))
-        out.push({ key: `p${p.id}`, label: p.name, sub: p.company_name ?? "Kişi", href: recordHref("person", p.id) });
-    }
-    for (const o of opps.rows) {
-      if (norm(o.title).includes(n) || norm(o.person_name).includes(n))
-        out.push({ key: `o${o.id}`, label: o.title, sub: `Fırsat · ${STAGE[o.stage]} · ${o.person_name}`, href: opportunityPath(o.id) });
-    }
-    for (const p of projects.rows) {
-      if (norm(p.name).includes(n) || norm(p.person_name).includes(n))
-        out.push({ key: `r${p.id}`, label: p.name, sub: `Proje · ${PROJECT_STAGE[p.stage]}`, href: recordHref("project", p.id) });
-    }
-    return out.slice(0, 8);
-  }, [armed, dq, people.rows, opps.rows, projects.rows, recordHref]);
-
-  const go = (h: Hit) => {
+  const go = (h: SearchHit) => {
     navigate(h.href);
     setQ("");
     setOpen(false);
@@ -76,6 +66,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
 
   return (
     <div className={board ? "relative flex-none" : "relative hidden flex-none desk:block"}>
+      {sources.map((src) => <SourceRunner key={src.id} source={src} armed={armed} q={folded} ctx={ctx} report={report} />)}
       <label className={board ? "dash-search" : "flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
         {board ? <BoardIcon name="search" className="size-icon-btn" stroke={1.8} /> : <Icon name="search" className="size-icon-md" />}
         <input

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow pipeline module: opportunities and their stage moves, the team on an opportunity, offers and the lead source funnel",
-  "fullfollow": { "module": "pipeline" },
+  "fullfollow": { "module": "pipeline", "endpoints": ["/report/sources", "/opportunity-people", "/opportunities", "/offers"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

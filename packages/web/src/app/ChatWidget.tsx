@@ -4,11 +4,11 @@ import { ChatButton } from "../components/chat/ChatButton";
 import { ChatPanel } from "../components/chat/ChatPanel";
 import { statusText, useElapsed } from "../components/chat/StatusLine";
 import { toast } from "../components/toast";
-import { chatBus, chatLive, chatPrefs, type ChatLive } from "../lib/chatStore";
-import { useMascotLive, useMascotPrefs } from "../mascot/mascotStore";
+import { chatBus, chatLive, chatPrefs, useChatOpener, type ChatLive } from "../lib/chatStore";
 import { T } from "../lib/chatText";
 import { CHAT_UI } from "../lib/chatText";
-import { isDesk, useOpenRecord } from "../lib/openRecord";
+import { isDesk } from "../lib/media";
+import { useOpenRecord } from "../lib/openRecord";
 import { useThread } from "../lib/useThread";
 
 /** Merge a session row into the list: update in place, or put a new one on top */
@@ -197,9 +197,7 @@ export default function ChatWidget() {
     chatLive.set({ open, running: !!thread.live, ready, status, since, phase: thread.live?.phase ?? null, tool: thread.live?.tool ?? null, outcome });
   }, [open, thread.live, ready, status, since, outcome]);
   // the old button stays until the mascot is really there: there is always one way to open the chat
-  const mascotPrefs = useMascotPrefs();
-  const mascot = useMascotLive();
-  const mascotUsable = mascotPrefs.show && mascot.engine === "ready";
+  const mascotUsable = useChatOpener();
   const defaults = meta?.defaults;
 
   return (

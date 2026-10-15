@@ -2,7 +2,8 @@
 import { useSyncExternalStore } from "react";
 import type { OppStage } from "../lib/labels";
 
-export type SheetKind = "opportunity" | "person" | "company" | "touch" | "task" | "comment" | "draft" | "post" | "idea" | "template" | "project" | "goal" | "own_project" | "offer";
+/** The kind of a form sheet: the `kind` of a module's quickAdd entry ("person", "task", ...) */
+export type SheetKind = string;
 export interface SheetState {
   kind: SheetKind;
   /** forma önceden doldurulacak değerler */

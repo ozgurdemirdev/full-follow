@@ -2,11 +2,9 @@
 @import "./fonts.css";
 @import "./tokens.css";
 @import "./chat.css";
-@import "./mascot.css";
 @import "./shell.css";
 @import "./parts.css";
 @import "./dash.css";
-@import "./calendar.css";
 @import "./people.css";
 @import "./people-overlay.css";
 @import "./drafts.css";
@@ -27,6 +25,9 @@
 @import "./forms.css";
 @import "./forms-fields.css";
 @import "./quick-add.css";
+
+/* the modules' web parts: their stylesheets and the folders scanned for utilities (written by scripts/gen-modules.mjs) */
+@import "./modules.generated.css";
 
 @layer base {
   html {

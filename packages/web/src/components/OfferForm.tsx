@@ -3,7 +3,7 @@ import { run } from "../api/actions";
 import { useOpps } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Detail, FileRow, Offer, OfferItem, OfferPlanPart, Opportunity, PriceFloor } from "../api/types";
-import { recordPath } from "../app/routes";
+import { linkTo } from "../app/modules/links";
 import { Form } from "../components/forms/Form";
 import { AreaField, ChipsField, DateField, NumField } from "../components/forms/fields";
 import { ComboField, ItemsField, itemsTotal, newItemRow, PlanField, planSum, type ItemRow, type PlanRow } from "../components/forms/fields-rich";
@@ -79,7 +79,7 @@ export function OfferForm(p: FormProps) {
         items: items.filter((i) => i.label.trim()).map((i): Pick<OfferItem, "label" | "amount" | "qty"> => ({ label: i.label.trim(), amount: i.unit ?? 0, qty: i.qty })),
         plan: planRows.length ? planRows.filter((r) => r.pct > 0).map((r): OfferPlanPart => ({ key: r.key as OfferPlanPart["key"], label: r.label, pct: r.pct })) : undefined,
       };
-      const open = recordPath("opportunity", Number(opp.id)) ?? undefined;
+      const open = linkTo("opportunity", Number(opp.id)) ?? undefined;
       if (editId) await run("patch", `/offers/${editId}`, body, { ok: "Teklif güncellendi", open });
       else await run("post", "/offers", { ...body, opportunity_id: opp.id }, { ok: "Teklif eklendi", open });
     },

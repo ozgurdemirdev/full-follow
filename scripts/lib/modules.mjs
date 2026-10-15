@@ -9,7 +9,11 @@ export const modulesDir = join(root, "packages", "modules");
 
 export const offKeys = () => [...new Set((process.env.FF_MODULES_OFF ?? "").split(",").map((s) => s.trim()).filter(Boolean))].sort();
 
-/** Every module package, sorted by key: { key, name, dir, server }; `server` is true when it exports "./server" (NestJS controllers) */
+/**
+ * Every module package, sorted by key: { key, name, dir, server, web, endpoints }; `server` is true when it exports "./server" (NestJS controllers),
+ * `web` when it has a web/index.ts manifest, `endpoints` are the API prefixes its web part owns ("fullfollow.endpoints" in package.json),
+ * `webMarkers` strings that are in the web build exactly when the module is installed ("fullfollow.webMarkers": a route path, a storage key; check:modules searches the build for them)
+ */
 export function discoverModules() {
   const found = [];
   if (existsSync(modulesDir)) {
@@ -22,7 +26,10 @@ export function discoverModules() {
       if (!key) continue;
       if (!/^[a-z][a-z0-9-]*$/.test(key)) throw new Error(`${pkgPath}: module key "${key}" must be lower-case letters, digits and dashes`);
       if (found.some((m) => m.key === key)) throw new Error(`${pkgPath}: duplicate module key "${key}"`);
-      found.push({ key, name: pkg.name, dir: join(modulesDir, dir.name), server: !!pkg.exports?.["./server"] });
+      found.push({
+        key, name: pkg.name, dir: join(modulesDir, dir.name), server: !!pkg.exports?.["./server"],
+        web: existsSync(join(modulesDir, dir.name, "web", "index.ts")), endpoints: pkg.fullfollow.endpoints ?? [], webMarkers: pkg.fullfollow.webMarkers ?? [],
+      });
     }
   }
   return found.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));

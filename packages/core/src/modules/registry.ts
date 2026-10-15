@@ -117,7 +117,7 @@ export function createRegistry(defs: ModuleDef[] = [], off: string[] = []): Modu
         }
         return effects;
       };
-      return { mod, emit, types, contrib };
+      return { mod, emit, types, contrib, moduleKeys: installed.map((d) => d.key) };
     },
   };
 }

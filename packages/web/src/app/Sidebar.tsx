@@ -1,29 +1,30 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { K, useBoard, useThreads } from "../api/keys";
-import { useModules } from "../api/modules";
+import { K } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Today } from "../api/types";
 import { BoardIcon, type BoardIconName } from "../components/boardIcons";
 import { ago } from "../lib/format";
-import { OPEN_STAGES } from "../lib/labels";
 import { useIsDesktop } from "../lib/media";
-import { PAGE_MODULE, PATHS, preload, type PageKey } from "./routes";
+import { preloadRoute, useRegistry } from "./modules/registry";
+import { PATHS } from "./routes";
 import { setUI, useUI } from "./ui";
 
 interface NavItem {
-  key: PageKey;
   label: string;
   icon: BoardIconName;
-  count?: number;
+  path: string;
+  /** a module's count hook (see NavEntry.useBadge) */
+  useBadge?: () => number | null | undefined;
 }
 
 function NavLink({ item, active, phoneOnly }: { item: NavItem; active: boolean; phoneOnly?: boolean }) {
+  const count = item.useBadge?.();
   return (
     <Link
-      href={PATHS[item.key]}
-      onPointerEnter={() => preload(item.key)}
-      onFocus={() => preload(item.key)}
+      href={item.path}
+      onPointerEnter={() => preloadRoute({ path: item.path })}
+      onFocus={() => preloadRoute({ path: item.path })}
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
       title={item.label}
@@ -31,12 +32,12 @@ function NavLink({ item, active, phoneOnly }: { item: NavItem; active: boolean; 
     >
       <BoardIcon name={item.icon} />
       <span className="ff-label">{item.label}</span>
-      {item.count ? <span className="ff-badge">{item.count}</span> : null}
+      {count ? <span className="ff-badge">{count}</span> : null}
     </Link>
   );
 }
 
-const SETTINGS: NavItem = { key: "settings", label: "Ayarlar", icon: "settings" };
+const SETTINGS: NavItem = { label: "Ayarlar", icon: "settings", path: PATHS.settings };
 
 export function Sidebar() {
   const collapsed = useUI((s) => s.collapsed);
@@ -44,48 +45,9 @@ export function Sidebar() {
   const [path] = useLocation();
   const strip = useRef<HTMLDivElement>(null);
   const today = useQuery<Today>(K.today);
-  const { has } = useModules();
-  const board = useBoard(has("pipeline"));
-  const threads = useThreads();
-  const openOpps = board.rows.filter((o) => OPEN_STAGES.includes(o.stage)).length;
-
-  // Network first: who I wrote to, who answered; sales and projects come second
-  const all: { label: string; items: NavItem[] }[] = [
-    {
-      label: "Network",
-      items: [
-        { key: "today", label: "Dashboard", icon: "grid" },
-        { key: "calendar", label: "Takvim", icon: "calendar" },
-        { key: "people", label: "Kişiler", icon: "users", count: today.data?.network?.awaiting.total },
-        { key: "companies", label: "Firmalar", icon: "building" },
-        { key: "referrals", label: "Referanslar", icon: "link" },
-        { key: "drafts", label: "Taslaklar", icon: "pen", count: today.data?.drafts?.total },
-        { key: "comments", label: "Yorumlar", icon: "comment", count: threads.rows.length },
-      ],
-    },
-    {
-      label: "Pazarlama",
-      items: [
-        { key: "posts", label: "Paylaşımlar", icon: "megaphone", count: today.data?.posts_due?.total },
-        { key: "ideas", label: "Gelir fikirleri", icon: "bulb" },
-        { key: "templates", label: "Şablonlar", icon: "template" },
-      ],
-    },
-    {
-      label: "Satış ve projeler",
-      items: [
-        { key: "pipeline", label: "Satış hunisi", icon: "funnel", count: openOpps },
-        { key: "projects", label: "Müşteri projeleri", icon: "folder" },
-        { key: "ownProjects", label: "Kendi projelerim", icon: "cube" },
-        { key: "timeline", label: "Zaman çizelgesi", icon: "clock" },
-        { key: "report", label: "Rapor", icon: "chart" },
-        { key: "review", label: "Haftalık inceleme", icon: "review" },
-      ],
-    },
-  ];
-  // a page whose module is not installed has no item, and a group without items no label
-  const groups = all.map((g) => ({ ...g, items: g.items.filter((it) => has(PAGE_MODULE[it.key])) })).filter((g) => g.items.length);
-  const isActive = (k: PageKey) => (k === "today" ? path === "/" : path === PATHS[k] || path.startsWith(`${PATHS[k]}/`));
+  // the groups and items come from the installed, visible modules (a group without items has no label)
+  const groups = useRegistry().nav;
+  const isActive = (to: string) => (to === PATHS.today ? path === "/" : path === to || path.startsWith(`${to}/`));
 
   // On the phone strip the current page scrolls into view
   useEffect(() => {
@@ -114,14 +76,14 @@ export function Sidebar() {
         {groups.map((g) => (
           <div key={g.label} className="ff-group">
             <span className="ff-glabel">{g.label}</span>
-            {g.items.map((it) => <NavLink key={it.key} item={it} active={isActive(it.key)} />)}
+            {g.items.map((it) => <NavLink key={it.path} item={it} active={isActive(it.path)} />)}
           </div>
         ))}
-        <NavLink item={SETTINGS} active={isActive("settings")} phoneOnly />
+        <NavLink item={SETTINGS} active={isActive(PATHS.settings)} phoneOnly />
       </div>
 
       <div className="ff-sidefoot">
-        <NavLink item={SETTINGS} active={isActive("settings")} />
+        <NavLink item={SETTINGS} active={isActive(PATHS.settings)} />
         <div className="ff-user">
           <div className="ff-user-avatar">ÖD</div>
           <div className="ff-userinfo">

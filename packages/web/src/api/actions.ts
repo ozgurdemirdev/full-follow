@@ -1,15 +1,14 @@
 // Yazma işlemleri: API çağrısı + ilgili önbellekleri tazeleme + kısa bildirim
+import { invalidatesFor } from "../app/modules/registry";
 import { PATHS } from "../app/routes";
 import { toast, type ToastAction } from "../components/toast";
 import { api, ApiError } from "./client";
 import { invalidate } from "./store";
 import type { Mutation } from "./types";
 
-/** Plan ekranları: günün planı ve takvim (giden temaslar hedeflere kendiliğinden sayılır) */
-const PLAN = ["/plan", "/calendar"];
-const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", "/review", ...PLAN];
+const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", "/review"];
 
-/** Her yazma işleminden sonra hangi listelerin tazeleneceği */
+/** Her yazma işleminden sonra hangi listelerin tazeleneceği (modüller kendi verilerini manifest `invalidates` ile ekler) */
 const AFFECTS: Record<string, string[]> = {
   people: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/report", "/posts", "/ideas", "/trash"],
   companies: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/drafts", "/trash"],
@@ -21,11 +20,9 @@ const AFFECTS: Record<string, string[]> = {
   files: ["/opportunities", "/projects", "/timeline", "/trash"],
   "opportunity-people": ["/opportunities", "/timeline", "/trash"],
   sources: ["/sources", "/opportunities", "/report", "/people", "/companies", "/trash"],
-  opportunities: [...PLAN, "/opportunities", "/today", "/timeline", "/projects", "/people", "/companies", "/report", "/payments", "/sources", "/trash"],
+  opportunities: ["/opportunities", "/today", "/timeline", "/projects", "/people", "/companies", "/report", "/payments", "/sources", "/trash"],
   projects: ["/projects", "/timeline", "/today", "/payments", "/trash"],
-  payments: [...PLAN, "/payments", "/projects", "/today", "/report", "/timeline", "/trash"],
-  tasks: ["/tasks", "/today", "/projects", "/timeline", "/trash", ...PLAN],
-  goals: ["/goals", "/today", "/timeline", "/trash", ...PLAN],
+  payments: ["/payments", "/projects", "/today", "/report", "/timeline", "/trash"],
   drafts: ["/drafts", "/settings", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
   touches: [...CONTACTS, "/opportunities", "/ideas", "/followups", "/trash"],
   comments: ["/comments", "/own-projects", "/today", "/timeline", "/people", "/companies", "/trash"],
@@ -86,7 +83,7 @@ export async function run<T = unknown>(
   try {
     const res = (await (method === "del" ? api.del(path) : api[method](path, body))) as Mutation<T> & Record<string, unknown>;
     const resource = path.split("/")[1];
-    invalidate(...(AFFECTS[resource] ?? [`/${resource}`]));
+    invalidate(...(AFFECTS[resource] ?? [`/${resource}`]), ...invalidatesFor(resource));
     const effects = res?.effects?.filter(Boolean) ?? [];
     if (!opts.silent && (opts.ok || effects.length)) {
       const href = typeof opts.open === "function" ? opts.open(res) : opts.open;

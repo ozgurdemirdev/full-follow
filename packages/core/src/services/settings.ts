@@ -91,6 +91,31 @@ function focusOwnProject(ctx: Ctx): number | null {
 /** Days after which a post without an interval of its own is due for a refresh */
 export const postRefreshDays = (ctx: Ctx): number => Number(readSetting(ctx, "post_refresh_days")) || POST_REFRESH_DEFAULT_DAYS;
 
+/** Modules Özgür hid in the web (setting `modules_hidden`, a list of keys): only installed ones count, the rest of the stored list is ignored. Hiding is a web concern: the data, the API and the hooks keep working */
+export function hiddenModules(ctx: Ctx): string[] {
+  const raw = readSetting(ctx, "modules_hidden");
+  if (!raw) return [];
+  try {
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list.filter((k): k is string => typeof k === "string" && ctx.moduleKeys.includes(k)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** The list a PUT brings: an array (or its JSON text) of module keys, each once */
+const hiddenModulesSchema = z.preprocess(
+  (v) => {
+    if (typeof v !== "string") return v;
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v;
+    }
+  },
+  z.array(z.string().trim().min(1)).transform((a) => [...new Set(a)]),
+);
+
 const num = (ctx: Ctx, key: string) => Number(readSetting(ctx, key) ?? 0) || 0;
 
 /** Tüm ayarlar (girilmemiş sayılar 0, şablon varsayılan) */
@@ -105,6 +130,7 @@ export function settingValues(ctx: Ctx) {
     chat_pinned_notes: readSetting(ctx, "chat_pinned_notes") ?? "",
     focus_own_project_id: focusOwnProject(ctx),
     post_refresh_days: postRefreshDays(ctx),
+    modules_hidden: hiddenModules(ctx),
   };
 }
 
@@ -140,6 +166,11 @@ export function settingsService(ctx: Ctx) {
       const id = value === null || value === "" ? null : parse(idSchema, value);
       if (id !== null && !row(ctx, "SELECT 1 x FROM own_projects WHERE id = ?", id)) throw new FFError("not_found", `kendi projesi #${id} bulunamadı`);
       stored = id === null ? "" : String(id);
+    } else if (key === "modules_hidden") {
+      const keys = parse(hiddenModulesSchema, value);
+      const unknown = keys.filter((k) => !ctx.moduleKeys.includes(k));
+      if (unknown.length) throw new FFError("validation", `kurulu olmayan modül: ${unknown.join(", ")} (kurulu: ${ctx.moduleKeys.join(", ") || "yok"})`);
+      stored = JSON.stringify(keys);
     } else if (key === "draft_rules") {
       stored = JSON.stringify(parse(draftRulesSchema, value));
     } else if (key === "post_refresh_days") {

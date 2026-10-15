@@ -64,8 +64,6 @@ export const POST_FORMATS = Object.keys(POST_FORMAT) as PostFormat[];
 export const PLATFORM_DOT: Record<string, string> = { r10: "bg-danger", linkedin: "bg-chip-opportunity-fg", instagram: "bg-entity-source", diger: "bg-entity-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
 export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
-/** What a goal can count by itself besides a channel */
-export const GOAL_METRIC: Record<string, string> = { new_records: "Yeni kayıt (kişi ve firma)" };
 export const FUNNEL_STEP: Record<string, string> = { found: "Bulundu", written: "Yazıldı", replied: "Cevap", meeting: "Görüşme", offer: "Teklif", won: "Kazanıldı" };
 /** Funnel period choices; the values are what the endpoint accepts */
 export const FUNNEL_PERIODS = [{ value: "30", label: "Son 30 gün" }, { value: "90", label: "Son 90 gün" }, { value: "all", label: "Tümü" }];
@@ -127,26 +125,13 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
   bulundu: "neutral", temas: "opportunity", cevap: "opportunity", gorusme: "source", teklif: "payment", kazanildi: "success", kaybedildi: "warning",
 };
 
-/** Günlük iş planı: hafta günü kısa adları (ISO sırası, pazartesi önde) ve hazır tekrarlar */
 /** Who a task belongs to: Özgür, Claude, or the client (the project then waits on the client) */
 export type TaskAssignee = Actor | "musteri";
 export const ASSIGNEE: Record<TaskAssignee, string> = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" };
 export const ASSIGNEE_ITEMS = (Object.keys(ASSIGNEE) as TaskAssignee[]).map((value) => ({ value, label: ASSIGNEE[value] }));
 
-/** Task kinds for the task form */
-export const TASK_KIND_ITEMS: { value: "gorusme" | "takip" | "gorev"; label: string }[] = [
-  { value: "gorev", label: "Görev" }, { value: "gorusme", label: "Görüşme" }, { value: "takip", label: "Takip" },
-];
+/** Weekday short names (ISO order, Monday first) */
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-export const GOAL_PRESETS: { value: string; label: string; days: number[] }[] = [
-  { value: "her_gun", label: "Her gün", days: [1, 2, 3, 4, 5, 6, 7] },
-  { value: "hafta_ici", label: "Hafta içi", days: [1, 2, 3, 4, 5] },
-];
-/** "1,2,3,4,5" → "Hafta içi" ya da "Pzt Çar" */
-export function daysLabel(days: string): string {
-  const preset = GOAL_PRESETS.find((p) => p.days.join(",") === days);
-  return preset ? preset.label : days.split(",").map((n) => WEEKDAY_SHORT[Number(n) - 1]).join(" ");
-}
 
 /** File picker filter for record files (the server checks the real type; the limits live in core FILE_LIMITS) */
 export const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.csv,.docx,.pptx,.xlsx";

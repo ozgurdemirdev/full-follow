@@ -44,27 +44,6 @@
   color: var(--color-text-primary);
 }
 
-/* ---------- goal strip ---------- */
-.dash-goals {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--spacing-dash-goal-min), 1fr));
-  gap: var(--spacing-9);
-  padding: var(--spacing-9) var(--spacing-10);
-  border-radius: var(--radius-card);
-  background: var(--color-surface-1);
-  border: var(--bw-default) solid var(--color-border-subtle);
-}
-.dash-goal {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-  min-width: 0;
-  color: var(--color-text-primary);
-}
-.dash-goal:hover {
-  color: var(--color-text-primary);
-}
-
 /* ---------- ask cards ---------- */
 .dash-ask {
   display: flex;

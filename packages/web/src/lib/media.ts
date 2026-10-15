@@ -11,3 +11,6 @@ export function useIsDesktop(): boolean {
     () => mql?.matches ?? true,
   );
 }
+
+/** Desktop layout (the `desk:` breakpoint from the tokens), read now */
+export const isDesk = () => window.matchMedia(`(min-width: ${getComputedStyle(document.documentElement).getPropertyValue("--breakpoint-desk")})`).matches;
