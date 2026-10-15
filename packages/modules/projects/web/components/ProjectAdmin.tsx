@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { run } from "../../api/actions";
-import type { ProjectRow } from "../../api/types";
-import { PROJECT_STAGE, type ProjectStage } from "../../lib/labels";
-import { NumberField } from "../NumberField";
+import { run } from "@kit/api/actions";
+import type { ProjectRow } from "../types";
+import { PROJECT_STAGE, type ProjectStage } from "@kit/lib/labels";
+import { NumberField } from "@kit/components/NumberField";
 
 const STAGES = Object.keys(PROJECT_STAGE) as ProjectStage[];
 

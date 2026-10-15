@@ -1,42 +1,24 @@
 import { Link } from "wouter";
-import { run } from "../../api/actions";
-import { useQuery } from "../../api/store";
-import type { Detail, FileRow } from "../../api/types";
-import { useModules } from "../../api/modules";
-import { PATHS, timelinePath } from "../../app/routes";
-import { lira } from "../../lib/format";
-import { ASSIGNEE, MILESTONE } from "../../lib/labels";
-import { askClaude, type ProjectView } from "../../lib/projects";
-import { remaining } from "../../lib/dashboard";
-import { BoardIcon } from "../boardIcons";
-import { FilesCard } from "../FilesCard";
-import { LinksCard } from "../LinksCard";
+import { run } from "@kit/api/actions";
+import { useQuery } from "@kit/api/store";
+import type { Detail, FileRow } from "@kit/api/types";
+import { Slot } from "@kit/app/modules/Slot";
+import { PATHS } from "@kit/app/routes";
+import { lira } from "@kit/lib/format";
+import { MILESTONE } from "@kit/lib/labels";
+import { askClaude, type ProjectView } from "../projects";
+import { remaining } from "@kit/lib/dashboard";
+import { FilesCard } from "@kit/components/FilesCard";
+import { LinksCard } from "@kit/components/LinksCard";
 import { ProjectAdmin } from "./ProjectAdmin";
 
 /** Expanded project: tasks with owner, payments (Alındı), Claude's note with the reminder request, then links, files and admin */
 export function ProjectDetail({ v }: { v: ProjectView }) {
   const { p } = v;
   const files = useQuery<Detail<unknown, { files?: FileRow[] }>>(`/projects/${p.id}?with=files`);
-  const { has } = useModules();
-  const toggle = (id: number, done: boolean) => void run("patch", `/tasks/${id}`, { done: !done }, { silent: true }).catch(() => {});
   return (
     <div className="prj-detail" id={`prj-detail-${p.id}`}>
-      <div className="prj-sec">
-        <span className="prj-sec-label">Görevler</span>
-        {v.tasks.length === 0 ? <span className="prj-row text-text-muted">Görev yok.</span> : null}
-        {v.tasks.map((t) => {
-          const done = !!t.done_at;
-          return (
-            <div key={t.id} className="prj-row">
-              <button type="button" className="prj-check" aria-pressed={done} aria-label={`${t.title}${done ? ", tamamlandı" : ", tamamla"}`} onClick={() => toggle(t.id, done)}>
-                {done ? <BoardIcon name="check" className="size-icon-sm" stroke={2.6} /> : null}
-              </button>
-              <span className="prj-task-text" data-done={done}>{t.title}</span>
-              <span className="prj-by" data-by={t.assignee}>{ASSIGNEE[t.assignee]}</span>
-            </div>
-          );
-        })}
-      </div>
+      <Slot name="project.detail.tasks" props={{ tasks: v.tasks }} />
 
       <div className="prj-sec">
         <span className="prj-sec-label">Ödemeler</span>
@@ -65,7 +47,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
             {v.ask.label}
           </button>
           <Link href={PATHS.comments} className="prj-link">Yorumlar · {v.comments}</Link>
-          {has("timeline") ? <Link href={timelinePath("project", p.id)} className="prj-link">Zaman çizelgesi</Link> : null}
+          <Slot name="project.detail.actions" props={{ type: "project", id: p.id, className: "prj-link", label: "Zaman çizelgesi" }} />
         </div>
       </div>
 

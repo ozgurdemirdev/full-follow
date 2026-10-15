@@ -1,12 +1,12 @@
 // Direct project entry for work that did not go through the pipeline (won opportunities open their project themselves)
 import { useState } from "react";
-import { Form } from "../components/forms/Form";
-import { ChipsField, DateField, NumField, TextField } from "../components/forms/fields";
-import { ComboField } from "../components/forms/fields-rich";
-import { todayIso } from "../lib/format";
-import { PROJECT_STEPS, PROJECT_STAGE, type ProjectStage } from "../lib/labels";
-import { emptyRef, ensurePerson, type Ref } from "./helpers";
-import { errorsOf, saveRecord, usePersonOptions, useSubmit, type FormProps } from "./shared";
+import { Form } from "@kit/components/forms/Form";
+import { ChipsField, DateField, NumField, TextField } from "@kit/components/forms/fields";
+import { ComboField } from "@kit/components/forms/fields-rich";
+import { todayIso } from "@kit/lib/format";
+import { PROJECT_STEPS, PROJECT_STAGE, type ProjectStage } from "@kit/lib/labels";
+import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
+import { errorsOf, saveRecord, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 
 const PRICE_STEP = 1000;
 const FEE_STEP = 100;

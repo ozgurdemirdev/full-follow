@@ -1,5 +1,5 @@
 // REST yanıt tipleri (packages/core/src/services/queries.ts ile aynı alanlar)
-import type { Actor, OppStage, PostFormat, ProjectStage } from "../lib/labels";
+import type { Actor, OppStage, PostFormat, ProjectStage, TaskAssignee } from "../lib/labels";
 import type { OwnStage } from "./types-own";
 
 export interface List<T> {
@@ -450,6 +450,15 @@ export interface Task extends Base {
   idea_id: number | null;
   idea_title: string | null;
 }
+/** Task owner: the two actors, plus the client (musteri) */
+export type { TaskAssignee };
+export type ProjectTask = Omit<Task, "assignee"> & { assignee: TaskAssignee };
+/** `GET /api/tasks/by-project` (calendar module): the tasks of one project; the name is null without the projects module */
+export interface ProjectTaskGroup {
+  project_id: number;
+  project_name: string | null;
+  tasks: ProjectTask[];
+}
 export interface Draft extends Base {
   person_id: number | null;
   person_name: string | null;
@@ -656,7 +665,6 @@ export interface Activity {
   /** firms and people per contact status */
   status: Record<"people" | "companies", { status: string; count: number }[]>;
 }
-export type * from "./types-projects";
 export * from "./types-own";
 export type * from "./types-ideas";
 export type { RenderedTemplate } from "./types-templates";

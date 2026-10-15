@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { NumberField } from "../../components/NumberField";
-import { ControlSkeleton } from "../../components/settings/Fields";
-import type { PriceFloor } from "../../api/types";
-import { MILESTONE } from "../../lib/labels";
-import { putSettings, useSettings } from "../../lib/settings";
+import { NumberField } from "@kit/components/NumberField";
+import { ControlSkeleton } from "@kit/components/settings/Fields";
+import type { PriceFloor } from "@kit/api/types";
+import { MILESTONE } from "@kit/lib/labels";
+import { putSettings, useSettings } from "@kit/lib/settings";
 
 type Rows = PriceFloor["payment_template"];
 

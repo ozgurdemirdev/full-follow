@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "wouter";
-import type { WaitKey } from "../api/types";
-import { Page } from "../app/Page";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { ProjectRow } from "../components/projects/ProjectRow";
-import { WaitCards } from "../components/projects/WaitCards";
-import { ErrorBox, PageSkeleton, Segmented } from "../components/ui";
-import { hasClientTasks, TABS, type TabKey, useProjectViews } from "../lib/projects";
+import type { WaitKey } from "../types";
+import { Page } from "@kit/app/Page";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { ProjectRow } from "../components/ProjectRow";
+import { WaitCards } from "../components/WaitCards";
+import { ErrorBox, PageSkeleton, Segmented } from "@kit/components/ui";
+import { hasClientTasks, TABS, type TabKey, useProjectViews } from "../projects";
 
 /** Client projects: tabs, the waiting cards (filters), and one expandable row per project (/projeler/:id opens that one) */
 export default function Projects() {

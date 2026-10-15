@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import type { WaitKey } from "../../api/types";
-import { lira } from "../../lib/format";
-import { WAIT_CARDS, type ProjectView, summarize } from "../../lib/projects";
+import type { WaitKey } from "../types";
+import { lira } from "@kit/lib/format";
+import { WAIT_CARDS, type ProjectView, summarize } from "../projects";
 
 /** "Bekleyen para": what each wait holds; a card is a filter for the list below. Müşteride shows only when the client owns work. */
 export function WaitCards({ views, who, onPick, showClient }: { views: ProjectView[]; who: WaitKey | null; onPick: (k: WaitKey | null) => void; showClient: boolean }) {

@@ -1,13 +1,14 @@
 // Client projects screen: tabs, the milestone money track, who a project waits on, and the one-pass join of
 // projects, payments, tasks and comment threads (everything is loaded once and joined in memory, no fetch per row).
 import { useMemo } from "react";
-import { run } from "../api/actions";
-import { useProjects, useThreads } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { List, Payment, ProjectRow, ProjectTask, ProjectTaskGroup, Thread, WaitKey } from "../api/types";
-import { ACTIVE_PROJECT_STAGES, lateDays, remaining } from "./dashboard";
-import { daysFrom, lira, todayIso } from "./format";
-import { MILESTONE, PROJECT_STEPS, type ProjectStage } from "./labels";
+import { run } from "@kit/api/actions";
+import { useProjects, useThreads } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { List, Payment, ProjectTask, ProjectTaskGroup, Thread } from "@kit/api/types";
+import type { ProjectRow, WaitKey } from "./types";
+import { ACTIVE_PROJECT_STAGES, lateDays, remaining } from "@kit/lib/dashboard";
+import { daysFrom, lira, todayIso } from "@kit/lib/format";
+import { MILESTONE, PROJECT_STEPS, type ProjectStage } from "@kit/lib/labels";
 
 export type TabKey = "aktif" | "bakim" | "teslim" | "iptal";
 /** Tabs as the board groups the stages: active work, maintenance, delivered (cancelled shows only when there are some) */

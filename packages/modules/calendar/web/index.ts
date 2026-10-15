@@ -3,6 +3,7 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { FORM_ICON } from "@kit/components/forms/icons";
 import { CalendarLink } from "./CalendarLink";
 import { GoalStrip } from "./cards/GoalMeters";
+import { ProjectTasks } from "./cards/ProjectTasks";
 import { CALENDAR_PATH } from "./paths";
 import { dailyGoalsRows } from "./settings";
 
@@ -36,7 +37,7 @@ export default defineWebModule({
       load: () => import("./forms/GoalForm").then((m) => ({ default: m.GoalForm })),
     },
   ],
-  slots: { "dashboard.strip": GoalStrip, "dashboard.tools": CalendarLink },
+  slots: { "dashboard.strip": GoalStrip, "dashboard.tools": CalendarLink, "project.detail.tasks": ProjectTasks },
   invalidates: {
     tasks: ["/tasks", "/today", "/projects", "/timeline", "/trash", ...PLAN],
     goals: ["/goals", "/today", "/timeline", "/trash", ...PLAN],

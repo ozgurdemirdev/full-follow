@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { run } from "../../api/actions";
-import { isMissing } from "../../api/modules";
-import { useQuery } from "../../api/store";
-import type { List, Payment, Report } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "../../lib/dashboard";
-import { fmtDay, fmtNum, initials, lira, todayIso } from "../../lib/format";
-import { MILESTONE } from "../../lib/labels";
-import { requestReminder } from "../../lib/projects";
-import { NumberField } from "../NumberField";
-import { Card } from "../ui";
-import { useExpand } from "../ExpandOverlay";
-import { DashOverlay, type ExRow } from "./DashOverlay";
+import { run } from "@kit/api/actions";
+import { isMissing } from "@kit/api/modules";
+import { useQuery } from "@kit/api/store";
+import type { List, Payment, Report } from "@kit/api/types";
+import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
+import { fmtDay, fmtNum, initials, lira, todayIso } from "@kit/lib/format";
+import { MILESTONE } from "@kit/lib/labels";
+import { PROJECTS_PATH } from "../paths";
+import { requestReminder } from "../projects";
+import { NumberField } from "@kit/components/NumberField";
+import { Card } from "@kit/components/ui";
+import { useExpand } from "@kit/components/ExpandOverlay";
+import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 
 const dueText = (p: Payment, today: string) => {
   const late = lateDays(p, today);
@@ -65,7 +65,7 @@ export function PaymentsCard() {
   const remind = (p: Payment) => requestReminder(p.project_id, p.project_name);
   const rows: ExRow[] = withGroup.map(({ p, g }) => ({
     key: p.id, lead: initials(p.project_name), title: p.project_name, sub: `${MILESTONE[p.milestone] ?? p.milestone} · ${dueText(p, today)}`, right: lira(remaining(p)),
-    rightCls: g === "late" ? "text-danger-soft" : undefined, tag: PAYMENT_GROUPS.find((x) => x.key === g)!.label, dot: PAYMENT_GROUPS.find((x) => x.key === g)!.dot, href: `${PATHS.projects}/${p.project_id}`,
+    rightCls: g === "late" ? "text-danger-soft" : undefined, tag: PAYMENT_GROUPS.find((x) => x.key === g)!.label, dot: PAYMENT_GROUPS.find((x) => x.key === g)!.dot, href: `${PROJECTS_PATH}/${p.project_id}`,
   }));
 
   return (
@@ -112,7 +112,7 @@ export function PaymentsCard() {
         )}
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Tahsilat", sub: `${lira(sum())} bekliyor · ${lira(sum("late"))} gecikmiş`, page: "Projeler", href: PATHS.projects, foot: report.data ? `Bu ay tahsil edilen ${lira(report.data.month.collected)}` : "", rows }} />
+        spec={{ title: "Tahsilat", sub: `${lira(sum())} bekliyor · ${lira(sum("late"))} gecikmiş`, page: "Projeler", href: PROJECTS_PATH, foot: report.data ? `Bu ay tahsil edilen ${lira(report.data.month.collected)}` : "", rows }} />
     </>
   );
 }

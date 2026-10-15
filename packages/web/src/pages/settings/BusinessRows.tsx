@@ -4,7 +4,6 @@ import { AutoNumber, ControlSkeleton } from "../../components/settings/Fields";
 import { lira } from "../../lib/format";
 import type { SettingsEntry } from "../../app/modules/types";
 import { putSettings, useNetworkCfg, useSettings } from "../../lib/settings";
-import { TemplateEditor } from "./TemplateEditor";
 
 type MoneyKey = "bagkur_monthly" | "accounting_monthly" | "other_fixed_monthly" | "target_net_monthly" | "tax_rate_percent";
 
@@ -73,19 +72,6 @@ export const businessEntries: SettingsEntry[] = [
       hint: "Dashboard’da bu haftanın ilerlemesi görünür. Boş ya da 0 = hedef yok",
       keywords: ["hedef", "linkedin", "mesaj"],
       control: <WeeklyTarget />,
-    }],
-  },
-  {
-    id: "business-payment-template",
-    category: "isletme",
-    order: 40,
-    rows: () => [{
-      id: "payment-template",
-      name: "Ödeme şablonu",
-      hint: "Kazanılan fırsat projeye dönünce ödemeler bu şablona göre açılır. Gün, proje başlangıcından sonraki vade",
-      keywords: ["ödeme", "peşinat", "ara ödeme", "teslim", "vade", "yüzde", "aşama"],
-      wide: true,
-      control: <TemplateEditor />,
     }],
   },
 ];

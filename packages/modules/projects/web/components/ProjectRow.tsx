@@ -1,9 +1,9 @@
 import { memo } from "react";
-import { lira } from "../../lib/format";
-import { PROJECT_STAGE } from "../../lib/labels";
-import { WAIT_CHIP, type ProjectView } from "../../lib/projects";
-import { BoardIcon } from "../boardIcons";
-import { Avatar } from "../ui";
+import { lira } from "@kit/lib/format";
+import { PROJECT_STAGE } from "@kit/lib/labels";
+import { WAIT_CHIP, type ProjectView } from "../projects";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Avatar } from "@kit/components/ui";
 import { ProjectDetail } from "./ProjectDetail";
 
 /** One project: the closed row (avatar, received vs total, milestone money track, wait chip, next step) and, when open, its detail */
