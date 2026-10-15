@@ -21,3 +21,6 @@ export const CHAT_UI = {
 
 /** How long a template card keeps saying "Kopyalandı" after the copy button (ms) */
 export const COPIED_FEEDBACK_MS = 1_600;
+
+/** Record blocks (the chips under a reply) whose rows are kept so scrolling back does not fetch again; the oldest go first */
+export const RECORD_BLOCKS_KEPT = 60;

@@ -9,6 +9,7 @@ import { T } from "./messages";
 import { CHAT_UI } from "./constants";
 import { isDesk } from "@kit/lib/media";
 import { useOpenRecord } from "./openRecord";
+import { recordCache } from "./recordCache";
 import { useThread } from "./useThread";
 
 /** Merge a session row into the list: update in place, or put a new one on top */
@@ -34,6 +35,11 @@ export default function ChatWidget() {
   const input = useRef<HTMLTextAreaElement>(null);
   const queued = useRef<{ sid: number; text: string; clientId: string; files: ChatAttachment[]; mode: "text" | "voice" } | null>(null);
   const listLoaded = useRef(false);
+
+  // the record chips under the replies read fresh rows whenever the window opens or another session is shown
+  useEffect(() => {
+    recordCache.clear();
+  }, [open, sessionId]);
 
   const onSession = useCallback((s: ChatSession) => {
     setSession((cur) => (cur?.id === s.id ? s : cur));

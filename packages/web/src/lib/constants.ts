@@ -14,3 +14,6 @@ export type QuickAddPart = "fab" | "menu";
 export const quickAddMark = (part: QuickAddPart) => ({ [QUICK_ADD_ATTR]: part });
 /** CSS selector of a part of quick add */
 export const quickAddSelector = (part: QuickAddPart) => `[${QUICK_ADD_ATTR}="${part}"]`;
+
+/** Reply suggestion answers (`ff.chat.suggest.<id>`) kept in this browser; the oldest go first */
+export const SUGGEST_KEEP = 200;

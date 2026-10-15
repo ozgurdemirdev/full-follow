@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { SUGGEST_KEEP } from "./constants";
 
 /** What a running reply is doing: waiting its turn, thinking, using a tool, writing */
 export type ChatPhase = "queued" | "thinking" | "tool" | "writing";
@@ -23,6 +24,26 @@ const write = (k: string, v: string | null) => {
   }
 };
 
+/** The suggestion keys to drop so that `keep` remain: the lowest message ids, which are the oldest replies */
+export function oldestSuggestKeys(keys: readonly string[], keep: number): string[] {
+  const id = (k: string) => Number(k.slice(KEY.suggest.length));
+  return [...keys].sort((a, b) => id(a) - id(b)).slice(0, Math.max(0, keys.length - keep));
+}
+
+/** One key per reply that ever got a suggestion button would grow for ever: only the newest SUGGEST_KEEP stay */
+function pruneSuggest() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(KEY.suggest)) keys.push(k);
+    }
+    for (const k of oldestSuggestKeys(keys, SUGGEST_KEEP)) localStorage.removeItem(k);
+  } catch {
+    /* private window */
+  }
+}
+
 export const chatPrefs = {
   open: () => read(KEY.open) === "1",
   setOpen: (v: boolean) => write(KEY.open, v ? "1" : null),
@@ -35,7 +56,10 @@ export const chatPrefs = {
   setSession: (id: number | null) => write(KEY.session, id === null ? null : String(id)),
   /** what Özgür did with a suggestion button: "done" or "no" (kept per reply so F5 does not bring the buttons back) */
   suggest: (messageId: number) => read(`${KEY.suggest}${messageId}`),
-  setSuggest: (messageId: number, v: "done" | "no") => write(`${KEY.suggest}${messageId}`, v),
+  setSuggest: (messageId: number, v: "done" | "no") => {
+    write(`${KEY.suggest}${messageId}`, v);
+    pruneSuggest();
+  },
   draft: (id: number | null) => read(`${KEY.draft}${id ?? "new"}`) ?? "",
   setDraft: (id: number | null, text: string) => write(`${KEY.draft}${id ?? "new"}`, text),
 };

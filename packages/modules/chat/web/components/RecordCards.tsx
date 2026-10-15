@@ -8,6 +8,7 @@ import { T } from "../messages";
 import { COPIED_FEEDBACK_MS } from "../constants";
 import { CHANNEL, CONTACT_STATUS, IDEA_STAGE, MILESTONE, PLATFORM, STAGE, TEMPLATE_KIND } from "@kit/lib/labels";
 import { useOpenRecord } from "../openRecord";
+import { recordCache } from "../recordCache";
 import { Icon } from "@kit/components/icons";
 import { stroke as STROKE } from "@kit/styles/tokens.json";
 
@@ -17,19 +18,16 @@ const DOT: Record<string, string> = {
   payment: "var(--color-entity-payment)", post: "var(--color-danger)", comment: "var(--color-entity-comment)",
 };
 
-/** One request per block, kept per message so scrolling and re-renders do not fetch again; reopening a session fetches fresh rows */
-const cache = new Map<string, CardRecord[]>();
-
 function useRecords(cacheKey: string, keys: string[]) {
-  const [rows, setRows] = useState<CardRecord[] | null>(() => cache.get(cacheKey) ?? null);
+  const [rows, setRows] = useState<CardRecord[] | null>(() => recordCache.get(cacheKey) ?? null);
   const joined = keys.join(",");
   const load = useCallback(async () => {
     const r = await chatApi.records(joined.split(","));
-    cache.set(cacheKey, r);
+    recordCache.set(cacheKey, r);
     setRows(r);
   }, [cacheKey, joined]);
   useEffect(() => {
-    if (!cache.has(cacheKey)) void load().catch(() => setRows([]));
+    if (!recordCache.has(cacheKey)) void load().catch(() => setRows([]));
   }, [cacheKey, load]);
   return { rows, reload: load };
 }
