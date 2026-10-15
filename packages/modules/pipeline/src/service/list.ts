@@ -1,5 +1,5 @@
 import {
-  addDays, bool, has, keptRow, keptRows, localDay, OPEN_OPP_STAGES, OPP_STAGES, page, rows,
+  addDays, bool, followUpDone, has, keptRow, keptRows, localDay, OPEN_OPP_STAGES, opportunityTouches, OPP_STAGES, page, rows,
   type Ctx, type ListOpts, type OfferRecord, type OpportunityRef, type OpportunityRow,
 } from "@fullfollow/core";
 import { BOARD_CLOSED_DAYS } from "./constants";
@@ -35,7 +35,8 @@ export function opportunityList(ctx: Ctx, o: ListOpts): { rows: OpportunityRow[]
     if (f[key]) { where.push(`${column} = ?`); args.push(Number(f[key])); }
   }
   if (bool(f.open)) where.push(`x.stage IN (${OPEN_SQL})`);
-  if (bool(f.due)) { where.push(`x.next_follow_up_at IS NOT NULL AND x.next_follow_up_at <= ? AND x.stage IN (${OPEN_SQL})`); args.push(today); }
+  // due: the follow-up date was reached, the stage is open and no outgoing touch followed the date yet
+  if (bool(f.due)) { where.push(`x.next_follow_up_at IS NOT NULL AND x.next_follow_up_at <= ? AND x.stage IN (${OPEN_SQL}) AND NOT ${followUpDone(opportunityTouches("x"), "x.next_follow_up_at")}`); args.push(today); }
   if (bool(f.board)) { where.push(`(x.stage IN (${OPEN_SQL}) OR (x.closed_at IS NOT NULL AND ${localDay("x.closed_at")} >= ?))`); args.push(addDays(today, -BOARD_CLOSED_DAYS)); }
   let list = rows<Listed>(ctx, `${SELECT}${where.length ? ` WHERE ${where.join(" AND ")}` : ""}`, ...args);
   list = list.filter((x) => has(o.q, x.title, x.person_name, x.company_name, x.source_name, x.source_url));

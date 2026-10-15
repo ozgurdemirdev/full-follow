@@ -1,5 +1,5 @@
 import {
-  dayOf, daysBetween, keptRow, keptRows, label, LOCALE, marketingSettings, renderTemplate, subjectWhere,
+  dayOf, daysBetween, followUpDone, keptRow, keptRows, label, LOCALE, marketingSettings, PERSON_TOUCHES, renderTemplate, subjectWhere,
   type Ctx, type FollowupDue, type FollowUpDate,
 } from "@fullfollow/core";
 import { m } from "../messages";
@@ -8,7 +8,7 @@ import { draftsServices } from "./index";
 /** Follow-up dates of people and (through the pipeline module) open opportunities in the range; the calendar feed reads this */
 export function followUpDates(ctx: Ctx, from: string, to: string): FollowUpDate[] {
   const people = keptRows<FollowUpDate>(ctx, `SELECT 'person' AS type, p.id, p.name, substr(p.next_follow_up_at, 1, 10) AS date,
-      EXISTS (SELECT 1 FROM touches t WHERE t.person_id = p.id AND t.direction = 'giden' AND substr(t.happened_at, 1, 10) >= substr(p.next_follow_up_at, 1, 10)) AS done
+      ${followUpDone(PERSON_TOUCHES, "p.next_follow_up_at")} AS done
     FROM people p WHERE substr(p.next_follow_up_at, 1, 10) BETWEEN ? AND ?`, from, to);
   const opps = ctx.mod("pipeline")?.followUpsDue(from, to) ?? [];
   return [...people, ...opps].map((r) => ({ ...r, done: !!r.done }));

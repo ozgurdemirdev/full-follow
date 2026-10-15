@@ -121,7 +121,7 @@ suite("people, companies and network together", () => {
       const c = app.companies.create({ name: "ABC", website: "https://abc.example" }).row;
       const p = app.people.create({ name: "Ada", email: "ada@abc.example", company_id: c.id, tags: ["Sıcak"], next_follow_up_at: "2026-10-14" }).row;
       const o = app.opportunities.create({ title: "Site", person_id: p.id, source_id: app.get("source", "R10").row.id, estimated_value: 1000 }).row;
-      app.touches.create({ person_id: p.id, opportunity_id: o.id, channel: "email", direction: "giden", summary: "merhaba" });
+      app.touches.create({ person_id: p.id, opportunity_id: o.id, channel: "email", direction: "giden", summary: "merhaba", happened_at: "2026-10-13T09:00:00Z" });
       app.touches.create({ contact: "loose@x.example", channel: "email", direction: "giden", summary: "adres" });
       app.tasks.create({ title: "ara", person_id: p.id });
       app.save("comment", { target_type: "person", target_id: p.id, body: "selam" });

@@ -151,4 +151,25 @@ suite("the fixes of the service review", () => {
     now = `${today}T10:00:00Z`;
     expect(app.mod("reports")!.marketing().channels.find((c) => c.channel === "email")).toMatchObject({ people: 1, sent: 1 });
   });
+
+  it("Today's follow-ups drop a person or opportunity that was contacted after the follow-up date, with the same rule as the calendar feed", () => {
+    const src = (app.get("source", "R10") as any).row;
+    const ada = app.people.create({ name: "Ada", next_follow_up_at: "2026-10-10" }).row;
+    const bob = app.people.create({ name: "Bob", next_follow_up_at: "2026-10-10" }).row;
+    const o = app.opportunities.create({ title: "O", person_id: ada.id, source_id: src.id, next_follow_up_at: "2026-10-10" }).row;
+    const due = () => {
+      const f = (app.today(10) as any).follow_ups;
+      return { people: f.people.rows.map((p: any) => p.name), opportunities: f.opportunities.rows.map((x: any) => x.title) };
+    };
+    expect(due()).toEqual({ people: ["Ada", "Bob"], opportunities: ["O"] });
+    app.touches.create({ person_id: ada.id, opportunity_id: o.id, channel: "email", direction: "giden", kind: "mesaj", summary: "takip", happened_at: "2026-10-12T09:00:00Z" });
+    expect(due()).toEqual({ people: ["Bob"], opportunities: [] });
+    const feed = app.goals.calendar("2026-10-10", "2026-10-10")[0].follow_ups.map((f: any) => [f.type, f.name, f.done]);
+    expect(feed).toEqual(expect.arrayContaining([["person", "Ada", true], ["person", "Bob", false], ["opportunity", "O", true]]));
+    expect(app.mod("people")!.list({ filter: { follow_up_due: true } }).rows.map((p) => p.id)).toEqual([bob.id]);
+    // a touch from before the date does not finish it
+    const early = app.people.create({ name: "Cem", next_follow_up_at: "2026-10-14" }).row;
+    app.touches.create({ person_id: early.id, channel: "email", direction: "giden", kind: "mesaj", summary: "once", happened_at: "2026-10-13T09:00:00Z" });
+    expect(due().people).toEqual(["Bob", "Cem"]);
+  });
 });
