@@ -24,6 +24,7 @@ export const m = defineMessages({
 
     forbiddenAction: (what: string) => `${what} sadece Özgür tarafından yapılır`,
     invalidId: (id: unknown) => `geçersiz id "${id}"`,
+    invalidNumber: (name: string, min: number, max: number) => `${name}, ${max === Number.MAX_SAFE_INTEGER ? `${min} ya da daha büyük` : `${min} ile ${max} arasında`} bir tam sayı olmalı`,
     notFound: (what: string, id: unknown) => `${what} #${id} bulunamadı`,
     moduleNotInstalled: (type: string, owner: string) => `"${type}" türü için "${owner}" modülü kurulu değil`,
     unknownType: (type: string, valid: string) => `bilinmeyen tür "${type}" (geçerli: ${valid})`,
@@ -140,6 +141,7 @@ export const m = defineMessages({
       moduleNotInstalled: (unknown: string, installed: string) => `kurulu olmayan modül: ${unknown} (kurulu: ${installed})`,
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",
+      pinnedNotesAction: "sabit notları değiştirmek",
     },
 
     // ---- Trash

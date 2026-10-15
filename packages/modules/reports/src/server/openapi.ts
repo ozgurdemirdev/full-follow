@@ -14,7 +14,7 @@ export const docs = defineDocs({
   "GET /api/report/months": {
     summary: "Get the collection against the floor for the last months",
     description: "The series behind the chart.",
-    query: z.object({ count: z.number().int().positive().optional().describe("Number of months") }),
+    query: z.object({ count: z.number().int().min(1).max(60).optional().describe("Number of months, 1 to 60 (default 6)") }),
     response: z.array(object),
   },
   "GET /api/report/marketing": { summary: "Get the marketing summary", description: "Posts, ideas, templates and channel performance.", response: object },

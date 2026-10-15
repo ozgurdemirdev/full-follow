@@ -4,7 +4,7 @@
  * Request shapes are the module's own Zod schemas, so the documentation cannot drift from what the service accepts.
  */
 import { z, type ZodType } from "zod";
-import { CONTACT_STATUSES } from "./constants";
+import { CONTACT_STATUSES, LIST_LIMIT_MAX } from "./constants";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 /** "GET /api/tasks/:id": the method and the full path as the controller declares it (path params with a colon) */
@@ -44,10 +44,12 @@ export const positiveInt = z.number().int().positive();
 export const row = z.looseObject({ id: positiveInt });
 /** Any JSON object */
 export const object = z.record(z.string(), z.unknown());
+/** `limit` of a list route: 1 up to the shared maximum */
+export const limitOf = (what: string) => z.number().int().min(1).max(LIST_LIMIT_MAX).optional().describe(`${what}, 1 to ${LIST_LIMIT_MAX} (a bigger value is cut to ${LIST_LIMIT_MAX})`);
 export const listQuery = z.object({
   q: z.string().optional().describe("Search text, matched against the record's names and text fields"),
-  limit: z.number().int().positive().optional().describe("Rows per page"),
-  offset: z.number().int().min(0).optional().describe("Rows to skip"),
+  limit: limitOf("Rows per page"),
+  offset: z.number().int().min(0).optional().describe("Rows to skip, 0 or more"),
 });
 /** `?x=true` style switch */
 export const flag = (what: string) => z.boolean().optional().describe(what);

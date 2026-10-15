@@ -21,6 +21,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/;
 
 export const isIsoDate = (s: string) => ISO_DATE.test(s);
+export const isIsoMonth = (s: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(s);
 export const isIsoDateTime = (s: string) => ISO_DATE.test(s) || ISO_DATETIME.test(s);
 
 /**

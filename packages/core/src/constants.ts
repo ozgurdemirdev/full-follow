@@ -197,6 +197,8 @@ export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] 
 export const ALL_ROWS = 100_000;
 /** Rows of a list when the caller gives no limit */
 export const LIST_PAGE_SIZE = 20;
+/** Most rows one list request can ask for over HTTP (a bigger `limit` is cut to it) */
+export const LIST_LIMIT_MAX = 1000;
 /** Related rows per relation in `get` (default and ceiling) */
 export const RELATED_ROWS_DEFAULT = 10;
 export const RELATED_ROWS_MAX = 200;

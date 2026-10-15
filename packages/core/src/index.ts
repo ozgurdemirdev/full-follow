@@ -51,7 +51,7 @@ export * as coreSchemas from "./schemas";
 export * as docKit from "./openapi";
 export type { DocKey, HttpMethod, RouteDoc, RouteDocs } from "./openapi";
 export type { Q } from "./db/client";
-export { APP_TOKEN, CLAUDE_APP_TOKEN, intId, listOpts, withList } from "./http";
+export { APP_TOKEN, CLAUDE_APP_TOKEN, intId, intQuery, listLimit, listOpts, withList } from "./http";
 
 /** Toplu kayıt sonucu: eklenenler, mükerrer diye atlananlar, hata verenler (sıra numarasıyla) */
 export interface BulkResult {

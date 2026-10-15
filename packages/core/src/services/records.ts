@@ -21,7 +21,7 @@ export function normalizeType(ctx: Ctx, t: string): string {
 export function resolveId(ctx: Ctx, type: string, id: string | number): number {
   if (isRefType(ctx, type)) return resolveRef(ctx, type, id);
   const n = Number(String(id).replace(/^#/, ""));
-  if (!Number.isInteger(n) || n <= 0) throw new FFError("validation", m.invalidId(id));
+  if (!Number.isSafeInteger(n) || n <= 0) throw new FFError("validation", m.invalidId(id));
   return n;
 }
 

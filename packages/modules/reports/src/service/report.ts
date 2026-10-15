@@ -1,4 +1,5 @@
-import { monthOf, type Ctx, type MonthReport } from "@fullfollow/core";
+import { FFError, isIsoMonth, monthOf, type Ctx, type MonthReport } from "@fullfollow/core";
+import { m } from "../messages";
 import { priceFloor } from "./floor";
 import { insightOf } from "./insight";
 
@@ -7,8 +8,9 @@ export function reportsService(ctx: Ctx) {
   const bySource = () => ctx.mod("pipeline")?.bySource() ?? [];
 
   /** Bir ayın tahsilatı (her ödeme girişi kendi tarihinin ayına, kısmi ödemeler dahil) ve fiyat tabanı ile farkı */
-  function month(m?: string): MonthReport {
-    const ym = m ? m.slice(0, 7) : monthOf(ctx.clock.today());
+  function month(at?: string): MonthReport {
+    const ym = at ? at.slice(0, 7) : monthOf(ctx.clock.today());
+    if (!isIsoMonth(ym)) throw new FFError("validation", m.badMonth);
     // without the projects module nothing is collected or due
     const projects = ctx.mod("projects");
     const collected = projects?.collectedIn(ym) ?? 0;
@@ -28,8 +30,8 @@ export function reportsService(ctx: Ctx) {
       list.unshift(`${y}-${String(mo).padStart(2, "0")}`);
       mo--; if (mo === 0) { mo = 12; y--; }
     }
-    return list.map((m) => month(m));
+    return list.map((ym) => month(ym));
   }
 
-  return { bySource, sourceFunnel: (period?: unknown) => ctx.mod("pipeline")?.funnel(period), month, months, report: (m?: string) => ({ sources: bySource(), month: month(m) }) };
+  return { bySource, sourceFunnel: (period?: unknown) => ctx.mod("pipeline")?.funnel(period), month, months, report: (at?: string) => ({ sources: bySource(), month: month(at) }) };
 }

@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, Query } from "@nestjs/common";
-import { APP_TOKEN, intId, type Core, type FeedQuery } from "@fullfollow/core";
+import { APP_TOKEN, intId, listLimit, type Core, type FeedQuery } from "@fullfollow/core";
 import { RECORD_TIMELINE_HTTP_LIMIT } from "../constants";
 
 @Controller("api/timeline")
@@ -21,6 +21,6 @@ export class TimelineController {
   /** Kişi / fırsat / proje zaman çizelgesi (eskiden yeniye) */
   @Get(":type/:id")
   record(@Param("type") type: string, @Param("id") id: string, @Query("limit") limit?: string) {
-    return this.app.mod("timeline")!.forRecord(type, intId(id), limit ? Number(limit) : RECORD_TIMELINE_HTTP_LIMIT);
+    return this.app.mod("timeline")!.forRecord(type, intId(id), listLimit(limit) ?? RECORD_TIMELINE_HTTP_LIMIT);
   }
 }

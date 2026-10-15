@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Query } from "@nestjs/common";
-import { APP_TOKEN, type Core } from "@fullfollow/core";
-import { REPORT_MONTHS_DEFAULT } from "../constants";
+import { APP_TOKEN, intQuery, type Core } from "@fullfollow/core";
+import { REPORT_MONTHS_DEFAULT, REPORT_MONTHS_MAX } from "../constants";
 
 @Controller("api")
 export class ReportsController {
@@ -15,7 +15,7 @@ export class ReportsController {
   /** Son N ayın tahsilat/taban serisi (grafik) */
   @Get("report/months")
   months(@Query("count") count?: string) {
-    return this.app.mod("reports")!.months(count ? Number(count) : REPORT_MONTHS_DEFAULT);
+    return this.app.mod("reports")!.months(intQuery("count", count, 1, REPORT_MONTHS_MAX) ?? REPORT_MONTHS_DEFAULT);
   }
 
   /** Pazarlama özeti: paylaşımlar, fikirler, şablonlar, kanal performansı */

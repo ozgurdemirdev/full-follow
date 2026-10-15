@@ -14,7 +14,7 @@ export class OpportunityPeopleController {
   @Post()
   add(@Body() b: { opportunity_id?: number } & Record<string, unknown>) {
     const { opportunity_id, ...rest } = b ?? {};
-    return this.team.add(Number(opportunity_id), rest);
+    return this.team.add(intId(String(opportunity_id)), rest);
   }
 
   @Patch(":id")
