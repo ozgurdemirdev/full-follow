@@ -1,0 +1,4 @@
+# Generated files are written with LF by the build scripts; keep the working copy LF so a build leaves no diff
+*.generated.ts text eol=lf
+*.generated.css text eol=lf
+packages/web/src/styles/tokens.css text eol=lf
