@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { zodKit } from "@fullfollow/core";
-import { POST_FORMATS, POST_PLATFORMS } from "./constants";
+import { POST_FORMATS, POST_PLATFORMS, REFRESH_DAYS_MAX, REFRESH_DAYS_MIN } from "./constants";
 
 const { id, text, optText, date, patch } = zodKit;
 
-const days = z.coerce.number().int().min(1).max(365);
+const days = z.coerce.number().int().min(REFRESH_DAYS_MIN).max(REFRESH_DAYS_MAX);
 
 export const postCreate = z.strictObject({
   platform: z.enum(POST_PLATFORMS),

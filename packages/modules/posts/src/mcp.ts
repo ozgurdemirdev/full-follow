@@ -1,5 +1,6 @@
 import type { McpDef } from "@fullfollow/core";
-import { PLATFORM_LABEL } from "./service/constants";
+import { m, platformLabel } from "./messages";
+import { MCP_IDEA_LENGTH, MCP_TITLE_LENGTH, MCP_YIELD_POSTS, MCP_YIELD_TITLE_LENGTH } from "./service/constants";
 
 type Row = Record<string, any>;
 
@@ -9,35 +10,35 @@ export const mcp: McpDef = {
   skip: ["platform", "posted_at", "refresh_days", "refreshed_at", "next_refresh_at"],
   entities: {
     post: {
-      kind: "paylaşım",
+      kind: m.noun,
       openable: true,
       line: (r, f) => f.join(
-        `#${r.id} ${PLATFORM_LABEL[r.platform] ?? r.platform} ${f.cut(r.title, 50)}`, f.d(r.posted_at),
-        r.refresh_due ? "GÜNCELLE" : r.next_refresh_at && `güncelle ${f.d(r.next_refresh_at)}`,
-        !!r.people_count && `${r.people_count} kişi`, !!r.opp_count && `${r.opp_count} fırsat`, !!r.won && `${r.won} kazanıldı ${f.tl(r.won_value)}`,
-        r.idea_title && `fikir: ${f.cut(r.idea_title, 30)}`, r.url,
+        `#${r.id} ${platformLabel(r.platform)} ${f.cut(r.title, MCP_TITLE_LENGTH)}`, f.d(r.posted_at),
+        r.refresh_due ? m.mcp.refreshNow : r.next_refresh_at && m.mcp.refreshOn(f.d(r.next_refresh_at)),
+        !!r.people_count && m.mcp.people(r.people_count), !!r.opp_count && m.mcp.opportunities(r.opp_count), !!r.won && m.mcp.won(r.won, f.tl(r.won_value)),
+        r.idea_title && m.mcp.idea(f.cut(r.idea_title, MCP_IDEA_LENGTH)), r.url,
       ),
-      details: (r, f) => [`yenileme: ${r.refresh_every} günde bir${r.refreshed_at ? ` · son ${f.d(r.refreshed_at)}` : ""}`, ...(r.format ? [`biçim: ${r.format}`] : [])],
+      details: (r, f) => [m.mcp.refreshEvery(r.refresh_every, r.refreshed_at ? f.d(r.refreshed_at) : null), ...(r.format ? [m.mcp.format(r.format)] : [])],
     },
   },
   relations: { posts: "post" },
-  today: [{ at: 550, render: (t, f) => f.section("Güncellenecek paylaşım", "post", t.posts_due ?? { rows: [], total: 0 }) }],
+  today: [{ at: 550, render: (t, f) => f.section(m.mcp.dueSection, "post", t.posts_due ?? { rows: [], total: 0 }) }],
   marketing: [{
     at: 100,
-    render: (m, f) => {
+    render: (mk, f) => {
       const out: string[] = [];
-      const posts = (m.posts ?? []).filter((p: Row) => p.people_count || p.opp_count).slice(0, 5);
-      if (posts.length) out.push(`Paylaşım getirisi: ${posts.map((p: Row) => `${f.cut(p.title, 30)} ${p.people_count} kişi, ${p.opp_count} fırsat${p.won ? `, ${f.tl(p.won_value)}` : ""}`).join(" · ")}`);
-      if (m.posts_due?.length) out.push(`Güncellenecek paylaşım: ${m.posts_due.length}`);
+      const posts = (mk.posts ?? []).filter((p: Row) => p.people_count || p.opp_count).slice(0, MCP_YIELD_POSTS);
+      if (posts.length) out.push(m.mcp.yield(posts.map((p: Row) => m.mcp.yieldItem(f.cut(p.title, MCP_YIELD_TITLE_LENGTH), p.people_count, p.opp_count, p.won ? f.tl(p.won_value) : undefined)).join(" · ")));
+      if (mk.posts_due?.length) out.push(m.mcp.dueCount(mk.posts_due.length));
       return out;
     },
   }],
   docs: {
-    today: [{ at: 150, text: "güncellenecek paylaşımlar, " }],
+    today: [{ at: 150, text: m.mcp.todayDoc }],
     open: [{ at: 250, text: "|post" }],
     find: [
       { at: 250, text: "|post" },
-      { at: 550, text: "post {refresh_due:true} {platform:'r10'}; " },
+      { at: 550, text: m.mcp.findDoc },
     ],
     get: [
       { at: 250, text: "|posts" },
@@ -46,8 +47,8 @@ export const mcp: McpDef = {
     ],
     save: [{
       at: 150,
-      text: "post: {platform:r10|linkedin|instagram|diger,title,url,posted_at,format:metin|gorsel|video|karusel,refresh_days (boşsa post_refresh_days ayarı)}; id + {refreshed:true} = güncellendi; kişinin kaynağı: person {post:'başlık'}. ",
+      text: m.mcp.saveDoc,
     }],
-    report: [{ at: 150, text: "paylaşım getirisi, " }],
+    report: [{ at: 150, text: m.mcp.reportDoc }],
   },
 };

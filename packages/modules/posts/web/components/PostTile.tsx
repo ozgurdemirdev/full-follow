@@ -2,6 +2,7 @@ import { memo, type KeyboardEvent } from "react";
 import type { Person, Post } from "@kit/api/types";
 import { lira } from "@kit/lib/format";
 import { POST_FORMAT } from "../labels";
+import { m } from "../messages";
 import { ageText, peopleLine, TILE_AVATARS } from "../posts";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Avatar } from "@kit/components/ui";
@@ -47,18 +48,18 @@ export const PostTile = memo(function PostTile({ p, people, onOpen }: { p: Post;
         {p.body ? <span className="posts-tile-excerpt">{p.body}</span> : null}
       </div>
       <div className="posts-flow">
-        <Stat n={p.people_count} label="kişi" />
+        <Stat n={p.people_count} label={m.tile.people} />
         <Arrow />
-        <Stat n={p.opp_count} label="fırsat" />
+        <Stat n={p.opp_count} label={m.tile.opportunities} />
         <Arrow />
-        <Stat n={p.won} label="kazanıldı" tone={wonTone} />
+        <Stat n={p.won} label={m.tile.won} tone={wonTone} />
       </div>
       <div className="posts-foot">
         <span className="posts-stack">
           {people.slice(0, TILE_AVATARS).map((x) => <Avatar key={x.id} name={x.name} id={x.id} size="stack" title={x.name} />)}
         </span>
         <span className="posts-foot-text">{peopleLine(p.people_count)}</span>
-        <span className={`posts-foot-value ${wonTone}`}>{p.won_value ? lira(p.won_value) : "henüz iş yok"}</span>
+        <span className={`posts-foot-value ${wonTone}`}>{p.won_value ? lira(p.won_value) : m.tile.noWork}</span>
       </div>
     </article>
   );

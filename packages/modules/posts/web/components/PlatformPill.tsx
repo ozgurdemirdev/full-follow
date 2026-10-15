@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { run } from "@kit/api/actions";
 import { PLATFORM } from "@kit/lib/labels";
+import { m } from "../messages";
 
 /** Platform chip in the platform's own colours (R10, LinkedIn, Instagram, Diğer) */
 export function PlatformPill({ platform, size }: { platform: string; size?: "lg" }) {
@@ -13,7 +14,7 @@ export function useRefresh(id: number | undefined) {
   const refresh = async () => {
     setBusy(true);
     try {
-      await run("post", `/posts/${id}/refresh`, undefined, { ok: "Güncellendi olarak işaretlendi" });
+      await run("post", `/posts/${id}/refresh`, undefined, { ok: m.refreshedMarked });
     } catch {
       /* the notification is shown inside run() */
     } finally {

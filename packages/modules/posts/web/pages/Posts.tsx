@@ -12,6 +12,7 @@ import { PostOverlay } from "../components/PostOverlay";
 import { PostTile } from "../components/PostTile";
 import { StaleCard } from "../components/StaleCard";
 import { Empty, ErrorBox, Filters, order, PageSkeleton } from "@kit/components/ui";
+import { m } from "../messages";
 import { byValue, peopleByPost, perPost, platformStats, staleDays } from "../posts";
 
 /** Size of the box the overlay grows from when a post is opened by address, not by a click */
@@ -35,7 +36,7 @@ export default function Posts() {
   const per = useMemo(() => perPost(posts.rows, stats), [posts.rows, stats]);
   const byPost = useMemo(() => peopleByPost(people.rows), [people.rows]);
   const shown = useMemo(() => sorted.filter((p) => !platform || p.platform === platform), [sorted, platform]);
-  const tabs = useMemo(() => [{ value: "", label: "Hepsi" }, ...stats.map((s) => ({ value: s.key, label: s.name }))], [stats]);
+  const tabs = useMemo(() => [{ value: "", label: m.shared.all }, ...stats.map((s) => ({ value: s.key, label: s.name }))], [stats]);
 
   const open = useCallback((id: number, el: HTMLElement) => {
     setFrom(el.getBoundingClientRect());
@@ -44,13 +45,13 @@ export default function Posts() {
 
   return (
     <Page
-      title="Paylaşımlar"
-      sub="Hangi paylaşım kimi getirdi, kim işe dönüştü"
+      title={m.label}
+      sub={m.page.sub}
       className="flex flex-col gap-10"
       right={
         <button type="button" className="dash-new" onClick={() => openSheet("post")}>
           <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
-          Paylaşım ekle
+          {m.page.add}
         </button>
       }
     >
@@ -58,15 +59,15 @@ export default function Posts() {
       {!posts.data ? (
         !posts.error && <PageSkeleton />
       ) : posts.rows.length === 0 ? (
-        <Empty>Henüz paylaşım yok. R10 konusu ya da LinkedIn gönderisi ekle; güncelleme zamanı gelince Dashboard’da hatırlatırım.</Empty>
+        <Empty>{m.page.empty}</Empty>
       ) : (
         <>
           {due.length ? <StaleCard rows={due} style={order(1)} /> : null}
           <PlatformStrip stats={stats} per={per} style={order(2)} />
           <div className="posts-bar rise" style={order(3)}>
-            <Filters label="Platform" value={platform} onChange={setPlatform} items={tabs} />
+            <Filters label={m.shared.platform} value={platform} onChange={setPlatform} items={tabs} />
             <span className="flex-grow" />
-            <span className="posts-bar-note">En çok iş getiren önce</span>
+            <span className="posts-bar-note">{m.page.mostWork}</span>
           </div>
           {shown.length ? (
             <div className="rise" style={order(4)}>
@@ -74,7 +75,7 @@ export default function Posts() {
                 {shown.map((p) => <PostTile key={p.id} p={p} people={byPost.get(p.id) ?? NO_PEOPLE} onOpen={open} />)}
               </TileColumns>
             </div>
-          ) : <Empty>Bu filtrede paylaşım yok.</Empty>}
+          ) : <Empty>{m.page.noneInFilter}</Empty>}
           <PostOverlay
             id={openId}
             from={openId ? (from ?? fallbackRect()) : from}

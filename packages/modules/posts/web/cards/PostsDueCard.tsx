@@ -5,14 +5,15 @@ import { Card } from "@kit/components/ui";
 import { SHOWN } from "@kit/lib/dashboard";
 import { PLATFORM } from "@kit/lib/labels";
 import { PLATFORM_DOT } from "../labels";
+import { m } from "../messages";
 import { refreshNote } from "../marketing";
 import { POSTS_PATH } from "../paths";
 
 /** Posts whose refresh date has come */
 export function PostsDueCard({ today }: { today: Today }) {
-  const refresh = (p: Post) => run("post", `/posts/${p.id}/refresh`, undefined, { ok: "Güncellendi olarak işaretlendi" }).catch(() => {});
+  const refresh = (p: Post) => run("post", `/posts/${p.id}/refresh`, undefined, { ok: m.refreshedMarked }).catch(() => {});
   return (
-    <Card title="Güncellenecek paylaşımlar" className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={POSTS_PATH}>Hepsi</MoreLink>}>
+    <Card title={m.card.title} className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={POSTS_PATH}>{m.shared.all}</MoreLink>}>
       {today.posts_due!.rows.slice(0, SHOWN.posts).map((p) => (
         <div key={p.id} className="flex items-center gap-5 border-t border-border-subtle py-4">
           <span className={`dash-dot ${PLATFORM_DOT[p.platform] ?? "bg-entity-neutral"}`} />
@@ -20,7 +21,7 @@ export function PostsDueCard({ today }: { today: Today }) {
             {p.url ? <a href={p.url} target="_blank" rel="noreferrer" className="truncate text-base text-text-primary">{p.title}</a> : <span className="truncate text-base">{p.title}</span>}
             <span className="text-sm text-warning">{PLATFORM[p.platform]} · {refreshNote(p)?.text}</span>
           </div>
-          <button type="button" className="dash-btn is-small flex-none" onClick={() => refresh(p)}>Güncelledim</button>
+          <button type="button" className="dash-btn is-small flex-none" onClick={() => refresh(p)}>{m.refreshedButton}</button>
         </div>
       ))}
     </Card>

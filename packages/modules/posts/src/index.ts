@@ -2,6 +2,7 @@ import { defineModule, row, type RecordTrashed } from "@fullfollow/core";
 import { postsApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { POST_PLATFORMS } from "./service/constants";
 
 /**
@@ -10,7 +11,7 @@ import { POST_PLATFORMS } from "./service/constants";
  */
 export default defineModule({
   key: "posts",
-  label: "Paylaşımlar",
+  label: m.label,
   smoke: ["/api/posts"],
   uses: ["ideas", "network"],
   api: postsApi,
@@ -22,14 +23,14 @@ export default defineModule({
     },
   },
   contribute: {
-    trashTypes: [{ type: "post", label: "paylaşım" }],
+    trashTypes: [{ type: "post", label: m.noun }],
     commentTargets: {
       post: { table: "posts", label: (ctx, id) => row(ctx, "SELECT title FROM posts WHERE id = ?", id)?.title ?? `#${id}` },
     },
     chatCards: {
       post: (ctx, id) => {
         const r = ctx.mod("posts")!.get(id);
-        if (!r) throw new Error("post not found");
+        if (!r) throw new Error(m.notFound);
         return { title: r.title, platform: r.platform };
       },
     },

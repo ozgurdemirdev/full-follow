@@ -1,7 +1,9 @@
 // Posts screen: sorting, platform totals, the "per post" figure and the age texts, all derived from the one posts list
 import type { Person, Post } from "@kit/api/types";
 import { daysFrom } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
 import { PLATFORM } from "@kit/lib/labels";
+import { m } from "./messages";
 
 const PERCENT = 100;
 const MIN_BAR_PERCENT = 4;
@@ -34,13 +36,13 @@ export const staleDays = (p: Post) => daysSince(p.refreshed_at ?? p.posted_at);
 /** "bugün", "8 gün önce", "3 hafta önce", "1 ay önce" */
 export function ageText(p: Post): string {
   const refreshed = p.refreshed_at ? daysSince(p.refreshed_at) : null;
-  if (refreshed === 0) return "bugün güncellendi";
+  if (refreshed === 0) return m.age.refreshedToday;
   const d = daysSince(p.posted_at);
-  if (d === 0) return "bugün";
-  if (d < DAYS_PER_WEEK * 2) return `${d} gün önce`;
-  if (d < DAYS_PER_MONTH) return `${Math.floor(d / DAYS_PER_WEEK)} hafta önce`;
-  if (d < DAYS_PER_YEAR) return `${Math.floor(d / DAYS_PER_MONTH)} ay önce`;
-  return `${Math.floor(d / DAYS_PER_YEAR)} yıl önce`;
+  if (d === 0) return m.age.today;
+  if (d < DAYS_PER_WEEK * 2) return m.age.days(d);
+  if (d < DAYS_PER_MONTH) return m.age.weeks(Math.floor(d / DAYS_PER_WEEK));
+  if (d < DAYS_PER_YEAR) return m.age.months(Math.floor(d / DAYS_PER_MONTH));
+  return m.age.years(Math.floor(d / DAYS_PER_YEAR));
 }
 
 export interface PlatformStat {
@@ -77,10 +79,10 @@ export function perPost(rows: Post[], stats: PlatformStat[]): PerPost {
   const avg = rows.length ? rows.reduce((a, p) => a + p.people_count, 0) / rows.length : 0;
   const rates = stats.filter((s) => s.count).map((s) => ({ key: s.key, name: s.name, rate: s.people / s.count }));
   const top = rates.reduce<(typeof rates)[number] | null>((m, r) => (!m || r.rate > m.rate ? r : m), null);
-  const noun = top?.key === "r10" ? "ilanları" : "paylaşımları";
+  const noun = top?.key === "r10" ? m.perPost.listings : m.perPost.posts;
   return {
-    average: (Math.round(avg * SINGLE_DECIMAL) / SINGLE_DECIMAL).toLocaleString("tr-TR"),
-    best: top && top.rate > 0 ? `${top.name} ${noun}` : null,
+    average: (Math.round(avg * SINGLE_DECIMAL) / SINGLE_DECIMAL).toLocaleString(LOCALE),
+    best: top && top.rate > 0 ? m.perPost.label(top.name, noun) : null,
     width: top && top.rate > 0 ? Math.max(MIN_BAR_PERCENT, Math.round((avg / top.rate) * PERCENT)) : MIN_BAR_PERCENT,
   };
 }
@@ -99,6 +101,6 @@ export function peopleByPost(people: Person[]): Map<number, Person[]> {
 
 /** "+2 kişi daha", "3 kişi bu paylaşımdan", "Kimse gelmedi" */
 export function peopleLine(count: number): string {
-  if (!count) return "Kimse gelmedi";
-  return count > TILE_AVATARS ? `+${count - TILE_AVATARS} kişi daha` : `${count} kişi bu paylaşımdan`;
+  if (!count) return m.people.nobody;
+  return count > TILE_AVATARS ? m.people.more(count - TILE_AVATARS) : m.people.from(count);
 }

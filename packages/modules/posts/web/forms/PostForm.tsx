@@ -12,10 +12,9 @@ import { todayIso } from "@kit/lib/format";
 import { PLATFORM, type PostFormat } from "@kit/lib/labels";
 import { PLATFORMS } from "../labels";
 import { POST_FORMAT, POST_FORMATS } from "../labels";
+import { REFRESH_MAX_DAYS, REFRESH_MIN_DAYS } from "../constants";
+import { m } from "../messages";
 import { useSettings } from "@kit/lib/settings";
-
-const REFRESH_MAX_DAYS = 365;
-
 
 /** Link as the record keeps it: with a scheme */
 const withScheme = (v: string) => (!v.trim() || /^https?:\/\//i.test(v.trim()) ? v.trim() : `https://${v.trim()}`);
@@ -68,28 +67,28 @@ export function PostForm(p: FormProps) {
     async () => {
       await saveRecord(p, editId, {
         platform, format: format || null, title: title.trim(), url: withScheme(url), posted_at: postedAt || undefined, body, notes,
-        refresh_days: refresh ? Math.max(1, Math.round(refresh)) : null,
+        refresh_days: refresh ? Math.max(REFRESH_MIN_DAYS, Math.round(refresh)) : null,
         idea_id: idea.id,
       });
     },
-    () => errorsOf({ title: !title.trim() && "Başlık gerekli" }),
+    () => errorsOf({ title: !title.trim() && m.form.titleRequired }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <ChipsField label="Platform" value={platform} onChange={(v) => v && setPlatform(v)} options={PLATFORM_OPTIONS} />
-      <SegField label="Format" options={FORMAT_OPTIONS} value={format} onChange={setFormat} />
-      <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Örn. Kurumsal web sitesi yapıyorum" autoFocus />
-      <AreaField label="Metin" opt value={body} onChange={setBody} rows={4} />
-      <TextField label="Link" opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder="instagram.com/p/..." />
-      <DateField label="Paylaşım tarihi" half value={postedAt} onChange={setPostedAt} placeholder="Örn. 12 Ekim" />
+      <ChipsField label={m.shared.platform} value={platform} onChange={(v) => v && setPlatform(v)} options={PLATFORM_OPTIONS} />
+      <SegField label={m.form.format} options={FORMAT_OPTIONS} value={format} onChange={setFormat} />
+      <TextField name="title" label={m.form.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} autoFocus />
+      <AreaField label={m.shared.text} opt value={body} onChange={setBody} rows={4} />
+      <TextField label={m.form.link} opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder={m.form.linkPlaceholder} />
+      <DateField label={m.overlay.postedAt} half value={postedAt} onChange={setPostedAt} placeholder={m.form.postedPlaceholder} />
       <NumField
-        label="Güncelleme aralığı" half opt suffix="gün" max={REFRESH_MAX_DAYS} value={refresh} onChange={setRefresh}
+        label={m.form.interval} half opt suffix={m.form.daysSuffix} max={REFRESH_MAX_DAYS} value={refresh} onChange={setRefresh}
         placeholder={refreshDays ? String(refreshDays) : undefined}
-        hint={refreshDays ? `Bu kadar gün eskiyince hatırlatır, boşsa ayardaki ${refreshDays} gün` : "Bu kadar gün eskiyince hatırlatır"}
+        hint={m.form.intervalHint(refreshDays)}
       />
-      {ideas.rows.length ? <ComboField label="Tanıttığı fikir" opt value={idea} onChange={setIdea} options={ideaOptions} placeholder="Fikir ara" /> : null}
-      <TextField label="Not" opt value={notes} onChange={setNotes} />
+      {ideas.rows.length ? <ComboField label={m.form.idea} opt value={idea} onChange={setIdea} options={ideaOptions} placeholder={m.form.ideaPlaceholder} /> : null}
+      <TextField label={m.shared.note} opt value={notes} onChange={setNotes} />
     </Form>
   );
 }

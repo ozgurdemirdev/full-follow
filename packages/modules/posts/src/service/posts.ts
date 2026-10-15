@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { addDays, announceTrashed, Bin, bool, FFError, has, page, parse, postRefreshDays, requireRow, rows, schema, stamp, truncate, writeEvent as emit, type Ctx, type ListOpts, type PostStats } from "@fullfollow/core";
-import { PLATFORM_LABEL } from "./constants";
+import { platformLabel, m } from "../messages";
+import { EVENT_TITLE_LENGTH } from "./constants";
 import { postCreate, postUpdate } from "./schemas";
 
 const { posts } = schema;
@@ -39,8 +40,8 @@ export function postStats(ctx: Ctx): PostStats[] {
 /** The idea a post is about comes from the ideas module (a link to it is refused while it is not installed) */
 function requireIdea(ctx: Ctx, id: number): void {
   const ideas = ctx.mod("ideas");
-  if (!ideas) throw new FFError("validation", `fikir verildi (#${id}) ama "ideas" modülü kurulu değil`);
-  if (!ideas.ref(id)) throw new FFError("not_found", `fikir #${id} bulunamadı`);
+  if (!ideas) throw new FFError("validation", m.ideaModuleMissing(id));
+  if (!ideas.ref(id)) throw new FFError("not_found", m.ideaNotFound(id));
 }
 
 export function postsService(ctx: Ctx) {
@@ -49,7 +50,7 @@ export function postsService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       if (d.idea_id) requireIdea(ctx, d.idea_id);
       const r = tx.insert(posts).values({ ...d, posted_at: d.posted_at ?? ctx.clock.today(), ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "post.created", summary: `Paylaşım (${PLATFORM_LABEL[d.platform]}): ${truncate(d.title, 60)}`, data: { post_id: r.id } });
+      emit(tx, ctx, { type: "post.created", summary: m.event.created(platformLabel(d.platform), truncate(d.title, EVENT_TITLE_LENGTH)), data: { post_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
@@ -64,12 +65,12 @@ export function postsService(ctx: Ctx) {
       const set: Record<string, unknown> = { ...d };
       if (refreshed) {
         set.refreshed_at = ctx.clock.today();
-        effects.push(`sonraki güncelleme ${nextRefresh({ ...cur, ...d, refreshed_at: ctx.clock.today() }, postRefreshDays(ctx))}`);
+        effects.push(m.nextRefresh(nextRefresh({ ...cur, ...d, refreshed_at: ctx.clock.today() }, postRefreshDays(ctx))));
       }
       if (Object.keys(set).length) tx.update(posts).set({ ...set, updated_at: ctx.clock.now() }).where(eq(posts.id, id)).run();
       emit(tx, ctx, {
         type: refreshed ? "post.refreshed" : "post.updated",
-        summary: `Paylaşım ${refreshed ? "güncellendi (yenilendi)" : "düzenlendi"}: ${truncate(d.title ?? cur.title, 60)}`,
+        summary: m.event.changed(!!refreshed, truncate(d.title ?? cur.title, EVENT_TITLE_LENGTH)),
         data: { post_id: id },
       });
       return { row: requireRow(ctx, "posts", id), effects };
@@ -85,7 +86,7 @@ export function postsService(ctx: Ctx) {
       bin.take("comments", "target_type = 'post' AND target_id = ?", id);
       bin.take("posts", "id = ?", id);
       bin.commit(tx, "post", id, cur.title);
-      emit(tx, ctx, { type: "post.deleted", summary: `Paylaşım silindi: ${truncate(cur.title, 60)}` });
+      emit(tx, ctx, { type: "post.deleted", summary: m.event.deleted(truncate(cur.title, EVENT_TITLE_LENGTH)) });
       return { effects: [] as string[], trash: { type: "post", id } };
     });
   }
