@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import { lira } from "../../lib/format";
-import { PLATFORM_BAR, type PerPost, type PlatformStat } from "../../lib/posts";
-import { Meter } from "../ui";
+import { lira } from "@kit/lib/format";
+import { PLATFORM_BAR, type PerPost, type PlatformStat } from "../posts";
+import { Meter } from "@kit/components/ui";
 
 function Col({ name, dot, value, sub, width }: { name: string; dot: string; value: string; sub: string; width: number }) {
   return (

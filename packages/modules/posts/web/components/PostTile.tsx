@@ -1,10 +1,10 @@
 import { memo, type KeyboardEvent } from "react";
-import type { Person, Post } from "../../api/types";
-import { lira } from "../../lib/format";
-import { POST_FORMAT } from "../../lib/labels";
-import { ageText, peopleLine, TILE_AVATARS } from "../../lib/posts";
-import { BoardIcon } from "../boardIcons";
-import { Avatar } from "../ui";
+import type { Person, Post } from "@kit/api/types";
+import { lira } from "@kit/lib/format";
+import { POST_FORMAT } from "../labels";
+import { ageText, peopleLine, TILE_AVATARS } from "../posts";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Avatar } from "@kit/components/ui";
 import { PlatformPill } from "./PlatformPill";
 
 function Stat({ n, label, tone }: { n: number; label: string; tone?: string }) {

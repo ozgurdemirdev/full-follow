@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
-import type { Post } from "../../api/types";
-import { staleDays } from "../../lib/posts";
+import type { Post } from "@kit/api/types";
+import { staleDays } from "../posts";
 import { PlatformPill, useRefresh } from "./PlatformPill";
 
 function StaleRow({ p }: { p: Post }) {

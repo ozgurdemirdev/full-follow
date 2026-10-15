@@ -1,18 +1,16 @@
-import { useMemo, type ReactNode } from "react";
-import { Link } from "wouter";
-import { remove } from "../../api/actions";
-import { useOpps } from "../../api/keys";
-import type { Person, Post } from "../../api/types";
-import { opportunityPath, PATHS } from "../../app/routes";
-import { openSheet } from "../../app/ui";
-import { fmtDay, lira } from "../../lib/format";
-import { POST_FORMAT, STAGE, STAGE_TONE } from "../../lib/labels";
-import { refreshNote } from "../../lib/marketing";
-import { oppsOf } from "../../lib/posts";
-import { BoardIcon } from "../boardIcons";
-import { Section } from "../contact";
-import { ExpandOverlay } from "../ExpandOverlay";
-import { Avatar, Chip, Who } from "../ui";
+import type { ReactNode } from "react";
+import { remove } from "@kit/api/actions";
+import type { Person, Post } from "@kit/api/types";
+import { Slot } from "@kit/app/modules/Slot";
+import { openSheet } from "@kit/app/ui";
+import { fmtDay } from "@kit/lib/format";
+import { POST_FORMAT } from "../labels";
+import { refreshNote } from "../marketing";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Section } from "@kit/components/contact";
+import { ExpandOverlay } from "@kit/components/ExpandOverlay";
+import { RecordLink } from "@kit/components/RecordLink";
+import { Chip, Who } from "@kit/components/ui";
 import { PlatformPill, useRefresh } from "./PlatformPill";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -30,7 +28,7 @@ function Facts({ p }: { p: Post }) {
         <Fact label="Aralık">{p.refresh_every} günde bir{p.refresh_days ? "" : " (varsayılan)"}</Fact>
         <Fact label="Ekleyen"><Who actor={p.created_by} /></Fact>
         {p.url ? <Fact label="Bağlantı"><a href={p.url} target="_blank" rel="noreferrer">Paylaşımı aç</a></Fact> : null}
-        {p.idea_title && p.idea_id ? <Fact label="Fikir"><Link href={`${PATHS.ideas}/${p.idea_id}`}>{p.idea_title}</Link></Fact> : null}
+        {p.idea_title && p.idea_id ? <Fact label="Fikir"><RecordLink type="idea" id={p.idea_id}>{p.idea_title}</RecordLink></Fact> : null}
       </Section>
     </div>
   );
@@ -42,40 +40,6 @@ function Texts({ p }: { p: Post }) {
     <div className="ppl-panel">
       {p.body ? <Section title="Metin"><p className="m-0 whitespace-pre-wrap text-base-sm text-text-primary">{p.body}</p></Section> : null}
       {p.notes ? <Section title="Notlar"><p className="m-0 whitespace-pre-wrap text-base-sm text-text-secondary">{p.notes}</p></Section> : null}
-    </div>
-  );
-}
-
-function PeopleList({ people }: { people: Person[] }) {
-  return (
-    <div className="ppl-panel">
-      <Section title={`Kişiler · ${people.length}`}>
-        {people.length ? people.map((x) => (
-          <Link key={x.id} href={`${PATHS.people}/${x.id}`} className="posts-link-row">
-            <Avatar name={x.name} id={x.id} size="sm" />
-            <span className="min-w-0 flex-grow truncate text-base">{x.name}</span>
-            {x.company_name ? <span className="truncate text-base-sm text-text-muted">{x.company_name}</span> : null}
-          </Link>
-        )) : <span className="text-base-sm text-text-muted">Bu paylaşımdan kimse gelmedi</span>}
-      </Section>
-    </div>
-  );
-}
-
-function OppList({ p, people }: { p: Post; people: Person[] }) {
-  const opps = useOpps(people.length > 0);
-  const list = useMemo(() => oppsOf(opps.rows, people), [opps.rows, people]);
-  return (
-    <div className="ppl-panel">
-      <Section title={`Fırsatlar · ${p.opp_count}`} right={p.won ? <Chip tone="success">{p.won} kazanıldı · {lira(p.won_value)}</Chip> : undefined}>
-        {list.length ? list.map((o) => (
-          <Link key={o.id} href={opportunityPath(o.id)} className="posts-link-row">
-            <span className="min-w-0 flex-grow truncate text-base">{o.title}</span>
-            {o.estimated_value ? <span className="font-mono text-base-sm text-text-secondary">{lira(o.estimated_value)}</span> : null}
-            <Chip tone={STAGE_TONE[o.stage]}>{STAGE[o.stage]}</Chip>
-          </Link>
-        )) : <span className="text-base-sm text-text-muted">{p.opp_count ? "Yükleniyor" : "Henüz fırsat yok"}</span>}
-      </Section>
     </div>
   );
 }
@@ -126,8 +90,7 @@ export function PostOverlay({ id, from, p, people, onClose }: { id: number | nul
             <Texts p={p} />
           </div>
           <div className="ppl-col min-w-0">
-            <PeopleList people={people} />
-            <OppList p={p} people={people} />
+            <Slot name="post.overlay.side" props={{ post: p, people }} />
           </div>
         </>
       ) : null}

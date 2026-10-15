@@ -1,6 +1,6 @@
 // Paylaşım yenileme notu: "Bugün güncellenecek", "Güncelleme 2 gün gecikti", "Güncelleme 16 Eki"
-import type { Post } from "../api/types";
-import { daysFrom, fmtDay } from "./format";
+import type { Post } from "@kit/api/types";
+import { daysFrom, fmtDay } from "@kit/lib/format";
 
 export function refreshNote(p: Post): { text: string; late: boolean } {
   const d = daysFrom(p.next_refresh_at);

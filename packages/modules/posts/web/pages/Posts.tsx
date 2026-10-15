@@ -1,18 +1,18 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { usePeople, usePosts } from "../api/keys";
-import type { Person } from "../api/types";
-import { Page } from "../app/Page";
-import { PATHS } from "../app/routes";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { TileColumns } from "../components/layout";
-import { PlatformStrip } from "../components/posts/PlatformStrip";
-import { PostOverlay } from "../components/posts/PostOverlay";
-import { PostTile } from "../components/posts/PostTile";
-import { StaleCard } from "../components/posts/StaleCard";
-import { Empty, ErrorBox, Filters, order, PageSkeleton } from "../components/ui";
-import { byValue, peopleByPost, perPost, platformStats, staleDays } from "../lib/posts";
+import { usePeople, usePosts } from "@kit/api/keys";
+import type { Person } from "@kit/api/types";
+import { Page } from "@kit/app/Page";
+import { POSTS_PATH } from "../paths";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { TileColumns } from "@kit/components/layout";
+import { PlatformStrip } from "../components/PlatformStrip";
+import { PostOverlay } from "../components/PostOverlay";
+import { PostTile } from "../components/PostTile";
+import { StaleCard } from "../components/StaleCard";
+import { Empty, ErrorBox, Filters, order, PageSkeleton } from "@kit/components/ui";
+import { byValue, peopleByPost, perPost, platformStats, staleDays } from "../posts";
 
 /** Size of the box the overlay grows from when a post is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -39,7 +39,7 @@ export default function Posts() {
 
   const open = useCallback((id: number, el: HTMLElement) => {
     setFrom(el.getBoundingClientRect());
-    navigate(`${PATHS.posts}/${id}`, { replace: true });
+    navigate(`${POSTS_PATH}/${id}`, { replace: true });
   }, [navigate]);
 
   return (
@@ -80,7 +80,7 @@ export default function Posts() {
             from={openId ? (from ?? fallbackRect()) : from}
             p={openId ? posts.byId.get(openId) : undefined}
             people={openId ? (byPost.get(openId) ?? NO_PEOPLE) : NO_PEOPLE}
-            onClose={() => navigate(PATHS.posts, { replace: true })}
+            onClose={() => navigate(POSTS_PATH, { replace: true })}
           />
         </>
       )}

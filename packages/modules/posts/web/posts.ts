@@ -1,7 +1,7 @@
 // Posts screen: sorting, platform totals, the "per post" figure and the age texts, all derived from the one posts list
-import type { Opportunity, Person, Post } from "../api/types";
-import { daysFrom } from "./format";
-import { PLATFORM } from "./labels";
+import type { Person, Post } from "@kit/api/types";
+import { daysFrom } from "@kit/lib/format";
+import { PLATFORM } from "@kit/lib/labels";
 
 const PERCENT = 100;
 const MIN_BAR_PERCENT = 4;
@@ -95,12 +95,6 @@ export function peopleByPost(people: Person[]): Map<number, Person[]> {
     else map.set(p.post_id, [p]);
   }
   return map;
-}
-
-/** Open and closed opportunities of the given people, most valuable first */
-export function oppsOf(opps: Opportunity[], people: Person[]): Opportunity[] {
-  const ids = new Set(people.map((p) => p.id));
-  return opps.filter((o) => ids.has(o.person_id)).sort((a, b) => (b.estimated_value ?? 0) - (a.estimated_value ?? 0));
 }
 
 /** "+2 kişi daha", "3 kişi bu paylaşımdan", "Kimse gelmedi" */

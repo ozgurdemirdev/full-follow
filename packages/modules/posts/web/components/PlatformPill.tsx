@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { run } from "../../api/actions";
-import { PLATFORM } from "../../lib/labels";
+import { run } from "@kit/api/actions";
+import { PLATFORM } from "@kit/lib/labels";
 
 /** Platform chip in the platform's own colours (R10, LinkedIn, Instagram, Diğer) */
 export function PlatformPill({ platform, size }: { platform: string; size?: "lg" }) {
