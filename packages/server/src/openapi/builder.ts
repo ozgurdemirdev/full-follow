@@ -140,7 +140,7 @@ const COMPONENTS: Json = {
       required: ["error", "code"],
       properties: {
         error: { type: "string", description: "What went wrong, in a sentence a person can read (Turkish)" },
-        code: { type: "string", description: "validation, not_found, rule, ambiguous, forbidden, duplicate, http or internal" },
+        code: { type: "string", description: "validation, not_found, rule, ambiguous, forbidden, duplicate, http (a malformed request: wrong id, number or body type, oversized body, foreign Host), attachment (an upload the chat refuses), file (a record file upload refused or missing), busy, too_many_runs, cli_missing (chat) or internal" },
         candidates: { type: "array", items: {}, description: "Code ambiguous: the records the name could mean" },
         duplicate: { type: "object", additionalProperties: {}, description: "Code duplicate: the record that already exists" },
       },
@@ -148,7 +148,7 @@ const COMPONENTS: Json = {
   },
   responses: {
     Error: {
-      description: "The shared error shape. validation and http answer 400, not_found 404, rule, ambiguous and duplicate 409, forbidden 403, anything else 500.",
+      description: "The shared error shape. validation answers 400; http answers 400, or 413 for a body over the size limit, 415 for a data changing request that is not application/json or multipart/form-data, 421 for a Host that is not this computer; not_found and a missing file 404; rule, ambiguous, duplicate and busy 409; forbidden 403; too_many_runs 429; cli_missing 503; an upload refused as too big 413; anything else 500.",
       content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
     },
     Unauthorized: {
