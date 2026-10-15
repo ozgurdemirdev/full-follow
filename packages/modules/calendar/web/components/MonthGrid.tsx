@@ -1,6 +1,7 @@
 import { fmtDayLong } from "@kit/lib/format";
 import { WEEKDAY_SHORT } from "@kit/lib/labels";
 import { KIND, type CalItem, type Kind } from "../calendar";
+import { m } from "../messages";
 
 /** Dots a cell shows at most */
 const MAX_DOTS = 6;
@@ -17,7 +18,7 @@ export function MonthGrid({ dates, month, items, hidden, picked, today, onPick }
   onPick: (date: string) => void;
 }) {
   return (
-    <section aria-label="Ay" className="flex flex-col gap-4 rounded-card border border-border-subtle bg-surface-1 p-9 rise">
+    <section aria-label={m.month.grid} className="flex flex-col gap-4 rounded-card border border-border-subtle bg-surface-1 p-9 rise">
       <div className="cal-month" aria-hidden="true">
         {WEEKDAY_SHORT.map((w) => <span key={w} className="px-2 text-sm text-text-muted">{w}</span>)}
       </div>
@@ -27,7 +28,7 @@ export function MonthGrid({ dates, month, items, hidden, picked, today, onPick }
           const list = all.filter((e) => !hidden.has(e.kind));
           const done = all.filter((e) => e.done).length;
           return (
-            <button key={date} type="button" className="cal-cell" aria-pressed={date === picked} aria-label={`${fmtDayLong(date)}, ${all.length} iş`}
+            <button key={date} type="button" className="cal-cell" aria-pressed={date === picked} aria-label={m.month.cell(fmtDayLong(date), all.length)}
               data-today={date === today} data-outside={date.slice(0, 7) !== month} onClick={() => onPick(date)}>
               <span className="flex w-full items-center gap-2">
                 <span className={`text-base ${date === today ? "text-accent" : ""}`}>{Number(date.slice(8))}</span>

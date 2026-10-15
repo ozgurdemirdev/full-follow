@@ -6,13 +6,14 @@ import { ChipsField, MultiChipsField, NumField, TextField } from "@kit/component
 import { CHANNEL, CHANNELS, WEEKDAY_SHORT } from "@kit/lib/labels";
 import { errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { GOAL_METRIC, GOAL_PRESETS } from "../labels";
+import { m } from "../messages";
 import type { Goal } from "../types";
 
 const EVERY_DAY = GOAL_PRESETS[0].days;
 const DEFAULT_TARGET = 10;
 const COUNTS = [
-  ...CHANNELS.map((c) => ({ value: c, label: `${CHANNEL[c]}: giden mesajlar` })),
-  ...Object.entries(GOAL_METRIC).map(([k, name]) => ({ value: k, label: `${name}: eklenenler` })),
+  ...CHANNELS.map((c) => ({ value: c, label: m.goalForm.countsChannel(CHANNEL[c]) })),
+  ...Object.entries(GOAL_METRIC).map(([k, name]) => ({ value: k, label: m.goalForm.countsMetric(name) })),
 ];
 const DAYS = WEEKDAY_SHORT.map((label, i) => ({ value: i + 1, label }));
 
@@ -42,16 +43,16 @@ export function GoalForm(p: FormProps) {
     async () => {
       await saveRecord(p, editId, { title: title.trim(), target: Number(target), days, channel: auto in GOAL_METRIC ? null : auto || null, metric: auto in GOAL_METRIC ? auto : null, note: note.trim() || null });
     },
-    () => errorsOf({ title: !title.trim() && "Hedef adı gerekli", target: !(Number(target) >= 1) && "En az 1 olmalı" }),
+    () => errorsOf({ title: !title.trim() && m.goalForm.nameRequired, target: !(Number(target) >= 1) && m.goalForm.min }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="title" label="Hedef adı" req value={title} onChange={setTitle} placeholder="Örn. LinkedIn bağlantı isteği" autoFocus />
-      <ChipsField label="Neyi sayar" hint="Seçmezsen sayıyı elle girersin" clearable value={auto} onChange={setAuto} options={COUNTS} />
-      <NumField name="target" label="Günde" req half min={1} suffix="adet" value={target} onChange={setTarget} />
-      <MultiChipsField label="Tekrar" options={DAYS} value={days} onChange={setDays} />
-      <TextField label="Kalıcı not" opt value={note} onChange={setNote} placeholder="Örn. kişiye özel not yaz" />
+      <TextField name="title" label={m.goalForm.name} req value={title} onChange={setTitle} placeholder={m.goalForm.namePlaceholder} autoFocus />
+      <ChipsField label={m.goalForm.counts} hint={m.goalForm.countsHint} clearable value={auto} onChange={setAuto} options={COUNTS} />
+      <NumField name="target" label={m.goalForm.perDay} req half min={1} suffix={m.goalForm.unit} value={target} onChange={setTarget} />
+      <MultiChipsField label={m.goalForm.repeat} options={DAYS} value={days} onChange={setDays} />
+      <TextField label={m.goalForm.note} opt value={note} onChange={setNote} placeholder={m.goalForm.notePlaceholder} />
     </Form>
   );
 }

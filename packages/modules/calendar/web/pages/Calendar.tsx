@@ -12,10 +12,14 @@ import { WeekList } from "../components/WeekList";
 import { ErrorBox, Filters, PageSkeleton } from "@kit/components/ui";
 import { dayTitle, GOAL_BEHIND, isoWeek, itemsByDate, KINDS, mondayOf, rangeOf, type Kind, type View } from "../calendar";
 import { addDaysIso, fmtDay, fmtMonth, todayIso, toDate } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
+import { m as kit } from "@kit/messages";
+import { MONTH_STEP_DAYS, STROKE } from "../constants";
+import { m } from "../messages";
 
 const DAYS_IN_WEEK = 7;
-const VIEWS: { value: View; label: string }[] = [{ value: "week", label: "Hafta" }, { value: "month", label: "Ay" }];
-const monthName = new Intl.DateTimeFormat("tr-TR", { month: "long" });
+const VIEWS: { value: View; label: string }[] = [{ value: "week", label: m.views.week }, { value: "month", label: m.views.month }];
+const monthName = new Intl.DateTimeFormat(LOCALE, { month: "long" });
 
 const datesOf = (from: string, to: string) => {
   const list: string[] = [];
@@ -28,7 +32,7 @@ function weekLabel(from: string, to: string) {
   const a = toDate(from);
   const b = toDate(to);
   const first = a.getMonth() === b.getMonth() ? `${a.getDate()}` : `${a.getDate()} ${monthName.format(a)}`;
-  return `${first} – ${b.getDate()} ${monthName.format(b)} ${b.getFullYear()} · ${isoWeek(from)}. hafta`;
+  return m.weekLabel(first, b.getDate(), monthName.format(b), b.getFullYear(), isoWeek(from));
 }
 
 /** Weekly figures from the feed days of the week: items, goal totals (a day counts up to its target) */
@@ -75,7 +79,7 @@ export default function Calendar() {
   const toggle = (k: Kind) => setHidden((cur) => { const next = new Set(cur); if (!next.delete(k)) next.add(k); return next; });
   const goToday = () => { setView("week"); setAnchor(today); setPicked(today); };
   const step = (dir: 1 | -1) => {
-    const next = view === "week" ? addDaysIso(anchor, dir * DAYS_IN_WEEK) : addDaysIso(`${anchor.slice(0, 7)}-15`, dir * 30);
+    const next = view === "week" ? addDaysIso(anchor, dir * DAYS_IN_WEEK) : addDaysIso(`${anchor.slice(0, 7)}-15`, dir * MONTH_STEP_DAYS);
     const range = rangeOf(view, next);
     setAnchor(next);
     setPicked(today >= range.from && today <= range.to && (view === "week" || today.slice(0, 7) === next.slice(0, 7)) ? today : view === "week" ? addDaysIso(picked, dir * DAYS_IN_WEEK) : `${next.slice(0, 7)}-01`);
@@ -88,13 +92,13 @@ export default function Calendar() {
   const sub = view === "week" ? weekLabel(from, to) : fmtMonth(anchor.slice(0, 7));
 
   return (
-    <Page title="Takvim" sub={sub} gap="tight" className="flex flex-col gap-9"
+    <Page title={m.label} sub={sub} gap="tight" className="flex flex-col gap-9"
       right={
         <div className="cal-tools">
-          <Filters label="Görünüm" size="md" items={VIEWS} value={view} onChange={setView} />
-          <button type="button" className="cal-nav" aria-label="Önceki" onClick={() => step(-1)}><BoardIcon name="chevronLeft" className="size-icon-md" stroke={2} /></button>
-          <button type="button" className="cal-today" onClick={goToday}>Bugün</button>
-          <button type="button" className="cal-nav" aria-label="Sonraki" onClick={() => step(1)}><BoardIcon name="chevronRight" className="size-icon-md" stroke={2} /></button>
+          <Filters label={m.view} size="md" items={VIEWS} value={view} onChange={setView} />
+          <button type="button" className="cal-nav" aria-label={m.previous} onClick={() => step(-1)}><BoardIcon name="chevronLeft" className="size-icon-md" stroke={STROKE.regular} /></button>
+          <button type="button" className="cal-today" onClick={goToday}>{kit.today}</button>
+          <button type="button" className="cal-nav" aria-label={m.next} onClick={() => step(1)}><BoardIcon name="chevronRight" className="size-icon-md" stroke={STROKE.regular} /></button>
         </div>
       }>
       {cal.error && !cal.data ? <ErrorBox error={cal.error} retry={cal.reload} /> : null}

@@ -3,6 +3,8 @@ import {
   Bin, bool, eventLink as link, FFError, has, page, parse, requireRow, row, rows, schema, stamp, truncate, writeEvent as emit,
   type Ctx, type ListOpts, type NextTask, type OpenProjectTask, type ProjectTasks, type TaskListRow, type TaskRecord,
 } from "@fullfollow/core";
+import { m } from "../messages";
+import { EVENT_TITLE_CHARS } from "./constants";
 import { parseQuickTask } from "./quickAdd";
 import { taskCreate, taskQuick, taskUpdate } from "./schemas";
 
@@ -13,21 +15,21 @@ const TARGET_KEYS = ["person_id", "company_id", "opportunity_id", "project_id", 
 
 function checkTargets(ctx: Ctx, d: Partial<Record<(typeof TARGET_KEYS)[number], number | null>>) {
   const set = TARGET_KEYS.filter((k) => d[k]).length;
-  if (set > 1) throw new FFError("validation", "görev en fazla bir kayda (kişi, firma, fırsat, proje ya da fikir) bağlanabilir");
+  if (set > 1) throw new FFError("validation", m.errors.oneTarget);
   if (d.person_id) requireRow(ctx, "people", d.person_id);
   if (d.company_id) requireRow(ctx, "companies", d.company_id);
   // opportunities come from the pipeline module, projects from the projects module (a link to one that is not installed is refused)
   if (d.opportunity_id) {
-    if (!ctx.mod("pipeline")) throw new FFError("validation", `fırsat verildi (#${d.opportunity_id}) ama "pipeline" modülü kurulu değil`);
-    if (!ctx.mod("pipeline")!.opportunities.ref(d.opportunity_id)) throw new FFError("not_found", `fırsat #${d.opportunity_id} bulunamadı`);
+    if (!ctx.mod("pipeline")) throw new FFError("validation", m.errors.moduleMissing(m.opportunityNoun, d.opportunity_id, "pipeline"));
+    if (!ctx.mod("pipeline")!.opportunities.ref(d.opportunity_id)) throw new FFError("not_found", m.errors.notFound(m.opportunityNoun, d.opportunity_id));
   }
   if (d.project_id) {
-    if (!ctx.mod("projects")) throw new FFError("validation", `proje verildi (#${d.project_id}) ama "projects" modülü kurulu değil`);
-    if (!ctx.mod("projects")!.projects.ref(d.project_id)) throw new FFError("not_found", `proje #${d.project_id} bulunamadı`);
+    if (!ctx.mod("projects")) throw new FFError("validation", m.errors.moduleMissing(m.projectNoun, d.project_id, "projects"));
+    if (!ctx.mod("projects")!.projects.ref(d.project_id)) throw new FFError("not_found", m.errors.notFound(m.projectNoun, d.project_id));
   }
   if (d.idea_id) {
-    if (!ctx.mod("ideas")) throw new FFError("validation", `fikir verildi (#${d.idea_id}) ama "ideas" modülü kurulu değil`);
-    if (!ctx.mod("ideas")!.ref(d.idea_id)) throw new FFError("not_found", `fikir #${d.idea_id} bulunamadı`);
+    if (!ctx.mod("ideas")) throw new FFError("validation", m.errors.moduleMissing(m.ideaNoun, d.idea_id, "ideas"));
+    if (!ctx.mod("ideas")!.ref(d.idea_id)) throw new FFError("not_found", m.errors.notFound(m.ideaNoun, d.idea_id));
   }
 }
 
@@ -37,7 +39,7 @@ export function tasksService(ctx: Ctx) {
     checkTargets(ctx, d);
     return ctx.db.transaction((tx) => {
       const r = tx.insert(tasks).values({ ...d, ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "task.created", ...link(ctx, r), summary: `Görev eklendi (${r.assignee}): ${truncate(r.title, 60)}`, data: { task_id: r.id } });
+      emit(tx, ctx, { type: "task.created", ...link(ctx, r), summary: m.events.taskAdded(r.assignee, truncate(r.title, EVENT_TITLE_CHARS)), data: { task_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
@@ -60,8 +62,8 @@ export function tasksService(ctx: Ctx) {
       const set: Record<string, unknown> = { ...f, ...(targetKey ? merged : {}), updated_at: ctx.clock.now() };
       if (done !== undefined) set.done_at = done ? (cur.done_at ?? ctx.clock.now()) : null;
       tx.update(tasks).set(set).where(eq(tasks.id, id)).run();
-      if (Object.keys(f).length) emit(tx, ctx, { type: "task.updated", ...link(ctx, { person_id: merged.person_id, opportunity_id: merged.opportunity_id, project_id: merged.project_id }), summary: `Görev düzenlendi: ${truncate(f.title ?? cur.title, 60)}`, data: { task_id: id } });
-      if (done === true && !cur.done_at) emit(tx, ctx, { type: "task.done", ...link(ctx, cur), summary: `Görev tamamlandı: ${truncate(cur.title, 60)}`, data: { task_id: id } });
+      if (Object.keys(f).length) emit(tx, ctx, { type: "task.updated", ...link(ctx, { person_id: merged.person_id, opportunity_id: merged.opportunity_id, project_id: merged.project_id }), summary: m.events.taskUpdated(truncate(f.title ?? cur.title, EVENT_TITLE_CHARS)), data: { task_id: id } });
+      if (done === true && !cur.done_at) emit(tx, ctx, { type: "task.done", ...link(ctx, cur), summary: m.events.taskDone(truncate(cur.title, EVENT_TITLE_CHARS)), data: { task_id: id } });
       return { row: requireRow(ctx, "tasks", id), effects: [] as string[] };
     });
   }
@@ -73,7 +75,7 @@ export function tasksService(ctx: Ctx) {
       bin.take("comments", "target_type = 'task' AND target_id = ?", id);
       bin.take("tasks", "id = ?", id);
       bin.commit(tx, "task", id, cur.title);
-      emit(tx, ctx, { type: "task.deleted", ...link(ctx, cur), summary: `Görev silindi: ${truncate(cur.title, 60)}`, data: { task_id: id } });
+      emit(tx, ctx, { type: "task.deleted", ...link(ctx, cur), summary: m.events.taskDeleted(truncate(cur.title, EVENT_TITLE_CHARS)), data: { task_id: id } });
       return { effects: [] as string[], trash: { type: "task", id } };
     });
   }
