@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { OwnProject } from "@kit/api/types";
-import { OWN_STATUS } from "@kit/lib/labels";
+import { OWN_STATUS } from "../labels";
 import { rateText, STATUS_DOT } from "../ownProjects";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Masonry } from "@kit/components/layout";

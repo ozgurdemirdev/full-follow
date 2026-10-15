@@ -1,6 +1,5 @@
-import { Link } from "wouter";
 import type { MonthReport } from "../../api/types";
-import { PATHS } from "../../app/routes";
+import { RecordLink } from "../../app/modules/RecordLink";
 import { fmtMonth, fmtMonthShort, lira } from "../../lib/format";
 import { INCOMING_COLOR, possessive, shortLira, type Incoming } from "../../lib/report";
 import { Card, order } from "../ui";
@@ -38,12 +37,12 @@ export function MonthsCard({ months, floor, top, now, picked, onPick, above, inc
       <div className="rep-incoming">
         <span className="rep-incoming-title">Bu ay gelmesi beklenenler</span>
         {incoming.length ? incoming.map((p) => (
-          <Link key={p.id} href={`${PATHS.projects}/${p.projectId}`} className="rep-row">
+          <RecordLink key={p.id} type="project" id={p.projectId} className="rep-row">
             <span className={`rep-dot ${INCOMING_COLOR[p.group].dot}`} />
             <span className="rep-row-name">{p.name}</span>
             <span className={`rep-row-when ${INCOMING_COLOR[p.group].text}`}>{p.when}</span>
             <span className="rep-row-amount">{lira(p.amount)}</span>
-          </Link>
+          </RecordLink>
         )) : <p className="rep-incoming-empty">Bu ay beklenen ödeme yok.</p>}
       </div>
     </Card>

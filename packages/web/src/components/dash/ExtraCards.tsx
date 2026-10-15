@@ -1,18 +1,17 @@
 // Cards the board leaves out but the dashboard keeps: daily quota, Friday review, posts to refresh, follow-ups due
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { run } from "../../api/actions";
-import { useModules } from "../../api/modules";
-import type { FollowupDue, List, Post, Quota, QuotaState, Today } from "../../api/types";
-import { opportunityPath, PATHS } from "../../app/routes";
+import type { FollowupDue, List, Post, Quota, QuotaState } from "../../api/types";
+import { useRegistry } from "../../app/modules/registry";
+import { PATHS } from "../../app/routes";
 import { SHOWN } from "../../lib/dashboard";
-import { fmtDay, followNote, initials } from "../../lib/format";
-import { CHANNEL_DOT, PLATFORM, PLATFORM_DOT, STAGE } from "../../lib/labels";
+import { fmtDay, initials } from "../../lib/format";
+import { CHANNEL_DOT, PLATFORM, PLATFORM_DOT } from "../../lib/labels";
 import { refreshNote } from "../../lib/marketing";
 import { channelName } from "../../lib/network";
-import { useRecordHref } from "../../lib/useRecordHref";
 import { BoardIcon } from "../boardIcons";
-import { Card, Meter } from "../ui";
+import { Card, MoreLink, Meter } from "../ui";
 
 const PERCENT = 100;
 
@@ -23,16 +22,6 @@ const QUOTA_TONE: Record<QuotaState, { bar: string; text: string }> = {
   over: { bar: "bg-danger", text: "text-danger" },
 };
 const QUOTA_NOTE: Partial<Record<QuotaState, string>> = { near: "limite yakın", over: "limit doldu" };
-
-/** Link with the arrow circle that sits in the header of a card */
-function MoreLink({ href, children }: { href: string; children: string }) {
-  return (
-    <Link href={href} className="ff-more">
-      {children}
-      <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
-    </Link>
-  );
-}
 
 /** Messages sent today against each channel's daily limit, plus the cold email warmup notice */
 export function QuotaCard({ quota }: { quota: Quota }) {
@@ -96,6 +85,7 @@ export function PostsDueCard({ list }: { list: List<Post> }) {
 
 /** Follow-up messages due in the marketing sequence, and the button that makes their drafts */
 export function FollowupsDueCard({ list }: { list: List<FollowupDue> }) {
+  const reg = useRegistry();
   const [busy, setBusy] = useState(false);
   const make = async () => {
     setBusy(true);
@@ -111,7 +101,7 @@ export function FollowupsDueCard({ list }: { list: List<FollowupDue> }) {
     <Card title="Takip zamanı" className="dash-gap-4 dash-head-pad rise"
       actions={<button type="button" className="dash-btn is-claude is-small" disabled={busy} onClick={make}>Şimdi hazırla</button>}>
       {list.rows.slice(0, SHOWN.followups).map((f) => (
-        <Link key={`${f.person_id}-${f.contact}`} href={f.person_id ? `${PATHS.people}/${f.person_id}` : PATHS.people}
+        <Link key={`${f.person_id}-${f.contact}`} href={(f.person_id ? reg.link("person", f.person_id) : reg.pagePath("people")) ?? PATHS.today}
           className="dash-row flex items-center gap-5 border-t border-border-subtle py-4 text-text-primary hover:text-text-primary">
           <span className="dash-av size-avatar-list text-sm">{initials(f.name)}</span>
           <span className="flex min-w-0 flex-grow flex-col">
@@ -125,46 +115,3 @@ export function FollowupsDueCard({ list }: { list: List<FollowupDue> }) {
   );
 }
 
-interface FollowItem {
-  key: string;
-  name: string;
-  org: string | null;
-  note: ReturnType<typeof followNote>;
-  stage?: string;
-  href: string;
-}
-
-/** People and opportunities whose follow-up date has come (the header counts them as "takip") */
-export function FollowUpsCard({ data }: { data: Today }) {
-  const { has } = useModules();
-  const recordHref = useRecordHref();
-  const items = useMemo(() => {
-    const seen = new Set<number>();
-    const out: FollowItem[] = [];
-    for (const o of data.follow_ups?.opportunities?.rows ?? []) {
-      seen.add(o.person_id);
-      out.push({ key: `o${o.id}`, name: o.person_name, org: o.title, note: followNote(o.next_follow_up_at), stage: STAGE[o.stage], href: opportunityPath(o.id) });
-    }
-    for (const p of data.follow_ups?.people?.rows ?? []) {
-      if (seen.has(p.id)) continue;
-      out.push({ key: `p${p.id}`, name: p.name, org: p.company_name, note: followNote(p.next_follow_up_at), href: recordHref("person", p.id) });
-    }
-    return out;
-  }, [data, recordHref]);
-
-  return (
-    <Card title="Takibi gelenler" className="dash-gap-4 dash-head-pad rise" actions={has("people") ? <MoreLink href={PATHS.people}>Hepsi</MoreLink> : undefined}>
-      {items.length === 0 ? <p className="m-0 text-base-sm text-text-muted">Bugün takibi gelen kimse yok.</p> : null}
-      {items.slice(0, SHOWN.followups).map((it) => (
-        <Link key={it.key} href={it.href} className="dash-row flex items-center gap-5 border-t border-border-subtle py-4 text-text-primary hover:text-text-primary">
-          <span className="dash-av size-avatar-list text-sm">{initials(it.name)}</span>
-          <span className="flex min-w-0 flex-grow flex-col">
-            <span className="truncate text-base">{it.name}{it.org ? <span className="text-text-secondary"> · {it.org}</span> : null}</span>
-            {it.note ? <span className={`text-sm ${it.note.late ? "text-warning" : "text-text-secondary"}`}>{it.note.text}</span> : null}
-          </span>
-          {it.stage ? <span className="dash-chip is-lg bg-chip-opportunity-bg text-chip-opportunity-fg">{it.stage}</span> : null}
-        </Link>
-      ))}
-    </Card>
-  );
-}

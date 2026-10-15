@@ -6,6 +6,7 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { PATHS } from "@kit/app/routes";
 import { BOARD_ICON } from "@kit/components/boardIcons";
+import { DraftsWaiting } from "./DraftsWaiting";
 
 export default defineWebModule({
   key: "drafts",
@@ -29,4 +30,5 @@ export default defineWebModule({
     load: () => import("@kit/forms/MarketingForms").then((m) => ({ default: m.DraftForm })),
   }],
   links: { draft: (id) => `${PATHS.drafts}/${id}` },
+  slots: { "person.overlay.deals": { order: 10, Component: DraftsWaiting }, "company.overlay.work.after": DraftsWaiting },
 });

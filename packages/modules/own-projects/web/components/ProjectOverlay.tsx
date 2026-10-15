@@ -4,7 +4,7 @@ import { useQuery } from "@kit/api/store";
 import type { Detail, Idea, OwnProject, Thread } from "@kit/api/types";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
-import { OWN_STATUS, OWN_STATUSES } from "@kit/lib/labels";
+import { OWN_STATUS, OWN_STATUSES } from "../labels";
 import { ratePct, rateNote, rateText, setStage } from "../ownProjects";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";

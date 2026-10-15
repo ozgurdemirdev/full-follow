@@ -16,7 +16,8 @@ import { OffersCard } from "../components/OffersCard";
 import { TeamCard } from "../components/TeamCard";
 import { Card, Chip, ErrorBox, Filters, PageSkeleton, Who } from "@kit/components/ui";
 import { fmtDay, lira, tl } from "@kit/lib/format";
-import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "@kit/lib/labels";
+import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
+import { STAGE_BG } from "../labels";
 import { PIPELINE_PATH } from "../paths";
 
 type Related = { people?: OppPerson[]; offers?: Offer[]; files?: FileRow[] };

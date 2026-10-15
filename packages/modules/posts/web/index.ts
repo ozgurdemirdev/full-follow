@@ -6,6 +6,7 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { PATHS } from "@kit/app/routes";
 import { BOARD_ICON } from "@kit/components/boardIcons";
+import { PersonPost } from "./PersonPost";
 
 export default defineWebModule({
   key: "posts",
@@ -24,4 +25,5 @@ export default defineWebModule({
     load: () => import("@kit/forms/MarketingForms").then((m) => ({ default: m.PostForm })),
   }],
   links: { post: (id) => `${PATHS.posts}/${id}` },
+  slots: { "person.overlay.marketing": { order: 10, Component: PersonPost } },
 });

@@ -3,7 +3,8 @@ import { Link } from "wouter";
 import { remove } from "../../api/actions";
 import { useOpps } from "../../api/keys";
 import type { Person, Post } from "../../api/types";
-import { opportunityPath, PATHS } from "../../app/routes";
+import { RecordLink } from "../../app/modules/RecordLink";
+import { PATHS } from "../../app/routes";
 import { openSheet } from "../../app/ui";
 import { fmtDay, lira } from "../../lib/format";
 import { POST_FORMAT, STAGE, STAGE_TONE } from "../../lib/labels";
@@ -51,11 +52,11 @@ function PeopleList({ people }: { people: Person[] }) {
     <div className="ppl-panel">
       <Section title={`Kişiler · ${people.length}`}>
         {people.length ? people.map((x) => (
-          <Link key={x.id} href={`${PATHS.people}/${x.id}`} className="posts-link-row">
+          <RecordLink key={x.id} type="person" id={x.id} className="posts-link-row">
             <Avatar name={x.name} id={x.id} size="sm" />
             <span className="min-w-0 flex-grow truncate text-base">{x.name}</span>
             {x.company_name ? <span className="truncate text-base-sm text-text-muted">{x.company_name}</span> : null}
-          </Link>
+          </RecordLink>
         )) : <span className="text-base-sm text-text-muted">Bu paylaşımdan kimse gelmedi</span>}
       </Section>
     </div>
@@ -69,11 +70,11 @@ function OppList({ p, people }: { p: Post; people: Person[] }) {
     <div className="ppl-panel">
       <Section title={`Fırsatlar · ${p.opp_count}`} right={p.won ? <Chip tone="success">{p.won} kazanıldı · {lira(p.won_value)}</Chip> : undefined}>
         {list.length ? list.map((o) => (
-          <Link key={o.id} href={opportunityPath(o.id)} className="posts-link-row">
+          <RecordLink key={o.id} type="opportunity" id={o.id} className="posts-link-row">
             <span className="min-w-0 flex-grow truncate text-base">{o.title}</span>
             {o.estimated_value ? <span className="font-mono text-base-sm text-text-secondary">{lira(o.estimated_value)}</span> : null}
             <Chip tone={STAGE_TONE[o.stage]}>{STAGE[o.stage]}</Chip>
-          </Link>
+          </RecordLink>
         )) : <span className="text-base-sm text-text-muted">{p.opp_count ? "Yükleniyor" : "Henüz fırsat yok"}</span>}
       </Section>
     </div>

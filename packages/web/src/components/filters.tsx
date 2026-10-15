@@ -2,6 +2,7 @@
 import { pickable, useSectors, useSources, useTags } from "../api/keys";
 import type { Labeled, Sector } from "../api/types";
 import { CONTACT_STATUS, CONTACT_STATUSES } from "../lib/labels";
+import { usePopover } from "../lib/usePopover";
 
 export interface LabelFilter {
   tag: string;
@@ -49,6 +50,23 @@ export function LabelFilters({ value, onChange, counts }: { value: LabelFilter; 
         {pickable(sources.rows).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
       </select>
       {active ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => onChange(noFilter)}>Temizle</button> : null}
+    </div>
+  );
+}
+
+/** The tag, sector, source and status filters of the people and company lists, behind one pill */
+export function MoreFilters({ value, onChange }: { value: LabelFilter; onChange: (v: LabelFilter) => void }) {
+  const { open, setOpen, root } = usePopover();
+  const active = Object.values(value).filter(Boolean).length;
+  return (
+    <div ref={root} className="relative">
+      <button type="button" className="ppl-chan ppl-filter" data-on={active > 0} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        Süzgeç{active ? ` · ${active}` : ""}
+      </button>
+      <div role="dialog" aria-label="Süzgeç" aria-hidden={!open} className="ppl-pop" inert={!open}>
+        <LabelFilters value={value} onChange={onChange} />
+        {active ? <button type="button" className="ppl-pop-item" onClick={() => onChange(noFilter)}>Süzgeci temizle</button> : null}
+      </div>
     </div>
   );
 }

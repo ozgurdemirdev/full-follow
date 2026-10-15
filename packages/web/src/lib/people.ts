@@ -176,3 +176,16 @@ export function compareTouch(a: Person, b: Person, today = todayIso()): number {
 
 /** The stream of a person shows this many entries until "daha" is pressed */
 export const STREAM_SHOWN = 30;
+
+// ------------------------------------------------------------ last touch (people, company tiles and the org cards)
+/** Last touch older than this many days reads in the cold colour */
+export const COLD_DAYS = LUKEWARM_DAYS;
+
+/** Days since an ISO time (0 for today and for the future) */
+export const daysSince = (iso: string) => Math.max(0, -daysFrom(iso, todayIso()));
+
+export const lastText = (days: number | null) => (days === null ? "Temas yok" : days <= 1 ? (days === 0 ? "bugün" : "dün") : `${days} gün önce`);
+
+/** Warmth word of the board for the colour of an org card dot: none, hot, mid, cold */
+export const warmthOf = (days: number | null): "none" | "hot" | "mid" | "cold" =>
+  days === null ? "none" : days <= WARM_DAYS ? "hot" : days <= COLD_DAYS ? "mid" : "cold";

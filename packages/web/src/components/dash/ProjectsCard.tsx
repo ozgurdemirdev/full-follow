@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useOwnProjects, useProjects } from "../../api/keys";
 import { isMissing, useModules } from "../../api/modules";
+import { useRegistry } from "../../app/modules/registry";
 import { PATHS } from "../../app/routes";
 import { ACTIVE_PROJECT_STAGES, PROJECT_SOON_DAYS, SHOWN } from "../../lib/dashboard";
 import { daysFrom, fmtDay } from "../../lib/format";
@@ -29,6 +30,7 @@ interface Row {
 /** "Projeler": client projects in progress and own projects in progress, with progress and the next step */
 export function ProjectsCard() {
   const ex = useExpand();
+  const reg = useRegistry();
   const [picked, setPicked] = useState(0);
   const { has } = useModules();
   const projects = useProjects(has("projects"));
@@ -44,12 +46,12 @@ export function ProjectsCard() {
     const next = p.next_task?.title ?? (p.next_payment ? `${MILESTONE[p.next_payment.milestone] ?? p.next_payment.milestone} ödemesi` : "");
     return {
       key: `c${p.id}`, name: p.name, client: p.person_name, pct: Math.round((PROJECT_STEPS.indexOf(p.stage) / (PROJECT_STEPS.length - 1)) * PERCENT),
-      due: dates[0] ? fmtDay(dates[0]) : "Tarih yok", soon: !!dates[0] && daysFrom(dates[0]) <= PROJECT_SOON_DAYS, next, href: `${PATHS.projects}/${p.id}`, own: false,
+      due: dates[0] ? fmtDay(dates[0]) : "Tarih yok", soon: !!dates[0] && daysFrom(dates[0]) <= PROJECT_SOON_DAYS, next, href: reg.link("project", p.id) ?? PATHS.today, own: false,
     };
   });
   const mine: Row[] = own.rows.filter((p) => p.status === "aktif").map((p) => ({
     key: `o${p.id}`, name: p.name, client: "Kendi projem", pct: p.open_ideas + p.done_ideas ? Math.round((p.done_ideas / (p.open_ideas + p.done_ideas)) * PERCENT) : 0,
-    due: `${p.open_ideas} açık fikir`, soon: false, next: "", href: `${PATHS.ownProjects}/${p.id}`, own: true,
+    due: `${p.open_ideas} açık fikir`, soon: false, next: "", href: reg.link("own_project", p.id) ?? PATHS.today, own: true,
   }));
   const shown = (tab === 0 ? client : mine).slice(0, SHOWN.projects);
   const everything = [...client, ...mine];
@@ -85,7 +87,7 @@ export function ProjectsCard() {
         </div>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Projeler", sub: `${client.length} müşteri projesi, ${mine.length} kendi projen`, page: withClient ? "Müşteri projeleri" : "Kendi projelerim", href: withClient ? PATHS.projects : PATHS.ownProjects, foot: `Ortalama ilerleme %${avg}`, rows }} />
+        spec={{ title: "Projeler", sub: `${client.length} müşteri projesi, ${mine.length} kendi projen`, page: withClient ? "Müşteri projeleri" : "Kendi projelerim", href: reg.pagePath(withClient ? "projects" : "ownProjects") ?? PATHS.today, foot: `Ortalama ilerleme %${avg}`, rows }} />
     </>
   );
 }

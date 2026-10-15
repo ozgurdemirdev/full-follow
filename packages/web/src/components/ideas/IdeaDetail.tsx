@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { run } from "../../api/actions";
 import type { IdeaRelated, Idea } from "../../api/types";
-import { PATHS } from "../../app/routes";
+import { useLinkTo } from "../../app/modules/registry";
 import { askPitch, IDEA_FLOW, ratePct } from "../../lib/ideas";
 import { IDEA_STAGE } from "../../lib/labels";
 import { useDayMarks } from "../../lib/people";
@@ -62,6 +62,7 @@ function MoneyNote({ idea }: { idea: Idea }) {
 /** Left panel: stage, stepper, problem, money note, interest ring with the verdict, the two actions */
 export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
   const [, navigate] = useLocation();
+  const linkTo = useLinkTo();
   const [pitched, markPitched] = useDayMarks("pitched");
   const asked = pitched.has(idea.id);
   const stageIdx = IDEA_FLOW.indexOf(idea.stage);
@@ -69,7 +70,8 @@ export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelate
   const toProject = async () => {
     try {
       const r = await run<{ id: number }>("post", `/own-projects/from-idea/${idea.id}`, {}, { ok: "Proje açıldı, Kendi projelerim’de" });
-      if (r.row) navigate(`${PATHS.ownProjects}/${r.row.id}`);
+      const href = r.row ? linkTo("own_project", r.row.id) : null;
+      if (href) navigate(href);
     } catch {
       /* the notice is shown by run() */
     }

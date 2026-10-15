@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
 import { remove, run } from "../../api/actions";
 import type { Interest } from "../../api/types";
-import { PATHS } from "../../app/routes";
+import { RecordLink } from "../../app/modules/RecordLink";
 import { emptyRef, type Ref } from "../../forms/helpers";
 import { usePersonOptions } from "../../forms/shared";
 import { NEXT_INTEREST } from "../../lib/ideas";
@@ -19,7 +18,7 @@ function PersonRow({ x }: { x: Interest }) {
     <div className="ideas-person">
       <Avatar name={x.person_name} id={x.person_id} size="md" />
       <span className="ideas-person-text">
-        <Link href={`${PATHS.people}/${x.person_id}`}>{x.person_name}</Link>
+        <RecordLink type="person" id={x.person_id}>{x.person_name}</RecordLink>
         {note ? <span>{note}</span> : null}
       </span>
       <button type="button" className="ideas-react" data-r={x.interest} aria-label={`${x.person_name}: ${INTEREST[x.interest]}, değiştir`} onClick={cycle}>

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow network module: touches (messages, calls, meetings), weekly numbers, who waits for an answer and who went cold",
-  "fullfollow": { "module": "network", "endpoints": ["/touches", "/network", "/stats"] },
+  "fullfollow": { "module": "network", "endpoints": ["/touches", "/network", "/stats"], "webMarkers": ["ppl-modes"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

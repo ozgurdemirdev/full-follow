@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow companies module: companies, their tags and sectors, contact status and the company card",
-  "fullfollow": { "module": "companies", "endpoints": ["/companies"] },
+  "fullfollow": { "module": "companies", "endpoints": ["/companies"], "webMarkers": ["/firmalar"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

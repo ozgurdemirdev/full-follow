@@ -1,5 +1,5 @@
 import type { OwnProject, OwnStage } from "@kit/api/types";
-import { SELLABLE } from "@kit/lib/labels";
+import { SELLABLE } from "../labels";
 import { JOURNEY, journeyState, SELLABLE_CLS, stageLabel } from "../ownProjects";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 

@@ -1,0 +1,219 @@
+/* ---------- header ---------- */
+.ppl-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+.ppl-search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  box-sizing: border-box;
+  height: var(--spacing-control-height-2xl);
+  width: var(--spacing-people-search-width);
+  max-width: 100%;
+  padding: 0 var(--spacing-7);
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border-subtle);
+  background: var(--color-surface-1);
+  color: var(--color-text-muted);
+}
+.ppl-search input {
+  flex-grow: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+.ppl-search input::placeholder {
+  color: var(--color-text-muted);
+}
+.ppl-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.ppl-chan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-control-height-xs);
+  height: var(--spacing-control-height-xs);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.ppl-chan[aria-pressed="true"] {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+  color: var(--color-accent-on);
+}
+.ppl-filter {
+  width: auto;
+  padding: 0 var(--spacing-6);
+  gap: var(--spacing-3);
+  font-size: var(--text-base-sm);
+  line-height: normal;
+}
+.ppl-filter[data-on="true"] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+/* popover under a pill: the filter menu and the overlay menu */
+.ppl-pop {
+  position: absolute;
+  top: calc(100% + var(--spacing-3));
+  right: 0;
+  z-index: var(--z-sheet);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  width: var(--spacing-fab-menu-width);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-inner-lg);
+  border: var(--bw-default) solid var(--color-border-menu);
+  background: var(--color-surface-menu);
+  box-shadow: var(--shadow-menu);
+  transform-origin: top right;
+  transition:
+    opacity var(--dur-hover) var(--ease-out),
+    transform var(--dur-hover) var(--ease-out);
+}
+.ppl-pop[aria-hidden="true"] {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(var(--spacing-3) * -1)) scale(0.97);
+}
+.ppl-pop .inp {
+  width: 100%;
+}
+.ppl-pop-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  height: var(--spacing-control-height-lg);
+  padding: 0 var(--spacing-5);
+  border: 0;
+  border-radius: var(--radius-nav);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-base-sm);
+  line-height: normal;
+  text-align: left;
+  white-space: nowrap;
+}
+.ppl-pop-item:hover {
+  background: var(--color-surface-menu-hover);
+  color: var(--color-text-primary);
+}
+
+/* Person overlay of the People screen (People.dc.html): header, the two columns, composer and stream. */
+
+/* ---------- person overlay ---------- */
+.ff-ex-rec {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--spacing-7);
+  padding: var(--spacing-10) var(--spacing-11) var(--spacing-8);
+  border-bottom: var(--bw-default) solid var(--color-border-subtle);
+}
+.ppl-hchip {
+  display: flex;
+  align-items: center;
+  height: var(--spacing-dash-chip-height-lg);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-track-alt);
+  color: var(--tone);
+  font-size: var(--text-sm);
+}
+.ppl-ask {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  height: var(--spacing-control-height-lg);
+  padding: 0 var(--spacing-7) 0 var(--spacing-5);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-claude-bg);
+  color: var(--color-claude-soft);
+  font-size: var(--text-base-sm);
+  line-height: normal;
+}
+.ppl-round {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-control-height-lg);
+  height: var(--spacing-control-height-lg);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: var(--bw-default) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+.ppl-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-10);
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--spacing-people-body-pad-top) var(--spacing-11) var(--spacing-11);
+}
+@variant desk {
+  .ppl-body {
+    grid-template-columns: var(--spacing-aside-panel) minmax(0, 1fr);
+  }
+}
+.ppl-body::-webkit-scrollbar {
+  width: var(--spacing-scrollbar);
+}
+.ppl-body::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+.ppl-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  min-width: 0;
+}
+.ppl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-row);
+  background: var(--color-surface-2);
+}
+.ppl-panel.is-list {
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-8);
+}
+.ppl-panel.is-compact {
+  gap: var(--spacing-4);
+  padding: var(--spacing-6);
+}
+/* the overlay sits outside the shell: its buttons get the same press and hover motion */
+.ff-ex-rec :where(button),
+.ppl-body :where(button) {
+  transition:
+    transform var(--dur-press) var(--ease-standard),
+    filter var(--dur-hover) var(--ease-standard),
+    background-color var(--dur-hover) var(--ease-standard);
+}
+.ff-ex-rec :where(button):hover,
+.ppl-body :where(button):hover {
+  filter: brightness(1.12);
+}
+.ff-ex-rec :where(button):active,
+.ppl-body :where(button):active {
+  transform: scale(var(--press-scale));
+}

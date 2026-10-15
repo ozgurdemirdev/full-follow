@@ -6,6 +6,7 @@ import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { norm } from "@kit/lib/format";
 import { PROJECT_STAGE } from "@kit/lib/labels";
+import { CompanyProjects, PersonProjects } from "./components/ProjectRows";
 import { PROJECTS_PATH } from "./paths";
 import { paymentTemplateRows } from "./settings";
 
@@ -34,6 +35,11 @@ export default defineWebModule({
         : null
     ),
   }],
+  // the projects on a person's and a company's overlay
+  slots: {
+    "person.overlay.deals": { order: 30, Component: PersonProjects },
+    "company.overlay.work": { order: 10, Component: CompanyProjects },
+  },
   invalidates: {
     projects: ["/projects", "/timeline", "/today", "/payments", "/trash"],
     payments: ["/payments", "/projects", "/today", "/report", "/timeline", "/trash"],

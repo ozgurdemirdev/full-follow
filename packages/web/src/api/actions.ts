@@ -1,17 +1,13 @@
 // Yazma işlemleri: API çağrısı + ilgili önbellekleri tazeleme + kısa bildirim
-import { invalidatesFor } from "../app/modules/registry";
+import { currentRegistry, invalidatesFor } from "../app/modules/registry";
 import { PATHS } from "../app/routes";
 import { toast, type ToastAction } from "../components/toast";
 import { api, ApiError } from "./client";
 import { invalidate } from "./store";
 import type { Mutation } from "./types";
 
-const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", "/review"];
-
 /** Her yazma işleminden sonra hangi listelerin tazeleneceği (modüller kendi verilerini manifest `invalidates` ile ekler) */
 const AFFECTS: Record<string, string[]> = {
-  people: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/report", "/posts", "/ideas", "/trash"],
-  companies: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/drafts", "/trash"],
   sectors: ["/sectors", "/people", "/companies", "/trash", "/templates", "/ideas"],
   tags: ["/tags", "/people", "/companies", "/trash"],
   notes: ["/notes", "/people", "/timeline", "/trash"],
@@ -19,7 +15,6 @@ const AFFECTS: Record<string, string[]> = {
   files: ["/opportunities", "/projects", "/timeline", "/trash"],
   sources: ["/sources", "/opportunities", "/report", "/people", "/companies", "/trash"],
   drafts: ["/drafts", "/settings", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
-  touches: [...CONTACTS, "/opportunities", "/ideas", "/followups", "/trash"],
   comments: ["/comments", "/own-projects", "/today", "/timeline", "/people", "/companies", "/trash"],
   settings: ["/settings", "/report", "/review", "/today", "/people", "/network", "/followups"],
   posts: ["/posts", "/today", "/people", "/ideas", "/report", "/trash"],
@@ -30,9 +25,8 @@ const AFFECTS: Record<string, string[]> = {
   trash: ["/"],
 };
 
-/** Mükerrer kaydın yeri: kişi ve firma kartı, kategoriler Ayarlar'da */
-export const recordHref = (type: string, id: number) =>
-  type === "person" ? `${PATHS.people}/${id}` : type === "company" ? `${PATHS.companies}/${id}` : PATHS.settings;
+/** Mükerrer kaydın yeri: kişi ve firma kartı (modülü sayfasını verir), kategoriler Ayarlar'da */
+export const recordHref = (type: string, id: number) => currentRegistry().link(type, id) ?? PATHS.settings;
 
 type DuplicateSink = (e: ApiError) => void;
 let duplicateSink: DuplicateSink | null = null;

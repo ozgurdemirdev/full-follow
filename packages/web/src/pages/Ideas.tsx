@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { useIdeas } from "../api/keys";
 import { useQuery } from "../api/store";
 import type { Detail, IdeaRelated, Idea } from "../api/types";
+import { useLinkTo } from "../app/modules/registry";
 import { Page } from "../app/Page";
 import { PATHS } from "../app/routes";
 import { openSheet } from "../app/ui";
@@ -21,10 +22,12 @@ export default function Ideas() {
   const lanes = useMemo(() => groupByStage(rows), [rows]);
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
+  const linkTo = useLinkTo();
   const inProject = params.id ? all.byId.get(Number(params.id))?.own_project_id : null;
+  const projectHref = inProject ? linkTo("own_project", inProject) : null;
   useEffect(() => {
-    if (inProject) navigate(`${PATHS.ownProjects}/${inProject}`, { replace: true });
-  }, [inProject, navigate]);
+    if (projectHref) navigate(projectHref, { replace: true });
+  }, [projectHref, navigate]);
   const sel = rows.find((i) => i.id === Number(params.id)) ?? lanes.find((l) => l.ideas.length)?.ideas[0];
   const pick = useCallback((id: number) => navigate(`${PATHS.ideas}/${id}`, { replace: true }), [navigate]);
   const detail = useQuery<Detail<Idea, IdeaRelated>>(sel ? `/ideas/${sel.id}?with=people,touches,posts` : null);

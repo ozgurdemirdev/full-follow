@@ -5,7 +5,7 @@ import { useQuery } from "@kit/api/store";
 import type { Detail, OwnProject, OwnStage } from "@kit/api/types";
 import { Form } from "@kit/components/forms/Form";
 import { AreaField, ChipsField, SegField, TextField } from "@kit/components/forms/fields";
-import { OWN_STATUS, OWN_STATUSES, SELLABLE, SELLABLES } from "@kit/lib/labels";
+import { OWN_STATUS, OWN_STATUSES, SELLABLE, SELLABLES } from "../labels";
 import { OWN_PROJECTS_PATH } from "../paths";
 import { JOURNEY } from "../ownProjects";
 import { SectorTagsField } from "@kit/forms/pickers";

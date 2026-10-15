@@ -38,6 +38,8 @@ export interface Registry {
   slot: (name: string) => { key: string; Component: ComponentType<any> }[];
   /** where a record of this type leads: null when no visible module serves it, or it has no page of its own */
   link: (type: string, id: number) => string | null;
+  /** the path of a module's page (its route `page` id, without the `params`): null when no visible module has that page */
+  pagePath: (page: string) => string | null;
   /** extra prefixes to refresh after a write to this resource */
   invalidates: (resource: string) => string[];
 }
@@ -78,6 +80,7 @@ function build(visible: (key: string) => boolean): Registry {
     settingsCategories: all((m) => m.settingsCategories).sort(byOrder),
     slot: (name) => [...(slots.get(name) ?? [])].sort((a, b) => a.order - b.order),
     link: (type, id) => links[type]?.(id) ?? null,
+    pagePath: (page) => all((m) => m.routes).find((r) => r.page === page)?.path ?? null,
     invalidates: (resource) => invalidates[resource] ?? [],
   };
 }

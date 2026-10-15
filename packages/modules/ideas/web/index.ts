@@ -4,6 +4,7 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { PATHS } from "@kit/app/routes";
 import { BOARD_ICON } from "@kit/components/boardIcons";
+import { PersonIdeas } from "./components/PersonIdeas";
 
 /** The idea columns of an own project's overlay (slot of the own projects page) */
 const ProjectIdeas = lazy(() => import("./components/ProjectIdeas").then((m) => ({ default: m.ProjectIdeas })));
@@ -19,5 +20,8 @@ export default defineWebModule({
     load: () => import("@kit/forms/MarketingForms").then((m) => ({ default: m.IdeaForm })),
   }],
   links: { idea: (id) => `${PATHS.ideas}/${id}` },
-  slots: { "own-project.overlay.ideas": { Component: ProjectIdeas } },
+  slots: {
+    "own-project.overlay.ideas": { Component: ProjectIdeas },
+    "person.overlay.marketing": { order: 20, Component: PersonIdeas },
+  },
 });

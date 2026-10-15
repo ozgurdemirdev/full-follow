@@ -12,7 +12,8 @@ import { StageFunnel } from "../components/StageFunnel";
 import { ErrorBox, Filters, PageSkeleton } from "@kit/components/ui";
 import { lira, norm } from "@kit/lib/format";
 import { useIsDesktop } from "@kit/lib/media";
-import { BOARD_STAGES, type OppStage } from "@kit/lib/labels";
+import { type OppStage } from "@kit/lib/labels";
+import { BOARD_STAGES } from "../labels";
 import { hintsByOpportunity, nextSteps, pipelineStats, StageRulesProvider, stageRates, stageRulesOf } from "../pipeline";
 
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];

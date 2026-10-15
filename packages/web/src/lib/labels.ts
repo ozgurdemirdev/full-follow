@@ -8,7 +8,6 @@ export type PostFormat = "metin" | "gorsel" | "video" | "karusel";
 export type Tone = "opportunity" | "source" | "payment" | "warning" | "neutral" | "success" | "claude";
 
 export const OPEN_STAGES: OppStage[] = ["bulundu", "temas", "cevap", "gorusme", "teklif"];
-export const BOARD_STAGES: OppStage[] = [...OPEN_STAGES, "kazanildi"];
 export const PROJECT_STEPS: ProjectStage[] = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"];
 
 export const STAGE: Record<OppStage, string> = {
@@ -18,10 +17,6 @@ export const PROJECT_STAGE: Record<ProjectStage, string> = {
   pesinat: "Peşinat", tasarim_onayi: "Tasarım onayı", test_surumu: "Test sürümü", yayin: "Yayın", teslim: "Teslim", bakim: "Bakım", iptal: "İptal",
 };
 export const MILESTONE: Record<string, string> = { ...PROJECT_STAGE };
-
-/** Role of an extra person on an opportunity, in display order */
-export const OPP_ROLE: Record<string, string> = { karar_verici: "Karar verici", teknik: "Teknik", ortak: "Ortak", diger: "Diğer" };
-export const OPP_ROLES = Object.keys(OPP_ROLE);
 
 /** Network kanalları önde (soğuk e-posta, Instagram DM, LinkedIn, telefon, yüz yüze) */
 export const CHANNEL: Record<string, string> = {
@@ -45,9 +40,6 @@ export const CONTACT_STATUSES = Object.keys(CONTACT_STATUS);
 /** People already known personally: no cold-outreach prompts for them */
 export const isKnown = (status: string) => status === "tanidik" || status === "arkadas";
 export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi: "opportunity", cevap_geldi: "payment", gorusuldu: "success", olumsuz: "warning", es_gecildi: "neutral", tanidik: "source", arkadas: "success" };
-export const STATUS_DOT: Record<string, string> = {
-  yazilmadi: "bg-entity-neutral", yazildi: "bg-entity-opportunity", cevap_geldi: "bg-entity-payment", gorusuldu: "bg-accent", olumsuz: "bg-danger", es_gecildi: "bg-text-disabled", tanidik: "bg-entity-source", arkadas: "bg-entity-comment",
-};
 
 export const TARGET: Record<string, string> = {
   person: "Kişi", company: "Firma", opportunity: "Fırsat", project: "Proje", task: "Görev", draft: "Taslak", payment: "Ödeme",
@@ -70,13 +62,6 @@ export const FUNNEL_PERIODS = [{ value: "30", label: "Son 30 gün" }, { value: "
 export const IDEA_STAGE: Record<string, string> = { fikir: "Fikir", dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" };
 export const IDEA_STAGES = Object.keys(IDEA_STAGE);
 export const IDEA_TONE: Record<string, Tone> = { fikir: "neutral", dogrulaniyor: "payment", demo: "opportunity", urun: "success" };
-// ---- Kendi projelerim ----
-export const OWN_STATUS: Record<string, string> = { aktif: "Aktif", beklemede: "Beklemede", tamamlandi: "Tamamlandı", birakildi: "Bırakıldı" };
-export const OWN_STATUSES = Object.keys(OWN_STATUS);
-export const OWN_STATUS_TONE: Record<string, Tone> = { aktif: "success", beklemede: "payment", tamamlandi: "opportunity", birakildi: "neutral" };
-export const SELLABLE: Record<string, string> = { evet: "Satılabilir", belki: "Belki satılır", hayir: "Satılmaz" };
-export const SELLABLES = Object.keys(SELLABLE);
-export const SELLABLE_TONE: Record<string, Tone> = { evet: "success", belki: "payment", hayir: "neutral" };
 export const PRIORITY: Record<string, string> = { yuksek: "Yüksek", orta: "Orta", dusuk: "Düşük" };
 export const PRIORITIES = Object.keys(PRIORITY);
 export const PRIORITY_TONE: Record<string, Tone> = { yuksek: "warning", orta: "payment", dusuk: "neutral" };
@@ -115,11 +100,6 @@ export const TAG_CLS: Record<string, string> = {
 };
 export const TAG_COLORS = Object.keys(TAG_CLS);
 
-/** Aşama noktası / çubuğu */
-export const STAGE_BG: Record<OppStage, string> = {
-  bulundu: "bg-stage-bulundu", temas: "bg-stage-temas", cevap: "bg-stage-cevap", gorusme: "bg-stage-gorusme",
-  teklif: "bg-stage-teklif", kazanildi: "bg-stage-kazanildi", kaybedildi: "bg-stage-kaybedildi",
-};
 /** Aşama çipi tonu */
 export const STAGE_TONE: Record<OppStage, Tone> = {
   bulundu: "neutral", temas: "opportunity", cevap: "opportunity", gorusme: "source", teklif: "payment", kazanildi: "success", kaybedildi: "warning",

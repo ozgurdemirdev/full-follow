@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { run } from "../api/actions";
 import type { Company, Person } from "../api/types";
 
@@ -6,6 +7,26 @@ export interface Ref {
   text: string;
 }
 export const emptyRef: Ref = { id: null, text: "" };
+
+/** Adres (e-posta ya da hesap) → form alanları: dönüştürmede önceden doldurulur */
+export function fromContact(contact?: string) {
+  const c = contact?.trim() ?? "";
+  if (!c) return {};
+  if (/linkedin\.com/i.test(c)) return { linkedin: c };
+  if (/instagram\.com/i.test(c) || c.startsWith("@")) return { instagram: c };
+  if (c.includes("@")) return { email: c };
+  return { handle: c };
+}
+
+/** Fill the text of a chosen record's reference once the list has loaded (opened with an id preset) */
+export function useRefText(ref: Ref, set: (r: Ref) => void, nameOf: (id: number) => string | undefined) {
+  useEffect(() => {
+    if (ref.id && !ref.text) {
+      const name = nameOf(ref.id);
+      if (name) set({ id: ref.id, text: name });
+    }
+  }, [ref, set, nameOf]);
+}
 
 /** Firma: seçildiyse id, yazıldıysa yeni firma açar, boşsa null */
 export async function ensureCompany(ref: Ref): Promise<number | null> {

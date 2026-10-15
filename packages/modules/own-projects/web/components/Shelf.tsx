@@ -1,5 +1,5 @@
 import type { OwnProject } from "@kit/api/types";
-import { OWN_STATUS } from "@kit/lib/labels";
+import { OWN_STATUS } from "../labels";
 
 /** "Rafta": left and finished projects, each can be taken off the shelf */
 export function Shelf({ rows, onRevive }: { rows: OwnProject[]; onRevive: (p: OwnProject) => void }) {

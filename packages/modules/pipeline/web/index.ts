@@ -7,6 +7,7 @@ import { BOARD_ICON } from "@kit/components/boardIcons";
 import { FORM_ICON } from "@kit/components/forms/icons";
 import { norm } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE } from "@kit/lib/labels";
+import { CompanyOpportunities, PersonOpenDeal, PersonOpportunities } from "./components/PersonDeals";
 import { opportunityPath, OPPORTUNITY_PATH, PIPELINE_PATH } from "./paths";
 
 export default defineWebModule({
@@ -47,6 +48,12 @@ export default defineWebModule({
         : null
     ),
   }],
+  // the opportunities on a person's and a company's overlay (rows, and the open deal fact)
+  slots: {
+    "person.overlay.deals": { order: 20, Component: PersonOpportunities },
+    "person.overlay.facts": PersonOpenDeal,
+    "company.overlay.work": { order: 20, Component: CompanyOpportunities },
+  },
   invalidates: {
     offers: ["/opportunities", "/timeline", "/trash"],
     "opportunity-people": ["/opportunities", "/timeline", "/trash"],

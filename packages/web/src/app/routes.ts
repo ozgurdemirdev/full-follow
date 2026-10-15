@@ -3,11 +3,6 @@
 
 export const PATHS = {
   today: "/",
-  pipeline: "/huni",
-  opportunity: "/firsatlar",
-  people: "/kisiler",
-  companies: "/firmalar",
-  projects: "/projeler",
   timeline: "/zaman",
   report: "/rapor",
   review: "/inceleme",
@@ -15,11 +10,9 @@ export const PATHS = {
   comments: "/yorumlar",
   posts: "/paylasimlar",
   ideas: "/fikirler",
-  ownProjects: "/projelerim",
   templates: "/sablonlar",
   settings: "/ayarlar",
 };
 
 export const settingsPath = (slug: string) => `${PATHS.settings}/${slug}`;
-export const opportunityPath = (id: number) => `${PATHS.opportunity}/${id}`;
 export const timelinePath = (type: string, id: number) => `/zaman/${type}/${id}`;

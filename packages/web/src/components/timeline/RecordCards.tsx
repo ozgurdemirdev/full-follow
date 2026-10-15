@@ -6,7 +6,9 @@ import { remove, run } from "../../api/actions";
 import { qs } from "../../api/client";
 import { useQuery } from "../../api/store";
 import type { Detail, List, Opportunity, Payment, Person, Project, Task, Touch } from "../../api/types";
-import { opportunityPath, PATHS, timelinePath } from "../../app/routes";
+import { RecordLink } from "../../app/modules/RecordLink";
+import { useRegistry } from "../../app/modules/registry";
+import { PATHS, timelinePath } from "../../app/routes";
 import { openSheet } from "../../app/ui";
 import { fmtDay, tl, todayIso } from "../../lib/format";
 import {
@@ -86,11 +88,11 @@ function PersonCard({ p, touches, detail }: { p: Person; touches: Touch[]; detai
         <section className="card rise flex flex-col gap-3 p-8">
           <h2 className="m-0 text-base font-semibold">Fırsatlar</h2>
           {opps.map((o) => (
-            <Link key={o.id} href={opportunityPath(o.id)} className="inset flex items-center gap-3 px-5 py-4 text-text-primary hover:text-text-primary">
+            <RecordLink key={o.id} type="opportunity" id={o.id} className="inset flex items-center gap-3 px-5 py-4 text-text-primary hover:text-text-primary">
               <span className="min-w-0 flex-grow truncate text-base">{o.title}</span>
               <Who actor={o.created_by} />
               <Chip tone={STAGE_TONE[o.stage]}>{STAGE[o.stage]}</Chip>
-            </Link>
+            </RecordLink>
           ))}
         </section>
       ) : null}
@@ -126,7 +128,8 @@ function Referrals({ by, name, referrals }: { by: { id: number; name: string } |
 function OppCard({ o }: { o: Opportunity }) {
   const [busy, setBusy] = useState(false);
   const [, navigate] = useLocation();
-  const del = () => remove(`/opportunities/${o.id}`, o.title).then(() => navigate(PATHS.pipeline)).catch(() => {});
+  const { pagePath } = useRegistry();
+  const del = () => remove(`/opportunities/${o.id}`, o.title).then(() => navigate(pagePath("pipeline") ?? PATHS.today)).catch(() => {});
   const move = async (stage: OppStage) => {
     let reason: string | undefined;
     if (stage === "kaybedildi") {

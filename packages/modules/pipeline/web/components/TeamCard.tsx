@@ -4,7 +4,7 @@ import { usePeople } from "@kit/api/keys";
 import type { OppPerson, Opportunity } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { emptyRef, type Ref } from "@kit/forms/helpers";
-import { OPP_ROLE, OPP_ROLES } from "@kit/lib/labels";
+import { OPP_ROLE, OPP_ROLES } from "../labels";
 import { Combo } from "@kit/components/Combo";
 import { Avatar, Card, Chip } from "@kit/components/ui";
 

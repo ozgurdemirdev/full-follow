@@ -1,27 +1,9 @@
-import type { ReactNode } from "react";
-import type { NetworkSettings } from "../../api/types";
-import { AutoNumber, AutoText, ControlSkeleton } from "../../components/settings/Fields";
+import { AutoNumber, AutoText, DAY_SUFFIX, WithNetwork } from "../../components/settings/Fields";
 import { QUOTA_CHANNELS } from "../../lib/labels";
 import { channelName } from "../../lib/network";
-import { putSettings, useNetworkCfg, useSettings, type SettingRow } from "../../lib/settings";
+import { putSettings, useSettings, type SettingRow } from "../../lib/settings";
 
 const LIMIT_STEP = 5;
-const DAY_SUFFIX = " gün";
-
-type DayKey = "reply_wait_days" | "cooling_days";
-
-/** Reads the network settings and hands them to a field; renders nothing when the network module is absent */
-function WithNetwork({ children }: { children: (cfg: NetworkSettings, reload: () => Promise<unknown>) => ReactNode }) {
-  const { cfg, loading, reload } = useNetworkCfg();
-  if (!cfg) return loading ? <ControlSkeleton /> : null;
-  return <>{children(cfg, reload)}</>;
-}
-
-const DaysField = ({ field, label }: { field: DayKey; label: string }) => (
-  <WithNetwork>
-    {(cfg, reload) => <AutoNumber server={cfg[field]} save={(n) => putSettings({ [field]: n })} settle={reload} label={label} min={1} suffix={DAY_SUFFIX} />}
-  </WithNetwork>
-);
 
 /** "3, 7": days after an unanswered message when Claude prepares a follow-up draft; empty turns it off */
 const FollowupDays = () => (
@@ -81,20 +63,6 @@ function PostRefresh() {
 
 export function followRows(): SettingRow[] {
   return [
-    {
-      id: "reply_wait_days",
-      name: "Cevap bekleme süresi",
-      hint: "Bu kadar gün cevap gelmezse kişi Dashboard’da öne çıkar",
-      keywords: ["bekleme", "cevap"],
-      control: <DaysField field="reply_wait_days" label="Cevap bekleme süresi" />,
-    },
-    {
-      id: "cooling_days",
-      name: "Soğuma eşiği",
-      hint: "Bu kadar gün temas yoksa kişi soğuyor sayılır",
-      keywords: ["soğuma", "soğuyor", "temas"],
-      control: <DaysField field="cooling_days" label="Soğuma eşiği" />,
-    },
     {
       id: "followup_days",
       name: "Takip dizisi (gün)",

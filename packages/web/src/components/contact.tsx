@@ -8,6 +8,14 @@ import { CHANNEL_DOT } from "../lib/labels";
 import { channelName, profileUrl, webUrl } from "../lib/network";
 import { Chip, StatusChip, Tags, Who } from "./ui";
 
+/** A label above a value (the facts panels of the person overlay, and the contributions other modules make to them) */
+export const Fact = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-sm text-text-muted">{label}</span>
+    <span className="text-base">{children}</span>
+  </div>
+);
+
 export function Section({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
     <section className="flex flex-col gap-4">

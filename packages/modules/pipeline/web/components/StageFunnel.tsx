@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import type { Opportunity } from "@kit/api/types";
 import { pct } from "@kit/lib/format";
-import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "@kit/lib/labels";
+import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
+import { STAGE_BG } from "../labels";
 import { shortLira } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Card } from "@kit/components/ui";
