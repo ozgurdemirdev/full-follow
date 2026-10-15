@@ -19,7 +19,11 @@ const TURKISH = /[çğıöşüÇĞİÖŞÜ₺]/;
 const LETTER = /\p{L}/u;
 const TEXT_PROPS = new Set(["label", "title", "placeholder", "hint", "noun", "dest", "ok", "empty", "message", "tooltip", "sub", "aria-label", "alt", "confirm", "caption"]);
 /** call name to the index of its message argument */
-const ERROR_CALLS = new Map([["FFError", 1], ["refuse", 0]]);
+const ERROR_CALLS = new Map([
+  ["FFError", 1], ["refuse", 0],
+  // Nest HTTP exceptions: the message is the first argument (HttpException: response, then status)
+  ["BadRequestException", 0], ["NotFoundException", 0], ["ForbiddenException", 0], ["ConflictException", 0], ["UnauthorizedException", 0], ["HttpException", 0],
+]);
 const TIMER_CALLS = new Set(["setTimeout", "setInterval"]);
 
 const targets = (process.argv.slice(2).length ? process.argv.slice(2) : ["packages"]).map((p) => join(root, p));
