@@ -7,14 +7,11 @@ import { ago } from "@kit/lib/format";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { MicButton } from "@kit/components/MicButton";
 import { STREAM_SHOWN } from "@kit/lib/people";
+import { m } from "../messages";
 import { resolve, stopWaiting, Tools } from "./Stream";
 
-const HINT = {
-  touch: "Firmaya temas ekle: kiminle, ne konuştunuz",
-  claude: "Claude bu firmayla ilgili ne yapsın?",
-  reply: "Claude’a cevap yaz",
-};
-const SAVED = { touch: "Temas kaydedildi", claude: "Claude’a iletildi, cevabı burada görünecek" };
+const HINT = m.companyHints;
+const SAVED = { touch: m.shared.saved, claude: m.shared.claudeForwarded };
 
 /** The field of the board: a touch to the company; "Claude’a" mode (or a reply to a thread) writes a comment for Claude instead */
 export function CompanyComposer({ company, card, claude, replyTo, onClaude }: {
@@ -55,14 +52,14 @@ export function CompanyComposer({ company, card, claude, replyTo, onClaude }: {
     <>
       {claude ? (
         <div className="co-claude-mode">
-          Claude’a yazıyorsun
-          <button type="button" className="ppl-small" onClick={() => onClaude(false)}>Vazgeç</button>
+          {m.company.claudeMode}
+          <button type="button" className="ppl-small" onClick={() => onClaude(false)}>{m.shared.cancel}</button>
         </div>
       ) : null}
       <form className="ff-field" onSubmit={(e) => void submit(e)}>
-        <input ref={input} type="text" value={text} aria-label="Firmaya temas ekle" placeholder={hint} onChange={(e) => setText(e.target.value)} />
+        <input ref={input} type="text" value={text} aria-label={m.company.addTouch} placeholder={hint} onChange={(e) => setText(e.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
-        <button type="submit" className="ff-field-go" aria-label="Kaydet" disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} /></button>
+        <button type="submit" className="ff-field-go" aria-label={m.shared.save} disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} /></button>
       </form>
     </>
   );
@@ -77,17 +74,17 @@ function Entry({ item, pair, lead, onReply }: { item: StreamItem; pair: string; 
       <div className="flex min-w-0 flex-grow flex-col gap-2">
         <span className="co-who">
           <span>{item.who} · {ago(item.at)}</span>
-          {th?.resolved_at ? <span>· Konu kapandı</span> : null}
-          {t ? <Tools label="Temas" onEdit={() => openSheet("touch", { edit: t.id })} onDelete={() => void remove(`/touches/${t.id}`, "Temas").catch(() => {})} /> : null}
+          {th?.resolved_at ? <span>· {m.shared.resolved}</span> : null}
+          {t ? <Tools label={m.stream.touch} onEdit={() => openSheet("touch", { edit: t.id })} onDelete={() => void remove(`/touches/${t.id}`, m.stream.touch).catch(() => {})} /> : null}
         </span>
         <span className="co-text">{item.text}</span>
         {lead && t?.direction === "giden" && t.expects_reply ? (
-          <span className="flex flex-wrap gap-2"><button type="button" className="ppl-small" onClick={() => void stopWaiting(t.id)}>Cevap beklemiyorum</button></span>
+          <span className="flex flex-wrap gap-2"><button type="button" className="ppl-small" onClick={() => void stopWaiting(t.id)}>{m.stream.stopWaiting}</button></span>
         ) : null}
         {openThread ? (
           <span className="flex flex-wrap gap-2">
-            {th!.last_by === "claude" ? <button type="button" className="ppl-small is-accent" onClick={() => onReply(th!.id)}>Cevapla</button> : null}
-            <button type="button" className="ppl-small" onClick={() => void resolve(th!.id)}>Konu kapandı</button>
+            {th!.last_by === "claude" ? <button type="button" className="ppl-small is-accent" onClick={() => onReply(th!.id)}>{m.shared.reply}</button> : null}
+            <button type="button" className="ppl-small" onClick={() => void resolve(th!.id)}>{m.shared.resolved}</button>
           </span>
         ) : null}
       </div>
@@ -103,8 +100,8 @@ export function CompanyStream({ items, pair, onReply }: { items: StreamItem[]; p
   return (
     <div className="ppl-stream flex flex-col">
       {list.map((i) => <Entry key={i.key} item={i} pair={pair} lead={i.key === leadKey} onReply={onReply} />)}
-      {items.length === 0 ? <p className="m-0 border-t border-border-subtle py-6 text-base-sm text-text-muted">Burada henüz kayıt yok.</p> : null}
-      {items.length > list.length ? <button type="button" className="btn btn-ghost self-start px-0 text-base-sm" onClick={() => setAll(true)}>{items.length - list.length} kayıt daha</button> : null}
+      {items.length === 0 ? <p className="m-0 border-t border-border-subtle py-6 text-base-sm text-text-muted">{m.shared.noRecords}</p> : null}
+      {items.length > list.length ? <button type="button" className="btn btn-ghost self-start px-0 text-base-sm" onClick={() => setAll(true)}>{m.shared.moreRecords(items.length - list.length)}</button> : null}
     </div>
   );
 }

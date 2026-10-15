@@ -16,7 +16,7 @@ export function PersonStream({ person, card, chan }: { person: Person; card?: Pe
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const items = useMemo(() => (card ? buildStream(card) : []), [card]);
   const status = statusOf(person);
-  const changeMode = (m: Mode) => { setMode(m); if (m !== "claude") setReplyTo(null); };
+  const changeMode = (next: Mode) => { setMode(next); if (next !== "claude") setReplyTo(null); };
 
   return (
     <div className="ppl-col min-w-0">

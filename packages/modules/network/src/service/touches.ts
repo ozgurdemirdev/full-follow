@@ -3,6 +3,8 @@ import {
   announceTrashed, Bin, bool, COMPANY_TOUCHES, contactKey, eventLink as link, FFError, has, isColdEmail, page, parse, requireRow, resolveSubject, rows, sameSide, schema, stamp, truncate,
   writeEvent as emit, type Ctx, type ListOpts, type Q, type TouchInput, type TouchListRow, type TouchRecord,
 } from "@fullfollow/core";
+import { m } from "../messages";
+import { EVENT_SUMMARY_LENGTH, EVENT_SUMMARY_SHORT } from "./constants";
 import { suggestMatches } from "./match";
 import { adoptInput, touchCreate, touchUpdate } from "./schemas";
 import { bumpContactStatus, statusOfTouch } from "./status";
@@ -12,8 +14,8 @@ const { touches } = schema;
 /** The idea a touch is about comes from the ideas module (a link to it is refused while it is not installed) */
 function requireIdea(ctx: Ctx, id: number): void {
   const ideas = ctx.mod("ideas");
-  if (!ideas) throw new FFError("validation", `fikir verildi (#${id}) ama "ideas" modülü kurulu değil`);
-  if (!ideas.ref(id)) throw new FFError("not_found", `fikir #${id} bulunamadı`);
+  if (!ideas) throw new FFError("validation", m.error.ideaModuleMissing(id));
+  if (!ideas.ref(id)) throw new FFError("not_found", m.error.ideaNotFound(id));
 }
 
 /**
@@ -25,14 +27,14 @@ function requireIdea(ctx: Ctx, id: number): void {
 export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; effects: string[] } {
   const s = resolveSubject(ctx, d);
   let oppId = d.opportunity_id ?? null;
-  if (!s.person_id && (d.idea_id || (!s.company_id && (oppId || d.project_id)))) throw new FFError("validation", "fikir bağlantısı sadece kişiye, fırsat ve proje bağlantısı kişiye ya da firmaya yazılan temasta olur");
+  if (!s.person_id && (d.idea_id || (!s.company_id && (oppId || d.project_id)))) throw new FFError("validation", m.error.linkOwners);
   // opportunities come from the pipeline module, projects from the projects module (a link to one that is not installed is refused)
   const pipeline = ctx.mod("pipeline");
   if (oppId) {
-    if (!pipeline) throw new FFError("validation", `fırsat verildi (#${oppId}) ama "pipeline" modülü kurulu değil`);
+    if (!pipeline) throw new FFError("validation", m.error.opportunityModuleMissing(oppId));
     const o = pipeline.opportunities.ref(oppId);
-    if (!o) throw new FFError("not_found", `fırsat #${oppId} bulunamadı`);
-    if (!sameSide(ctx, o.person_id, s)) throw new FFError("validation", `fırsat #${oppId} bu kişiye ya da firmasına ait değil`);
+    if (!o) throw new FFError("not_found", m.error.opportunityNotFound(oppId));
+    if (!sameSide(ctx, o.person_id, s)) throw new FFError("validation", m.error.opportunityNotTheirs(oppId));
   } else if (s.person_id && !d.project_id) {
     // proje hakkındaki temas satış fırsatını ilerletmesin; sadece serbest temas tek açık fırsata bağlanır
     const open = pipeline?.opportunities.openIdsOf(s.person_id) ?? [];
@@ -40,10 +42,10 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
   }
   if (d.project_id) {
     const projects = ctx.mod("projects");
-    if (!projects) throw new FFError("validation", `proje verildi (#${d.project_id}) ama "projects" modülü kurulu değil`);
+    if (!projects) throw new FFError("validation", m.error.projectModuleMissing(d.project_id));
     const p = projects.projects.ref(d.project_id);
-    if (!p) throw new FFError("not_found", `proje #${d.project_id} bulunamadı`);
-    if (!sameSide(ctx, p.person_id, s)) throw new FFError("validation", `proje #${d.project_id} bu kişiye ya da firmasına ait değil`);
+    if (!p) throw new FFError("not_found", m.error.projectNotFound(d.project_id));
+    if (!sameSide(ctx, p.person_id, s)) throw new FFError("validation", m.error.projectNotTheirs(d.project_id));
   }
   if (d.idea_id) requireIdea(ctx, d.idea_id);
 
@@ -59,7 +61,7 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
   const who = s.person_id ? "" : s.company_id ? ` → ${requireRow(ctx, "companies", s.company_id).name}` : ` → ${s.contact}`;
   emit(q, ctx, {
     type: "touch.created", ...link(ctx, { person_id: s.person_id, opportunity_id: oppId, project_id: d.project_id }),
-    summary: `${d.direction === "giden" ? "Giden" : "Gelen"} ${d.kind} (${d.channel})${who}: ${truncate(d.summary, 60)}`,
+    summary: m.event.created(d.direction === "giden" ? m.event.outgoing : m.event.incoming, d.kind, d.channel, who, truncate(d.summary, EVENT_SUMMARY_LENGTH)),
     data: { touch_id: r.id, channel: d.channel, direction: d.direction, company_id: s.company_id ?? undefined },
   });
 
@@ -91,13 +93,13 @@ function present(ctx: Ctx, list: Selected[]): TouchListRow[] {
 
 /** A loose touch joins the person or company its address belongs to: the status of the record moves like a new touch's, an event is written, the drafts of that address follow */
 function moveLoose(q: Q, ctx: Ctx, cur: TouchRecord, owner: { person_id?: number; company_id?: number }): string[] {
-  if (!isLoose(cur)) throw new FFError("rule", `temas #${cur.id} zaten bir kişiye ya da firmaya bağlı`);
+  if (!isLoose(cur)) throw new FFError("rule", m.error.alreadyLinked(cur.id));
   const personal = owner.person_id !== undefined;
   const target = personal ? requireRow(ctx, "people", owner.person_id!) : requireRow(ctx, "companies", owner.company_id!);
   q.update(touches).set({ ...owner, updated_at: ctx.clock.now() }).where(eq(touches.id, cur.id)).run();
   emit(q, ctx, {
     type: "touch.adopted", ...link(ctx, { person_id: owner.person_id }),
-    summary: `Temas ${personal ? "kişiye" : "firmaya"} bağlandı: ${target.name} (${cur.contact}): ${truncate(cur.summary, 50)}`,
+    summary: m.event.adopted(personal, target.name, cur.contact, truncate(cur.summary, EVENT_SUMMARY_SHORT)),
     data: { touch_id: cur.id, contact: cur.contact, ...owner },
   });
   if (cur.contact_key) ctx.mod("drafts")?.adoptLoose(owner, [cur.contact_key]);
@@ -119,17 +121,17 @@ export function touchesService(ctx: Ctx) {
     const owner = person_id ? { person_id } : company_id ? { company_id } : null;
     return ctx.db.transaction((tx) => {
       let cur = requireRow<TouchRecord>(ctx, "touches", id);
-      if (d.expects_reply && cur.direction !== "giden") throw new FFError("validation", "sadece giden temas cevap bekleyebilir");
+      if (d.expects_reply && cur.direction !== "giden") throw new FFError("validation", m.error.onlyOutgoingWaits);
       const moved = owner ? moveLoose(tx, ctx, cur, owner) : [];
       if (owner) cur = requireRow<TouchRecord>(ctx, "touches", id);
       if (!Object.keys(d).length) return { row: cur, effects: moved };
       if (d.idea_id) {
-        if (!cur.person_id) throw new FFError("validation", "fikir bağlantısı sadece kişiye yazılan temasta olur");
+        if (!cur.person_id) throw new FFError("validation", m.error.ideaOnlyPerson);
         requireIdea(ctx, d.idea_id);
       }
       tx.update(touches).set({ ...d, updated_at: ctx.clock.now() }).where(eq(touches.id, id)).run();
-      const what = d.expects_reply === false ? "cevap beklenmiyor" : d.expects_reply ? "cevap bekleniyor" : "düzenlendi";
-      emit(tx, ctx, { type: "touch.updated", ...link(ctx, cur), summary: `Temas ${what}: ${truncate(d.summary ?? cur.summary, 50)}`, data: { touch_id: id } });
+      const what = d.expects_reply === false ? m.event.noReply : d.expects_reply ? m.event.waitsReply : m.event.edited;
+      emit(tx, ctx, { type: "touch.updated", ...link(ctx, cur), summary: m.event.updated(what, truncate(d.summary ?? cur.summary, EVENT_SUMMARY_SHORT)), data: { touch_id: id } });
       const row = requireRow<TouchRecord>(ctx, "touches", id);
       const effects = [...moved, ...ctx.emit("touch.updated", { touch: row, changes: d })];
       if (d.kind) effects.push(...bumpContactStatus(ctx, cur, statusOfTouch({ direction: cur.direction, kind: d.kind })));
@@ -150,12 +152,12 @@ export function touchesService(ctx: Ctx) {
       const effects: string[] = [];
       let adopted = 0;
       for (const t of loose) {
-        const m = matches.get(t.contact_key!);
-        if (!m) continue;
-        effects.push(...moveLoose(tx, ctx, t, m.type === "person" ? { person_id: m.id } : { company_id: m.id }));
+        const match = matches.get(t.contact_key!);
+        if (!match) continue;
+        effects.push(...moveLoose(tx, ctx, t, match.type === "person" ? { person_id: match.id } : { company_id: match.id }));
         adopted++;
       }
-      return { adopted, effects: adopted ? [`${adopted} temas bağlandı`, ...effects] : effects };
+      return { adopted, effects: adopted ? [m.adopted(adopted), ...effects] : effects };
     });
   }
 
@@ -166,8 +168,8 @@ export function touchesService(ctx: Ctx) {
       // the ideas module empties the interest rows that point at the touch
       announceTrashed(ctx, bin, "touch", id);
       bin.take("touches", "id = ?", id);
-      bin.commit(tx, "touch", id, `Temas: ${truncate(cur.summary, 60)}`);
-      emit(tx, ctx, { type: "touch.deleted", ...link(ctx, cur), summary: `Temas silindi: ${truncate(cur.summary, 60)}`, data: { touch_id: id } });
+      bin.commit(tx, "touch", id, m.trashTouch(truncate(cur.summary, EVENT_SUMMARY_LENGTH)));
+      emit(tx, ctx, { type: "touch.deleted", ...link(ctx, cur), summary: m.event.deleted(truncate(cur.summary, EVENT_SUMMARY_LENGTH)), data: { touch_id: id } });
       return { effects: [] as string[], trash: { type: "touch", id } };
     });
   }

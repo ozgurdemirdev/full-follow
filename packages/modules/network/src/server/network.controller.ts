@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Query } from "@nestjs/common";
 import { APP_TOKEN, type Core } from "@fullfollow/core";
+import { NETWORK_HTTP_LIMIT } from "../service/constants";
 
 /** The network views: who waits for an answer, who went cold, and the weekly and chart numbers */
 @Controller("api")
@@ -13,7 +14,7 @@ export class NetworkController {
   /** Network: cevap bekleyenler ve soğuyan bağlantılar */
   @Get("network")
   network(@Query("limit") limit?: string) {
-    return this.net.lists(limit ? Number(limit) : 50);
+    return this.net.lists(limit ? Number(limit) : NETWORK_HTTP_LIMIT);
   }
 
   /** Haftalık temas sayıları (bu hafta / geçen hafta, kanal kırılımı) */

@@ -4,15 +4,16 @@ import type { Person } from "@kit/api/types";
 import { defaultChannel } from "@kit/lib/people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { MicButton } from "@kit/components/MicButton";
+import { m } from "../messages";
 
 export type Mode = "touch" | "note" | "claude";
 const MODES: { key: Mode; label: string; hint: string }[] = [
-  { key: "touch", label: "Temas", hint: "Ne konuştunuz? Örn. aradım, cuma dönecek" },
-  { key: "note", label: "Not", hint: "Kendine not: ne seviyor, neye dikkat" },
-  { key: "claude", label: "Claude’a", hint: "Claude bu kişiyle ilgili ne yapsın?" },
+  { key: "touch", label: m.composerModes.touch, hint: m.composerHints.touch },
+  { key: "note", label: m.composerModes.note, hint: m.composerHints.note },
+  { key: "claude", label: m.composerModes.claude, hint: m.composerHints.claude },
 ];
-const DIRECTIONS = [{ key: "giden", label: "Ben yazdım" }, { key: "gelen", label: "O yazdı" }] as const;
-const SAVED: Record<Mode, string> = { touch: "Temas kaydedildi", note: "Not eklendi", claude: "Claude’a iletildi, cevabı burada görünecek" };
+const DIRECTIONS = [{ key: "giden", label: m.composerDirections.giden }, { key: "gelen", label: m.composerDirections.gelen }] as const;
+const SAVED: Record<Mode, string> = { touch: m.composerSaved.touch, note: m.composerSaved.note, claude: m.shared.claudeForwarded };
 
 /** Add to the stream: a touch (with its direction), a note, or a comment for Claude (a reply when a thread is picked) */
 export function Composer({ person, mode, onMode, replyTo, onSent }: {
@@ -26,7 +27,7 @@ export function Composer({ person, mode, onMode, replyTo, onSent }: {
   const [direction, setDirection] = useState<(typeof DIRECTIONS)[number]["key"]>("giden");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const hint = MODES.find((m) => m.key === mode)!.hint;
+  const hint = MODES.find((x) => x.key === mode)!.hint;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -48,9 +49,9 @@ export function Composer({ person, mode, onMode, replyTo, onSent }: {
 
   return (
     <div className="ppl-panel is-compact">
-      <div className="ppl-modes" role="radiogroup" aria-label="Ne ekliyorsun">
-        {MODES.map((m) => (
-          <button key={m.key} type="button" role="radio" className="ppl-mode" aria-checked={mode === m.key} onClick={() => onMode(m.key)}>{m.label}</button>
+      <div className="ppl-modes" role="radiogroup" aria-label={m.composer.whatAdding}>
+        {MODES.map((x) => (
+          <button key={x.key} type="button" role="radio" className="ppl-mode" aria-checked={mode === x.key} onClick={() => onMode(x.key)}>{x.label}</button>
         ))}
         {mode === "touch" ? (
           <>
@@ -64,7 +65,7 @@ export function Composer({ person, mode, onMode, replyTo, onSent }: {
       <form className="ff-field" onSubmit={(e) => void submit(e)}>
         <input type="text" value={text} aria-label={hint} placeholder={hint} onChange={(e) => setText(e.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
-        <button type="submit" className="ff-field-go" aria-label="Kaydet" disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} /></button>
+        <button type="submit" className="ff-field-go" aria-label={m.shared.save} disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} /></button>
       </form>
     </div>
   );

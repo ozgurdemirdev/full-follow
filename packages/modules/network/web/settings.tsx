@@ -1,5 +1,6 @@
 import { AutoNumber, ControlSkeleton, DAY_SUFFIX, WithNetworkCfg } from "@kit/components/settings/Fields";
 import { putSettings, useNetworkCfg, type SettingRow } from "@kit/lib/settings";
+import { m } from "./messages";
 
 const TARGET_STEP = 5;
 
@@ -15,17 +16,17 @@ const DaysField = ({ field, label }: { field: DayKey; label: string }) => (
 export const followWaitRows = (): SettingRow[] => [
   {
     id: "reply_wait_days",
-    name: "Cevap bekleme süresi",
-    hint: "Bu kadar gün cevap gelmezse kişi Dashboard’da öne çıkar",
-    keywords: ["bekleme", "cevap"],
-    control: <DaysField field="reply_wait_days" label="Cevap bekleme süresi" />,
+    name: m.settings.replyWait,
+    hint: m.settings.replyWaitHint,
+    keywords: m.settings.replyWaitKeywords.split(","),
+    control: <DaysField field="reply_wait_days" label={m.settings.replyWait} />,
   },
   {
     id: "cooling_days",
-    name: "Soğuma eşiği",
-    hint: "Bu kadar gün temas yoksa kişi soğuyor sayılır",
-    keywords: ["soğuma", "soğuyor", "temas"],
-    control: <DaysField field="cooling_days" label="Soğuma eşiği" />,
+    name: m.settings.cooling,
+    hint: m.settings.coolingHint,
+    keywords: m.settings.coolingKeywords.split(","),
+    control: <DaysField field="cooling_days" label={m.settings.cooling} />,
   },
 ];
 
@@ -33,14 +34,14 @@ export const followWaitRows = (): SettingRow[] => [
 function WeeklyTarget() {
   const { cfg, loading, reload } = useNetworkCfg();
   if (!cfg) return loading ? <ControlSkeleton /> : null;
-  return <AutoNumber server={cfg.weekly_target || null} save={(n) => putSettings({ weekly_target: n })} settle={reload} label="Haftalık giden mesaj hedefi" nullable min={0} step={TARGET_STEP} placeholder="hedef yok" />;
+  return <AutoNumber server={cfg.weekly_target || null} save={(n) => putSettings({ weekly_target: n })} settle={reload} label={m.settings.target} nullable min={0} step={TARGET_STEP} placeholder={m.settings.targetPlaceholder} />;
 }
 
 /** The weekly target row of the business category */
 export const weeklyTargetRows = (): SettingRow[] => [{
   id: "weekly-target",
-  name: "Haftalık giden mesaj hedefi",
-  hint: "Dashboard’da bu haftanın ilerlemesi görünür. Boş ya da 0 = hedef yok",
-  keywords: ["hedef", "linkedin", "mesaj"],
+  name: m.settings.target,
+  hint: m.settings.targetHint,
+  keywords: m.settings.targetKeywords.split(","),
   control: <WeeklyTarget />,
 }];

@@ -1,5 +1,7 @@
 // Dashboard grafikleri: günlük / haftalık / aylık temas sayıları, yeni kayıtlar, temas durumu dağılımı
 import { addDays, CHANNELS, CONTACT_STATUSES, dayOf, FFError, rows, weekStart, type ActivityBucket, type ActivityReport, type Ctx } from "@fullfollow/core";
+import { m } from "../messages";
+import { WEEK_DAYS } from "./constants";
 
 export const ACTIVITY_PERIODS = ["day", "week", "month"] as const;
 export type ActivityPeriod = (typeof ACTIVITY_PERIODS)[number];
@@ -18,14 +20,14 @@ function addMonths(ym01: string, n: number): string {
  * Gün sınırları yerel saate göre (dates.dayOf).
  */
 export function activity(ctx: Ctx, period: string = "week"): ActivityReport {
-  if (!(ACTIVITY_PERIODS as readonly string[]).includes(period)) throw new FFError("validation", `dönem: ${ACTIVITY_PERIODS.join(", ")}`);
+  if (!(ACTIVITY_PERIODS as readonly string[]).includes(period)) throw new FFError("validation", m.period(ACTIVITY_PERIODS.join(", ")));
   const p = period as ActivityPeriod;
   const today = ctx.clock.today();
   const n = BUCKETS[p];
   const starts: string[] = [];
   const cur = p === "day" ? today : p === "week" ? weekStart(today) : monthStart(today);
-  for (let i = n - 1; i >= 0; i--) starts.push(p === "day" ? addDays(cur, -i) : p === "week" ? addDays(cur, -7 * i) : addMonths(cur, -i));
-  const next = (s: string) => (p === "day" ? addDays(s, 1) : p === "week" ? addDays(s, 7) : addMonths(s, 1));
+  for (let i = n - 1; i >= 0; i--) starts.push(p === "day" ? addDays(cur, -i) : p === "week" ? addDays(cur, -WEEK_DAYS * i) : addMonths(cur, -i));
+  const next = (s: string) => (p === "day" ? addDays(s, 1) : p === "week" ? addDays(s, WEEK_DAYS) : addMonths(s, 1));
   const buckets: ActivityBucket[] = starts.map((s) => ({ start: s, end: addDays(next(s), -1), sent: 0, replies: 0, meetings: 0, new_people: 0, new_companies: 0, drafts: 0, offers: 0 }));
   const indexOf = (day: string) => {
     for (let i = buckets.length - 1; i >= 0; i--) if (day >= buckets[i].start) return day <= buckets[i].end ? i : -1;

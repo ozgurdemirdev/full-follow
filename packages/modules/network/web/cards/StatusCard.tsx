@@ -5,12 +5,13 @@ import { useRegistry } from "@kit/app/modules/registry";
 import { CONTACT_STATUS } from "@kit/lib/labels";
 import { STATUS_DOT } from "../labels";
 import { Card } from "@kit/components/ui";
+import { m } from "../messages";
 
 const PERCENT = 100;
 /** `page` is the route id of the list the group links to (no link when no module has that page) */
 const GROUPS = [
-  { key: "companies", label: "Firmalar", page: "companies" },
-  { key: "people", label: "Kişiler", page: "people" },
+  { key: "companies", label: m.shared.companies, page: "companies" },
+  { key: "people", label: m.shared.people, page: "people" },
 ] as const;
 
 /** "Temas durumu": firms and people per contact status, a stacked bar and a legend each (link to the list) */
@@ -19,7 +20,7 @@ export function StatusCard() {
   const { pagePath } = useRegistry();
   if (!q.data) return null;
   return (
-    <Card title="Temas durumu" className="dash-gap-7 rise">
+    <Card title={m.status.title} className="dash-gap-7 rise">
       {GROUPS.map((g) => {
         const list = q.data!.status[g.key].filter((x) => x.count);
         const total = list.reduce((s, x) => s + x.count, 0);
@@ -37,7 +38,7 @@ export function StatusCard() {
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
               {list.map((x) => <span key={x.status} className="inline-flex items-center gap-3"><span className={`dash-dot ${STATUS_DOT[x.status]}`} />{CONTACT_STATUS[x.status]} {x.count}</span>)}
-              {!total ? <span className="text-text-muted">Henüz kayıt yok</span> : null}
+              {!total ? <span className="text-text-muted">{m.status.none}</span> : null}
             </div>
           </>
         );

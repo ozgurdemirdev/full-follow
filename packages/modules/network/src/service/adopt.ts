@@ -1,4 +1,5 @@
 import { rows, type Ctx } from "@fullfollow/core";
+import { m } from "../messages";
 import { bumpContactStatus, statusOfTouch } from "./status";
 
 /**
@@ -18,5 +19,5 @@ export function adoptLoose(ctx: Ctx, owner: { person_id?: number; company_id?: n
   }
   // the drafts saved with only this address join too (the drafts module owns them)
   ctx.mod("drafts")?.adoptLoose(owner, [...wanted]);
-  return loose.length ? [`${loose.length} temas bağlandı`] : [];
+  return loose.length ? [m.adopted(loose.length)] : [];
 }

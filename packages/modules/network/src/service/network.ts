@@ -1,7 +1,8 @@
 import {
-  addDays, CHANNELS, CONNECTION_TAGS, COMPANY_TOUCHES, dayOf, daysBetween, labelFields, networkSettings, RHYTHM_WEEKS, rows, sectorsOf, tagsOf, weekStart,
+  addDays, CHANNELS, CONNECTION_TAGS, COMPANY_TOUCHES, dayOf, daysBetween, labelFields, LOCALE, networkSettings, RHYTHM_WEEKS, rows, sectorsOf, tagsOf, weekStart,
   type ChannelSummary, type Ctx, type NetworkLists, type PersonNet, type WeekStats,
 } from "@fullfollow/core";
+import { NETWORK_LIST_LIMIT, SILENT_OFFER_DAYS, WEEK_DAYS } from "./constants";
 
 /**
  * Tüm kişilerin temas durumu tek sorguda (kişi sayısı küçük; listeler bunu kullanır).
@@ -60,13 +61,13 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
  * the current week last. One grouped query for everyone; people without touches are not in the map.
  */
 export function weeklyRhythm(ctx: Ctx): Map<number, number[]> {
-  const first = addDays(weekStart(ctx.clock.today()), -7 * (RHYTHM_WEEKS - 1));
+  const first = addDays(weekStart(ctx.clock.today()), -WEEK_DAYS * (RHYTHM_WEEKS - 1));
   // one day wider than the window: the day is cut by local time below
   const list = rows<{ person_id: number; happened_at: string; n: number }>(ctx,
     "SELECT person_id, happened_at, COUNT(*) AS n FROM touches WHERE person_id IS NOT NULL AND happened_at >= ? GROUP BY person_id, happened_at", addDays(first, -1));
   const out = new Map<number, number[]>();
   for (const t of list) {
-    const week = Math.floor(daysBetween(first, dayOf(t.happened_at)) / 7);
+    const week = Math.floor(daysBetween(first, dayOf(t.happened_at)) / WEEK_DAYS);
     if (week < 0 || week >= RHYTHM_WEEKS) continue;
     const counts = out.get(t.person_id) ?? new Array<number>(RHYTHM_WEEKS).fill(0);
     counts[week] += t.n;
@@ -96,9 +97,9 @@ export function companyChannelSummary(ctx: Ctx, companyId: number): ChannelSumma
 export function weekStats(ctx: Ctx, ref = ctx.clock.today()): WeekStats {
   const today = ctx.clock.today();
   const ws = weekStart(ref);
-  const prev = addDays(ws, -7);
+  const prev = addDays(ws, -WEEK_DAYS);
   // gelecek günlerin temasları sayılmaz
-  const until = addDays(ws, 6) < today ? addDays(ws, 6) : today;
+  const until = addDays(ws, WEEK_DAYS - 1) < today ? addDays(ws, WEEK_DAYS - 1) : today;
   // UTC/yerel farkı için bir gün geniş çek, gün yerel saate göre ayrılır
   const list = rows<{ happened_at: string; direction: string; kind: string; channel: string }>(ctx,
     "SELECT happened_at, direction, kind, channel FROM touches WHERE happened_at >= ?", addDays(prev, -1));
@@ -133,7 +134,7 @@ export function weekStats(ctx: Ctx, ref = ctx.clock.today()): WeekStats {
     last_week: { ...last, reply_rate: rate(last), new_people: newRecords("people", prev, addDays(ws, -1)), new_companies: newRecords("companies", prev, addDays(ws, -1)) },
     by_channel: CHANNELS.filter((c) => by.has(c)).map((c) => ({ channel: c, ...by.get(c)! })),
     open_offers: offers.length,
-    silent_offers: offers.filter((o) => daysBetween(dayOf(o.updated_at), today) >= 3).length,
+    silent_offers: offers.filter((o) => daysBetween(dayOf(o.updated_at), today) >= SILENT_OFFER_DAYS).length,
   };
 }
 
@@ -142,7 +143,7 @@ export function weekToday(ctx: Ctx) {
   const date = ctx.clock.today();
   const day = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7;
   const start = addDays(date, -day);
-  const prev = addDays(start, -7);
+  const prev = addDays(start, -WEEK_DAYS);
   const t = rows<{ sent: number; sent_prev: number; replies: number; meetings: number }>(ctx, `SELECT
       SUM(direction = 'giden' AND substr(happened_at, 1, 10) >= ?) AS sent,
       SUM(direction = 'giden' AND substr(happened_at, 1, 10) < ?) AS sent_prev,
@@ -151,7 +152,7 @@ export function weekToday(ctx: Ctx) {
     FROM touches WHERE substr(happened_at, 1, 10) >= ?`, start, start, start, start, prev)[0];
   // open offers come from the pipeline module (none without it); a silent one was last touched three days ago or earlier
   const offerTimes = ctx.mod("pipeline")?.openOfferTimes() ?? [];
-  const silentBefore = addDays(date, -3);
+  const silentBefore = addDays(date, -SILENT_OFFER_DAYS);
   const w = weekStats(ctx);
   return {
     start, sent: t?.sent ?? 0, sent_prev: t?.sent_prev ?? 0, replies: t?.replies ?? 0, meetings: t?.meetings ?? 0,
@@ -161,15 +162,15 @@ export function weekToday(ctx: Ctx) {
 }
 
 /** Bugün ekranının network bölümleri: cevap bekleyenler ve soğuyanlar */
-export function networkLists(ctx: Ctx, limit = 10): NetworkLists {
+export function networkLists(ctx: Ctx, limit = NETWORK_LIST_LIMIT): NetworkLists {
   const stats = networkStats(ctx);
   const tags = tagsOf(ctx, "person");
   const sectors = sectorsOf(ctx, "person");
   const people = rows(ctx, `SELECT p.id, p.name, p.company_id, p.contact_status, p.next_follow_up_at, p.created_by, c.name AS company_name
     FROM people p LEFT JOIN companies c ON c.id = p.company_id`)
     .map((p) => ({ ...p, ...labelFields(tags.get(p.id), sectors.get(p.id)), ...stats.get(p.id)! }));
-  const awaiting = people.filter((p) => p.awaiting).sort((a, b) => b.awaiting!.days - a.awaiting!.days || a.name.localeCompare(b.name, "tr"));
-  const cooling = people.filter((p) => p.cooling).sort((a, b) => b.days_since - a.days_since || a.name.localeCompare(b.name, "tr"));
+  const awaiting = people.filter((p) => p.awaiting).sort((a, b) => b.awaiting!.days - a.awaiting!.days || a.name.localeCompare(b.name, LOCALE));
+  const cooling = people.filter((p) => p.cooling).sort((a, b) => b.days_since - a.days_since || a.name.localeCompare(b.name, LOCALE));
   const cut = <T>(l: T[]) => ({ rows: l.slice(0, limit), total: l.length });
   return { awaiting: cut(awaiting), cooling: cut(cooling), settings: networkSettings(ctx) };
 }

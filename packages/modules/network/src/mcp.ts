@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { resolveRef, type McpDef } from "@fullfollow/core";
+import { m } from "./messages";
+import { MCP_OUTCOME_LENGTH, MCP_SUMMARY_LENGTH } from "./service/constants";
 
 const idOrName = z.union([z.number(), z.string()]);
 type Row = Record<string, any>;
@@ -10,17 +12,17 @@ type Subject = { person?: string | number; company?: string | number; contact?: 
 export const mcp: McpDef = {
   entities: {
     touch: {
-      kind: "temas",
+      kind: m.noun,
       line: (r, f) => f.join(
-        `#${r.id} ${f.d(r.happened_at)} ${r.direction} ${f.label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && "firma", f.cut(r.summary, 60),
-        r.outcome && `→ ${f.cut(r.outcome, 30)}`, r.expects_reply && "cevap bekler",
-        r.suggested_match && `öneri: ${r.suggested_match.type === "person" ? "kişi" : "firma"} #${r.suggested_match.id} ${r.suggested_match.name}`,
+        `#${r.id} ${f.d(r.happened_at)} ${r.direction} ${f.label(r.channel)}`, r.to_name ?? r.person_name, !r.person_id && r.company_id && m.mcp.company, f.cut(r.summary, MCP_SUMMARY_LENGTH),
+        r.outcome && `→ ${f.cut(r.outcome, MCP_OUTCOME_LENGTH)}`, r.expects_reply && m.mcp.waitsReply,
+        r.suggested_match && m.mcp.suggestion(r.suggested_match.type === "person" ? m.mcp.person : m.mcp.company, r.suggested_match.id, r.suggested_match.name),
       ),
     },
   },
   relations: { touches: "touch" },
   relationLines: {
-    channels: (rows, f) => `kanallar: ${rows.map((c) => `${f.label(c.channel)} ${c.out_count}→/${c.in_count}← son ${f.d(c.last_at)}${c.awaiting ? " (cevap bekliyor)" : ""}`).join(" · ")}`,
+    channels: (rows, f) => m.mcp.channels(rows.map((c) => m.mcp.channelItem(f.label(c.channel), c.out_count, c.in_count, f.d(c.last_at), !!c.awaiting)).join(" · ")),
   },
   today: [
     // the week line comes first (before the daily quota of the drafts module)
@@ -30,21 +32,21 @@ export const mcp: McpDef = {
       render: (t, f) => {
         const w = t.week;
         const target = t.network?.settings?.weekly_target;
-        return w ? `Hafta: ${w.sent}${target ? `/${target} hedef` : ""} giden (geçen ${w.sent_prev}) · ${w.replies} dönüş · ${w.meetings} görüşme${w.by_channel?.length ? ` · ${w.by_channel.map((c: Row) => `${f.label(c.channel)} ${c.sent}/${c.replies}`).join(", ")}` : ""}` : "";
+        return w ? m.mcp.week(w.sent, target, w.sent_prev, w.replies, w.meetings, w.by_channel?.length ? w.by_channel.map((c: Row) => `${f.label(c.channel)} ${c.sent}/${c.replies}`).join(", ") : null) : "";
       },
     },
-    { at: 200, render: (t, f) => (t.network ? f.section("Cevap bekleyen", "person", t.network.awaiting) : "") },
-    { at: 800, render: (t, f) => (t.network ? f.section("Soğuyan bağlantı", "person", t.network.cooling) : "") },
+    { at: 200, render: (t, f) => (t.network ? f.section(m.mcp.awaitingSection, "person", t.network.awaiting) : "") },
+    { at: 800, render: (t, f) => (t.network ? f.section(m.mcp.coolingSection, "person", t.network.cooling) : "") },
   ],
   docs: {
     today: [
-      { at: 110, text: "cevap bekleyenler, " },
-      { at: 200, text: "soğuyanlar, " },
-      { at: 310, text: ", haftalık sayılar" },
+      { at: 110, text: m.mcp.todayAwaitingDoc },
+      { at: 200, text: m.mcp.todayCoolingDoc },
+      { at: 310, text: m.mcp.todayWeekDoc },
     ],
     find: [
       { at: 210, text: "|touch" },
-      { at: 430, text: "{person_id|company_id:3}(touch,note) {loose:true}(touch: kişisiz adres) " },
+      { at: 430, text: m.mcp.findDoc },
     ],
     get: [
       { at: 110, text: "touches|" },
@@ -52,12 +54,12 @@ export const mcp: McpDef = {
       { at: 310, text: "touches," },
       { at: 430, text: ",touches" },
     ],
-    save: [{ at: 145, text: "touch id + {expects_reply:false} cevap beklemeyi kapatır; id + {person_id|company_id} kişisiz adres temasını o kayda bağlar (find loose çıktısındaki öneri). " }],
-    report: [{ at: 100, text: "Haftalık temas sayıları, " }],
+    save: [{ at: 145, text: m.mcp.saveDoc }],
+    report: [{ at: 100, text: m.mcp.reportDoc }],
   },
   tools: [{
     name: "touch",
-    description: "Temas kaydı (fırsat gerekmez); muhatap person, company ya da sadece contact (kayıtsız adres/hesap: info@firma.com, @hesap; o adresle kişi/firma açılınca ona bağlanır). Kişi/firma temas durumu ilerler, fırsat varsa aşama ilerler. channel: email|instagram|linkedin|telefon|yuz_yuze|whatsapp|r10|diger. direction: giden|gelen. kind: mesaj|arama|gorusme. Giden mesaj cevap bekler. at: ISO ya da bugün/dün. idea: fikir anlatıldıysa.",
+    description: m.mcp.touchDescription,
     input: {
       person: idOrName.optional(), company: idOrName.optional(), contact: z.string().optional(), channel: z.string(), direction: z.string(), summary: z.string(),
       opp: idOrName.optional(), project: idOrName.optional(), at: z.string().optional(),
@@ -74,7 +76,7 @@ export const mcp: McpDef = {
         happened_at: a.at, kind: a.kind, outcome: a.outcome,
         idea_id: a.idea !== undefined ? resolveRef(ctx, "idea", a.idea) : undefined,
       });
-      return f.ok("temas", r.row.id, r.effects);
+      return f.ok(m.noun, r.row.id, r.effects);
     },
   }],
 };

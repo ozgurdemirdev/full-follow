@@ -9,12 +9,13 @@ import { ComboField } from "@kit/components/forms/fields-rich";
 import { STAGE } from "@kit/lib/labels";
 import { ensureCompany, ensurePerson, localToIso, nowLocal, toLocal, useRefText, type Ref } from "@kit/forms/helpers";
 import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { m } from "../messages";
 
 type Target = "person" | "company" | "contact";
-const TARGETS = [{ value: "person" as const, label: "Kişi" }, { value: "company" as const, label: "Firma" }, { value: "contact" as const, label: "Sadece adres" }];
-const DIRECTIONS = [{ value: "giden" as const, label: "Giden" }, { value: "gelen" as const, label: "Gelen" }];
-const KINDS = [{ value: "mesaj" as const, label: "Mesaj" }, { value: "arama" as const, label: "Arama" }, { value: "gorusme" as const, label: "Görüşme" }];
-const WAIT_HINT = "Cevap gelmezse takip zamanında Bugün dokun listesine düşer";
+const TARGETS = [{ value: "person" as const, label: m.formTargets.person }, { value: "company" as const, label: m.formTargets.company }, { value: "contact" as const, label: m.formTargets.contact }];
+const DIRECTIONS = [{ value: "giden" as const, label: m.formDirections.giden }, { value: "gelen" as const, label: m.formDirections.gelen }];
+const KINDS = [{ value: "mesaj" as const, label: m.formKinds.mesaj }, { value: "arama" as const, label: m.formKinds.arama }, { value: "gorusme" as const, label: m.formKinds.gorusme }];
+const WAIT_HINT = m.form.waitHint;
 
 export function TouchForm(p: FormProps) {
   const pre = p.sheet.preset;
@@ -52,7 +53,7 @@ function TouchCreate(p: FormProps) {
   const submit = useSubmit(
     p,
     async () => {
-      const subject = target === "person" ? { person_id: await ensurePerson(person, { tags: ["aday"] }) }
+      const subject = target === "person" ? { person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }) }
         : target === "company" ? { company_id: await ensureCompany(company) }
         : { contact: contact.trim() };
       await saveRecord(p, null, {
@@ -65,40 +66,40 @@ function TouchCreate(p: FormProps) {
       });
     },
     () => errorsOf({
-      who: !(target === "person" ? person.text : target === "company" ? company.text : contact).trim() && "Kime yazdığını seç",
-      summary: !summary.trim() && "Ne konuşulduğunu yaz",
+      who: !(target === "person" ? person.text : target === "company" ? company.text : contact).trim() && m.form.pickTarget,
+      summary: !summary.trim() && m.form.summaryRequired,
     }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <SegField label="Kime" options={TARGETS} value={target} onChange={setTarget} />
+      <SegField label={m.form.to} options={TARGETS} value={target} onChange={setTarget} />
       {target === "person" ? (
-        <ComboField name="who" label="Kişi" req value={person} onChange={(v) => (setPerson(v), setOppId(""))} options={personOptions} placeholder="Kişi ara" newLabel="Yeni kişi" />
+        <ComboField name="who" label={m.shared.person} req value={person} onChange={(v) => (setPerson(v), setOppId(""))} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
       ) : target === "company" ? (
-        <ComboField name="who" label="Firma" req value={company} onChange={setCompany} options={companyOptions} placeholder="Firma ara ya da yeni yaz" newLabel="Yeni firma" />
+        <ComboField name="who" label={m.shared.company} req value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
       ) : (
-        <TextField name="who" label="E-posta adresi ya da hesap" req value={contact} onChange={setContact} placeholder="info@firma.com ya da @hesap"
-          hint="Cevap gelince tek tıkla kişiye ya da firmaya dönüştürürsün; o adresle kayıt açılınca temas ona bağlanır." />
+        <TextField name="who" label={m.form.contact} req value={contact} onChange={setContact} placeholder={m.form.contactPlaceholder}
+          hint={m.form.contactHint} />
       )}
       {personOpps.length ? (
         <ChipsField
-          label="Fırsat"
-          hint="Boşsa tek açık fırsat varsa ona bağlanır"
+          label={m.form.opportunity}
+          hint={m.form.opportunityHint}
           clearable
           value={oppId}
           onChange={setOppId}
           options={personOpps.map((o) => ({ value: String(o.id), label: `${o.title} · ${STAGE[o.stage]}` }))}
         />
       ) : null}
-      <ChipsField label="Kanal" value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
-      <SegField label="Yön" half options={DIRECTIONS} value={direction} onChange={setDirection} />
-      <DateField label="Tarih" half quick withTime value={at} onChange={setAt} />
-      <SegField label="Tür" options={KINDS} value={kind} onChange={(k) => (setKind(k), setWait(k === "mesaj"))} />
-      <AreaField name="summary" label="Ne konuşuldu" req value={summary} onChange={setSummary} placeholder="Kısa yaz ya da konuş" rows={4} />
-      {direction === "giden" ? <ToggleField label="Cevap bekliyorum" hint={WAIT_HINT} value={wait} onChange={setWait} /> : null}
+      <ChipsField label={m.shared.channel} value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
+      <SegField label={m.form.direction} half options={DIRECTIONS} value={direction} onChange={setDirection} />
+      <DateField label={m.shared.date} half quick withTime value={at} onChange={setAt} />
+      <SegField label={m.shared.kind} options={KINDS} value={kind} onChange={(k) => (setKind(k), setWait(k === "mesaj"))} />
+      <AreaField name="summary" label={m.form.what} req value={summary} onChange={setSummary} placeholder={m.form.whatPlaceholder} rows={4} />
+      {direction === "giden" ? <ToggleField label={m.form.waiting} hint={WAIT_HINT} value={wait} onChange={setWait} /> : null}
       {ideas.rows.length && target === "person" ? (
-        <ComboField label="Bir fikir anlattıysan" opt value={idea} onChange={setIdea} options={ideaOptions} placeholder="Fikir ara" />
+        <ComboField label={m.form.idea} opt value={idea} onChange={setIdea} options={ideaOptions} placeholder={m.form.ideaPlaceholder} />
       ) : null}
     </Form>
   );
@@ -131,18 +132,18 @@ function TouchEdit(p: FormProps & { id: number }) {
         expects_reply: t?.direction === "giden" ? wait : undefined,
       });
     },
-    () => errorsOf({ summary: !summary.trim() && "Ne konuşulduğunu yaz" }),
+    () => errorsOf({ summary: !summary.trim() && m.form.summaryRequired }),
   );
   if (!t) return null;
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <Note>{t.direction === "gelen" ? "Gelen" : "Giden"} · {t.to_name}</Note>
-      <ChipsField label="Kanal" value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
-      <SegField label="Tür" options={KINDS} value={kind} onChange={setKind} />
-      <DateField label="Tarih" quick withTime value={at} onChange={setAt} />
-      <AreaField name="summary" label="Ne konuşuldu" req value={summary} onChange={setSummary} rows={4} />
-      <TextField label="Sonuç" opt value={outcome} onChange={setOutcome} placeholder="Örn. teklif istedi" />
-      {t.direction === "giden" ? <ToggleField label="Cevap bekliyorum" hint={WAIT_HINT} value={wait} onChange={setWait} /> : null}
+      <Note>{t.direction === "gelen" ? m.form.incoming : m.form.outgoing} · {t.to_name}</Note>
+      <ChipsField label={m.shared.channel} value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
+      <SegField label={m.shared.kind} options={KINDS} value={kind} onChange={setKind} />
+      <DateField label={m.shared.date} quick withTime value={at} onChange={setAt} />
+      <AreaField name="summary" label={m.form.what} req value={summary} onChange={setSummary} rows={4} />
+      <TextField label={m.form.result} opt value={outcome} onChange={setOutcome} placeholder={m.form.resultPlaceholder} />
+      {t.direction === "giden" ? <ToggleField label={m.form.waiting} hint={WAIT_HINT} value={wait} onChange={setWait} /> : null}
     </Form>
   );
 }

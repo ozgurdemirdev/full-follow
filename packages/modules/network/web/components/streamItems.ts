@@ -1,12 +1,13 @@
 import type { Comment, Note, PersonCard, Thread, Touch } from "@kit/api/types";
+import { m } from "../messages";
 
 export type StreamKind = "in" | "out" | "note" | "claude";
 export type StreamFilter = "all" | "touch" | "note" | "claude";
 export const STREAM_FILTERS: { key: StreamFilter; label: string }[] = [
-  { key: "all", label: "Hepsi" },
-  { key: "touch", label: "Temaslar" },
-  { key: "note", label: "Notlar" },
-  { key: "claude", label: "Claude" },
+  { key: "all", label: m.streamFilters.all },
+  { key: "touch", label: m.streamFilters.touch },
+  { key: "note", label: m.streamFilters.note },
+  { key: "claude", label: m.streamFilters.claude },
 ];
 
 export interface StreamItem {

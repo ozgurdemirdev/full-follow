@@ -2,6 +2,7 @@
 import type { Comment, Company, CompanyCard, Thread, Touch } from "@kit/api/types";
 import { initials } from "@kit/lib/format";
 import { channelName } from "@kit/lib/network";
+import { m } from "./messages";
 
 /** Addresses named in the line of the loose touches card */
 export const LOOSE_NAMED = 3;
@@ -22,8 +23,8 @@ export interface StreamItem {
   thread?: Thread;
 }
 
-const CLAUDE_INI = "CL";
-const ME_INI = "ÖD";
+const CLAUDE_INI = m.streamIni.claude;
+const ME_INI = m.streamIni.me;
 
 /** Touches (to the company and its people) and the comments of its threads, newest first */
 export function buildStream(card: CompanyCard): StreamItem[] {
@@ -31,13 +32,13 @@ export function buildStream(card: CompanyCard): StreamItem[] {
     ...card.touches.rows.map((t): StreamItem => {
       const name = t.person_name ?? t.company_name ?? t.to_name;
       const text = t.outcome ? `${t.summary} → ${t.outcome}` : t.summary;
-      if (t.created_by === "claude") return { key: `t${t.id}`, kind: "claude", ini: CLAUDE_INI, who: `Claude · ${t.to_name}`, at: t.happened_at, text, touch: t };
+      if (t.created_by === "claude") return { key: `t${t.id}`, kind: "claude", ini: CLAUDE_INI, who: m.stream.claudeTo(t.to_name), at: t.happened_at, text, touch: t };
       if (t.direction === "gelen") return { key: `t${t.id}`, kind: "person", ini: initials(name), who: `${name} · ${channelName(t.channel)}`, at: t.happened_at, text, touch: t };
-      return { key: `t${t.id}`, kind: "me", ini: ME_INI, who: `Sen · ${t.to_name}`, at: t.happened_at, text, touch: t };
+      return { key: `t${t.id}`, kind: "me", ini: ME_INI, who: m.stream.meTo(t.to_name), at: t.happened_at, text, touch: t };
     }),
     ...card.threads.flatMap((th) => (th.comments ?? []).map((c): StreamItem => (c.created_by === "claude"
-      ? { key: `c${c.id}`, kind: "claude", ini: CLAUDE_INI, who: "Claude yorumu", at: c.created_at, text: c.body, comment: c, thread: th }
-      : { key: `c${c.id}`, kind: "me", ini: ME_INI, who: "Claude’a yazdın", at: c.created_at, text: c.body, comment: c, thread: th }))),
+      ? { key: `c${c.id}`, kind: "claude", ini: CLAUDE_INI, who: m.stream.claudeComment, at: c.created_at, text: c.body, comment: c, thread: th }
+      : { key: `c${c.id}`, kind: "me", ini: ME_INI, who: m.stream.youWrote, at: c.created_at, text: c.body, comment: c, thread: th }))),
   ];
   return items.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
@@ -70,6 +71,6 @@ export function groupLoose(rows: Touch[]): LooseGroup[] {
 export function namedAddresses(groups: LooseGroup[]): string {
   const names = groups.slice(0, LOOSE_NAMED).map((g) => g.contact);
   const rest = groups.length - names.length;
-  const head = names.length > 1 ? `${names.slice(0, -1).join(", ")} ve ${names[names.length - 1]}` : names[0] ?? "";
-  return rest > 0 ? `${names.join(", ")} ve ${rest} adres daha` : head;
+  const head = names.length > 1 ? m.stream.and(names.slice(0, -1).join(", "), names[names.length - 1]) : names[0] ?? "";
+  return rest > 0 ? m.stream.moreAddresses(names.join(", "), rest) : head;
 }

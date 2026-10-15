@@ -2,6 +2,7 @@ import { defineModule, type RecordTrashed } from "@fullfollow/core";
 import { networkApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { networkLists, weekToday } from "./service/network";
 
 /**
@@ -12,7 +13,7 @@ import { networkLists, weekToday } from "./service/network";
  */
 export default defineModule({
   key: "network",
-  label: "Temaslar",
+  label: m.label,
   smoke: ["/api/network", "/api/stats/week", "/api/stats/activity", "/api/touches"],
   uses: ["people", "companies", "drafts", "ideas"],
   api: networkApi,
@@ -35,7 +36,7 @@ export default defineModule({
       "touch.adopted": { kind: "temas", row: { key: "touch_id", table: "touches" } },
       // every other event of the network module that should show in the feed is listed here (event type to kind), never in the timeline module
     },
-    trashTypes: [{ type: "touch", label: "temas" }],
+    trashTypes: [{ type: "touch", label: m.noun }],
     // who waits for an answer, who went cold, and this week's numbers, on the Today view
     today: (ctx, { limit }) => ({ network: networkLists(ctx, limit), week: weekToday(ctx) }),
     relations: {

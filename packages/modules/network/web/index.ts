@@ -8,25 +8,26 @@ import { BOARD_ICON } from "@kit/components/boardIcons";
 import { CompanyTouches } from "./components/CompanyTouches";
 import { LooseTouches } from "./components/LooseTouches";
 import { PersonStream } from "./components/PersonStream";
+import { m } from "./messages";
 import { followWaitRows, weeklyTargetRows } from "./settings";
 
 export default defineWebModule({
   key: "network",
-  label: "Temaslar",
+  label: m.label,
   dashboard: [
-    { id: "awaiting", column: 1, order: 40, show: (t) => !!t.network, load: () => import("./cards").then((m) => ({ default: m.AwaitingDashCard })) },
-    { id: "activity", column: 1, order: 80, load: () => import("./cards/ActivityCard").then((m) => ({ default: m.ActivityCard })) },
-    { id: "cooling", column: 2, order: 120, show: (t) => !!t.network?.cooling.rows.length, load: () => import("./cards").then((m) => ({ default: m.CoolingDashCard })) },
-    { id: "status", order: 150, load: () => import("./cards/StatusCard").then((m) => ({ default: m.StatusCard })) },
+    { id: "awaiting", column: 1, order: 40, show: (t) => !!t.network, load: () => import("./cards").then((mod) => ({ default: mod.AwaitingDashCard })) },
+    { id: "activity", column: 1, order: 80, load: () => import("./cards/ActivityCard").then((mod) => ({ default: mod.ActivityCard })) },
+    { id: "cooling", column: 2, order: 120, show: (t) => !!t.network?.cooling.rows.length, load: () => import("./cards").then((mod) => ({ default: mod.CoolingDashCard })) },
+    { id: "status", order: 150, load: () => import("./cards/StatusCard").then((mod) => ({ default: mod.StatusCard })) },
   ],
   settings: [
     { id: "follow-wait", category: "takip", order: 5, rows: followWaitRows },
     { id: "weekly-target", category: "isletme", order: 20, rows: weeklyTargetRows },
   ],
   quickAdd: [{
-    kind: "touch", name: "Temas", key: "T", dest: "Kişinin zaman çizelgesi", icon: BOARD_ICON.comment, tone: "info", group: "Kişiler ve iletişim", order: 30,
-    form: { noun: "Temas", dest: "Kişinin zaman çizelgesine eklenir", icon: BOARD_ICON.comment, base: "/touches", editId: (p) => p.edit, page: () => pageTo("timeline") ?? PATHS.today },
-    load: () => import("./forms/TouchForm").then((m) => ({ default: m.TouchForm })),
+    kind: "touch", name: m.noun, key: "T", dest: m.dest, icon: BOARD_ICON.comment, tone: "info", group: m.shared.contactAndComms, order: 30,
+    form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.comment, base: "/touches", editId: (p) => p.edit, page: () => pageTo("timeline") ?? PATHS.today },
+    load: () => import("./forms/TouchForm").then((mod) => ({ default: mod.TouchForm })),
   }],
   slots: {
     "person.overlay.main": PersonStream,

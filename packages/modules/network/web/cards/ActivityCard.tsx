@@ -5,14 +5,15 @@ import type { Activity, ActivityBucket } from "@kit/api/types";
 import { fmtNum, toDate } from "@kit/lib/format";
 import { WEEKDAY_SHORT } from "@kit/lib/labels";
 import { Card } from "@kit/components/ui";
+import { m } from "../messages";
 
 /** Days shown in the weekly activity card (the current day is the last bar) */
 const ACTIVITY_DAYS = 7;
 
 const METRICS = [
-  { key: "temas", label: "Temas", unit: "temas", count: (b: ActivityBucket) => b.sent + b.replies },
-  { key: "taslak", label: "Taslak", unit: "taslak", count: (b: ActivityBucket) => b.drafts },
-  { key: "teklif", label: "Teklif", unit: "teklif", count: (b: ActivityBucket) => b.offers },
+  { key: "temas", label: m.activity.touch, unit: m.activity.unitTouch, count: (b: ActivityBucket) => b.sent + b.replies },
+  { key: "taslak", label: m.activity.draft, unit: m.activity.unitDraft, count: (b: ActivityBucket) => b.drafts },
+  { key: "teklif", label: m.activity.offer, unit: m.activity.unitOffer, count: (b: ActivityBucket) => b.offers },
 ];
 /** The scale tops at a multiple of this many, so the middle tick is a round half */
 const SCALE_STEP = 3;
@@ -21,7 +22,7 @@ const MIN_BAR = 6;
 const PERCENT = 100;
 
 const sum = (list: ActivityBucket[], count: (b: ActivityBucket) => number) => list.reduce((s, b) => s + count(b), 0);
-const dayLabel = (b: ActivityBucket, last: boolean) => (last ? "Bugün" : WEEKDAY_SHORT[(toDate(b.start).getDay() + 6) % 7]);
+const dayLabel = (b: ActivityBucket, last: boolean) => (last ? m.activity.today : WEEKDAY_SHORT[(toDate(b.start).getDay() + 6) % 7]);
 
 /** "Haftalık aktivite": the last seven days of touches, drafts or offers, a bar per day */
 export function ActivityCard() {
@@ -29,27 +30,27 @@ export function ActivityCard() {
   const [pick, setPick] = useState(ACTIVITY_DAYS - 1);
   const q = useQuery<Activity>("/stats/activity?period=day");
   if (isMissing(q.error)) return null;
-  const m = METRICS[metric];
+  const cur = METRICS[metric];
   const buckets = q.data?.buckets ?? [];
   const week = buckets.slice(-ACTIVITY_DAYS);
   const before = buckets.slice(-ACTIVITY_DAYS * 2, -ACTIVITY_DAYS);
-  const vals = week.map(m.count);
-  const total = sum(week, m.count);
-  const prev = sum(before, m.count);
+  const vals = week.map(cur.count);
+  const total = sum(week, cur.count);
+  const prev = sum(before, cur.count);
   const diff = total - prev;
   const top = Math.max(SCALE_STEP, Math.ceil(Math.max(0, ...vals) / SCALE_STEP) * SCALE_STEP);
-  const delta = diff > 0 ? `+${diff} geçen haftaya göre` : diff < 0 ? `${-diff} eksik, geçen hafta ${prev}` : "geçen haftayla aynı";
+  const delta = diff > 0 ? m.activity.more(diff) : diff < 0 ? m.activity.less(-diff, prev) : m.activity.same;
 
   return (
-    <Card title="Haftalık aktivite" className="dash-gap-8 dash-wrap-head rise"
+    <Card title={m.activity.title} className="dash-gap-8 dash-wrap-head rise"
       actions={
-        <div className="dash-metric" role="group" aria-label="Ölçü">
+        <div className="dash-metric" role="group" aria-label={m.activity.measure}>
           {METRICS.map((x, i) => <button key={x.key} type="button" aria-pressed={metric === i} onClick={() => setMetric(i)}>{x.label}</button>)}
         </div>
       }>
       <div className="flex flex-wrap items-baseline gap-4">
         <span className="text-display leading-none tracking-kpi">{total}</span>
-        <span className="text-base text-text-secondary">{m.unit}</span>
+        <span className="text-base text-text-secondary">{cur.unit}</span>
         {q.data ? <span className={`text-base-sm ${diff >= 0 ? "text-accent" : "text-danger-soft"}`}>{delta}</span> : null}
       </div>
       <div className="flex gap-5">
@@ -62,7 +63,7 @@ export function ActivityCard() {
             const share = Math.max(MIN_BAR, Math.round((vals[i] / top) * PERCENT));
             const label = dayLabel(b, i === week.length - 1);
             return (
-              <button key={b.start} type="button" className="dash-bar" aria-pressed={sel} aria-label={`${label}: ${vals[i]} ${m.unit}`} onClick={() => setPick(i)}>
+              <button key={b.start} type="button" className="dash-bar" aria-pressed={sel} aria-label={m.activity.bar(label, vals[i], cur.unit)} onClick={() => setPick(i)}>
                 <div className="dash-bar-well">
                   <div className="dash-bar-fill" style={{ height: `${share}%` }} />
                   {sel ? <span className="dash-bar-tip" style={{ bottom: `${share}%` }}>{vals[i]}</span> : null}
