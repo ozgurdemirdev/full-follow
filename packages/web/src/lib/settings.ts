@@ -9,6 +9,8 @@ import { norm } from "./format";
 export const SETTINGS_SAVE_DEBOUNCE = 700;
 /** A list longer than this shows a "N more" button instead of every row */
 export const SETTINGS_ROW_LIMIT = 12;
+/** The search keywords of a row, written in the messages as one comma separated string */
+export const words = (list: string) => list.split(",");
 const SAVED_TOAST = "Kaydedildi";
 
 export interface SettingRow {

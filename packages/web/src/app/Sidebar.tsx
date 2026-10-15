@@ -6,9 +6,14 @@ import type { Today } from "../api/types";
 import { BoardIcon, type BoardIconName } from "../components/boardIcons";
 import { ago } from "../lib/format";
 import { useIsDesktop } from "../lib/media";
+import { m as kit } from "../messages";
+import { shell } from "../messages.shell";
 import { preloadRoute, useRegistry } from "./modules/registry";
 import { PATHS } from "./routes";
 import { setUI, useUI } from "./ui";
+
+const m = shell.sidebar;
+const brand = shell;
 
 interface NavItem {
   label: string;
@@ -37,7 +42,7 @@ function NavLink({ item, active, phoneOnly }: { item: NavItem; active: boolean; 
   );
 }
 
-const SETTINGS: NavItem = { label: "Ayarlar", icon: "settings", path: PATHS.settings };
+const SETTINGS: NavItem = { label: m.settings, icon: "settings", path: PATHS.settings };
 
 export function Sidebar() {
   const collapsed = useUI((s) => s.collapsed);
@@ -56,16 +61,16 @@ export function Sidebar() {
   }, [desk, path]);
 
   return (
-    <nav aria-label="Ana menü" className={`sb ff-side ${collapsed ? "is-mini" : ""}`}>
+    <nav aria-label={m.main} className={`sb ff-side ${collapsed ? "is-mini" : ""}`}>
       <div className="ff-brand">
-        <div className="ff-logo">ff</div>
-        <span className="ff-brandname">Full Follow</span>
+        <div className="ff-logo">{brand.brandMark}</div>
+        <span className="ff-brandname">{brand.brand}</span>
         <button
           type="button"
           className="ff-toggle"
-          aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+          aria-label={collapsed ? m.expand : m.collapse}
           aria-expanded={!collapsed}
-          title={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+          title={collapsed ? m.expand : m.collapse}
           onClick={() => setUI({ collapsed: !collapsed })}
         >
           <BoardIcon name="sidebar" className="size-icon-md" />
@@ -85,12 +90,12 @@ export function Sidebar() {
       <div className="ff-sidefoot">
         <NavLink item={SETTINGS} active={isActive(PATHS.settings)} />
         <div className="ff-user">
-          <div className="ff-user-avatar">ÖD</div>
+          <div className="ff-user-avatar">{kit.ownerInitials}</div>
           <div className="ff-userinfo">
-            <span className="ff-username">Özgür</span>
-            <span className="ff-userstatus" title="Claude’un MCP ile yaptığı son işlem">
+            <span className="ff-username">{m.userName}</span>
+            <span className="ff-userstatus" title={m.claudeLastTitle}>
               <i />
-              <span>{today.data?.claude_last_at ? `Claude: ${ago(today.data.claude_last_at)}` : "Claude henüz bağlanmadı"}</span>
+              <span>{today.data?.claude_last_at ? m.claudeLast(ago(today.data.claude_last_at)) : m.claudeNever}</span>
             </span>
           </div>
         </div>

@@ -1,5 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { BLUR_CLOSE_MS } from "../lib/constants";
 import { initials, norm } from "../lib/format";
+import { parts } from "../messages.parts";
 import { FORM_ICON, PathIcon } from "./forms/icons";
 
 export interface Option {
@@ -8,6 +10,7 @@ export interface Option {
   sub?: string;
 }
 
+const m = parts.combo;
 const MAX_HITS = 7;
 
 /**
@@ -69,7 +72,7 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
       }}
       onClick={() => form && setOpen(true)}
       onBlur={() => {
-        blurTimer.current = setTimeout(() => setOpen(false), 120);
+        blurTimer.current = setTimeout(() => setOpen(false), BLUR_CLOSE_MS);
       }}
       onChange={(e) => {
         onChange({ id: null, text: e.target.value });
@@ -111,7 +114,7 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
           <button
             type="button"
             className="form-icon-btn"
-            aria-label="Listeyi aç"
+            aria-label={m.openList}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
               clearTimeout(blurTimer.current);
@@ -150,9 +153,9 @@ export function Combo({ id, value, options, onChange, placeholder, allowNew = tr
   return (
     <div className="relative">
       {field}
-      {value.id ? <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-accent-text">seçili</span> : null}
+      {value.id ? <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-accent-text">{m.selected}</span> : null}
       {!value.id && allowNew && value.text.trim() && !exact ? (
-        <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-text-muted">yeni</span>
+        <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-text-muted">{m.fresh}</span>
       ) : null}
       {listing ? (
         <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-sheet mt-1 flex flex-col rounded-inner border border-border-menu bg-surface-menu p-1 shadow-menu">

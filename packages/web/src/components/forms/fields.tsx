@@ -1,10 +1,14 @@
 // Field types of the form sheet board: text, area, chips, seg, num, date, time, toggle (the richer ones live in fields-rich.tsx)
 import { useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { formatDate, formatDateTime, parseDate, parseDateTime, parseTime, quickDates } from "../../lib/dateInput";
+import { m as kit } from "../../messages";
+import { forms } from "../../messages.forms";
 import { MicButton } from "../MicButton";
 import { NumberField } from "../NumberField";
 import { useFieldError } from "./context";
 import { FORM_ICON, PathIcon } from "./icons";
+
+const m = forms.fields;
 
 const DEFAULT_TIME = "09:00";
 const SPLIT_DATE = 10;
@@ -26,7 +30,7 @@ export function Field({ id, label, req, opt, hint, half, error, children }: {
     <>
       {label}
       {req ? <span className="form-req">*</span> : null}
-      {opt ? <span className="form-opt">isteğe bağlı</span> : null}
+      {opt ? <span className="form-opt">{kit.optional}</span> : null}
     </>
   ) : null;
   return (
@@ -130,7 +134,7 @@ export function AreaField({ name, label, req, opt, hint, half, value, onChange, 
       </div>
       {tokens?.length ? (
         <span className="form-tokens">
-          Ekle:
+          {m.tokens}
           {tokens.map((t) => (
             <button key={t} type="button" className="form-token" onClick={() => insert(t)}>{t}</button>
           ))}
@@ -243,13 +247,13 @@ export function NumField({ name, label, req, opt, hint, half, value, onChange, m
   return (
     <Field id={id} label={label} req={req} opt={opt} hint={hint} half={half} error={error}>
       <div className="form-control form-num" data-invalid={!!error}>
-        <button type="button" className="form-step" aria-label="Azalt" onClick={() => bump(-1)}>−</button>
+        <button type="button" className="form-step" aria-label={m.decrease} onClick={() => bump(-1)}>−</button>
         <span className="form-num-mid">
           {prefix ? <span className="form-affix">{prefix}</span> : null}
           <NumberField id={id} className="" min={min} max={max} value={value} placeholder={placeholder} ariaLabel={label} onChange={(v) => (touch(), onChange(v))} />
           {suffix ? <span className="form-affix" data-suffix="">{suffix}</span> : null}
         </span>
-        <button type="button" className="form-step" aria-label="Artır" onClick={() => bump(1)}>+</button>
+        <button type="button" className="form-step" aria-label={m.increase} onClick={() => bump(1)}>+</button>
       </div>
     </Field>
   );
@@ -309,9 +313,9 @@ export function DateField({ name, label, req, opt, hint, half, value, onChange, 
     onChange(join(d));
   };
   return (
-    <Field id={id} label={label} req={req} opt={opt} hint={hint} half={half} error={error ?? (t.bad ? "Tarihi anlayamadım" : undefined)}>
+    <Field id={id} label={label} req={req} opt={opt} hint={hint} half={half} error={error ?? (t.bad ? m.dateBad : undefined)}>
       <div className="form-control" data-invalid={!!error || t.bad}>
-        <button type="button" className="form-icon-btn" aria-label="Takvimden seç" onClick={() => picker.current?.showPicker?.()}>
+        <button type="button" className="form-icon-btn" aria-label={m.datePick} onClick={() => picker.current?.showPicker?.()}>
           <PathIcon d={FORM_ICON.calendar} className="size-icon-chip" />
         </button>
         <input id={id} type="text" value={t.text} placeholder={placeholder} aria-invalid={!!error || t.bad} onChange={(e) => t.type(e.target.value)} onBlur={t.blur} />
@@ -338,7 +342,7 @@ export function TimeField({ name, label, req, opt, hint, half, value, onChange, 
   const { error, touch } = useFieldError(name);
   const t = useTypedValue(value, parseTime, (v) => (touch(), onChange(v)));
   return (
-    <Field id={id} label={label} req={req} opt={opt} hint={hint} half={half} error={error ?? (t.bad ? "Saati anlayamadım" : undefined)}>
+    <Field id={id} label={label} req={req} opt={opt} hint={hint} half={half} error={error ?? (t.bad ? m.timeBad : undefined)}>
       <div className="form-control" data-invalid={!!error || t.bad}>
         <PathIcon d={FORM_ICON.clock} className="size-icon-chip form-icon-soft" />
         <input id={id} type="text" inputMode="numeric" value={t.text} placeholder={placeholder} aria-invalid={!!error || t.bad} onChange={(e) => t.type(e.target.value)} onBlur={t.blur} />

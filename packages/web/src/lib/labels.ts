@@ -1,5 +1,6 @@
 // Ekranda görünen adlar ve token sınıf eşlemeleri.
 // Tailwind sınıfları derleme anında tarandığı için tam sınıf adları burada açıkça yazılır.
+import { labels } from "../messages.labels";
 
 export type Actor = "ozgur" | "claude";
 export type OppStage = "bulundu" | "temas" | "cevap" | "gorusme" | "teklif" | "kazanildi" | "kaybedildi";
@@ -10,39 +11,27 @@ export type Tone = "opportunity" | "source" | "payment" | "warning" | "neutral" 
 export const OPEN_STAGES: OppStage[] = ["bulundu", "temas", "cevap", "gorusme", "teklif"];
 export const PROJECT_STEPS: ProjectStage[] = ["pesinat", "tasarim_onayi", "test_surumu", "yayin", "teslim", "bakim"];
 
-export const STAGE: Record<OppStage, string> = {
-  bulundu: "Bulundu", temas: "Temas", cevap: "Cevap", gorusme: "Görüşme", teklif: "Teklif", kazanildi: "Kazanıldı", kaybedildi: "Kaybedildi",
-};
-export const PROJECT_STAGE: Record<ProjectStage, string> = {
-  pesinat: "Peşinat", tasarim_onayi: "Tasarım onayı", test_surumu: "Test sürümü", yayin: "Yayın", teslim: "Teslim", bakim: "Bakım", iptal: "İptal",
-};
+export const STAGE: Record<OppStage, string> = labels.stage;
+export const PROJECT_STAGE: Record<ProjectStage, string> = labels.projectStage;
 export const MILESTONE: Record<string, string> = { ...PROJECT_STAGE };
 
 /** Network kanalları önde (soğuk e-posta, Instagram DM, LinkedIn, telefon, yüz yüze) */
-export const CHANNEL: Record<string, string> = {
-  email: "E-posta", instagram: "Instagram DM", linkedin: "LinkedIn", telefon: "Telefon", yuz_yuze: "Yüz yüze",
-  whatsapp: "WhatsApp", r10: "R10 mesajı", diger: "Diğer",
-};
+export const CHANNEL: Record<string, string> = labels.channel;
 export const CHANNELS = Object.keys(CHANNEL);
 
 /** Firma ve kişinin temas durumu (temaslarla ilerler; "olumsuz" ve "es geçildi" elle) */
-export const CONTACT_STATUS: Record<string, string> = {
-  yazilmadi: "Yazılmadı", yazildi: "Yazıldı", cevap_geldi: "Cevap geldi", gorusuldu: "Görüşüldü", olumsuz: "Olumsuz", es_gecildi: "Es geçildi", tanidik: "Tanıdık", arkadas: "Arkadaş",
-};
+export const CONTACT_STATUS: Record<string, string> = labels.contactStatus;
 export const CONTACT_STATUSES = Object.keys(CONTACT_STATUS);
 export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi: "opportunity", cevap_geldi: "payment", gorusuldu: "success", olumsuz: "warning", es_gecildi: "neutral", tanidik: "source", arkadas: "success" };
 
-export const TARGET: Record<string, string> = {
-  person: "Kişi", company: "Firma", opportunity: "Fırsat", project: "Proje", task: "Görev", draft: "Taslak", payment: "Ödeme",
-  post: "Paylaşım", idea: "Fikir", own_project: "Kendi projesi",
-};
+export const TARGET: Record<string, string> = labels.target;
 
-export const ACTOR: Record<Actor, string> = { ozgur: "Özgür", claude: "Claude" };
+export const ACTOR: Record<Actor, string> = labels.actor;
 
 // ---- Paket 2: pazarlama ----
-export const PLATFORM: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
-export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
-export const IDEA_STAGE: Record<string, string> = { fikir: "Fikir", dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" };
+export const PLATFORM: Record<string, string> = labels.platform;
+export const TEMPLATE_KIND: Record<string, string> = labels.templateKind;
+export const IDEA_STAGE: Record<string, string> = labels.ideaStage;
 
 /** Yazar çipi */
 export const WHO_CLS: Record<Actor, string> = {
@@ -83,10 +72,10 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
 
 /** Who a task belongs to: Özgür, Claude, or the client (the project then waits on the client) */
 export type TaskAssignee = Actor | "musteri";
-export const ASSIGNEE: Record<TaskAssignee, string> = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" };
+export const ASSIGNEE: Record<TaskAssignee, string> = labels.assignee;
 
 /** Weekday short names (ISO order, Monday first) */
-export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+export const WEEKDAY_SHORT = Object.values(labels.weekdayShort);
 
 /** File picker filter for record files (the server checks the real type; the limits live in core FILE_LIMITS) */
 export const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.csv,.docx,.pptx,.xlsx";

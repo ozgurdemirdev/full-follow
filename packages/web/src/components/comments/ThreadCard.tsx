@@ -3,6 +3,8 @@ import { Link } from "wouter";
 import { run } from "../../api/actions";
 import type { Thread } from "../../api/types";
 import { kindOf, optionsOf, reopenTab, STATE_CHIP, targetHref, type CState, type CTab } from "../../lib/comments";
+import { m as kit } from "../../messages";
+import { comments as msg } from "../../messages.comments";
 import { BoardIcon } from "../boardIcons";
 import { Bubble } from "./Bubble";
 
@@ -56,7 +58,7 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
   };
   const reply = (body: string) =>
     guard(async () => {
-      await run("post", "/comments", { reply_to: t.id, body }, { ok: "Cevap yazıldı" });
+      await run("post", "/comments", { reply_to: t.id, body }, { ok: msg.replied });
       setDraft("");
     });
   const send = (e: { preventDefault: () => void }) => {
@@ -66,7 +68,7 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
   };
   const setResolved = (resolved: boolean) =>
     guard(async () => {
-      await run("post", `/comments/${t.id}/resolve`, { resolved }, { ok: resolved ? `${t.target_label} konusu kapandı` : "Konu yeniden açıldı" });
+      await run("post", `/comments/${t.id}/resolve`, { resolved }, { ok: resolved ? msg.thread.closedFor(t.target_label) : msg.thread.reopened });
       if (!resolved) onReopened(reopenTab(t));
     });
 
@@ -96,19 +98,19 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
       {state !== "closed" ? (
         <div className="cmt-reply">
           <form className="cmt-field" onSubmit={send}>
-            <textarea ref={area} rows={1} value={draft} aria-label="Cevap yaz" placeholder="Cevap yaz"
+            <textarea ref={area} rows={1} value={draft} aria-label={kit.writeReply} placeholder={kit.writeReply}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send(e))} />
-            <button type="submit" className="cmt-send" aria-label="Gönder" disabled={busy}>
+            <button type="submit" className="cmt-send" aria-label={kit.send} disabled={busy}>
               <BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} />
             </button>
           </form>
-          <button type="button" className="cmt-close" title="Konu kapandı" aria-label="Konu kapandı" disabled={busy} onClick={() => void setResolved(true)}>
+          <button type="button" className="cmt-close" title={msg.thread.close} aria-label={msg.thread.close} disabled={busy} onClick={() => void setResolved(true)}>
             <BoardIcon name="check" className="size-icon-chip" stroke={2.2} />
           </button>
         </div>
       ) : (
-        <button type="button" className="cmt-reopen" disabled={busy} onClick={() => void setResolved(false)}>Konuyu yeniden aç</button>
+        <button type="button" className="cmt-reopen" disabled={busy} onClick={() => void setResolved(false)}>{msg.thread.reopen}</button>
       )}
     </article>
   );

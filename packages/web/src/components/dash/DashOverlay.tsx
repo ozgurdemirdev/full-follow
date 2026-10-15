@@ -1,8 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import { norm } from "../../lib/format";
+import { dash } from "../../messages.dash";
 import { BoardIcon } from "../boardIcons";
 import { ExpandLink, ExpandOverlay } from "../ExpandOverlay";
+
+const m = dash.overlay;
 
 export interface ExRow {
   key: string | number;
@@ -45,15 +48,15 @@ export function DashOverlay({ open, from, onClose, spec }: { open: boolean; from
       toolbar={
         <label className="dash-ex-search">
           <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
-          <span className="sr-only">Bu listede ara</span>
-          <input type="search" placeholder="Bu listede ara" value={q} onChange={(e) => setQ(e.target.value)}
+          <span className="sr-only">{m.search}</span>
+          <input type="search" placeholder={m.search} value={q} onChange={(e) => setQ(e.target.value)}
             className="min-w-0 flex-grow border-0 bg-transparent text-base text-text-primary outline-0 placeholder:text-text-muted [&::-webkit-search-cancel-button]:hidden" />
         </label>
       }
       footer={
         <>
           <span>{spec.foot}</span>
-          <ExpandLink href={spec.href}>{spec.page} sayfasına git</ExpandLink>
+          <ExpandLink href={spec.href}>{m.toPage(spec.page)}</ExpandLink>
         </>
       }
     >
@@ -70,7 +73,7 @@ export function DashOverlay({ open, from, onClose, spec }: { open: boolean; from
           </span>
         </Link>
       ))}
-      {rows.length === 0 ? <p className="empty">Burada eşleşen kayıt yok.</p> : null}
+      {rows.length === 0 ? <p className="empty">{m.none}</p> : null}
     </ExpandOverlay>
   );
 }

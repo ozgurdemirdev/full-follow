@@ -4,6 +4,7 @@ import { api, onAuthRequired } from "../api/client";
 import { loadModules } from "../api/modules";
 import { PageSkeleton } from "../components/ui";
 import { requestChatOpen } from "../lib/chatStore";
+import { shell } from "../messages.shell";
 import { Fab } from "./Fab";
 import { Login } from "./Login";
 import { lazyOf, preloadRoute, useRegistry } from "./modules/registry";
@@ -92,9 +93,9 @@ class Boundary extends Component<{ children: ReactNode }, { error?: Error }> {
     return (
       <main className="ff-main">
         <div className="ff-wrap items-start">
-          <h1 className="page-title">Bir şeyler ters gitti</h1>
+          <h1 className="page-title">{shell.errorTitle}</h1>
           <p className="m-0 text-base text-text-secondary">{this.state.error.message}</p>
-          <button type="button" className="btn btn-pri" onClick={() => location.reload()}>Sayfayı yenile</button>
+          <button type="button" className="btn btn-pri" onClick={() => location.reload()}>{shell.errorReload}</button>
         </div>
       </main>
     );

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { MIC_ERROR, useDictation } from "../lib/useDictation";
+import { parts } from "../messages.parts";
 import { BoardIcon } from "./boardIcons";
 import { toast } from "./toast";
 
-const LABEL = { start: "Konuşarak ekle", stop: "Dinlemeyi durdur" };
+const LABEL = parts.mic;
 
 /** Dictation button (Web Speech API, tr-TR). Each recognised phrase goes to onText; renders nothing when the browser cannot dictate. */
 export function MicButton({ onText, className = "" }: { onText: (text: string) => void; className?: string }) {

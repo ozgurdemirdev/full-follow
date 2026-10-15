@@ -1,5 +1,6 @@
 import type { Thread } from "../api/types";
 import { linkTo } from "../app/modules/links";
+import { comments as m } from "../messages.lib";
 import { TARGET } from "./labels";
 
 /** Where a thread stands, from Özgür's side (the states of the Comments board) */
@@ -12,19 +13,19 @@ export const THREADS_SHOWN = 24;
 export const TARGETS_SHOWN = 5;
 
 export const TABS: { key: CTab; label: string; dot: string; states: CState[]; empty: string }[] = [
-  { key: "open", label: "Açık", dot: "bg-text-primary", states: ["you", "answered", "answered_seen"], empty: "Açık konu yok." },
-  { key: "you", label: "Sana soruldu", dot: "bg-warning", states: ["you"], empty: "Claude senden bir şey beklemiyor." },
-  { key: "claude", label: "Claude’da", dot: "bg-claude-soft", states: ["claude"], empty: "Claude’da bekleyen konu yok, hepsine cevap verdi." },
-  { key: "closed", label: "Kapandı", dot: "bg-text-disabled", states: ["closed"], empty: "Kapanan konu yok." },
+  { key: "open", label: m.tabs.open, dot: "bg-text-primary", states: ["you", "answered", "answered_seen"], empty: m.empty.open },
+  { key: "you", label: m.tabs.you, dot: "bg-warning", states: ["you"], empty: m.empty.you },
+  { key: "claude", label: m.tabs.claude, dot: "bg-claude-soft", states: ["claude"], empty: m.empty.claude },
+  { key: "closed", label: m.tabs.closed, dot: "bg-text-disabled", states: ["closed"], empty: m.empty.closed },
 ];
 
 /** State chip text and colours (Tailwind classes written out in full so they are scanned) */
 export const STATE_CHIP: Record<CState, { label: string; cls: string }> = {
-  you: { label: "Sana soruldu", cls: "bg-chip-payment-bg text-warning" },
-  answered: { label: "Yeni cevap", cls: "bg-accent-soft-bg text-accent" },
-  answered_seen: { label: "Cevaplandı", cls: "bg-surface-track-alt text-text-secondary" },
-  claude: { label: "Claude’da", cls: "bg-claude-bg text-claude-soft" },
-  closed: { label: "Kapandı", cls: "bg-surface-2 text-text-disabled" },
+  you: { label: m.state.you, cls: "bg-chip-payment-bg text-warning" },
+  answered: { label: m.state.answered, cls: "bg-accent-soft-bg text-accent" },
+  answered_seen: { label: m.state.answeredSeen, cls: "bg-surface-track-alt text-text-secondary" },
+  claude: { label: m.state.claude, cls: "bg-claude-bg text-claude-soft" },
+  closed: { label: m.state.closed, cls: "bg-surface-2 text-text-disabled" },
 };
 
 /** Record kinds as the board names them, with the dot colour; other target types use the shared label */
@@ -32,7 +33,7 @@ const KIND: Record<string, { label: string; dot: string }> = {
   project: { label: TARGET.project, dot: "bg-warning" },
   person: { label: TARGET.person, dot: "bg-entity-person" },
   company: { label: TARGET.company, dot: "bg-entity-source" },
-  own_project: { label: "Kendi projem", dot: "bg-claude" },
+  own_project: { label: m.ownProject, dot: "bg-claude" },
   opportunity: { label: TARGET.opportunity, dot: "bg-claude-soft" },
   task: { label: TARGET.task, dot: "bg-entity-task" },
   payment: { label: TARGET.payment, dot: "bg-entity-payment" },

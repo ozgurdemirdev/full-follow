@@ -1,4 +1,5 @@
 // İnce fetch katmanı: JSON, çekirdek hata biçimi ({ error, code }) ve oturum düşmesi
+import { api as m } from "../messages.api";
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -33,7 +34,7 @@ export async function request<T>(method: string, path: string, body?: unknown, s
     });
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
-    throw new ApiError("Sunucuya ulaşılamadı", 0, "network");
+    throw new ApiError(m.unreachable, 0, "network");
   }
   const text = await res.text();
   const data = text ? JSON.parse(text) : undefined;

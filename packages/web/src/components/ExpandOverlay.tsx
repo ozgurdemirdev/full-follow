@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Link } from "wouter";
 import { layout, radius } from "../styles/tokens.json";
 import { dur, ease, overlayRise } from "../lib/motion";
+import { m as kit } from "../messages";
 import { BoardIcon } from "./boardIcons";
 import { MotionScope } from "./MotionScope";
 
@@ -134,7 +135,7 @@ function Panel({ from, title, sub, toolbar, footer, header, headerClassName, bod
     <div className="fixed inset-0 z-overlay" onKeyDown={onKeyDown}>
       <m.button
         type="button"
-        aria-label="Kapat"
+        aria-label={kit.close}
         tabIndex={-1}
         className="ff-scrim"
         initial={{ opacity: 0 }}
@@ -164,7 +165,7 @@ function Panel({ from, title, sub, toolbar, footer, header, headerClassName, bod
                 <h2>{title}</h2>
                 {sub ? <m.span className="ff-ex-sub" {...body(dur["overlay-body-delay"])}>{sub}</m.span> : null}
               </div>
-              <button type="button" className="ff-ex-close" data-close aria-label="Küçült" onClick={onClose}>
+              <button type="button" className="ff-ex-close" data-close aria-label={kit.collapse} onClick={onClose}>
                 <BoardIcon name="shrink" className="size-icon-btn" stroke={2.2} />
               </button>
             </div>

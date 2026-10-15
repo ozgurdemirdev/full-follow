@@ -3,6 +3,8 @@ import type { ApiError } from "../api/client";
 import { useTags } from "../api/keys";
 import { initials } from "../lib/format";
 import { ACTOR, CONTACT_STATUS, STATUS_TONE, TAG_CLS, TONE_CLS, WHO_CLS, type Actor, type Tone } from "../lib/labels";
+import { m as kit } from "../messages";
+import { parts } from "../messages.parts";
 import { BoardIcon } from "./boardIcons";
 
 export function Chip({ tone = "neutral", children, className = "" }: { tone?: Tone; children: ReactNode; className?: string }) {
@@ -22,7 +24,7 @@ export function Tags({ ids }: { ids: readonly number[] }) {
         const t = tags.byId.get(id);
         if (!t) return null;
         return (
-          <span key={id} className={`chip ${TAG_CLS[t.color] ?? TONE_CLS.neutral} ${t.deleted_at ? "opacity-muted" : ""}`} title={t.deleted_at ? "Silinmiş etiket" : undefined}>
+          <span key={id} className={`chip ${TAG_CLS[t.color] ?? TONE_CLS.neutral} ${t.deleted_at ? "opacity-muted" : ""}`} title={t.deleted_at ? parts.ui.deletedTag : undefined}>
             {t.name}
           </span>
         );
@@ -127,7 +129,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 
 export function PageSkeleton() {
   return (
-    <div className="flex flex-col gap-9" aria-busy="true" aria-label="Yükleniyor">
+    <div className="flex flex-col gap-9" aria-busy="true" aria-label={kit.loading}>
       <Skeleton className="h-chart-height-mobile" />
       <Skeleton className="h-chart-height" />
     </div>
@@ -138,8 +140,8 @@ export function ErrorBox({ error, retry }: { error?: ApiError | Error; retry?: (
   if (!error) return null;
   return (
     <div className="card flex flex-wrap items-center gap-5 p-9 text-base text-danger" role="alert">
-      <span className="flex-grow">{error.message || "Yüklenemedi"}</span>
-      {retry ? <button type="button" className="btn btn-sec" onClick={retry}>Tekrar dene</button> : null}
+      <span className="flex-grow">{error.message || kit.loadFailed}</span>
+      {retry ? <button type="button" className="btn btn-sec" onClick={retry}>{kit.retry}</button> : null}
     </div>
   );
 }
@@ -182,7 +184,7 @@ export function Card({ title, label, count, onExpand, actions, children, classNa
             <div className="flex items-center gap-3">
               {actions}
               {onExpand && count !== undefined ? (
-                <button type="button" className="ff-more" aria-label={`${title}, büyüt`} onClick={() => root.current && onExpand(root.current.getBoundingClientRect())}>
+                <button type="button" className="ff-more" aria-label={parts.ui.expandCard(title)} onClick={() => root.current && onExpand(root.current.getBoundingClientRect())}>
                   {count}
                   <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
                 </button>

@@ -1,6 +1,8 @@
 import { Link } from "wouter";
 import { recordHref, restore } from "../../api/actions";
 import type { ApiError } from "../../api/client";
+import { m as kit } from "../../messages";
+import { forms } from "../../messages.forms";
 import { FORM_ICON, PathIcon } from "./icons";
 
 /** Amber "Zaten var" banner: the server refused a duplicate key; the existing record can be opened (or restored from the trash) */
@@ -15,9 +17,9 @@ export function DuplicateBanner({ error, onOpen, onRestored }: { error: ApiError
       </span>
       <span className="form-dup-actions">
         {d.in_trash ? (
-          <button type="button" data-kind="primary" onClick={() => void restore(d.type, d.id).then(onRestored).catch(() => {})}>Geri yükle</button>
+          <button type="button" data-kind="primary" onClick={() => void restore(d.type, d.id).then(onRestored).catch(() => {})}>{kit.restore}</button>
         ) : (
-          <Link href={recordHref(d.type, d.id)} data-kind="primary" onClick={onOpen}>Aç</Link>
+          <Link href={recordHref(d.type, d.id)} data-kind="primary" onClick={onOpen}>{kit.open}</Link>
         )}
       </span>
     </div>
@@ -30,7 +32,7 @@ export function ErrorSummary({ count }: { count: number }) {
   return (
     <div className="form-sum" role="alert">
       <PathIcon d={FORM_ICON.alert} className="size-icon-chip" stroke={2} />
-      {count} alan düzeltilmeli
+      {forms.banners.fix(count)}
     </div>
   );
 }

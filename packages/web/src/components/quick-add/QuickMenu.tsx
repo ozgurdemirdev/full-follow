@@ -1,10 +1,13 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { openSheet, type SheetKind } from "../../app/ui";
+import { m as kit } from "../../messages";
+import { parts } from "../../messages.parts";
 import { BoardIcon } from "../boardIcons";
 import { QuickPanel } from "./QuickPanel";
 import { closeQuick, openQuick, registerHeader, toggleQuick, useHeaderMounted, useQuickOpen, type QuickHost } from "./store";
 
-const NOT_TYPING = "input, textarea, select, [contenteditable]";
+const m = parts.quick;
+const NOT_TYPING ="input, textarea, select, [contenteditable]";
 const MODAL = '[role="dialog"][aria-modal="true"]';
 
 /** While the menu is open: Esc and a press outside close it, and focus goes back to the button that opened it */
@@ -37,7 +40,7 @@ function Menu({ host, trigger }: { host: QuickHost; trigger: RefObject<HTMLEleme
   };
   return (
     <>
-      <button type="button" className="quick-scrim" aria-label="Kapat" tabIndex={-1} onClick={() => closeQuick()} />
+      <button type="button" className="quick-scrim" aria-label={kit.close} tabIndex={-1} onClick={() => closeQuick()} />
       <QuickPanel host={host} onPick={pick} />
     </>
   );
@@ -54,8 +57,8 @@ export function QuickAddButton() {
     <div ref={root} className="quick-host">
       <button ref={trigger} type="button" className="quick-new" aria-haspopup="menu" aria-expanded={open} onClick={() => toggleQuick("header")}>
         <BoardIcon name="plus" className="quick-plus size-icon-md" stroke={2.2} />
-        Yeni kayıt
-        <span className="quick-key">N</span>
+        {m.title}
+        <span className="quick-key">{m.shortcutKey}</span>
       </button>
       {open ? <Menu host="header" trigger={trigger} /> : null}
     </div>
@@ -71,7 +74,7 @@ export function QuickAddFab() {
   useDismiss(open, root, trigger);
   return (
     <div ref={root}>
-      <button ref={trigger} type="button" className="quick-fab" aria-label="Yeni kayıt" aria-haspopup="menu" aria-expanded={open} data-covered={covered} onClick={() => toggleQuick("fab")}>
+      <button ref={trigger} type="button" className="quick-fab" aria-label={m.title} aria-haspopup="menu" aria-expanded={open} data-covered={covered} onClick={() => toggleQuick("fab")}>
         <BoardIcon name="plus" className="quick-plus size-icon-2xl" stroke={2.4} />
       </button>
       {open ? <Menu host="fab" trigger={trigger} /> : null}

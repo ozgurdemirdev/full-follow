@@ -1,5 +1,6 @@
 // Dashboard: how many rows each card shows and the thresholds behind its colours and words
 import type { Payment } from "../api/types";
+import { dashboard as m } from "../messages.lib";
 import { daysFrom } from "./format";
 
 export const SHOWN = { drafts: 2, awaiting: 4, cooling: 3, comments: 3, payments: 3, projects: 3, followups: 5, posts: 4 } as const;
@@ -12,9 +13,9 @@ export const ACTIVE_PROJECT_STAGES = ["pesinat", "tasarim_onayi", "test_surumu",
 
 export type PaymentGroup = "late" | "soon" | "later";
 export const PAYMENT_GROUPS: { key: PaymentGroup; label: string; dot: string; bg: string }[] = [
-  { key: "late", label: "Gecikmiş", dot: "bg-danger", bg: "bg-danger" },
-  { key: "soon", label: "Bu hafta", dot: "bg-accent", bg: "bg-accent" },
-  { key: "later", label: "Sonra", dot: "bg-entity-later", bg: "bg-entity-later" },
+  { key: "late", label: m.groups.late, dot: "bg-danger", bg: "bg-danger" },
+  { key: "soon", label: m.groups.soon, dot: "bg-accent", bg: "bg-accent" },
+  { key: "later", label: m.groups.later, dot: "bg-entity-later", bg: "bg-entity-later" },
 ];
 
 export const remaining = (p: Payment) => p.expected_amount - p.paid_amount;

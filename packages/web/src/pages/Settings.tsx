@@ -6,9 +6,11 @@ import { BoardIcon } from "../components/boardIcons";
 import { CatIcon, SetSection } from "../components/settings/Parts";
 import { norm } from "../lib/format";
 import { rowMatches } from "../lib/settings";
+import { settings } from "../messages.settings";
 import { useSettingCategories } from "./settings/registry";
 
 /** Links to the first versions of the categories keep working */
+const m = settings.page;
 const LEGACY_SLUG: Record<string, string> = { is: "isletme", network: "takip", listeler: "liste" };
 
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
@@ -48,17 +50,17 @@ export default function Settings() {
 
   return (
     <Page
-      title="Ayarlar"
-      sub="Değişiklikler anında kaydedilir"
+      title={m.title}
+      sub={m.sub}
       className=""
       right={(
         <label className="set-search">
           <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
-          <span className="sr-only">Ayarlarda ara</span>
+          <span className="sr-only">{m.search}</span>
           <input
             ref={search}
             type="search"
-            placeholder="Ayarlarda ara: vergi, takip, maskot, etiket"
+            placeholder={m.searchPlaceholder}
             autoComplete="off"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -68,7 +70,7 @@ export default function Settings() {
       )}
     >
       <div className="set-grid">
-        <nav aria-label="Ayar kategorileri" className="set-cats">
+        <nav aria-label={m.categories} className="set-cats">
           {found.map(({ c, rows }) => (
             <button
               key={c.slug}
@@ -87,7 +89,7 @@ export default function Settings() {
         </nav>
         <div className="set-groups">
           {groups.map(({ c, rows }) => <SetSection key={c.slug} name={c.name} sub={q ? undefined : c.sub} empty={c.empty} rows={rows} />)}
-          {q && !groups.length ? <p className="set-nohits">“{input.trim()}” için ayar bulunamadı.</p> : null}
+          {q && !groups.length ? <p className="set-nohits">{m.noHits(input.trim())}</p> : null}
         </div>
       </div>
     </Page>

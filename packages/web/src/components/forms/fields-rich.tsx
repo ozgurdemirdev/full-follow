@@ -1,11 +1,15 @@
 // The richer field types of the form sheet board: combo, tags, offer items, payment plan, template suggestions
 import { useId, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { fmtNum, lira } from "../../lib/format";
+import { m as kit } from "../../messages";
+import { forms } from "../../messages.forms";
 import { Combo, type Option } from "../Combo";
 import { NumberField } from "../NumberField";
 import { useFieldError } from "./context";
 import { Field, type FieldProps } from "./fields";
 import { FORM_ICON, PathIcon } from "./icons";
+
+const m = forms.rich;
 
 // ---------------------------------------------------------------- combo
 
@@ -65,12 +69,12 @@ export function TagsField({ name, label, req, opt, hint, half, tags, suggestions
         {tags.map((t) => (
           <span key={t.key} className="form-tag">
             {t.label}
-            <button type="button" aria-label={`${t.label} kaldır`} onClick={() => onRemove(t.key)}>
+            <button type="button" aria-label={m.remove(t.label)} onClick={() => onRemove(t.key)}>
               <PathIcon d={FORM_ICON.close} className="size-form-icon-10" stroke={2.6} />
             </button>
           </span>
         ))}
-        <input id={id} type="text" value={draft} placeholder={placeholder} aria-label={label ? `${label} ekle` : undefined} onChange={(e) => setDraft(e.target.value)} onKeyDown={key} />
+        <input id={id} type="text" value={draft} placeholder={placeholder} aria-label={label ? m.add(label) : undefined} onChange={(e) => setDraft(e.target.value)} onKeyDown={key} />
       </div>
       {suggestions.length ? (
         <span className="form-suggest">
@@ -112,26 +116,26 @@ export function ItemsField({ name, label, req, opt, hint, half, items, onChange 
         {items.map((it) => (
           <div key={it.key} className="form-item">
             <span className="form-item-cell">
-              <input type="text" value={it.label} placeholder="Kalem" aria-label="Kalem adı" onChange={(e) => set(it.key, { label: e.target.value })} />
+              <input type="text" value={it.label} placeholder={m.itemPlaceholder} aria-label={m.itemName} onChange={(e) => set(it.key, { label: e.target.value })} />
             </span>
             <span className="form-item-cell">
-              <button type="button" aria-label="Adedi azalt" onClick={() => set(it.key, { qty: Math.max(1, it.qty - 1) })}>−</button>
+              <button type="button" aria-label={m.qtyDecrease} onClick={() => set(it.key, { qty: Math.max(1, it.qty - 1) })}>−</button>
               <span className="form-item-qty">{it.qty}</span>
-              <button type="button" aria-label="Adedi artır" onClick={() => set(it.key, { qty: it.qty + 1 })}>+</button>
+              <button type="button" aria-label={m.qtyIncrease} onClick={() => set(it.key, { qty: it.qty + 1 })}>+</button>
             </span>
             <span className="form-item-cell" data-price="">
-              <span className="form-affix">₺</span>
-              <NumberField className="" value={it.unit} min={0} ariaLabel="Birim tutar" onChange={(unit) => set(it.key, { unit })} />
+              <span className="form-affix">{kit.lira}</span>
+              <NumberField className="" value={it.unit} min={0} ariaLabel={m.unitAria} onChange={(unit) => set(it.key, { unit })} />
             </span>
-            <button type="button" className="form-item-remove" aria-label="Kalemi sil" onClick={() => (touch(), onChange(items.filter((x) => x.key !== it.key)))}>
+            <button type="button" className="form-item-remove" aria-label={m.removeItem} onClick={() => (touch(), onChange(items.filter((x) => x.key !== it.key)))}>
               <PathIcon d={FORM_ICON.close} className="size-form-icon-13" stroke={2.2} />
             </button>
           </div>
         ))}
         <div className="form-items-foot">
-          <button type="button" className="form-add" onClick={() => onChange([...items, newItemRow()])}>+ Kalem ekle</button>
+          <button type="button" className="form-add" onClick={() => onChange([...items, newItemRow()])}>{m.addItem}</button>
           <span className="form-total">
-            <span>Toplam</span>
+            <span>{m.total}</span>
             <span>{lira(itemsTotal(items))}</span>
           </span>
         </div>
@@ -171,9 +175,9 @@ export function PlanField({ name, label, req, opt, hint, half, rows, total, onCh
           <div key={r.key} className="form-plan-row">
             <span className="form-plan-name">{r.label}</span>
             <span className="form-plan-step">
-              <button type="button" aria-label="Yüzdeyi azalt" onClick={() => step(r.key, -PLAN_STEP)}>−</button>
-              <span>%{r.pct}</span>
-              <button type="button" aria-label="Yüzdeyi artır" onClick={() => step(r.key, PLAN_STEP)}>+</button>
+              <button type="button" aria-label={m.pctDecrease} onClick={() => step(r.key, -PLAN_STEP)}>−</button>
+              <span>{m.pct(r.pct)}</span>
+              <button type="button" aria-label={m.pctIncrease} onClick={() => step(r.key, PLAN_STEP)}>+</button>
             </span>
             <span className="form-plan-amount">{lira(Math.round((total * r.pct) / PLAN_FULL))}</span>
           </div>
@@ -221,7 +225,7 @@ export function SuggField({ name, label, req, opt, hint, half, options, value, o
               <span>{s.meta}</span>
               {s.rate === null ? null : (
                 <span className="form-sugg-rate" style={{ "--rate": s.rate >= GOOD_REPLY_RATE ? "var(--color-accent)" : "var(--color-warning)" } as CSSProperties}>
-                  %{fmtNum(Math.round(s.rate * 100))} cevap
+                  {m.replyRate(fmtNum(Math.round(s.rate * 100)))}
                 </span>
               )}
             </span>

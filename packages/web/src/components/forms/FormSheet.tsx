@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { m as kit } from "../../messages";
+import { forms } from "../../messages.forms";
 import { layout, motion } from "../../styles/tokens.json";
 import { FORM_ICON, PathIcon } from "./icons";
 
@@ -126,16 +128,16 @@ function Panel({ title, icon, dest, formId, busy, saveLabel, onDelete, onClose, 
 
   return (
     <>
-      <button type="button" className="form-scrim" aria-label="Kapat" tabIndex={-1} data-closing={closing ? "" : undefined} onClick={onClose} />
+      <button type="button" className="form-scrim" aria-label={kit.close} tabIndex={-1} data-closing={closing ? "" : undefined} onClick={onClose} />
       <section ref={panel} role="dialog" aria-modal="true" aria-label={title} className="form-sheet" data-closing={closing ? "" : undefined}>
-        <button type="button" className="form-grab" aria-label="Kapatmak için aşağı sürükle" tabIndex={-1} onPointerDown={down} onPointerMove={dragMove} onPointerUp={up} onPointerCancel={up} />
+        <button type="button" className="form-grab" aria-label={forms.sheet.drag} tabIndex={-1} onPointerDown={down} onPointerMove={dragMove} onPointerUp={up} onPointerCancel={up} />
         <header className="form-head">
           <span className="form-head-icon"><PathIcon d={icon} className="size-form-icon-19" /></span>
           <div className="form-head-text">
             <h2 className="form-title">{title}</h2>
             <span className="form-dest">{dest}</span>
           </div>
-          <button type="button" className="form-close" aria-label="Kapat" onClick={onClose}>
+          <button type="button" className="form-close" aria-label={kit.close} onClick={onClose}>
             <PathIcon d={FORM_ICON.close} className="size-icon-chip" stroke={2} />
           </button>
         </header>
@@ -144,9 +146,9 @@ function Panel({ title, icon, dest, formId, busy, saveLabel, onDelete, onClose, 
           {children}
         </div>
         <footer className="form-foot">
-          {onDelete ? <button type="button" className="form-btn" data-kind="danger" onClick={onDelete}>Sil</button> : null}
+          {onDelete ? <button type="button" className="form-btn" data-kind="danger" onClick={onDelete}>{kit.delete}</button> : null}
           <span className="form-foot-gap" />
-          <button type="button" className="form-btn" onClick={onClose}>Vazgeç</button>
+          <button type="button" className="form-btn" onClick={onClose}>{kit.cancel}</button>
           <button type="submit" form={formId} className="form-btn" data-kind="primary" disabled={busy} aria-busy={busy}>
             {busy ? <span className="ff-spinner" /> : null}
             {saveLabel}

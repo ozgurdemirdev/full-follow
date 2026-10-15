@@ -1,22 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { api, ApiError } from "../api/client";
 import { FORM_ICON, PathIcon } from "../components/forms/icons";
+import { shell } from "../messages.shell";
 
 const HTTP_UNAUTHORIZED = 401;
-const TEXT = {
-  title: "Tekrar hoş geldin",
-  sub: "Devam etmek için şifreni gir.",
-  label: "Şifre",
-  wrong: "Şifre yanlış. Tekrar dene.",
-  failed: "Giriş yapılamadı",
-  go: "Giriş yap",
-  busy: "Giriş yapılıyor",
-  show: "Şifreyi göster",
-  hide: "Şifreyi gizle",
-  hint: "Tek kullanıcılı kurulum. Şifreyi unuttuysan sunucudaki .env dosyasında FF_PASSWORD satırına bak.",
-  headline: ["Kimi takip edeceğini", "sen değil, liste hatırlar."],
-  lead: "Kişiler, fırsatlar, projeler ve tahsilat tek yerde. Claude aynı kayıtları görür, sen onaylarsın.",
-};
+const TEXT = shell.login;
 
 /** Login from the design board. The brand panel carries no business numbers: nothing is fetched before the session exists. */
 export function Login({ onDone }: { onDone: () => void }) {
@@ -45,11 +33,11 @@ export function Login({ onDone }: { onDone: () => void }) {
         <span className="login-orb" data-tone="accent" />
         <span className="login-orb" data-tone="claude" />
         <div className="login-brand">
-          <span className="login-logo">ff</span>
-          <span className="login-brandname">Full Follow</span>
+          <span className="login-logo">{shell.brandMark}</span>
+          <span className="login-brandname">{shell.brand}</span>
         </div>
         <div className="login-pitch">
-          <span className="login-headline">{TEXT.headline[0]}<br />{TEXT.headline[1]}</span>
+          <span className="login-headline">{TEXT.headlineTop}<br />{TEXT.headlineBottom}</span>
           <span className="login-lead">{TEXT.lead}</span>
         </div>
         <span />
@@ -57,7 +45,7 @@ export function Login({ onDone }: { onDone: () => void }) {
       <main className="login-main">
         <form className="login-card" onSubmit={submit}>
           <div className="login-head">
-            <span className="login-card-logo">ff</span>
+            <span className="login-card-logo">{shell.brandMark}</span>
             <h1 className="login-title">{TEXT.title}</h1>
             <p className="login-sub">{TEXT.sub}</p>
           </div>
