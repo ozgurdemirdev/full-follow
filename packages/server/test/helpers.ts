@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
+import { moduleServers } from "../src/modules.generated";
 
 // The app opens the database FF_DB names when its first provider is built: a throwaway file per test file, with the chat's runtime files beside it
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ff-server-test-"));
@@ -71,3 +72,9 @@ export async function startServer(): Promise<TestServer> {
 }
 
 export const JSON_HEADERS = { "content-type": "application/json" };
+
+/** True when the module is installed in this build (check:modules switches modules off): a test about a module's routes runs only then, the core assertions run in every case */
+export const installed = (key: string) => moduleServers.some((m) => m.key === key);
+
+/** The urls whose owning module is installed: each entry is a url, or [module key, url] for a module's route */
+export const available = (list: (string | [string, string])[]) => list.flatMap((e) => (typeof e === "string" ? [e] : installed(e[0]) ? [e[1]] : []));

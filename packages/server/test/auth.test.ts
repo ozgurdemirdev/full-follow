@@ -24,8 +24,10 @@ const operations = Object.entries((openApiDocument(controllers) as { paths: Reco
   .filter((o) => !PUBLIC.has(o.route));
 
 describe("password protection", () => {
-  it("the document lists routes to check", () => {
-    expect(operations.length).toBeGreaterThan(50);
+  it("the document lists routes to check, the core ones whatever modules are installed", () => {
+    const listed = operations.map((o) => `${o.method} ${o.route}`);
+    expect(listed).toEqual(expect.arrayContaining(["GET /api/tags", "POST /api/notes", "GET /api/today", "PUT /api/settings"]));
+    expect(operations.length).toBeGreaterThan(30);
   });
 
   it("every documented route answers 401 without the session cookie, and not 401 with it", async () => {
