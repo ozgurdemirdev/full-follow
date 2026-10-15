@@ -213,4 +213,13 @@ suite("the fixes of the service review", () => {
     h.sqlite.prepare("UPDATE settings SET value = ? WHERE key = 'payment_template'").run(JSON.stringify([{ milestone: "teslim", percent: 100, days: 0 }]));
     expect(app.settings.all().payment_template).toEqual([{ milestone: "teslim", percent: 100, days: 0 }]);
   });
+
+  it("settings.setMany saves all of its values or none of them", () => {
+    expect(() => app.settings.setMany({ bagkur_monthly: 123, tax_rate_percent: 150 })).toThrow(/Too big/);
+    expect(app.settings.all().bagkur_monthly).toBe(0);
+    expect(sql("SELECT COUNT(*) AS n FROM events WHERE type = 'settings.updated'")[0].n).toBe(0);
+    app.settings.setMany({ bagkur_monthly: 123, tax_rate_percent: 20 });
+    expect(app.settings.all()).toMatchObject({ bagkur_monthly: 123, tax_rate_percent: 20 });
+    expect(sql("SELECT COUNT(*) AS n FROM events WHERE type = 'settings.updated'")[0].n).toBe(2);
+  });
 });

@@ -4,6 +4,7 @@ import { emit, FFError, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
 import { isIsoDate, resolveRelativeDate } from "../dates";
+import type { Q } from "../db/client";
 import { settings } from "../db/schema";
 
 export const readSetting = (ctx: Ctx, key: string): string | undefined =>
@@ -150,7 +151,8 @@ export function settingsService(ctx: Ctx) {
     return Object.assign({}, values, ...ctx.contrib("settingsView").map((extra) => extra(ctx, values)));
   }
 
-  function set(key: string, value: unknown): void {
+  /** The text a setting is stored as; a value that is not valid for its key is a validation error */
+  function validated(key: string, value: unknown): string {
     if (!(SETTING_KEYS as readonly string[]).includes(key)) {
       throw new FFError("validation", m.settings.unknown(key, SETTING_KEYS.join(", ")));
     }
@@ -188,18 +190,24 @@ export function settingsService(ctx: Ctx) {
     } else {
       stored = String(parse(z.coerce.number().int().min(0), value));
     }
-    const t = ctx.clock.now();
-    ctx.db.transaction((tx) => {
-      tx.insert(settings).values({ key, value: stored, updated_at: t, updated_by: ctx.actor })
-        .onConflictDoUpdate({ target: settings.key, set: { value: stored, updated_at: t, updated_by: ctx.actor } }).run();
-      emit(tx, ctx, { type: "settings.updated", summary: m.settings.event(key), data: { key, value: stored } });
-    });
+    return stored;
   }
 
+  /** Writes one setting and its event inside the caller's transaction */
+  function store(tx: Q, key: string, value: string): void {
+    const t = ctx.clock.now();
+    tx.insert(settings).values({ key, value, updated_at: t, updated_by: ctx.actor })
+      .onConflictDoUpdate({ target: settings.key, set: { value, updated_at: t, updated_by: ctx.actor } }).run();
+    emit(tx, ctx, { type: "settings.updated", summary: m.settings.event(key), data: { key, value } });
+  }
+
+  const set = (key: string, value: unknown): void => ctx.db.transaction((tx) => store(tx, key, validated(key, value)));
+
+  /** Several settings in one transaction: one invalid value saves none of them */
   function setMany(data: Record<string, unknown>) {
     const keys = Object.keys(data);
     if (!keys.length) throw new FFError("validation", m.settings.empty);
-    for (const k of keys) set(k, data[k]);
+    ctx.db.transaction((tx) => { for (const k of keys) store(tx, k, validated(k, data[k])); });
     return { keys, effects: [] as string[] };
   }
 
