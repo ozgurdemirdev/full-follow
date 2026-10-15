@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Link } from "wouter";
 import { layout, radius } from "../styles/tokens.json";
 import { dur, ease, overlayRise } from "../lib/motion";
+import { lockScroll } from "../lib/scrollLock";
 import { m as kit } from "../messages";
 import { BoardIcon } from "./boardIcons";
 import { MotionScope } from "./MotionScope";
@@ -104,10 +105,10 @@ function Panel({ from, title, sub, toolbar, footer, header, headerClassName, bod
   // focus moves in, the page behind does not scroll, focus goes back to the opener on close
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = "hidden";
+    const unlock = lockScroll();
     panel.current?.querySelector<HTMLElement>("[data-close]")?.focus();
     return () => {
-      document.body.style.overflow = "";
+      unlock();
       opener?.focus?.();
     };
   }, []);

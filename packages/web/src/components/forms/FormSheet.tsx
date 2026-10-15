@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { lockScroll } from "../../lib/scrollLock";
 import { m as kit } from "../../messages";
 import { forms } from "../../messages.forms";
 import { layout, motion } from "../../styles/tokens.json";
@@ -96,12 +97,12 @@ function Panel({ title, icon, dest, formId, busy, saveLabel, onDelete, onClose, 
       }
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const unlock = lockScroll();
     const t = setTimeout(() => panel.current?.querySelector<HTMLElement>(FIRST_FIELD)?.focus(), FOCUS_DELAY);
     return () => {
       clearTimeout(t);
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      unlock();
       if (opener?.isConnected) opener.focus();
     };
   }, []);
