@@ -11,6 +11,7 @@ import { SectorTagsField } from "@kit/forms/pickers";
 import { errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { IDEA_STAGE } from "@kit/lib/labels";
 import { IDEA_STAGES, PRIORITIES, PRIORITY } from "../labels";
+import { m } from "../messages";
 
 const PROJECT_NONE = "none";
 
@@ -53,7 +54,7 @@ export function IdeaForm(p: FormProps) {
     }
   }, [ideas.byId, parent]);
   const where = useMemo(
-    () => [{ value: PROJECT_NONE, label: "Para kazanma fikirleri" }, ...projects.rows.filter((x) => x.status !== "birakildi" || String(x.id) === projectId).map((x) => ({ value: String(x.id), label: x.name }))],
+    () => [{ value: PROJECT_NONE, label: m.form.generalIdeas }, ...projects.rows.filter((x) => x.status !== "birakildi" || String(x.id) === projectId).map((x) => ({ value: String(x.id), label: x.name }))],
     [projects.rows, projectId],
   );
 
@@ -67,25 +68,25 @@ export function IdeaForm(p: FormProps) {
         : { title: title.trim(), problem, money_note: money, stage, notes, sectors, parent_id: parent.id, ...(row?.own_project_id ? { own_project_id: null } : {}) };
       await saveRecord(p, editId, data);
     },
-    () => errorsOf({ title: !title.trim() && "Başlık gerekli" }),
+    () => errorsOf({ title: !title.trim() && m.form.titleRequired }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Örn. klinik randevu botu" autoFocus />
-      <ChipsField label="Nerede" value={projectId || PROJECT_NONE} onChange={(v) => v && setProjectId(v === PROJECT_NONE ? "" : v)} options={where} />
-      <AreaField label={projectId ? "Açıklama" : "Çözdüğü sorun"} opt value={problem} onChange={setProblem} placeholder={projectId ? "Bu fikir ne yapacak" : "Kimin hangi derdini çözüyor"} rows={3} />
+      <TextField name="title" label={m.shared.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} autoFocus />
+      <ChipsField label={m.form.where} value={projectId || PROJECT_NONE} onChange={(v) => v && setProjectId(v === PROJECT_NONE ? "" : v)} options={where} />
+      <AreaField label={projectId ? m.form.description : m.form.problem} opt value={problem} onChange={setProblem} placeholder={projectId ? m.form.descriptionPlaceholder : m.form.problemPlaceholder} rows={3} />
       {projectId ? (
-        <SegField label="Öncelik" options={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
+        <SegField label={m.shared.priority} options={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
       ) : (
         <>
-          <TextField label="Para notu" opt value={money} onChange={setMoney} placeholder="Kabaca nasıl para kazandırır" />
-          <ChipsField label="Aşama" value={stage} onChange={(v) => v && setStage(v)} options={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} />
+          <TextField label={m.form.moneyNote} opt value={money} onChange={setMoney} placeholder={m.form.moneyNotePlaceholder} />
+          <ChipsField label={m.form.stage} value={stage} onChange={(v) => v && setStage(v)} options={IDEA_STAGES.map((s) => ({ value: s, label: IDEA_STAGE[s] }))} />
           <SectorTagsField value={sectors} onChange={setSectors} />
-          <ComboField label="Üst fikir" opt value={parent} onChange={setParent} options={parentOptions} placeholder="Bağlı olduğu fikir" />
+          <ComboField label={m.form.parent} opt value={parent} onChange={setParent} options={parentOptions} placeholder={m.form.parentPlaceholder} />
         </>
       )}
-      <AreaField label="Notlar" opt value={notes} onChange={setNotes} rows={3} />
+      <AreaField label={m.shared.notes} opt value={notes} onChange={setNotes} rows={3} />
     </Form>
   );
 }

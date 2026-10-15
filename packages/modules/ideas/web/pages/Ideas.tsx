@@ -14,6 +14,7 @@ import { IdeaLanes } from "../components/IdeaLanes";
 import { IdeaPeople } from "../components/IdeaPeople";
 import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
 import { groupByStage } from "../ideas";
+import { m } from "../messages";
 import { IDEAS_PATH } from "../paths";
 
 /** Gelir fikirleri: four stage lanes, the chosen idea with its interest numbers, and who it was told to */
@@ -37,12 +38,12 @@ export default function Ideas() {
 
   return (
     <Page
-      title="Gelir fikirleri"
-      sub="Fikri insanlara anlat, ilgiyi say, sayı tutarsa projeye dönüştür"
+      title={m.page.title}
+      sub={m.page.sub}
       right={
         <button type="button" className="dash-new" onClick={() => openSheet("idea")}>
           <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
-          Fikir ekle
+          {m.page.add}
         </button>
       }
     >
@@ -60,7 +61,7 @@ export default function Ideas() {
               <IdeaPeople ideaId={sel.id} people={detail.data?.related.people} />
             </div>
           ) : (
-            <Empty>Henüz fikir yok. Ürün fikrini, çözdüğü sorunu ve hedef sektörü yaz; kime anlattığını buradan ölç.</Empty>
+            <Empty>{m.page.empty}</Empty>
           )}
         </>
       )}

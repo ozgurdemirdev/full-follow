@@ -3,6 +3,8 @@ import {
   announceTrashed, Bin, FFError, IDEA_STAGES, keptRow, keptRows, label, parse, placeInGroup, renumberGroup, requireRow, schema, sectorInput, setSectorLinks, stamp,
   truncate, writeEvent as emit, type Ctx, type IdeaRecord, type InterestLevel, type InterestRecord, type OwnProjectRecord, type Q,
 } from "@fullfollow/core";
+import { m } from "../messages";
+import { EVENT_TITLE_LENGTH, EVENT_TITLE_SHORT } from "./constants";
 import { ideaCreate, ideaUpdate, interestSave, interestUpdate } from "./schemas";
 
 /** The table that links ideas to sectors */
@@ -22,8 +24,8 @@ export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: 
     const r = q.insert(idea_people).values({
       idea_id: d.idea_id, person_id: d.person_id, interest: d.interest ?? "anlatildi", note: d.note ?? null, touch_id: d.touch_id ?? null, ...stamp(ctx),
     }).returning().get();
-    emit(q, ctx, { type: "idea.told", person_id: person.id, summary: `Fikir anlatıldı: ${truncate(idea.title, 50)}${d.interest && d.interest !== "anlatildi" ? ` (${label(d.interest)})` : ""}`, data: { idea_id: idea.id } });
-    return { row: r as InterestRecord, effects: [`${person.name} fikre bağlandı`] };
+    emit(q, ctx, { type: "idea.told", person_id: person.id, summary: m.event.told(truncate(idea.title, EVENT_TITLE_SHORT), d.interest && d.interest !== "anlatildi" ? label(d.interest) : undefined), data: { idea_id: idea.id } });
+    return { row: r as InterestRecord, effects: [m.effect.linked(person.name)] };
   }
   const set: Record<string, unknown> = {};
   if (d.interest && d.interest !== cur.interest) set.interest = d.interest;
@@ -31,7 +33,7 @@ export function upsertInterest(q: Q, ctx: Ctx, d: { idea_id: number; person_id: 
   if (d.touch_id && !cur.touch_id) set.touch_id = d.touch_id;
   if (Object.keys(set).length) {
     q.update(idea_people).set({ ...set, updated_at: ctx.clock.now() }).where(eq(idea_people.id, cur.id)).run();
-    if (set.interest) emit(q, ctx, { type: "idea.interest", person_id: person.id, summary: `Fikre ilgi: ${truncate(idea.title, 50)} → ${label(String(set.interest))}`, data: { idea_id: idea.id } });
+    if (set.interest) emit(q, ctx, { type: "idea.interest", person_id: person.id, summary: m.event.interest(truncate(idea.title, EVENT_TITLE_SHORT), label(String(set.interest))), data: { idea_id: idea.id } });
   }
   return { row: requireRow<InterestRecord>(ctx, "idea_people", cur.id), effects: [] as string[] };
 }
@@ -47,7 +49,7 @@ export function trashIdea(tx: Q, ctx: Ctx, id: number) {
   bin.take("comments", "target_type = 'idea' AND target_id = ?", id);
   bin.take("ideas", "id = ?", id);
   bin.commit(tx, "idea", id, cur.title);
-  emit(tx, ctx, { type: "idea.deleted", summary: `Fikir silindi: ${truncate(cur.title, 60)}` });
+  emit(tx, ctx, { type: "idea.deleted", summary: m.event.deleted(truncate(cur.title, EVENT_TITLE_LENGTH)) });
   return { effects: [] as string[], trash: { type: "idea", id } };
 }
 
@@ -55,19 +57,19 @@ export function ideasService(ctx: Ctx) {
   /** Two levels only: the parent is a top-level idea, and an idea with children cannot get a parent */
   function checkParent(parentId: number | null | undefined, selfId?: number) {
     if (!parentId) return;
-    if (parentId === selfId) throw new FFError("validation", "fikir kendi altına konamaz");
-    const p = requireRow(ctx, "ideas", parentId, "üst fikir");
-    if (p.own_project_id) throw new FFError("validation", "proje fikri üst fikir olamaz");
-    if (p.parent_id) throw new FFError("validation", `${p.title} zaten bir alt fikir; alt fikrin altına fikir konmaz`);
-    if (selfId && keptRow(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", "alt fikirleri olan bir fikir başka bir fikrin altına konamaz");
+    if (parentId === selfId) throw new FFError("validation", m.error.ownParent);
+    const p = requireRow(ctx, "ideas", parentId, m.parentNoun);
+    if (p.own_project_id) throw new FFError("validation", m.error.projectIdeaParent);
+    if (p.parent_id) throw new FFError("validation", m.error.alreadyChild(p.title));
+    if (selfId && keptRow(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", selfId)) throw new FFError("validation", m.error.parentWithChildren);
   }
 
   /** An own project is the own-projects module's: a project given to an idea must exist there */
   function projectOf(id: number): OwnProjectRecord {
     const projects = ctx.mod("own-projects");
-    if (!projects) throw new FFError("validation", `kendi projesi verildi (#${id}) ama "own-projects" modülü kurulu değil`);
+    if (!projects) throw new FFError("validation", m.error.projectModuleMissing(id));
     const p = projects.ref(id);
-    if (!p) throw new FFError("not_found", `kendi projesi #${id} bulunamadı`);
+    if (!p) throw new FFError("not_found", m.error.projectNotFound(id));
     return p;
   }
 
@@ -78,16 +80,16 @@ export function ideasService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const { sector_ids, ...d } = parse(ideaCreate, sectorInput(tx, ctx, input));
       if (d.own_project_id) {
-        if (d.parent_id) throw new FFError("validation", "proje fikri bir üst fikrin altına konamaz");
+        if (d.parent_id) throw new FFError("validation", m.error.projectIdeaNoParent);
         projectOf(d.own_project_id);
       } else if (d.priority) {
-        throw new FFError("validation", "öncelik, sıra ve yapıldı sadece proje fikirlerinde");
+        throw new FFError("validation", m.error.projectOnly);
       }
       checkParent(d.parent_id);
       const r = tx.insert(ideas).values({ ...d, ...stamp(ctx) }).returning().get();
       if (r.own_project_id) placeInGroup(tx, ctx, "ideas", GROUP, [r.own_project_id, r.priority], r.id);
       if (sector_ids?.length) setSectorLinks(ctx, SECTOR_LINKS, r.id, sector_ids);
-      emit(tx, ctx, { type: "idea.created", summary: `Fikir: ${truncate(d.title, 60)}`, data: { idea_id: r.id } });
+      emit(tx, ctx, { type: "idea.created", summary: m.event.created(truncate(d.title, EVENT_TITLE_LENGTH)), data: { idea_id: r.id } });
       return { row: requireRow<IdeaRecord>(ctx, "ideas", r.id), effects: [] as string[] };
     });
   }
@@ -98,11 +100,11 @@ export function ideasService(ctx: Ctx) {
       const cur = requireRow(ctx, "ideas", id);
       const projectId = d.own_project_id !== undefined ? d.own_project_id : cur.own_project_id;
       if ((d.priority !== undefined || d.position !== undefined || done !== undefined) && !projectId) {
-        throw new FFError("validation", "öncelik, sıra ve yapıldı sadece proje fikirlerinde");
+        throw new FFError("validation", m.error.projectOnly);
       }
       if (projectId) {
-        if (d.parent_id) throw new FFError("validation", "proje fikri bir üst fikrin altına konamaz");
-        if (keptRow(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", id)) throw new FFError("validation", "alt fikirleri olan fikir projeye taşınamaz; önce alt fikirleri ayır");
+        if (d.parent_id) throw new FFError("validation", m.error.projectIdeaNoParent);
+        if (keptRow(ctx, "SELECT 1 x FROM ideas WHERE parent_id = ?", id)) throw new FFError("validation", m.error.childrenToProject);
         // a project the idea already belongs to exists (deleting a project lets its ideas go), so only a new one is looked up
         if (d.own_project_id !== undefined) projectOf(projectId);
         d.parent_id = null;
@@ -131,25 +133,25 @@ export function ideasService(ctx: Ctx) {
       if (sector_ids) setSectorLinks(ctx, SECTOR_LINKS, id, sector_ids);
 
       const effects: string[] = [];
-      const title = truncate(d.title ?? cur.title, 50);
+      const title = truncate(d.title ?? cur.title, EVENT_TITLE_SHORT);
       if (scopeChanged) {
-        const name = projectId ? projectOf(projectId).name : "Para kazanma fikirleri";
-        emit(tx, ctx, { type: "idea.moved", summary: `Fikir taşındı: ${title} → ${name}`, data: { idea_id: id, from: cur.own_project_id, to: projectId } });
-        effects.push(`fikir → ${name}`);
+        const name = projectId ? projectOf(projectId).name : m.generalIdeas;
+        emit(tx, ctx, { type: "idea.moved", summary: m.event.moved(title, name), data: { idea_id: id, from: cur.own_project_id, to: projectId } });
+        effects.push(m.effect.toIdea(name));
       } else if (done !== undefined && done !== wasDone) {
-        emit(tx, ctx, { type: done ? "idea.done" : "idea.undone", summary: done ? `Fikir yapıldı: ${title}` : `Fikir geri açıldı: ${title}`, data: { idea_id: id } });
+        emit(tx, ctx, { type: done ? "idea.done" : "idea.undone", summary: done ? m.event.done(title) : m.event.undone(title), data: { idea_id: id } });
       } else if (d.stage && d.stage !== cur.stage) {
-        emit(tx, ctx, { type: "idea.stage", summary: `Fikir ${label(cur.stage)} → ${label(d.stage)}: ${truncate(cur.title, 50)}`, data: { idea_id: id, from: cur.stage, to: d.stage } });
-        effects.push(`fikir → ${label(d.stage)}`);
+        emit(tx, ctx, { type: "idea.stage", summary: m.event.stage(label(cur.stage), label(d.stage), truncate(cur.title, EVENT_TITLE_SHORT)), data: { idea_id: id, from: cur.stage, to: d.stage } });
+        effects.push(m.effect.toIdea(label(d.stage)));
       } else if (Object.keys(set).length || sector_ids) {
-        emit(tx, ctx, { type: "idea.updated", summary: `Fikir düzenlendi: ${truncate(d.title ?? cur.title, 60)}`, data: { idea_id: id } });
+        emit(tx, ctx, { type: "idea.updated", summary: m.event.updated(truncate(d.title ?? cur.title, EVENT_TITLE_LENGTH)), data: { idea_id: id } });
       }
       return { row: requireRow<IdeaRecord>(ctx, "ideas", id), effects };
     });
   }
 
   const move = (id: number, stage: string) => {
-    if (!(IDEA_STAGES as readonly string[]).includes(stage)) throw new FFError("validation", `fikir aşaması: ${IDEA_STAGES.join(", ")}`);
+    if (!(IDEA_STAGES as readonly string[]).includes(stage)) throw new FFError("validation", m.error.stages(IDEA_STAGES.join(", ")));
     return update(id, { stage });
   };
 
@@ -183,8 +185,8 @@ export function ideasService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("idea_people", "id = ?", id);
-      bin.commit(tx, "interest", id, `Fikir ilgisi: ${truncate(idea.title, 50)}`);
-      emit(tx, ctx, { type: "idea.untold", person_id: cur.person_id, summary: `Fikir bağı kaldırıldı: ${truncate(idea.title, 50)}` });
+      bin.commit(tx, "interest", id, m.event.interestTrash(truncate(idea.title, EVENT_TITLE_SHORT)));
+      emit(tx, ctx, { type: "idea.untold", person_id: cur.person_id, summary: m.event.untold(truncate(idea.title, EVENT_TITLE_SHORT)) });
       return { effects: [] as string[], trash: { type: "interest", id } };
     });
   }

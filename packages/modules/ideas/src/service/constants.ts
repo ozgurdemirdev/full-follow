@@ -8,11 +8,13 @@ export const RATE_MIXED = 0.4;
 /** Stages that still want a demo before a project */
 export const EARLY_STAGES: readonly IdeaStage[] = ["fikir", "dogrulaniyor"];
 
-/** The sentences of the verdict */
-export const VERDICT_TEXT = {
-  tooFew: (pending: number) => `Karar için az. En az ${VERDICT_MIN_ANSWERS} kişiden cevap al; ${pending} kişi henüz dönmedi.`,
-  strongEarly: "İlgi güçlü. Demo aşamasına geçip küçük bir örnek göster.",
-  strongLate: "İlgi güçlü. Projeye dönüştürmek için yeterli sinyal var.",
-  mixed: "Karışık. İlgilenmeyenlerin nedenine bak, fiyat mı ihtiyaç mı?",
-  weak: "İlgi zayıf. Bırakmayı ya da kime anlattığını değiştirmeyi düşün.",
-} as const;
+/** Words that name the idea and interest record types in the generic tools */
+export const IDEA_ALIASES = ["fikir", "ideas"];
+export const INTEREST_ALIASES = ["ilgi"];
+/** Longest idea title written into an event summary: most events, and the edit event */
+export const EVENT_TITLE_SHORT = 50;
+export const EVENT_TITLE_LENGTH = 60;
+/** MCP output: lengths of the text parts of a line, of an idea title in the marketing report, and how many ideas that report names */
+export const MCP_TEXT_LENGTH = 50;
+export const MCP_TITLE_LENGTH = 30;
+export const MCP_MARKETING_IDEAS = 5;

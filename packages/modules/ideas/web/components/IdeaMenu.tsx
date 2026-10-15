@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { remove } from "@kit/api/actions";
 import type { Idea } from "@kit/api/types";
+import { m } from "../messages";
 import { IDEAS_PATH } from "../paths";
 import { openSheet } from "@kit/app/ui";
 import { usePopover } from "@kit/lib/usePopover";
@@ -12,20 +13,20 @@ export function IdeaMenu({ idea }: { idea: Idea }) {
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative flex-none">
-      <button type="button" className="ppl-round" aria-label="Diğer işlemler" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="ppl-round" aria-label={m.shared.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <BoardIcon name="dots" className="size-icon-md" stroke={2.4} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop ideas-pop" inert={!open}>
-        {idea.sectors.length ? <span className="ideas-pop-note">Sektör: {idea.sectors.map((s) => s.path).join(", ")}</span> : null}
+        {idea.sectors.length ? <span className="ideas-pop-note">{m.menu.sectors(idea.sectors.map((s) => s.path).join(", "))}</span> : null}
         {idea.parent_id ? (
           <Link href={`${IDEAS_PATH}/${idea.parent_id}`} role="menuitem" className="ppl-pop-item" onClick={() => setOpen(false)}>
-            <span>Üst fikir: {idea.parent_title}</span>
+            <span>{m.menu.parent(idea.parent_title ?? "")}</span>
           </Link>
         ) : null}
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("idea", { idea_id: idea.id }))}>Düzenle</button>
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { idea_id: idea.id }))}>Anlattığım teması ekle</button>
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("post", { idea_id: idea.id }))}>Paylaşım ekle</button>
-        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/ideas/${idea.id}`, `“${idea.title}” fikri`).catch(() => {}))}>Sil</button>
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("idea", { idea_id: idea.id }))}>{m.shared.edit}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { idea_id: idea.id }))}>{m.menu.addTouch}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("post", { idea_id: idea.id }))}>{m.menu.addPost}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/ideas/${idea.id}`, m.menu.deleteNoun(idea.title)).catch(() => {}))}>{m.shared.delete}</button>
       </div>
     </div>
   );

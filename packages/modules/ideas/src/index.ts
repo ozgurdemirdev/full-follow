@@ -2,6 +2,7 @@ import { defineModule, IDEA_PRIORITIES, IDEA_STAGES, INTEREST_LEVELS, row, type 
 import { ideasApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { upsertInterest } from "./service/ideas";
 
 /**
@@ -11,7 +12,7 @@ import { upsertInterest } from "./service/ideas";
  */
 export default defineModule({
   key: "ideas",
-  label: "Fikirler",
+  label: m.label,
   smoke: ["/api/ideas", "/api/ideas/people"],
   uses: ["people", "network", "own-projects", "posts"],
   api: ideasApi,
@@ -31,14 +32,14 @@ export default defineModule({
     },
   },
   contribute: {
-    trashTypes: [{ type: "idea", label: "fikir" }, { type: "interest", label: "fikir ilgisi" }],
+    trashTypes: [{ type: "idea", label: m.noun }, { type: "interest", label: m.interestNoun }],
     commentTargets: {
       idea: { table: "ideas", label: (ctx, id) => row(ctx, "SELECT title FROM ideas WHERE id = ?", id)?.title ?? `#${id}` },
     },
     chatCards: {
       idea: (ctx, id) => {
         const r = ctx.mod("ideas")!.get(id);
-        if (!r) throw new Error("idea not found");
+        if (!r) throw new Error(m.notFound);
         return { title: r.title, stage: r.stage };
       },
     },

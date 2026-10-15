@@ -4,20 +4,21 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { PersonIdeas } from "./components/PersonIdeas";
+import { m } from "./messages";
 import { IDEAS_PATH } from "./paths";
 
 /** The idea columns of an own project's overlay (slot of the own projects page) */
-const ProjectIdeas = lazy(() => import("./components/ProjectIdeas").then((m) => ({ default: m.ProjectIdeas })));
+const ProjectIdeas = lazy(() => import("./components/ProjectIdeas").then((mod) => ({ default: mod.ProjectIdeas })));
 
 export default defineWebModule({
   key: "ideas",
-  label: "Fikirler",
+  label: m.label,
   routes: [{ page: "ideas", path: IDEAS_PATH, params: "/:id?", load: () => import("./pages/Ideas") }],
-  nav: [{ group: "Pazarlama", order: 20, label: "Gelir fikirleri", icon: "bulb", path: IDEAS_PATH }],
+  nav: [{ group: m.shared.marketing, order: 20, label: m.navLabel, icon: "bulb", path: IDEAS_PATH }],
   quickAdd: [{
-    kind: "idea", name: "Fikir", key: "I", dest: "Gelir fikirleri", icon: BOARD_ICON.bulb, tone: "comment", group: "Pazarlama", order: 20,
-    form: { noun: "Fikir", dest: "Gelir fikirlerine eklenir", icon: BOARD_ICON.bulb, base: "/ideas", editId: (p) => p.idea_id, page: byRecord("idea") },
-    load: () => import("./forms/IdeaForm").then((m) => ({ default: m.IdeaForm })),
+    kind: "idea", name: m.noun, key: "I", dest: m.navLabel, icon: BOARD_ICON.bulb, tone: "comment", group: m.shared.marketing, order: 20,
+    form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.bulb, base: "/ideas", editId: (p) => p.idea_id, page: byRecord("idea") },
+    load: () => import("./forms/IdeaForm").then((mod) => ({ default: mod.IdeaForm })),
   }],
   links: { idea: (id) => `${IDEAS_PATH}/${id}` },
   slots: {

@@ -1,12 +1,14 @@
 import type { Ctx, EntityHandler } from "@fullfollow/core";
+import { m } from "./messages";
+import { IDEA_ALIASES, INTEREST_ALIASES } from "./service/constants";
 
 const ideas = (ctx: Ctx) => ctx.mod("ideas")!;
 
 /** The "idea" and "interest" record types, for the generic save / find / get / delete / move (the web and MCP use these names) */
 export const entities: Record<string, EntityHandler> = {
   idea: {
-    aliases: ["fikir", "ideas"],
-    ref: { table: "ideas", col: "title", label: "fikir" },
+    aliases: IDEA_ALIASES,
+    ref: { table: "ideas", col: "title", label: m.noun },
     // `parent: "üst fikir"` names the parent idea
     refKeys: { parent: "parent_id" },
     // the people told, touches and posts come from the relations the modules contribute
@@ -18,7 +20,7 @@ export const entities: Record<string, EntityHandler> = {
     move: (ctx, id, input) => ideas(ctx).move(id, input.stage),
   },
   interest: {
-    aliases: ["ilgi"],
+    aliases: INTEREST_ALIASES,
     save: (ctx, d, id) => (id ? ideas(ctx).updateInterest(id, d) : ideas(ctx).saveInterest(d)),
     get: (ctx, id) => ideas(ctx).interests.get(id),
     find: (ctx, o) => ideas(ctx).interests.list(o),

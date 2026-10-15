@@ -1,12 +1,10 @@
 import { run } from "@kit/api/actions";
 import type { Idea, IdeaStage, InterestLevel } from "@kit/api/types";
 import { todayIso } from "@kit/lib/format";
+import { m } from "./messages";
 
 /** The four lanes, left to right: the stage order of an idea */
 export const IDEA_FLOW: readonly IdeaStage[] = ["fikir", "dogrulaniyor", "demo", "urun"];
-
-/** The title of the task that asks Claude for a pitch text; the idea is the task's link */
-const PITCH_TASK_TITLE = "Fikir için kısa anlatım metni hazırla";
 
 /** Interest dots drawn on a lane card */
 export const DOTS_MAX = 8;
@@ -31,7 +29,7 @@ export function dotsOf(i: Pick<Idea, "told" | "interested" | "not_interested" | 
 
 /** Ask Claude for a short pitch text: a task for Claude linked to the idea (the draft lands in Taslaklar) */
 export const askPitch = (i: Pick<Idea, "id">) =>
-  run("post", "/tasks", { title: PITCH_TASK_TITLE, idea_id: i.id, assignee: "claude", due_date: todayIso() }, { ok: "Kısa anlatım metni Taslaklar’a düşecek" });
+  run("post", "/tasks", { title: m.pitch.taskTitle, idea_id: i.id, assignee: "claude", due_date: todayIso() }, { ok: m.pitch.queued });
 
 export type Lane = { stage: IdeaStage; ideas: Idea[] };
 

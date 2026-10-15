@@ -8,6 +8,7 @@ import { askPitch, IDEA_FLOW } from "../ideas";
 import { IDEA_STAGE } from "@kit/lib/labels";
 import { useDayMarks } from "@kit/lib/people";
 import { IdeaExtras } from "./IdeaExtras";
+import { m } from "../messages";
 import { IdeaMenu } from "./IdeaMenu";
 
 /** Ring geometry of the board: viewBox 36, r 15.9 so the circumference is 100 and the dash is the percent */
@@ -24,7 +25,7 @@ function Ring({ idea }: { idea: Idea }) {
       </svg>
       <span className="ideas-ring-num">
         {rate === null ? "–" : `%${pct}`}
-        <small>ilgi</small>
+        <small>{m.detail.interest}</small>
       </span>
     </div>
   );
@@ -44,16 +45,16 @@ function MoneyNote({ idea }: { idea: Idea }) {
     setEditing(false);
     const next = draft.trim();
     if (cancelled.current || next === (idea.money_note ?? "")) return;
-    run("patch", `/ideas/${idea.id}`, { money_note: next }, { ok: "Para hesabı kaydedildi" }).catch(() => {});
+    run("patch", `/ideas/${idea.id}`, { money_note: next }, { ok: m.detail.moneySaved }).catch(() => {});
   };
   return (
     <div className="ideas-block">
-      <h3>Para hesabı</h3>
+      <h3>{m.detail.money}</h3>
       {editing ? (
-        <textarea className="inp" rows={2} autoFocus value={draft} aria-label="Para hesabı" placeholder="₺2.500 × 10 klinik = ₺25.000 / ay"
+        <textarea className="inp" rows={2} autoFocus value={draft} aria-label={m.detail.money} placeholder={m.detail.moneyPlaceholder}
           onChange={(e) => setDraft(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Escape" && ((cancelled.current = true), e.currentTarget.blur())} />
       ) : (
-        <button type="button" className="ideas-note" data-empty={!idea.money_note} onClick={start}>{idea.money_note ?? "Nasıl para kazandırır? Yaz"}</button>
+        <button type="button" className="ideas-note" data-empty={!idea.money_note} onClick={start}>{idea.money_note ?? m.detail.moneyEmpty}</button>
       )}
     </div>
   );
@@ -64,7 +65,7 @@ export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelate
   const [pitched, markPitched] = useDayMarks("pitched");
   const asked = pitched.has(idea.id);
   const stageIdx = IDEA_FLOW.indexOf(idea.stage);
-  const move = (stage: string) => stage !== idea.stage && run("patch", `/ideas/${idea.id}`, { stage }, { ok: `Aşama: ${IDEA_STAGE[stage]}` }).catch(() => {});
+  const move = (stage: string) => stage !== idea.stage && run("patch", `/ideas/${idea.id}`, { stage }, { ok: m.detail.stageSet(IDEA_STAGE[stage]) }).catch(() => {});
 
   return (
     <section aria-label={idea.title} className="ideas-detail" data-lane={idea.stage}>
@@ -85,22 +86,22 @@ export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelate
       </div>
       <div className="ideas-blocks">
         <div className="ideas-block">
-          <h3>Çözdüğü sorun</h3>
-          <span>{idea.problem ?? "Çözdüğü sorun yazılmadı"}</span>
+          <h3>{m.detail.problem}</h3>
+          <span>{idea.problem ?? m.detail.noProblem}</span>
         </div>
         <MoneyNote key={idea.id} idea={idea} />
       </div>
       <div className="ideas-verdict">
         <Ring idea={idea} />
         <div className="ideas-verdict-text">
-          <span>{idea.told} kişiye anlatıldı · {idea.interested} ilgilendi · {idea.not_interested} ilgilenmedi</span>
+          <span>{m.detail.told(idea.told, idea.interested, idea.not_interested)}</span>
           <p>{idea.verdict}</p>
         </div>
       </div>
       <div className="ideas-actions">
         <Slot name="idea.actions" props={{ idea }} />
         <button type="button" className={`ideas-pitch ${asked ? "is-asked" : ""}`} onClick={() => { if (!asked) askPitch(idea).then(() => markPitched(idea.id)).catch(() => {}); }}>
-          {asked ? "Anlatım metni istendi" : "Claude anlatım metni yazsın"}
+          {asked ? m.pitch.asked : m.pitch.ask}
         </button>
       </div>
       <IdeaExtras idea={idea} related={related} />
