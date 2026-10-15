@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ACTORS, FFError, isIsoDateTime } from "@fullfollow/core";
 import { FEED_DEFAULT_LIMIT, FEED_KINDS, FEED_MAX_LIMIT, FEED_QUERY_MAX } from "../constants";
+import { m } from "../messages";
 
 /** An empty query value (`?actor=`) counts as not given */
 const given = (v: unknown) => (v === "" ? undefined : v);
@@ -10,9 +11,9 @@ export const feedQuery = z.strictObject({
   limit: z.preprocess(given, z.coerce.number().int().min(1).transform((n) => Math.min(n, FEED_MAX_LIMIT)).default(FEED_DEFAULT_LIMIT)),
   type: z.preprocess(given, z.string().trim().optional()),
   actor: z.preprocess(given, z.enum(ACTORS).optional()),
-  since: z.preprocess(given, z.string().trim().refine(isIsoDateTime, "since: YYYY-MM-DD ya da ISO zaman olmalı").optional()),
+  since: z.preprocess(given, z.string().trim().refine(isIsoDateTime, m.badSince).optional()),
   q: z.preprocess(given, z.string().trim().max(FEED_QUERY_MAX).optional()),
-  record: z.preprocess(given, z.string().trim().regex(/^[a-z_]+:\d+$/, "record: tür:id olmalı (person:12)").optional()),
+  record: z.preprocess(given, z.string().trim().regex(/^[a-z_]+:\d+$/, m.badRecord).optional()),
 });
 
 /** `person:12` to its kind and id (the schema has checked the shape) */
@@ -26,7 +27,7 @@ export function kindsOf(list: string | undefined) {
   if (!list) return undefined;
   const kinds = list.split(",").map((k) => k.trim()).filter(Boolean);
   const bad = kinds.find((k) => !(FEED_KINDS as readonly string[]).includes(k));
-  if (bad) throw new FFError("validation", `type: geçersiz tür "${bad}" (geçerli: ${FEED_KINDS.join(", ")})`);
+  if (bad) throw new FFError("validation", m.badKind(bad, FEED_KINDS.join(", ")));
   return kinds;
 }
 
@@ -34,6 +35,6 @@ const encodeCursor = (at: string, id: number) => Buffer.from(`${at}|${id}`).toSt
 export const cursorOf = (row: { created_at: string; id: number }) => encodeCursor(row.created_at, row.id);
 export function decodeCursor(c: string): { at: string; id: number } {
   const [at, id] = Buffer.from(c, "base64url").toString().split("|");
-  if (!at || !Number.isInteger(Number(id))) throw new FFError("validation", "geçersiz cursor");
+  if (!at || !Number.isInteger(Number(id))) throw new FFError("validation", m.badCursor);
   return { at, id: Number(id) };
 }

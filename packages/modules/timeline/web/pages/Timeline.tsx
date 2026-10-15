@@ -5,6 +5,8 @@ import { useCompanies, useOwnProjects } from "@kit/api/keys";
 import { useModules } from "@kit/api/modules";
 import { useQuery } from "@kit/api/store";
 import type { Detail, List, Thread, Touch } from "@kit/api/types";
+import { LATEST_LIMIT, THREADS_LIMIT, TOUCHES_LIMIT } from "../constants";
+import { m } from "../messages";
 import type { TimelineEvent, TlPage, TlRec, TlType, TlWeekData } from "../types";
 import { Page } from "@kit/app/Page";
 import { TIMELINE_PATH, timelinePath } from "../paths";
@@ -21,10 +23,6 @@ import type { Actor } from "@kit/lib/labels";
 import { canFocus, focusSummary, groupDays, isAsideKind, STAGE_EVENTS_LIMIT, TL_SEARCH_DEBOUNCE_MS, TL_TYPES, weekView } from "../timeline";
 import { useDebounced } from "@kit/lib/useDebounced";
 import { useTimelineFeed } from "../useTimelineFeed";
-
-/** Rows the side cards of a focused record ask for: the person's touches (their counts) and the record's comment threads (the open one) */
-const SIDE_LIMIT = 1000;
-const THREADS_LIMIT = 50;
 
 /** Timeline: everything Özgür and Claude did, newest first. /zaman/:type/:id focuses one record. */
 export default function Timeline() {
@@ -49,10 +47,10 @@ export default function Timeline() {
     record: focusKey,
   }, shownTypes.length > 0);
   const week = useQuery<TlWeekData>("/timeline/week");
-  const latest = useQuery<TlPage>(focusKey ? `/timeline${qs({ record: focusKey, limit: 1 })}` : null);
+  const latest = useQuery<TlPage>(focusKey ? `/timeline${qs({ record: focusKey, limit: LATEST_LIMIT })}` : null);
   const detail = useQuery<Detail<any>>(aside ? detailKey(aside, id, has) : null);
   const stageEvents = useQuery<TimelineEvent[]>(aside ? `/timeline/${aside}/${id}?limit=${STAGE_EVENTS_LIMIT}` : null);
-  const touches = useQuery<List<Touch>>(aside === "person" ? `/touches${qs({ person_id: id, limit: SIDE_LIMIT })}` : null);
+  const touches = useQuery<List<Touch>>(aside === "person" ? `/touches${qs({ person_id: id, limit: TOUCHES_LIMIT })}` : null);
   const threads = useQuery<List<Thread>>(aside ? `/comments${qs({ target_type: aside, target_id: id, resolved: "all", limit: THREADS_LIMIT })}` : null);
   const companies = useCompanies(kind === "company" && !!focusKey);
   const ownProjects = useOwnProjects(kind === "own_project" && !!focusKey);
@@ -81,16 +79,16 @@ export default function Timeline() {
   const search = (
     <label className="tlx-search">
       <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
-      <span className="sr-only">Kayıt ara</span>
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kişi, fırsat ya da proje ara" />
+      <span className="sr-only">{m.search.label}</span>
+      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.search.placeholder} />
     </label>
   );
-  const frame = (children: ReactNode) => <Page title="Zaman çizelgesi" sub="Sen ve Claude ne yaptınız, kayıt kayıt" right={search}>{children}</Page>;
+  const frame = (children: ReactNode) => <Page title={m.label} sub={m.sub} right={search}>{children}</Page>;
 
   if (feed.error && !feed.ready) return frame(<ErrorBox error={feed.error} retry={feed.reload} />);
   if (aside && detail.error && !detail.data) return frame(<ErrorBox error={detail.error} retry={detail.reload} />);
   const lookedUp = aside ? !!detail.data : kind === "company" ? !!companies.data : kind === "own_project" ? !!ownProjects.data : true;
-  if (focusKey && !focus && lookedUp) return frame(<Empty>Kayıt bulunamadı</Empty>);
+  if (focusKey && !focus && lookedUp) return frame(<Empty>{m.notFound}</Empty>);
   if (!feed.ready || (!week.data && !week.error) || (focusKey && !focus)) return frame(<PageSkeleton />);
 
   const openThread = threads.data?.rows.find((t) => !t.resolved_at);
@@ -98,7 +96,7 @@ export default function Timeline() {
     <div className="tlx-feed rise" style={order(3)}>
       <FeedFilters actor={actor} onActor={setActor} hidden={hidden} onToggle={toggle} />
       <DayGroups days={days} onFocus={onFocus} />
-      {feed.rows.length === 0 ? <p className="tlx-empty">Bu süzgeçte olay yok.</p> : null}
+      {feed.rows.length === 0 ? <p className="tlx-empty">{m.noEventsInFilter}</p> : null}
       {feed.next ? <LoadMore onMore={feed.loadMore} busy={feed.paging} /> : null}
       {aside && focus ? <div className="tlx-composer"><FeedComposer type={aside} id={id} label={focus.name} openThread={openThread} /></div> : null}
     </div>

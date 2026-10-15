@@ -1,5 +1,6 @@
 import { addDays, FFError, isIsoDate, keptRow, keptRows, weekStart, type Ctx, type TimelineEventDef, type WeekStrip } from "@fullfollow/core";
 import { DRAFT_APPROVED_STATUSES, WEEK_DAYS } from "../constants";
+import { m } from "../messages";
 
 /** Events of the feed types in a range, counted per type and actor; the `events_feed` index serves the range */
 const COUNTS = `SELECT e.type, e.created_by, COUNT(*) AS n FROM events e
@@ -17,7 +18,7 @@ const dayStart = (date: string) => new Date(`${date}T00:00:00`).toISOString().re
 
 /** The week strip: Monday to Sunday of the week `start` falls in, against the week before */
 export function weekOf(ctx: Ctx, kinds: Record<string, TimelineEventDef>, start?: string): WeekStrip {
-  if (start !== undefined && !isIsoDate(start)) throw new FFError("validation", "start: YYYY-MM-DD olmalı");
+  if (start !== undefined && !isIsoDate(start)) throw new FFError("validation", m.badStart);
   const monday = weekStart(start ?? ctx.clock.today());
   const types = JSON.stringify(Object.keys(kinds));
   const from = dayStart(monday);

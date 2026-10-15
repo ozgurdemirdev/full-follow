@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { m } from "../messages";
 import { TL_PREFETCH_MARGIN } from "../timeline";
 
 /** "Daha eski olaylar": pressed by hand, or by itself once it comes within reach of the viewport while the list is scrolled */
@@ -14,5 +15,5 @@ export function LoadMore({ onMore, busy }: { onMore: () => void; busy: boolean }
     seen.observe(el);
     return () => seen.disconnect();
   }, [onMore, busy]);
-  return <button ref={button} type="button" className="tlx-more" disabled={busy} onClick={onMore}>Daha eski olaylar</button>;
+  return <button ref={button} type="button" className="tlx-more" disabled={busy} onClick={onMore}>{m.olderEvents}</button>;
 }

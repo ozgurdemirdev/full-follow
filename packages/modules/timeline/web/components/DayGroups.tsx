@@ -2,6 +2,7 @@ import { memo } from "react";
 import { useModules } from "@kit/api/modules";
 import type { TlRec, TlRow } from "../types";
 import { lira } from "@kit/lib/format";
+import { m } from "../messages";
 import { canFocus, fmtClock, recTone, TL_TYPE, type TlDay } from "../timeline";
 import { PathIcon } from "./PathIcon";
 
@@ -15,7 +16,7 @@ const Row = memo(function Row({ e, onFocus }: { e: TlRow; onFocus: (r: TlRec) =>
       <div className="tlx-ev-body">
         <span className="tlx-meta">
           <span className="tlx-time">{fmtClock(e.created_at)}</span>
-          <span className="tlx-actor" data-by={e.created_by}>{e.created_by === "ozgur" ? "Sen" : "Claude"}</span>
+          <span className="tlx-actor" data-by={e.created_by}>{e.created_by === "ozgur" ? m.actor.ozgur : m.actor.claude}</span>
           <span>{type.label}</span>
         </span>
         <span className="tlx-text">{e.text}</span>

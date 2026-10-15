@@ -1,6 +1,7 @@
 import { defineModule } from "@fullfollow/core";
 import { timelineApi } from "./api";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 
 /**
  * Timeline: the event history of a person, opportunity or project, the global feed (touches, payments, tasks, stage changes, drafts, comments)
@@ -9,7 +10,7 @@ import { mcp } from "./mcp";
  */
 export default defineModule({
   key: "timeline",
-  label: "Zaman çizelgesi",
+  label: m.label,
   smoke: ["/api/timeline", "/api/timeline/week"],
   uses: ["network", "projects", "pipeline", "drafts", "calendar"],
   api: timelineApi,
