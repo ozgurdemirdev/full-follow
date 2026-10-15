@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { useIdeas } from "@kit/api/keys";
+import { useModules } from "@kit/api/modules";
 import { useQuery } from "@kit/api/store";
 import type { Detail, Idea } from "@kit/api/types";
 import type { IdeaRelated } from "../types";
@@ -24,6 +25,7 @@ export default function Ideas() {
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
   const linkTo = useLinkTo();
+  const { has } = useModules();
   const inProject = params.id ? all.byId.get(Number(params.id))?.own_project_id : null;
   const projectPage = inProject ? linkTo("own_project", inProject) : null;
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function Ideas() {
   }, [projectPage, navigate]);
   const sel = rows.find((i) => i.id === Number(params.id)) ?? lanes.find((l) => l.ideas.length)?.ideas[0];
   const pick = useCallback((id: number) => navigate(`${IDEAS_PATH}/${id}`, { replace: true }), [navigate]);
-  const detail = useQuery<Detail<Idea, IdeaRelated>>(sel ? `/ideas/${sel.id}?with=people,touches,posts` : null);
+  const detail = useQuery<Detail<Idea, IdeaRelated>>(sel ? `/ideas/${sel.id}?with=${["people", has("network") && "touches", has("posts") && "posts"].filter(Boolean).join(",")}` : null);
 
   return (
     <Page

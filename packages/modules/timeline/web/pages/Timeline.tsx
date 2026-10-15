@@ -50,7 +50,7 @@ export default function Timeline() {
   }, shownTypes.length > 0);
   const week = useQuery<TlWeekData>("/timeline/week");
   const latest = useQuery<TlPage>(focusKey ? `/timeline${qs({ record: focusKey, limit: 1 })}` : null);
-  const detail = useQuery<Detail<any>>(aside ? detailKey(aside, id) : null);
+  const detail = useQuery<Detail<any>>(aside ? detailKey(aside, id, has) : null);
   const stageEvents = useQuery<TimelineEvent[]>(aside ? `/timeline/${aside}/${id}?limit=${STAGE_EVENTS_LIMIT}` : null);
   const touches = useQuery<List<Touch>>(aside === "person" ? `/touches${qs({ person_id: id, limit: SIDE_LIMIT })}` : null);
   const threads = useQuery<List<Thread>>(aside ? `/comments${qs({ target_type: aside, target_id: id, resolved: "all", limit: THREADS_LIMIT })}` : null);
