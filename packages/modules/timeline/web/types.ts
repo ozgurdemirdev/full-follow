@@ -61,7 +61,7 @@ export interface TlWeekData {
   me: number;
   claude: number;
   touches: number;
-  collections_amount: number;
+  collections_amount: number | null;
   collections_count: number;
   tasks_done: number;
   claude_drafts: number;

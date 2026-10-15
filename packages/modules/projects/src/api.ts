@@ -1,7 +1,7 @@
 import type { Ctx, ProjectsApi } from "@fullfollow/core";
 import { projectsServices } from "./service";
 import { countOf, forOpportunity, idsForOpportunities, moneyByCompany, namesOf, paymentGet, paymentList, paymentRef, paymentsDue, personStats, projectGet, projectList, projectRef } from "./service/list";
-import { collectedIn, outstandingDue } from "./service/payments";
+import { collectedBetween, collectedIn, outstandingDue } from "./service/payments";
 
 /** The projects module's implementation of its contract (`ProjectsApi` in core's contracts) */
 export function projectsApi(ctx: Ctx): ProjectsApi {
@@ -32,6 +32,7 @@ export function projectsApi(ctx: Ctx): ProjectsApi {
       due: (from, to) => paymentsDue(ctx, from, to),
     },
     collectedIn: (ym) => collectedIn(ctx, ym),
+    collectedBetween: (from, to) => collectedBetween(ctx, from, to),
     outstandingDue: (ym) => outstandingDue(ctx, ym),
     personStats: () => personStats(ctx),
     moneyByCompany: () => moneyByCompany(ctx),

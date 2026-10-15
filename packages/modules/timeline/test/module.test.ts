@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCore, FFError, openDb, type Clock } from "@fullfollow/core";
 import { FEED_MAX_LIMIT } from "../src/constants";
-import { appFor, company, event, feedKinds, fakePeople, person, touch } from "./helpers";
+import { appFor, company, event, feedKinds, fakePeople, fakeProjects, person, touch } from "./helpers";
 
 const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
 
@@ -84,7 +84,7 @@ describe("timeline as a module", () => {
 
   it("the week strip counts Monday to Sunday against the week before, in SQL", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [feedKinds]);
+    const app = appFor(h, "ozgur", clock, [feedKinds, fakeProjects]);
     const noon = (d: string) => `2026-10-${d}T12:00:00Z`;
     // this week: 2026-10-12 to 2026-10-18
     event(h, { type: "touch.created", at: noon("12"), by: "ozgur" });
@@ -127,7 +127,7 @@ describe("timeline as a module", () => {
   it("without the modules that write events the feed is empty and the week strip is zero; a core without the module has no timeline", () => {
     const app = appFor(openDb(":memory:"), "ozgur", clock);
     expect(app.timeline.feed()).toEqual({ rows: [], next_before: null, day_counts: {} });
-    expect(app.timeline.week()).toMatchObject({ start: "2026-10-12", me: 0, claude: 0, touches: 0, collections_amount: 0, tasks_done: 0 });
+    expect(app.timeline.week()).toMatchObject({ start: "2026-10-12", me: 0, claude: 0, touches: 0, collections_amount: null, tasks_done: 0 });
     expect(createCore(openDb(":memory:"), "ozgur", clock).mod("timeline")).toBeUndefined();
   });
 });

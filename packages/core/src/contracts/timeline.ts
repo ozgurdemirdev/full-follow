@@ -86,7 +86,8 @@ export interface WeekStrip {
   me: number;
   claude: number;
   touches: number;
-  collections_amount: number;
+  /** money received in the week by payment date (the projects module's ledger); null without that module */
+  collections_amount: number | null;
   collections_count: number;
   tasks_done: number;
   claude_drafts: number;

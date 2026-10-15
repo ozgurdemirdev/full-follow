@@ -143,7 +143,7 @@ export function weekView(w: TlWeekData): TlWeek {
     me: w.me, cl: w.claude,
     tiles: [
       { type: "temas", label: m.week.touches, value: String(w.touches), sub: m.week.lastWeek(w.prev.touches) },
-      { type: "odeme", label: m.week.collected, value: lira(w.collections_amount), sub: m.week.payments(w.collections_count) },
+      { type: "odeme", label: m.week.collected, value: w.collections_amount === null ? m.week.unknown : lira(w.collections_amount), sub: m.week.payments(w.collections_count) },
       { type: "gorev", label: m.week.tasksDone, value: String(w.tasks_done), sub: m.week.lastWeek(w.prev.tasks_done) },
       { type: "taslak", label: m.week.claudeDrafts, value: String(w.claude_drafts), sub: m.week.approved(w.claude_drafts_approved) },
     ],
