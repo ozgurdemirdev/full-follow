@@ -2,3 +2,4 @@
 *.generated.ts text eol=lf
 *.generated.css text eol=lf
 packages/web/src/styles/tokens.css text eol=lf
+package-lock.json text eol=lf
