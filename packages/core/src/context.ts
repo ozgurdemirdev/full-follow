@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 import { z } from "zod";
 import type { Actor } from "./constants";
+import { LOCALE } from "./i18n";
 import { localDate, nowIso } from "./dates";
 import type { Db, Q } from "./db/client";
 import { events } from "./db/schema";
@@ -123,7 +124,7 @@ export function assertOzgur(ctx: Ctx, what: string): void {
   if (ctx.actor !== "ozgur") throw new FFError("forbidden", `${what} sadece Özgür tarafından yapılır`);
 }
 
-export const money = (n: number) => `${n.toLocaleString("tr-TR")}₺`;
+export const money = (n: number) => `${n.toLocaleString(LOCALE)}₺`;
 
 /** Arama için: küçük harf, Türkçe karakter ve aksan duyarsız */
 export function norm(s: string | null | undefined): string {

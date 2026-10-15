@@ -1,11 +1,12 @@
 // Biçimlendiriciler bir kez oluşturulur (her çizimde Intl nesnesi kurmak pahalı)
-const num = new Intl.NumberFormat("tr-TR");
-const dayMonth = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" });
-const dayMonthLong = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
-const dayMonthWeekday = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", weekday: "long" });
-const monthYear = new Intl.DateTimeFormat("tr-TR", { month: "long", year: "numeric" });
-const monthShort = new Intl.DateTimeFormat("tr-TR", { month: "short" });
-const rel = new Intl.RelativeTimeFormat("tr-TR", { numeric: "auto" });
+import { LOCALE } from "./i18n";
+const num = new Intl.NumberFormat(LOCALE);
+const dayMonth = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short" });
+const dayMonthLong = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "long" });
+const dayMonthWeekday = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "long", weekday: "long" });
+const monthYear = new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeric" });
+const monthShort = new Intl.DateTimeFormat(LOCALE, { month: "short" });
+const rel = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
 
 export const tl = (n: number | null | undefined) => (n == null ? "—" : `${num.format(n)} ₺`);
 /** Amount with the lira sign in front, as the boards write it: ₺84.500 */
@@ -32,7 +33,7 @@ export const fmtDayLong = (s: string | null | undefined) => (s ? dayMonthLong.fo
 export const fmtToday = (s: string) => dayMonthWeekday.format(toDate(s));
 export const fmtMonth = (ym: string) => cap(monthYear.format(toDate(`${ym}-15`)));
 export const fmtMonthShort = (ym: string) => cap(monthShort.format(toDate(`${ym}-15`)));
-const cap = (s: string) => s.charAt(0).toLocaleUpperCase("tr-TR") + s.slice(1);
+const cap = (s: string) => s.charAt(0).toLocaleUpperCase(LOCALE) + s.slice(1);
 
 /** Gün farkı: pozitif = gelecekte */
 export function daysFrom(iso: string, from = todayIso()): number {
@@ -65,13 +66,13 @@ export function initials(name: string): string {
   const parts = name.replace(/^(dr|av|prof)\.?\s+/i, "").trim().split(/\s+/);
   const a = parts[0]?.[0] ?? "";
   const b = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (a + b).toLocaleUpperCase("tr-TR");
+  return (a + b).toLocaleUpperCase(LOCALE);
 }
 
 /** Türkçe ve büyük/küçük harf duyarsız arama anahtarı */
 export function norm(s: string | null | undefined): string {
   return (s ?? "")
-    .toLocaleLowerCase("tr-TR")
+    .toLocaleLowerCase(LOCALE)
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/ı/g, "i");
@@ -80,7 +81,7 @@ export function norm(s: string | null | undefined): string {
 /** File size: "812 KB", "3,4 MB" */
 export function fmtSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / 1024 / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB`;
+  return `${(bytes / 1024 / 1024).toLocaleString(LOCALE, { maximumFractionDigits: 1 })} MB`;
 }
 
 /** A share (0 to 1) as a whole percent */

@@ -19,6 +19,7 @@ import type { SaveResult } from "./modules/types";
 
 export * from "./constants";
 export * from "./dates";
+export * from "./i18n";
 export { openDb, defaultDbPath, loadRootEnv, backupDb, type DbHandle, type Db } from "./db/client";
 export { FFError, systemClock, type Clock, type ListOpts, type ErrorCode, type DuplicateHit } from "./context";
 export type { Thread } from "./services/comments";
