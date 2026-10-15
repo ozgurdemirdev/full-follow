@@ -5,7 +5,10 @@ import { useQuery } from "@kit/api/store";
 import type { List, Payment, Report } from "@kit/api/types";
 import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
 import { fmtDay, fmtNum, initials, lira, todayIso } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
 import { MILESTONE } from "@kit/lib/labels";
+import { MIN_PAYMENT, PAYMENTS_LIMIT } from "../constants";
+import { m } from "../messages";
 import { PROJECTS_PATH } from "../paths";
 import { requestReminder } from "../projects";
 import { NumberField } from "@kit/components/NumberField";
@@ -15,9 +18,9 @@ import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 
 const dueText = (p: Payment, today: string) => {
   const late = lateDays(p, today);
-  return late ? `${late} gün gecikti` : p.due_date === today ? "bugün" : p.due_date ? fmtDay(p.due_date) : "tarih yok";
+  return late ? m.card.late(late) : p.due_date === today ? m.card.today : p.due_date ? fmtDay(p.due_date) : m.card.noDate;
 };
-const label = (p: Payment) => MILESTONE[p.milestone]?.toLocaleLowerCase("tr-TR") ?? p.milestone;
+const label = (p: Payment) => MILESTONE[p.milestone]?.toLocaleLowerCase(LOCALE) ?? p.milestone;
 
 /** Records a payment on one of the waiting ones (the whole remainder unless another amount is typed) */
 function PayForm({ list, onDone }: { list: Payment[]; onDone: () => void }) {
@@ -27,7 +30,7 @@ function PayForm({ list, onDone }: { list: Payment[]; onDone: () => void }) {
   const save = async () => {
     if (!picked) return;
     try {
-      await run("post", `/payments/${picked.id}/pay`, { amount: amount ?? remaining(picked) }, { ok: "Ödeme kaydedildi" });
+      await run("post", `/payments/${picked.id}/pay`, { amount: amount ?? remaining(picked) }, { ok: m.aside.paymentSaved });
       onDone();
     } catch {
       /* the notice is shown by run() */
@@ -35,14 +38,14 @@ function PayForm({ list, onDone }: { list: Payment[]; onDone: () => void }) {
   };
   return (
     <div className="flex flex-col gap-4">
-      <select className="inp" aria-label="Ödeme" value={id} onChange={(e) => { setId(Number(e.target.value)); setAmount(null); }}>
+      <select className="inp" aria-label={m.card.payment} value={id} onChange={(e) => { setId(Number(e.target.value)); setAmount(null); }}>
         {list.map((p) => <option key={p.id} value={p.id}>{p.project_name} · {label(p)} · {lira(remaining(p))}</option>)}
       </select>
       <div className="flex gap-3">
-        <NumberField className="inp inp-num" min={1} max={picked ? remaining(picked) : undefined} placeholder={picked ? fmtNum(remaining(picked)) : ""} value={amount} onChange={setAmount}
-          onKeyDown={(e) => e.key === "Enter" && void save()} ariaLabel="Tutar" autoFocus />
-        <button type="button" className="dash-btn is-primary" onClick={() => void save()}>Kaydet</button>
-        <button type="button" className="dash-btn" onClick={onDone}>Vazgeç</button>
+        <NumberField className="inp inp-num" min={MIN_PAYMENT} max={picked ? remaining(picked) : undefined} placeholder={picked ? fmtNum(remaining(picked)) : ""} value={amount} onChange={setAmount}
+          onKeyDown={(e) => e.key === "Enter" && void save()} ariaLabel={m.shared.amount} autoFocus />
+        <button type="button" className="dash-btn is-primary" onClick={() => void save()}>{m.shared.save}</button>
+        <button type="button" className="dash-btn" onClick={onDone}>{m.shared.cancel}</button>
       </div>
     </div>
   );
@@ -51,7 +54,7 @@ function PayForm({ list, onDone }: { list: Payment[]; onDone: () => void }) {
 /** "Tahsilat": what is waiting, what is late, the next payments, record a payment, ask for a reminder draft */
 export function PaymentsCard() {
   const ex = useExpand();
-  const payments = useQuery<List<Payment>>("/payments?unpaid=true&limit=1000");
+  const payments = useQuery<List<Payment>>(`/payments?unpaid=true&limit=${PAYMENTS_LIMIT}`);
   const report = useQuery<Report>("/report");
   const [group, setGroup] = useState<PaymentGroup | null>(null);
   const [paying, setPaying] = useState(false);
@@ -70,14 +73,14 @@ export function PaymentsCard() {
 
   return (
     <>
-      <Card title="Tahsilat" count={`${all.length} ödeme`} onExpand={(r) => ex.show("payments", r)} className="dash-gap-7 rise">
+      <Card title={m.card.title} count={m.card.count(all.length)} onExpand={(r) => ex.show("payments", r)} className="dash-gap-7 rise">
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-baseline gap-2">
-            <span className="text-currency font-light text-text-muted">₺</span>
+            <span className="text-currency font-light text-text-muted">{m.shared.currency}</span>
             <span className="text-display leading-none tracking-kpi">{fmtNum(sum())}</span>
-            <span className="text-base text-text-secondary">bekliyor</span>
+            <span className="text-base text-text-secondary">{m.card.waiting}</span>
           </div>
-          {late.length ? <span className="text-base-sm text-danger-soft">{lira(sum("late"))} gecikmiş, {late.length} ödeme</span> : null}
+          {late.length ? <span className="text-base-sm text-danger-soft">{m.card.overdue(lira(sum("late")), late.length)}</span> : null}
         </div>
         {all.length ? (
           <div className="flex flex-col gap-4">
@@ -95,7 +98,7 @@ export function PaymentsCard() {
           </div>
         ) : null}
         <div className="flex flex-col">
-          {shown.length === 0 ? <p className="m-0 border-t border-border-subtle py-5 text-base-sm text-text-muted">{group ? "Bu grupta ödeme yok." : "Bekleyen ödeme yok."}</p> : null}
+          {shown.length === 0 ? <p className="m-0 border-t border-border-subtle py-5 text-base-sm text-text-muted">{group ? m.card.noneInGroup : m.card.none}</p> : null}
           {shown.map(({ p, g }) => (
             <div key={p.id} className="flex items-center gap-4 border-t border-border-subtle py-4">
               <div className="flex min-w-0 flex-grow flex-col">
@@ -103,16 +106,16 @@ export function PaymentsCard() {
                 <span className={`text-sm ${g === "late" ? "text-danger-soft" : "text-text-secondary"}`}>{MILESTONE[p.milestone] ?? p.milestone} · {dueText(p, today)}</span>
               </div>
               <span className={`flex-none font-mono text-base ${g === "late" ? "text-danger-soft" : ""}`}>{lira(remaining(p))}</span>
-              {g === "late" ? <button type="button" className="dash-btn is-claude is-small flex-none" onClick={() => void remind(p)}>Hatırlat</button> : null}
+              {g === "late" ? <button type="button" className="dash-btn is-claude is-small flex-none" onClick={() => void remind(p)}>{m.card.remind}</button> : null}
             </div>
           ))}
         </div>
         {paying ? <PayForm list={all} onDone={() => setPaying(false)} /> : (
-          <button type="button" className="dash-btn is-wide mt-auto" disabled={!all.length} onClick={() => setPaying(true)}>Ödeme kaydet</button>
+          <button type="button" className="dash-btn is-wide mt-auto" disabled={!all.length} onClick={() => setPaying(true)}>{m.card.record}</button>
         )}
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Tahsilat", sub: `${lira(sum())} bekliyor · ${lira(sum("late"))} gecikmiş`, page: "Projeler", href: PROJECTS_PATH, foot: report.data ? `Bu ay tahsil edilen ${lira(report.data.month.collected)}` : "", rows }} />
+        spec={{ title: m.card.title, sub: m.card.overlaySub(lira(sum()), lira(sum("late"))), page: m.card.pageName, href: PROJECTS_PATH, foot: report.data ? m.card.collectedThisMonth(lira(report.data.month.collected)) : "", rows }} />
     </>
   );
 }

@@ -4,6 +4,7 @@ import {
   Bin, eventLink as link, FFError, keptRow, label, money, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
   type Ctx, type PaymentStatus,
 } from "@fullfollow/core";
+import { m } from "../messages";
 import { paymentCreate, paymentUpdate } from "./schemas";
 
 const { payments } = schema;
@@ -17,7 +18,7 @@ export function paymentStatus(p: { expected_amount: number; paid_amount: number;
 }
 
 const payInput = z.object({
-  amount: z.coerce.number().int().positive("tutar 0'dan büyük olmalı"),
+  amount: z.coerce.number().int().positive(m.error.amountPositive),
   date: paymentUpdate.shape.paid_at,
 });
 
@@ -55,7 +56,7 @@ export function paymentsService(ctx: Ctx) {
       const r = tx.insert(payments).values({ ...d, ...stamp(ctx) }).returning().get();
       emit(tx, ctx, {
         type: "payment.planned", ...link(ctx, { project_id: d.project_id }),
-        summary: `Ödeme planlandı: ${label(d.milestone)} ${money(d.expected_amount)}`,
+        summary: m.event.paymentPlanned(label(d.milestone), money(d.expected_amount)),
       });
       return { row: r, effects: [] as string[] };
     });
@@ -72,7 +73,7 @@ export function paymentsService(ctx: Ctx) {
       const cur = requireRow<Payment>(ctx, "payments", id);
       const expected = d.expected_amount ?? cur.expected_amount;
       const paid = d.paid_amount ?? cur.paid_amount;
-      if (paid > expected) throw new FFError("validation", `ödenen (${paid}) beklenenden (${expected}) fazla olamaz`);
+      if (paid > expected) throw new FFError("validation", m.error.overpaid(paid, expected));
       const set: Record<string, unknown> = { ...d };
       if (paid === 0) set.paid_at = null;
       else if (!(d.paid_at ?? cur.paid_at)) set.paid_at = ctx.clock.today();
@@ -89,8 +90,8 @@ export function paymentsService(ctx: Ctx) {
       emit(tx, ctx, {
         type: ledgerChanged ? "payment.corrected" : "payment.updated", ...link(ctx, { project_id: cur.project_id }),
         summary: ledgerChanged
-          ? `Ödeme düzeltildi: ${label(cur.milestone)} ${money(cur.paid_amount)} → ${money(paid)}`
-          : `Ödeme planı güncellendi: ${label(d.milestone ?? cur.milestone)} (${Object.keys(d).join(", ")})`,
+          ? m.event.paymentCorrected(label(cur.milestone), money(cur.paid_amount), money(paid))
+          : m.event.paymentUpdated(label(d.milestone ?? cur.milestone), Object.keys(d).join(", ")),
         data: { payment_id: id, ...(ledgerChanged ? { entries } : {}) },
       });
       return { row: requireRow<Payment>(ctx, "payments", id), effects: [] as string[] };
@@ -103,20 +104,20 @@ export function paymentsService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const cur = requireRow<Payment>(ctx, "payments", id);
       const remaining = cur.expected_amount - cur.paid_amount;
-      if (d.amount > remaining) throw new FFError("rule", `Kalan tutar ${money(remaining)}, fazlası girilemez`);
+      if (d.amount > remaining) throw new FFError("rule", m.error.remaining(money(remaining)));
       const paid = cur.paid_amount + d.amount;
       const at = d.date ?? ctx.clock.today();
       tx.update(payments).set({ paid_amount: paid, paid_at: at, updated_at: ctx.clock.now() }).where(eq(payments.id, id)).run();
       emit(tx, ctx, {
         type: "payment.paid", ...link(ctx, { project_id: cur.project_id }),
-        summary: `Ödeme alındı: ${label(cur.milestone)} ${money(d.amount)} (${money(paid)}/${money(cur.expected_amount)})`,
+        summary: m.event.paymentReceived(label(cur.milestone), money(d.amount), money(paid), money(cur.expected_amount)),
         data: { payment_id: id, amount: d.amount, date: at },
       });
       const effects: string[] = [];
-      if (paid >= cur.expected_amount) effects.push("tamamen ödendi");
+      if (paid >= cur.expected_amount) effects.push(m.effect.fullyPaid);
       if (cur.milestone === "pesinat" && paid >= cur.expected_amount) {
         const pr = row(ctx, "SELECT stage FROM projects WHERE id = ?", cur.project_id);
-        if (pr?.stage === "pesinat") effects.push("peşinat tamam, proje ilerleyebilir");
+        if (pr?.stage === "pesinat") effects.push(m.effect.depositDone);
       }
       return { row: requireRow<Payment>(ctx, "payments", id), effects };
     });
@@ -124,13 +125,13 @@ export function paymentsService(ctx: Ctx) {
 
   function remove(id: number) {
     const cur = requireRow<Payment>(ctx, "payments", id);
-    if (cur.paid_amount > 0) throw new FFError("rule", "Ödeme alınmış kayıt silinemez; önce ödenen tutarı düzelt");
+    if (cur.paid_amount > 0) throw new FFError("rule", m.error.paidCannotDelete);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("comments", "target_type = 'payment' AND target_id = ?", id);
       bin.take("payments", "id = ?", id);
-      bin.commit(tx, "payment", id, `Ödeme: ${label(cur.milestone)}`);
-      emit(tx, ctx, { type: "payment.deleted", ...link(ctx, { project_id: cur.project_id }), summary: `Ödeme planı silindi: ${label(cur.milestone)}` });
+      bin.commit(tx, "payment", id, m.trashPayment(label(cur.milestone)));
+      emit(tx, ctx, { type: "payment.deleted", ...link(ctx, { project_id: cur.project_id }), summary: m.event.paymentDeleted(label(cur.milestone)) });
       return { effects: [] as string[], trash: { type: "payment", id } };
     });
   }

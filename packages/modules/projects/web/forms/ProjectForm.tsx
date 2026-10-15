@@ -7,6 +7,7 @@ import { todayIso } from "@kit/lib/format";
 import { PROJECT_STEPS, PROJECT_STAGE, type ProjectStage } from "@kit/lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
 import { errorsOf, saveRecord, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { m } from "../messages";
 
 const PRICE_STEP = 1000;
 const FEE_STEP = 100;
@@ -25,21 +26,21 @@ export function ProjectForm(p: FormProps) {
     p,
     async () => {
       await saveRecord(p, null, {
-        name: name.trim(), person_id: await ensurePerson(person, { tags: ["müşteri"] }),
+        name: name.trim(), person_id: await ensurePerson(person, { tags: [m.form.customerTag] }),
         price: price ?? 0, maintenance_fee: fee, started_at: started || undefined, stage,
       });
     },
-    () => errorsOf({ name: !name.trim() && "Proje adı gerekli", person: !person.text.trim() && "Müşteriyi seç ya da yeni bir ad yaz" }),
+    () => errorsOf({ name: !name.trim() && m.form.nameRequired, person: !person.text.trim() && m.form.personRequired }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="name" label="Proje adı" req value={name} onChange={setName} placeholder="Örn. Pizza Z mobil uygulama" autoFocus />
-      <ComboField name="person" label="Müşteri" req value={person} onChange={setPerson} options={personOptions} placeholder="Kişi ara ya da yeni ad yaz" newLabel="Yeni kişi" />
-      <NumField label="Toplam" half prefix="₺" step={PRICE_STEP} value={price} onChange={setPrice} />
-      <NumField label="Bakım ücreti" half opt prefix="₺" suffix="/ ay" step={FEE_STEP} value={fee} onChange={setFee} />
-      <ChipsField label="Aşama" value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
-      <DateField label="Başlangıç" half value={started} onChange={setStarted} placeholder="Örn. 12 Ekim" />
+      <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
+      <ComboField name="person" label={m.form.customer} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.customerPlaceholder} newLabel={m.form.newPerson} />
+      <NumField label={m.form.total} half prefix={m.shared.currency} step={PRICE_STEP} value={price} onChange={setPrice} />
+      <NumField label={m.form.maintenanceFee} half opt prefix={m.shared.currency} suffix={m.form.perMonth} step={FEE_STEP} value={fee} onChange={setFee} />
+      <ChipsField label={m.shared.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
+      <DateField label={m.form.start} half value={started} onChange={setStarted} placeholder={m.form.startPlaceholder} />
     </Form>
   );
 }

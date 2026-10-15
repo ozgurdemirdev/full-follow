@@ -2,6 +2,8 @@ import { defineModule, filesOf, MILESTONES, PROJECT_STAGES, type OpportunityWon 
 import { projectsApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
+import { PAYMENTS_DUE_DAYS } from "./service/constants";
 import { openProjectForWonOpportunity } from "./service/projects";
 
 /**
@@ -11,7 +13,7 @@ import { openProjectForWonOpportunity } from "./service/projects";
  */
 export default defineModule({
   key: "projects",
-  label: "Projeler",
+  label: m.label,
   smoke: ["/api/projects", "/api/payments"],
   uses: ["pipeline", "calendar"],
   api: projectsApi,
@@ -27,7 +29,7 @@ export default defineModule({
       "project.created": { kind: "asama" },
       "project.stage": { kind: "asama" },
     },
-    trashTypes: [{ type: "project", label: "proje" }, { type: "payment", label: "ödeme" }],
+    trashTypes: [{ type: "project", label: m.noun }, { type: "payment", label: m.paymentNoun }],
     commentTargets: {
       project: {
         table: "projects",
@@ -38,14 +40,14 @@ export default defineModule({
         // a project shows the links of the opportunity it came from
         linksFrom: (ctx, id) => {
           const opportunityId = ctx.mod("projects")!.projects.ref(id)?.opportunity_id;
-          return opportunityId ? { type: "opportunity", id: opportunityId, from: "fırsat" } : undefined;
+          return opportunityId ? { type: "opportunity", id: opportunityId, from: m.opportunityLabel } : undefined;
         },
       },
       payment: {
         table: "payments",
         label: (ctx, id) => {
           const p = ctx.mod("projects")!.payments.ref(id);
-          return p ? `ödeme #${id} (${p.milestone})` : `ödeme #${id}`;
+          return m.paymentLabel(id, p?.milestone);
         },
         link: (ctx, id) => ({ project_id: ctx.mod("projects")!.payments.ref(id)?.project_id }),
       },
@@ -54,7 +56,7 @@ export default defineModule({
       payment: (ctx, id) => {
         const projects = ctx.mod("projects")!;
         const r = projects.payments.get(id);
-        if (!r) throw new Error("payment not found");
+        if (!r) throw new Error(m.notFound);
         const project = projects.projects.get(r.project_id)!;
         return { title: `${project.name}`, project_id: r.project_id, milestone: r.milestone, expected: r.expected_amount, paid: r.paid_amount, due_date: r.due_date };
       },
@@ -63,7 +65,7 @@ export default defineModule({
     // an event that names only the project also carries the opportunity and person it came from
     recordLinks: { project_id: (ctx, id) => ctx.mod("projects")!.projects.ref(id) },
     // payments due in the next week, on the Today view
-    today: (ctx, { limit }) => ({ payments: ctx.mod("projects")!.payments.list({ limit, filter: { due_within_days: 7 } }) }),
+    today: (ctx, { limit }) => ({ payments: ctx.mod("projects")!.payments.list({ limit, filter: { due_within_days: PAYMENTS_DUE_DAYS } }) }),
     relations: {
       // `get(person, id, with: ["projects"])`
       projects: { on: ["person"], load: (ctx, by, limit) => ctx.mod("projects")!.projects.list({ filter: by, limit }).rows.slice(0, limit) },

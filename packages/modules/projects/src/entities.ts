@@ -1,12 +1,14 @@
 import type { Ctx, EntityHandler } from "@fullfollow/core";
+import { m } from "./messages";
+import { PAYMENT_ALIASES, PROJECT_ALIASES } from "./service/constants";
 
 const projects = (ctx: Ctx) => ctx.mod("projects")!;
 
 /** The "project" and "payment" record types, for the generic save / find / get / delete / move (the web and MCP use these names) */
 export const entities: Record<string, EntityHandler> = {
   project: {
-    aliases: ["proje"],
-    ref: { table: "projects", col: "name", label: "proje" },
+    aliases: PROJECT_ALIASES,
+    ref: { table: "projects", col: "name", label: m.noun },
     // the payments come from the relation this module contributes
     related: ["comments", "links"],
     save: (ctx, d, id) => (id ? projects(ctx).projects.update(id, d) : projects(ctx).projects.create(d)),
@@ -16,7 +18,7 @@ export const entities: Record<string, EntityHandler> = {
     move: (ctx, id, input) => projects(ctx).projects.move(id, input),
   },
   payment: {
-    aliases: ["odeme", "ödeme"],
+    aliases: PAYMENT_ALIASES,
     related: ["comments"],
     save: (ctx, d, id) => (id ? projects(ctx).payments.update(id, d) : projects(ctx).payments.create(d)),
     get: (ctx, id) => projects(ctx).payments.get(id),

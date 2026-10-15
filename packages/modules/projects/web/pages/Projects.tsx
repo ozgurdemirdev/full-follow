@@ -7,6 +7,7 @@ import { BoardIcon } from "@kit/components/boardIcons";
 import { ProjectRow } from "../components/ProjectRow";
 import { WaitCards } from "../components/WaitCards";
 import { ErrorBox, PageSkeleton, Segmented } from "@kit/components/ui";
+import { m } from "../messages";
 import { hasClientTasks, TABS, type TabKey, useProjectViews } from "../projects";
 
 /** Client projects: tabs, the waiting cards (filters), and one expandable row per project (/projeler/:id opens that one) */
@@ -36,15 +37,15 @@ export default function Projects() {
 
   return (
     <Page
-      title="Müşteri projeleri"
-      sub="Her aşama bir ödemeye bağlı: iş nerede duruyorsa para da orada"
+      title={m.page.title}
+      sub={m.page.sub}
       right={
         <div className="prj-tools">
-          <Segmented label="Proje durumu" size="lg" value={Math.max(0, tabs.findIndex((t) => t.key === tab))} onChange={pick}
+          <Segmented label={m.page.status} size="lg" value={Math.max(0, tabs.findIndex((t) => t.key === tab))} onChange={pick}
             items={tabs.map((t) => ({ label: t.label, count: t.count }))} />
           <button type="button" className="dash-new" onClick={() => openSheet("project")}>
             <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
-            Proje ekle
+            {m.page.add}
           </button>
         </div>
       }
@@ -57,7 +58,7 @@ export default function Projects() {
           <WaitCards views={inTab} who={who} onPick={setWho} showClient={showClient} />
           <div className="prj-list">
             {shown.map((v) => <ProjectRow key={v.p.id} v={v} open={open === v.p.id} onToggle={toggle} />)}
-            {shown.length === 0 ? <p className="prj-empty">Bu süzgeçte proje yok.</p> : null}
+            {shown.length === 0 ? <p className="prj-empty">{m.page.none}</p> : null}
           </div>
         </>
       )}

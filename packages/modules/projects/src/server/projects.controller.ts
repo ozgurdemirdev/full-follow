@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from "@nestjs/common";
 import { APP_TOKEN, intId, listOpts, withList, type Core } from "@fullfollow/core";
+import { DETAIL_RELATED_LIMIT } from "../service/constants";
 
 @Controller("api/projects")
 export class ProjectsController {
@@ -16,7 +17,7 @@ export class ProjectsController {
 
   @Get(":id")
   one(@Param("id") id: string, @Query("with") w?: string) {
-    return this.app.get("project", intId(id), withList(w), 50);
+    return this.app.get("project", intId(id), withList(w), DETAIL_RELATED_LIMIT);
   }
 
   @Post()
