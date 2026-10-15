@@ -3,7 +3,8 @@ import {
   addDays, Bin, BULK_SKIPPED_EVENT, daysBetween, FFError, has, isoWeekday, page, parse, requireRow, row, rows, schema, stamp,
   truncate, writeEvent as emit, type CalendarDay, type CalendarTask, type Ctx, type DayPlan, type GoalDay, type GoalRecord, type ListOpts,
 } from "@fullfollow/core";
-import { MAX_CALENDAR_DAYS, STREAK_LOOKBACK_DAYS, TASK_ORDER_SQL } from "./constants";
+import { m } from "../messages";
+import { EVENT_TITLE_CHARS, MAX_CALENDAR_DAYS, PROGRESS_TITLE_CHARS, STREAK_LOOKBACK_DAYS, TASK_ORDER_SQL } from "./constants";
 import { goalCreate, goalLogInput, goalUpdate } from "./schemas";
 
 const { daily_goals, goal_logs } = schema;
@@ -33,18 +34,18 @@ function skippedCounts(ctx: Ctx, from: string, to: string): Map<string, number> 
 
 /** A goal counts by itself from a channel or from a metric, never both */
 const assertOneCounter = (channel?: string | null, metric?: string | null) => {
-  if (channel && metric) throw new FFError("validation", "hedef ya kanaldan ya da yeni kayıttan kendiliğinden sayar, ikisinden birden değil");
+  if (channel && metric) throw new FFError("validation", m.errors.oneCounter);
 };
 
 export function goalsService(ctx: Ctx) {
   const all = () => rows<GoalRow>(ctx, "SELECT * FROM daily_goals ORDER BY id");
 
   function logsBetween(from: string, to: string): Map<string, { count: number; note: string | null }> {
-    const m = new Map<string, { count: number; note: string | null }>();
+    const byKey = new Map<string, { count: number; note: string | null }>();
     for (const l of rows<{ goal_id: number; date: string; count: number; note: string | null }>(ctx, "SELECT goal_id, date, count, note FROM goal_logs WHERE date BETWEEN ? AND ?", from, to)) {
-      m.set(`${l.goal_id}|${l.date}`, { count: l.count, note: l.note });
+      byKey.set(`${l.goal_id}|${l.date}`, { count: l.count, note: l.note });
     }
-    return m;
+    return byKey;
   }
 
   /** Goal state per day (from..to); days without applicable goals have an empty list */
@@ -103,7 +104,7 @@ export function goalsService(ctx: Ctx) {
 
   /** Calendar: goal fill rate, tasks (timed first), payments due and follow-ups due for every day in the range */
   function calendar(from: string, to: string): CalendarDay[] {
-    if (from > to || daysBetween(from, to) >= MAX_CALENDAR_DAYS) throw new FFError("validation", `takvim aralığı en fazla ${MAX_CALENDAR_DAYS} gün olabilir`);
+    if (from > to || daysBetween(from, to) >= MAX_CALENDAR_DAYS) throw new FFError("validation", m.errors.rangeTooLong(MAX_CALENDAR_DAYS));
     const taskRows = rows<CalendarTask & { due_date: string }>(ctx,
       `SELECT id, title, due_date, due_time, kind, done_at FROM tasks WHERE due_date BETWEEN ? AND ? ORDER BY ${TASK_ORDER_SQL}`, from, to);
     // payments come from the projects module (none without it)
@@ -125,7 +126,7 @@ export function goalsService(ctx: Ctx) {
     assertOneCounter(d.channel, d.metric);
     return ctx.db.transaction((tx) => {
       const r = tx.insert(daily_goals).values({ ...d, ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "goal.created", summary: `Günlük hedef eklendi: ${truncate(r.title, 60)} (${r.target})`, data: { goal_id: r.id } });
+      emit(tx, ctx, { type: "goal.created", summary: m.events.goalAdded(truncate(r.title, EVENT_TITLE_CHARS), r.target), data: { goal_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
@@ -133,24 +134,24 @@ export function goalsService(ctx: Ctx) {
   function update(id: number, input: unknown) {
     const d = parse(goalUpdate, input);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow<GoalRow>(ctx, "daily_goals", id, "hedef");
+      const cur = requireRow<GoalRow>(ctx, "daily_goals", id, m.goal);
       assertOneCounter(d.channel === undefined ? cur.channel : d.channel, d.metric === undefined ? cur.metric : d.metric);
       if (Object.keys(d).length) {
         tx.update(daily_goals).set({ ...d, updated_at: ctx.clock.now() }).where(eq(daily_goals.id, id)).run();
-        emit(tx, ctx, { type: "goal.updated", summary: `Günlük hedef düzenlendi: ${truncate(d.title ?? cur.title, 60)}`, data: { goal_id: id } });
+        emit(tx, ctx, { type: "goal.updated", summary: m.events.goalUpdated(truncate(d.title ?? cur.title, EVENT_TITLE_CHARS)), data: { goal_id: id } });
       }
-      return { row: requireRow(ctx, "daily_goals", id, "hedef"), effects: [] as string[] };
+      return { row: requireRow(ctx, "daily_goals", id, m.goal), effects: [] as string[] };
     });
   }
 
   function remove(id: number) {
-    const cur = requireRow<GoalRow>(ctx, "daily_goals", id, "hedef");
+    const cur = requireRow<GoalRow>(ctx, "daily_goals", id, m.goal);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("goal_logs", "goal_id = ?", id);
       bin.take("daily_goals", "id = ?", id);
       bin.commit(tx, "goal", id, cur.title);
-      emit(tx, ctx, { type: "goal.deleted", summary: `Günlük hedef silindi: ${truncate(cur.title, 60)}`, data: { goal_id: id } });
+      emit(tx, ctx, { type: "goal.deleted", summary: m.events.goalDeleted(truncate(cur.title, EVENT_TITLE_CHARS)), data: { goal_id: id } });
       return { effects: [] as string[], trash: { type: "goal", id } };
     });
   }
@@ -158,11 +159,11 @@ export function goalsService(ctx: Ctx) {
   /** A day's progress: add = on top of the count (never below 0), count = set it, note = day note. Date defaults to today. */
   function log(input: unknown) {
     const d = parse(goalLogInput, input);
-    if (d.add === undefined && d.count === undefined && d.note === undefined) throw new FFError("validation", "add, count ya da note gerekli");
-    if (d.add !== undefined && d.count !== undefined) throw new FFError("validation", "add ve count birlikte verilmez");
+    if (d.add === undefined && d.count === undefined && d.note === undefined) throw new FFError("validation", m.errors.logNeedsValue);
+    if (d.add !== undefined && d.count !== undefined) throw new FFError("validation", m.errors.logAddAndCount);
     const date = d.date ?? ctx.clock.today();
     return ctx.db.transaction((tx) => {
-      const goal = requireRow<GoalRow>(ctx, "daily_goals", d.goal_id, "hedef");
+      const goal = requireRow<GoalRow>(ctx, "daily_goals", d.goal_id, m.goal);
       const cur = row<{ id: number; count: number }>(ctx, "SELECT id, count FROM goal_logs WHERE goal_id = ? AND date = ?", goal.id, date);
       const counted = d.add !== undefined || d.count !== undefined;
       const count = d.count ?? Math.max(0, (cur?.count ?? 0) + (d.add ?? 0));
@@ -171,9 +172,9 @@ export function goalsService(ctx: Ctx) {
       else tx.insert(goal_logs).values({ goal_id: goal.id, date, ...set, ...stamp(ctx) }).run();
       const state = days(date, date)[0].goals.find((g) => g.id === goal.id);
       if (counted) {
-        emit(tx, ctx, { type: "goal.progress", summary: `${truncate(goal.title, 40)}: ${state?.done ?? set.count}/${goal.target} (${date})`, data: { goal_id: goal.id, date } });
+        emit(tx, ctx, { type: "goal.progress", summary: m.events.goalProgress(truncate(goal.title, PROGRESS_TITLE_CHARS), state?.done ?? set.count, goal.target, date), data: { goal_id: goal.id, date } });
       }
-      return { row: row(ctx, "SELECT * FROM goal_logs WHERE goal_id = ? AND date = ?", goal.id, date), effects: state ? [`${state.done}/${state.target}${state.complete ? " tamam" : ""}`] : [] };
+      return { row: row(ctx, "SELECT * FROM goal_logs WHERE goal_id = ? AND date = ?", goal.id, date), effects: state ? [`${state.done}/${state.target}${state.complete ? m.complete : ""}`] : [] };
     });
   }
 

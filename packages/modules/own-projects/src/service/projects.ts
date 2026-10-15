@@ -3,6 +3,8 @@ import {
   announceTrashed, Bin, FFError, keptRow, label, OWN_PROJECT_STATUSES, parse, requireRow, schema, sectorInput, setSectorLinks, stamp, truncate, writeEvent as emit,
   type Ctx, type OwnProjectRecord,
 } from "@fullfollow/core";
+import { m } from "../messages";
+import { EVENT_NAME_CHARS, UPDATE_NAME_CHARS } from "./constants";
 import { ownProjectCreate, ownProjectUpdate } from "./schemas";
 
 /** The table that links own projects to sectors */
@@ -19,7 +21,7 @@ export function ownProjectsService(ctx: Ctx) {
       const { sector_ids, ...d } = parse(ownProjectCreate, sectorInput(tx, ctx, input));
       const r = tx.insert(own_projects).values({ ...d, ...stamp(ctx) }).returning().get();
       if (sector_ids?.length) setSectorLinks(ctx, SECTOR_LINKS, r.id, sector_ids);
-      emit(tx, ctx, { type: "own_project.created", summary: `Kendi projesi: ${truncate(d.name, 60)}`, data: { own_project_id: r.id } });
+      emit(tx, ctx, { type: "own_project.created", summary: m.events.created(truncate(d.name, EVENT_NAME_CHARS)), data: { own_project_id: r.id } });
       return { row: r as OwnProjectRecord, effects: [] as string[] };
     });
   }
@@ -27,29 +29,29 @@ export function ownProjectsService(ctx: Ctx) {
   function update(id: number, input: unknown) {
     return ctx.db.transaction((tx) => {
       const { sector_ids, ...d } = parse(ownProjectUpdate, sectorInput(tx, ctx, input));
-      const cur = requireRow(ctx, "own_projects", id, "kendi projesi");
+      const cur = requireRow(ctx, "own_projects", id, m.project);
       const effects: string[] = [];
       if (Object.keys(d).length) tx.update(own_projects).set({ ...d, updated_at: ctx.clock.now() }).where(eq(own_projects.id, id)).run();
       if (sector_ids) setSectorLinks(ctx, SECTOR_LINKS, id, sector_ids);
-      const name = truncate(d.name ?? cur.name, 50);
+      const name = truncate(d.name ?? cur.name, UPDATE_NAME_CHARS);
       if (d.status && d.status !== cur.status) {
-        emit(tx, ctx, { type: "own_project.status", summary: `Proje ${label(cur.status)} → ${label(d.status)}: ${name}`, data: { own_project_id: id, from: cur.status, to: d.status } });
-        effects.push(`proje → ${label(d.status)}`);
+        emit(tx, ctx, { type: "own_project.status", summary: m.events.status(label(cur.status), label(d.status), name), data: { own_project_id: id, from: cur.status, to: d.status } });
+        effects.push(m.effects.status(label(d.status)));
       } else if (Object.keys(d).length || sector_ids) {
-        emit(tx, ctx, { type: "own_project.updated", summary: `Kendi projesi düzenlendi: ${name}`, data: { own_project_id: id } });
+        emit(tx, ctx, { type: "own_project.updated", summary: m.events.updated(name), data: { own_project_id: id } });
       }
-      return { row: requireRow<OwnProjectRecord>(ctx, "own_projects", id, "kendi projesi"), effects };
+      return { row: requireRow<OwnProjectRecord>(ctx, "own_projects", id, m.project), effects };
     });
   }
 
   function move(id: number, status: string) {
-    if (!(OWN_PROJECT_STATUSES as readonly string[]).includes(status)) throw new FFError("validation", `proje durumu: ${OWN_PROJECT_STATUSES.join(", ")}`);
+    if (!(OWN_PROJECT_STATUSES as readonly string[]).includes(status)) throw new FFError("validation", m.errors.status(OWN_PROJECT_STATUSES.join(", ")));
     return update(id, { status });
   }
 
   /** Its ideas fall back to the general list (the ideas module empties their link when it hears the announcement; restoring re-links them) */
   function remove(id: number) {
-    const cur = requireRow(ctx, "own_projects", id, "kendi projesi");
+    const cur = requireRow(ctx, "own_projects", id, m.project);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       announceTrashed(ctx, bin, "own_project", id);
@@ -58,7 +60,7 @@ export function ownProjectsService(ctx: Ctx) {
       bin.take("comments", "target_type = 'own_project' AND target_id = ?", id);
       bin.take("own_projects", "id = ?", id);
       bin.commit(tx, "own_project", id, cur.name);
-      emit(tx, ctx, { type: "own_project.deleted", summary: `Kendi projesi silindi: ${truncate(cur.name, 60)}` });
+      emit(tx, ctx, { type: "own_project.deleted", summary: m.events.deleted(truncate(cur.name, EVENT_NAME_CHARS)) });
       return { effects: [] as string[], trash: { type: "own_project", id } };
     });
   }
@@ -66,10 +68,10 @@ export function ownProjectsService(ctx: Ctx) {
   /** "Projeye dönüştür": a top level general idea becomes a project, its sub ideas become the project's ideas (the ideas module hands them over) */
   function fromIdea(ideaId: number) {
     const ideas = ctx.mod("ideas");
-    if (!ideas) throw new FFError("validation", `fikirden proje için "ideas" modülü kurulu olmalı`);
+    if (!ideas) throw new FFError("validation", m.errors.ideasModuleMissing);
     const idea = ideas.ref(ideaId);
-    if (!idea) throw new FFError("not_found", `fikir #${ideaId} bulunamadı`);
-    if (idea.own_project_id || idea.parent_id) throw new FFError("validation", "sadece en üstteki genel fikir projeye dönüşür");
+    if (!idea) throw new FFError("not_found", m.errors.ideaNotFound(ideaId));
+    if (idea.own_project_id || idea.parent_id) throw new FFError("validation", m.errors.topLevelOnly);
     return ctx.db.transaction((tx) => {
       const now = ctx.clock.now();
       const p = tx.insert(own_projects).values({
@@ -79,8 +81,8 @@ export function ownProjectsService(ctx: Ctx) {
         tx.insert(own_project_sectors).values({ own_project_id: p.id, sector_id, created_at: now, created_by: ctx.actor }).run();
       }
       const kids = ideas.handOver(tx, ideaId, p.id);
-      emit(tx, ctx, { type: "own_project.created", summary: `Fikirden proje: ${truncate(p.name, 60)}`, data: { own_project_id: p.id, idea_id: ideaId } });
-      return { row: p as OwnProjectRecord, effects: [`${kids} fikir projeye taşındı`, "kaynak fikir çöp kutusunda"] };
+      emit(tx, ctx, { type: "own_project.created", summary: m.events.fromIdea(truncate(p.name, EVENT_NAME_CHARS)), data: { own_project_id: p.id, idea_id: ideaId } });
+      return { row: p as OwnProjectRecord, effects: [m.effects.ideasMoved(kids), m.effects.sourceTrashed] };
     });
   }
 

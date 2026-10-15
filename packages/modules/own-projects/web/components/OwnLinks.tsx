@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useLinks } from "@kit/components/LinksCard";
 import { BoardIcon } from "@kit/components/boardIcons";
+import { m as kit } from "@kit/messages";
+import { STROKE } from "../constants";
+import { m } from "../messages";
 
 /** "Linkler" panel of the project overlay: link rows, and a dashed "Link ekle" that opens the add form */
 export function OwnLinks({ id }: { id: number }) {
@@ -13,28 +16,28 @@ export function OwnLinks({ id }: { id: number }) {
   };
   return (
     <div className="opr-panel" data-gap="tight">
-      <span className="opr-label">Linkler</span>
+      <span className="opr-label">{kit.nouns.links}</span>
       {rows.map((l) => (
         <div key={l.id} className="opr-link">
           <a href={l.url} target="_blank" rel="noreferrer">
             <span className="text-base">{l.label}</span>
             <span className="opr-link-url">{l.url}</span>
           </a>
-          <BoardIcon name="expand" className="size-icon-xs text-text-secondary" stroke={1.8} />
-          {l.from ? null : <button type="button" className="opr-link-del" aria-label={`${l.label} linkini sil`} onClick={() => del(l)}>Sil</button>}
+          <BoardIcon name="expand" className="size-icon-xs text-text-secondary" stroke={STROKE.thin} />
+          {l.from ? null : <button type="button" className="opr-link-del" aria-label={m.links.deleteLink(l.label)} onClick={() => del(l)}>{kit.delete}</button>}
         </div>
       ))}
       {adding ? (
         <div className="opr-link-form">
-          <input className="inp" placeholder="Ad (ör. Roadmap)" aria-label="Link adı" value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
+          <input className="inp" placeholder={m.links.namePlaceholder} aria-label={m.links.nameLabel} value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
           <div className="flex gap-3">
-            <input className="inp min-w-0 flex-1" placeholder="https://…" aria-label="Link adresi" value={url}
+            <input className="inp min-w-0 flex-1" placeholder={m.links.urlPlaceholder} aria-label={m.links.urlLabel} value={url}
               onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void submit())} />
-            <button type="button" className="btn btn-sec" disabled={busy || !ready} onClick={() => void submit()}>Ekle</button>
+            <button type="button" className="btn btn-sec" disabled={busy || !ready} onClick={() => void submit()}>{kit.add}</button>
           </div>
         </div>
       ) : (
-        <button type="button" className="opr-dashed" onClick={() => setAdding(true)}>Link ekle</button>
+        <button type="button" className="opr-dashed" onClick={() => setAdding(true)}>{m.links.add}</button>
       )}
     </div>
   );

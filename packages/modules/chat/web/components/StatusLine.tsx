@@ -1,4 +1,4 @@
-import { T } from "../chatText";
+import { T } from "../messages";
 import { useElapsed } from "@kit/lib/useElapsed";
 import type { Live } from "../useThread";
 

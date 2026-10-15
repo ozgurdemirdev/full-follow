@@ -1,5 +1,5 @@
 import type { Ref } from "react";
-import { T } from "../chatText";
+import { T } from "../messages";
 import { Icon } from "@kit/components/icons";
 
 interface Props {

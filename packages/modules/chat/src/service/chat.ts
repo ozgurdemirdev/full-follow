@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { CHAT_NEW_TITLE, FFError, parse, schema, stamp, writeEvent as emit, type ChatApi, type Ctx } from "@fullfollow/core";
 import { CHAT_DEFAULTS, CHAT_TITLE_CHARS } from "../constants";
+import { m } from "../messages";
 import { chatAttachmentCreate, chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "./schemas";
 
 const { chat_attachments, chat_messages, chat_sessions } = schema;
@@ -18,30 +19,30 @@ function autoTitle(body: string): string {
 const encodeCursor = (at: string, id: number) => Buffer.from(`${at}|${id}`).toString("base64url");
 function decodeCursor(c: string): { at: string; id: number } {
   const [at, id] = Buffer.from(c, "base64url").toString().split("|");
-  if (!at || !Number.isInteger(Number(id))) throw new FFError("validation", "geçersiz cursor");
+  if (!at || !Number.isInteger(Number(id))) throw new FFError("validation", m.errors.invalidCursor);
   return { at, id: Number(id) };
 }
 
 export function chatService(ctx: Ctx): ChatApi {
   const sessionRow = (id: number) => {
     const r = ctx.db.select().from(chat_sessions).where(and(eq(chat_sessions.id, id), isNull(chat_sessions.deleted_at))).get();
-    if (!r) throw new FFError("not_found", `sohbet #${id} bulunamadı`);
+    if (!r) throw new FFError("not_found", m.errors.sessionNotFound(id));
     return r;
   };
   const messageRow = (id: number) => {
     const r = ctx.db.select().from(chat_messages).where(eq(chat_messages.id, id)).get();
-    if (!r) throw new FFError("not_found", `mesaj #${id} bulunamadı`);
+    if (!r) throw new FFError("not_found", m.errors.messageNotFound(id));
     return r;
   };
 
   /** User rows carry the files they were sent with; every row gets the field so the shape is the same */
   function withAttachments<T extends { id: number }>(list: T[]) {
-    const ids = list.map((m) => m.id);
+    const ids = list.map((item) => item.id);
     const files = ids.length
       ? ctx.db.select({ id: chat_attachments.id, message_id: chat_attachments.message_id, name: chat_attachments.name, mime: chat_attachments.mime, size: chat_attachments.size })
         .from(chat_attachments).where(inArray(chat_attachments.message_id, ids)).orderBy(chat_attachments.id).all()
       : [];
-    return list.map((m) => ({ ...m, attachments: files.filter((f) => f.message_id === m.id).map(({ message_id: _m, ...f }) => f) }));
+    return list.map((item) => ({ ...item, attachments: files.filter((f) => f.message_id === item.id).map(({ message_id: _m, ...f }) => f) }));
   }
 
   /** Stored before the message exists; becomes part of it when the message is sent */
@@ -52,7 +53,7 @@ export function chatService(ctx: Ctx): ChatApi {
   }
   function getAttachment(id: number) {
     const r = ctx.db.select().from(chat_attachments).where(eq(chat_attachments.id, id)).get();
-    if (!r) throw new FFError("not_found", `dosya #${id} bulunamadı`);
+    if (!r) throw new FFError("not_found", m.errors.fileNotFound(id));
     return r;
   }
   function attachmentsOfMessage(messageId: number) {
@@ -65,7 +66,7 @@ export function chatService(ctx: Ctx): ChatApi {
       const r = tx.insert(chat_sessions).values({
         model: d.model ?? CHAT_DEFAULTS.model, effort: d.effort ?? CHAT_DEFAULTS.effort, cli_session_id: randomUUID(), ...stamp(ctx),
       }).returning().get();
-      emit(tx, ctx, { type: "chat.created", summary: "Yeni sohbet açıldı", data: { chat_session_id: r.id } });
+      emit(tx, ctx, { type: "chat.created", summary: m.events.created, data: { chat_session_id: r.id } });
       return r;
     });
   }
@@ -96,16 +97,16 @@ export function chatService(ctx: Ctx): ChatApi {
     ctx.db.transaction((tx) => {
       const now = ctx.clock.now();
       tx.update(chat_sessions).set({ deleted_at: now, updated_at: now }).where(eq(chat_sessions.id, id)).run();
-      emit(tx, ctx, { type: "chat.deleted", summary: `Sohbet silindi: ${cur.title}`, data: { chat_session_id: id } });
+      emit(tx, ctx, { type: "chat.deleted", summary: m.events.deleted(cur.title), data: { chat_session_id: id } });
     });
     return { effects: [] as string[], trash: { type: "chat_session", id } };
   }
 
   function restoreSession(id: number) {
     const cur = ctx.db.select().from(chat_sessions).where(eq(chat_sessions.id, id)).get();
-    if (!cur) throw new FFError("not_found", `sohbet #${id} bulunamadı`);
+    if (!cur) throw new FFError("not_found", m.errors.sessionNotFound(id));
     ctx.db.update(chat_sessions).set({ deleted_at: null, updated_at: ctx.clock.now() }).where(eq(chat_sessions.id, id)).run();
-    return { label: cur.title, effects: [`${cur.title} geri yüklendi`] };
+    return { label: cur.title, effects: [m.restored(cur.title)] };
   }
 
   /** `before` loads the page older than that message id; items come back oldest to newest */
@@ -128,7 +129,7 @@ export function chatService(ctx: Ctx): ChatApi {
       ? ctx.db.select().from(chat_attachments).where(inArray(chat_attachments.id, d.attachment_ids)).all()
       : [];
     if (owned.length !== d.attachment_ids.length || owned.some((a) => a.session_id !== sessionId || a.message_id !== null)) {
-      throw new FFError("validation", "dosya bu sohbete ait değil ya da zaten gönderilmiş");
+      throw new FFError("validation", m.errors.fileNotOwned);
     }
     return ctx.db.transaction((tx) => {
       const first = !tx.select({ id: chat_messages.id }).from(chat_messages).where(eq(chat_messages.session_id, sessionId)).get();

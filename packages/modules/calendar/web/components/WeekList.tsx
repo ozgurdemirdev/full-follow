@@ -2,6 +2,8 @@ import { toDate } from "@kit/lib/format";
 import { WEEKDAY_SHORT } from "@kit/lib/labels";
 import { ANYTIME, KIND, type CalItem, type Kind } from "../calendar";
 import { Meter } from "@kit/components/ui";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 
 const PERCENT = 100;
 
@@ -26,7 +28,7 @@ export function WeekList({ dates, items, hidden, picked, today, onPick }: {
   onPick: (date: string) => void;
 }) {
   return (
-    <div className="cal-week rise" role="list" aria-label="Hafta">
+    <div className="cal-week rise" role="list" aria-label={m.week.list}>
       {dates.map((date, i) => {
         const all = items.get(date) ?? [];
         const done = all.filter((e) => e.done).length;
@@ -39,16 +41,16 @@ export function WeekList({ dates, items, hidden, picked, today, onPick }: {
               <span className="flex items-baseline gap-3">
                 <span className={`text-cal-num font-light leading-none tracking-kpi ${past ? "text-text-muted" : ""}`}>{Number(date.slice(8))}</span>
                 <span className={`text-base-sm ${isToday ? "text-accent" : "text-text-secondary"}`}>{WEEKDAY_SHORT[i]}</span>
-                {isToday ? <span className="flex h-badge items-center rounded-pill bg-accent px-3 text-2xs text-accent-on">Bugün</span> : null}
+                {isToday ? <span className="flex h-badge items-center rounded-pill bg-accent px-3 text-2xs text-accent-on">{kit.today}</span> : null}
               </span>
               <span className="flex items-center gap-3">
-                <Meter value={all.length ? (done / all.length) * PERCENT : 0} size="sm" className="flex-grow" color={past && done < all.length ? "bg-danger" : "bg-accent"} label={`${toDate(date).getDate()}. gün tamamlanma`} />
+                <Meter value={all.length ? (done / all.length) * PERCENT : 0} size="sm" className="flex-grow" color={past && done < all.length ? "bg-danger" : "bg-accent"} label={m.week.dayCompletion(toDate(date).getDate())} />
                 <span className="font-mono text-xs text-text-secondary">{all.length ? `${done}/${all.length}` : "–"}</span>
               </span>
             </span>
             <span className="flex min-w-0 flex-wrap items-center gap-2">
               {visible.map((e) => <Chip key={e.key} e={e} />)}
-              {!all.length ? <span className="text-base-sm text-text-disabled">Boş gün, yarına kalanları buraya çekebilirsin</span> : null}
+              {!all.length ? <span className="text-base-sm text-text-disabled">{m.week.emptyDay}</span> : null}
             </span>
           </button>
         );

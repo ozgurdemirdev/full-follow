@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { T } from "../chatText";
+import { T } from "../messages";
+import { STROKE } from "../constants";
 import { Icon } from "@kit/components/icons";
 
 /** Full size view of an image attachment: click outside, the close button or Esc closes it (Esc does not minimize the chat behind it) */
@@ -18,7 +19,7 @@ export function Lightbox({ url, name, onClose }: { url: string; name: string; on
   return createPortal(
     <div className="lightbox" role="dialog" aria-modal="true" aria-label={name} onClick={onClose}>
       <button type="button" className="lightbox-close" aria-label={T.close} onClick={onClose}>
-        <Icon name="close" className="size-icon-lg" stroke={2} />
+        <Icon name="close" className="size-icon-lg" stroke={STROKE.regular} />
       </button>
       <img src={url} alt={name} onClick={(e) => e.stopPropagation()} />
       <span className="lightbox-name">{name}</span>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CHAT_UI } from "./chatText";
+import { CHAT_UI } from "./constants";
 
 export type Connection = "open" | "lost" | "back";
 export type StreamHandler = (name: string, data: any) => void;

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type RefObject, type Ref } from "react";
 import type { ChatMeta } from "../api";
-import { CHAT_UI, T } from "../chatText";
+import { T } from "../messages";
+import { CHAT_UI, STROKE } from "../constants";
 import { acceptAttr, isImage, refuseReason } from "../chatFiles";
 import { chatPrefs } from "@kit/lib/chatStore";
 import { MIC_ERROR, useDictation } from "@kit/lib/useDictation";
@@ -218,7 +219,7 @@ export function Composer({ sessionId, running, disabled, maxChars, meta, weekDan
             </button>
           ) : (
             <button className="send" type="submit" aria-label={T.send} disabled={disabled || !canSend}>
-              <Icon name="up" className="size-icon-md" stroke={2} />
+              <Icon name="up" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           )}
         </div>

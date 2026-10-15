@@ -1,19 +1,21 @@
 import type { CSSProperties } from "react";
 import type { ChatLimits, ChatMeta, ChatSession } from "../api";
-import { CHAT_UI, T } from "../chatText";
+import { T } from "../messages";
+import { CHAT_UI } from "../constants";
+import { LOCALE } from "@kit/lib/i18n";
 import { fmtNum } from "@kit/lib/format";
 
-const costFmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const resetFmt = new Intl.DateTimeFormat("tr-TR", { weekday: "short", hour: "2-digit", minute: "2-digit" });
-const timeFmt = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" });
+const costFmt = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const resetFmt = new Intl.DateTimeFormat(LOCALE, { weekday: "short", hour: "2-digit", minute: "2-digit" });
+const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: "2-digit", minute: "2-digit" });
 const MS = 1_000;
 
-export const fmtTokens = (n: number) => (n >= CHAT_UI.million ? "1 milyon" : `${fmtNum(Math.round(n / CHAT_UI.contextUnit))} bin`);
+export const fmtTokens = (n: number) => (n >= CHAT_UI.million ? T.millionTokens : T.thousandTokens(fmtNum(Math.round(n / CHAT_UI.contextUnit))));
 
 function resetText(at: number | null): string {
   if (!at) return "";
   const d = new Date(at * MS);
-  return `${T.resets}: ${d.toDateString() === new Date().toDateString() ? `bugün ${timeFmt.format(d)}` : resetFmt.format(d)}`;
+  return `${T.resets}: ${d.toDateString() === new Date().toDateString() ? T.resetsToday(timeFmt.format(d)) : resetFmt.format(d)}`;
 }
 
 function Limit({ label, value, warn, danger, tip }: { label: string; value: number | null; warn: boolean; danger: boolean; tip: string }) {
