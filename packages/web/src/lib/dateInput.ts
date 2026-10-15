@@ -41,7 +41,7 @@ export function parseDate(text: string, today = todayIso()): string | null {
   if (wd >= 0) return nextWeekday(wd, today, true);
   const year = Number(today.slice(0, 4));
   let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
-  if (m) return t;
+  if (m) return valid(Number(m[1]), Number(m[2]), Number(m[3]));
   m = /^(\d{1,2})[./](\d{1,2})(?:[./](\d{4}))?$/.exec(t);
   if (m) return valid(Number(m[3] ?? year), Number(m[2]), Number(m[1]));
   m = /^(\d{1,2}) ([a-z]+)(?: (\d{4}))?(?: [a-z]+)?$/.exec(t);
