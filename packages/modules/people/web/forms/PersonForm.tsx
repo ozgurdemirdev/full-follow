@@ -13,8 +13,9 @@ import { emptyRef, ensureCompany, fromContact, useRefText, type Ref } from "@kit
 import { instagram as ig, leadFor, personLinkedin } from "@kit/forms/handles";
 import { useLabels } from "@kit/forms/pickers";
 import { badEmail, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 
-const EMAIL_ERROR = "Geçerli bir e-posta yaz";
 const INFLUENCE_OPTIONS = (Object.keys(INFLUENCE_LABEL) as (keyof typeof INFLUENCE_LABEL)[]).map((value) => ({ value, label: INFLUENCE_LABEL[value] }));
 
 export function PersonForm(p: FormProps) {
@@ -80,30 +81,30 @@ export function PersonForm(p: FormProps) {
       };
       await saveRecord(p, editId, body, { ...body, next_follow_up_at: follow || undefined });
     },
-    () => errorsOf({ name: !name.trim() && "Ad gerekli", email: badEmail(email) && EMAIL_ERROR, follow: !editId && !!follow && follow < todayIso() && "Geçmiş bir tarih olamaz" }),
+    () => errorsOf({ name: !name.trim() && m.form.nameRequired, email: badEmail(email) && m.form.emailInvalid, follow: !editId && !!follow && follow < todayIso() && m.form.pastDate }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="name" label="Ad soyad" req value={name} onChange={setName} placeholder="Örn. Zeynep Öztürk" autoFocus />
-      <ComboField label="Firma" half value={company} onChange={setCompany} options={companyOptions} placeholder="Firma ara" newLabel="Yeni firma" />
-      <TextField label="Rol" half value={role} onChange={setRole} placeholder="Örn. Kurucu" />
-      <TextField name="email" label="E-posta" half type="email" value={email} onChange={setEmail} placeholder="ad@firma.com" />
-      <TextField label="Telefon" half type="tel" value={phone} onChange={setPhone} placeholder="05xx xxx xx xx" />
-      <TextField label="Instagram" half prefix={leadFor(instagram, "@")} value={instagram} onChange={setInstagram} />
-      <TextField label="LinkedIn" half opt prefix={leadFor(linkedin, "in/")} value={linkedin} onChange={setLinkedin} placeholder="kullanıcı adı" />
+      <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
+      <ComboField label={kit.nouns.company} half value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.searchCompany} newLabel={m.form.newCompany} />
+      <TextField label={m.fields.role} half value={role} onChange={setRole} placeholder={m.form.rolePlaceholder} />
+      <TextField name="email" label={m.fields.email} half type="email" value={email} onChange={setEmail} placeholder={m.form.emailPlaceholder} />
+      <TextField label={m.fields.phone} half type="tel" value={phone} onChange={setPhone} placeholder={m.form.phonePlaceholder} />
+      <TextField label={m.fields.instagram} half prefix={leadFor(instagram, "@")} value={instagram} onChange={setInstagram} />
+      <TextField label={m.fields.linkedin} half opt prefix={leadFor(linkedin, "in/")} value={linkedin} onChange={setLinkedin} placeholder={m.form.handlePlaceholder} />
       {labels.sourceField}
-      <ComboField label="Kim tanıttı" opt value={referrer} onChange={setReferrer} options={referrerOptions} placeholder="Kişi ara" />
-      <DateField name="follow" label="Sonraki takip tarihi" half opt quick value={follow} onChange={setFollow} placeholder="Örn. 17 Ekim" />
-      <TextField label="Diğer hesap (R10 vb.)" half opt value={handle} onChange={setHandle} />
+      <ComboField label={m.form.whoIntroduced} opt value={referrer} onChange={setReferrer} options={referrerOptions} placeholder={m.searchPerson} />
+      <DateField name="follow" label={m.form.nextFollowUp} half opt quick value={follow} onChange={setFollow} placeholder={m.form.followPlaceholder} />
+      <TextField label={m.form.otherAccount} half opt value={handle} onChange={setHandle} />
       {labels.statusField}
-      <ChipsField label="Karar rolü" opt clearable value={influence} onChange={setInfluence} options={INFLUENCE_OPTIONS} />
+      <ChipsField label={m.fields.influence} opt clearable value={influence} onChange={setInfluence} options={INFLUENCE_OPTIONS} />
       {posts.rows.length ? (
-        <ComboField label="Kaynak paylaşım" opt hint="Bu kişi hangi paylaşımdan geldi" value={postRef} onChange={setPostRef} options={postOptions} placeholder="Paylaşım ara" />
+        <ComboField label={m.form.sourcePost} opt hint={m.form.sourcePostHint} value={postRef} onChange={setPostRef} options={postOptions} placeholder={m.form.searchPost} />
       ) : null}
       {labels.tagsField}
       {labels.sectorsField}
-      <AreaField label="Not" value={notes} onChange={setNotes} placeholder="Kendine not" rows={3} />
+      <AreaField label={kit.nouns.note} value={notes} onChange={setNotes} placeholder={m.form.notePlaceholder} rows={3} />
     </Form>
   );
 }

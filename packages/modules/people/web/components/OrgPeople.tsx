@@ -5,6 +5,7 @@ import { TONE_CLS } from "@kit/lib/labels";
 import { INFLUENCE_LABEL, INFLUENCE_TONE, type Influence } from "../labels";
 import { COLD_DAYS, daysSince, lastText, warmthOf } from "@kit/lib/people";
 import { Avatar } from "@kit/components/ui";
+import { m } from "../messages";
 import { PEOPLE_PATH } from "../paths";
 
 const ROLES = Object.keys(INFLUENCE_LABEL) as Influence[];
@@ -13,7 +14,7 @@ const ROLES = Object.keys(INFLUENCE_LABEL) as Influence[];
 function RolePicker({ p }: { p: Person }) {
   const pick = (role: Influence) => void run("patch", `/people/${p.id}`, { influence: p.influence === role ? null : role }).catch(() => {});
   return (
-    <span className="co-infl" role="group" aria-label={`${p.name} karar rolü`}>
+    <span className="co-infl" role="group" aria-label={m.org.rolesOf(p.name)}>
       {ROLES.map((role) => (
         <button key={role} type="button" className={`co-chip ${p.influence === role ? TONE_CLS[INFLUENCE_TONE[role]] : "is-idle"}`} aria-pressed={p.influence === role} onClick={() => pick(role)}>
           {INFLUENCE_LABEL[role]}
@@ -52,13 +53,13 @@ export function OrgPeople({ people }: { people: Person[] }) {
   return (
     <div className="co-section">
       <div className="co-h3-row">
-        <h3 className="co-h3">İçerideki kişiler</h3>
-        <span className="text-sm text-text-muted">Karar kimde, kiminle konuşuyorsun</span>
+        <h3 className="co-h3">{m.org.title}</h3>
+        <span className="text-sm text-text-muted">{m.org.sub}</span>
       </div>
       {people.length ? (
         <div className="co-orgs">{people.map((p) => <OrgCard key={p.id} p={p} />)}</div>
       ) : (
-        <span className="text-base-sm text-text-muted">Henüz kişi yok. Cevap veren kişiyi ekleyince temasları burada da görünür.</span>
+        <span className="text-base-sm text-text-muted">{m.org.empty}</span>
       )}
     </div>
   );

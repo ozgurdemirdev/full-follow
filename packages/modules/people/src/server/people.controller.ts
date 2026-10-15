@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from "@nestjs/common";
 import { APP_TOKEN, intId, listOpts, withList, type Core } from "@fullfollow/core";
+import { RELATED_ROWS } from "../service/constants";
 
 @Controller("api/people")
 export class PeopleController {
@@ -22,7 +23,7 @@ export class PeopleController {
 
   @Get(":id")
   one(@Param("id") id: string, @Query("with") w?: string) {
-    return this.app.get("person", intId(id), withList(w), 50);
+    return this.app.get("person", intId(id), withList(w), RELATED_ROWS);
   }
 
   @Post()

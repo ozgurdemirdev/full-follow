@@ -1,4 +1,6 @@
 import { FFError, listThreads, queriesFor, type Ctx, type PersonCard } from "@fullfollow/core";
+import { m } from "../messages";
+import { ALL_ROWS, CARD_DRAFTS_LIMIT, CARD_NOTES_LIMIT, CARD_OPPORTUNITIES_LIMIT, CARD_PROJECTS_LIMIT, CARD_REFERRALS_LIMIT, CARD_TOUCHES_LIMIT } from "./constants";
 import { peopleList } from "./list";
 
 /**
@@ -12,8 +14,8 @@ import { peopleList } from "./list";
 export function personCard(ctx: Ctx, id: number): PersonCard {
   const q = queriesFor(ctx);
   const network = ctx.mod("network");
-  const person = peopleList(ctx, { limit: 100000 }).rows.find((p) => p.id === id);
-  if (!person) throw new FFError("not_found", `kişi #${id} bulunamadı`);
+  const person = peopleList(ctx, { limit: ALL_ROWS }).rows.find((p) => p.id === id);
+  if (!person) throw new FFError("not_found", m.notFound(id));
   // the referral numbers come from the referrals module (none without it)
   const refs = ctx.mod("referrals")?.report() ?? [];
   const pipeline = ctx.mod("pipeline");
@@ -21,19 +23,19 @@ export function personCard(ctx: Ctx, id: number): PersonCard {
   return {
     row: person,
     channels: network?.channels(id, { awaiting: person.awaiting }) ?? [],
-    touches: network?.touches.list({ filter: { person_id: id }, limit: 200 }) ?? { rows: [], total: 0 },
-    notes: q.notes({ filter: { person_id: id }, limit: 200 }).rows,
+    touches: network?.touches.list({ filter: { person_id: id }, limit: CARD_TOUCHES_LIMIT }) ?? { rows: [], total: 0 },
+    notes: q.notes({ filter: { person_id: id }, limit: CARD_NOTES_LIMIT }).rows,
     threads: listThreads(ctx, { target_type: "person", target_id: id, resolved: "all", messages: true }),
     referrer: person.referred_by_id ? { id: person.referred_by_id, name: person.referred_by_name } : null,
-    referrals: peopleList(ctx, { filter: { referred_by_id: id }, limit: 200 }).rows.map((r) => {
+    referrals: peopleList(ctx, { filter: { referred_by_id: id }, limit: CARD_REFERRALS_LIMIT }).rows.map((r) => {
       const v = refs.find((x) => x.person_id === r.id);
       const own = opps?.get(r.id);
       return { id: r.id, name: r.name, company_name: r.company_name, tags: r.tags, sector_path: r.sector_path, opps: own?.opps ?? 0, won: own?.won ?? 0, network: v?.network ?? 0 };
     }),
     referral_value: refs.find((r) => r.person_id === id) ?? null,
-    opportunities: pipeline?.opportunities.list({ filter: { person_id: id }, limit: 100 }).rows ?? [],
-    projects: ctx.mod("projects")?.projects.list({ filter: { person_id: id }, limit: 100 }).rows ?? [],
-    drafts: ctx.mod("drafts")?.list({ filter: { person_id: id, status: "bekliyor" }, limit: 20 }).rows ?? [],
+    opportunities: pipeline?.opportunities.list({ filter: { person_id: id }, limit: CARD_OPPORTUNITIES_LIMIT }).rows ?? [],
+    projects: ctx.mod("projects")?.projects.list({ filter: { person_id: id }, limit: CARD_PROJECTS_LIMIT }).rows ?? [],
+    drafts: ctx.mod("drafts")?.list({ filter: { person_id: id, status: "bekliyor" }, limit: CARD_DRAFTS_LIMIT }).rows ?? [],
     // Paket 2: kişiyi getiren paylaşım ve anlatılan fikirler
     post: person.post_id ? ctx.mod("posts")?.get(person.post_id) ?? null : null,
     ideas: ctx.mod("ideas")?.people(undefined, id) ?? [],
