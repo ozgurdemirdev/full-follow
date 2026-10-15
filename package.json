@@ -22,7 +22,8 @@
     "demo:seed": "node scripts/demo-seed.cjs",
     "dev:web": "npm run dev -w @fullfollow/web",
     "mcp": "node packages/mcp/dist/index.js",
-    "db:generate": "npm run db:generate -w @fullfollow/core"
+    "db:generate": "npm run db:generate -w @fullfollow/core",
+    "check:text": "node scripts/check-text.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
