@@ -12,6 +12,7 @@ export const m = defineMessages({
     events: {
       created: (name: string) => `Kişi eklendi: ${name}`,
       updated: (fields: string) => `Kişi güncellendi (${fields})`,
+      status: (name: string, from: string, to: string) => `Temas durumu ilerledi: ${name} (${from} → ${to})`,
       deleted: (name: string) => `Kişi silindi: ${name}`,
     },
     /** Field names the update summary lists, by column or input key */

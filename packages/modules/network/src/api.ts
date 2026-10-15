@@ -9,8 +9,8 @@ export function networkApi(ctx: Ctx): NetworkApi {
   const { touches } = networkServices(ctx);
   return {
     touches,
-    stats: () => networkStats(ctx),
-    rhythm: () => weeklyRhythm(ctx),
+    stats: (ids) => networkStats(ctx, ids),
+    rhythm: (ids) => weeklyRhythm(ctx, ids),
     channels: (personId, net) => channelSummary(ctx, personId, net),
     companyChannels: (companyId) => companyChannelSummary(ctx, companyId),
     lists: (limit) => networkLists(ctx, limit),

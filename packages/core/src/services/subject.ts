@@ -1,6 +1,7 @@
 // Temas ve taslağın muhatabı: kişi, firma ya da sadece adres/hesap (soğuk e-postadaki info@firma.com gibi).
 // Shared by the network, drafts and templates modules, so it stays in core.
 import { FFError, row, rows, type Ctx } from "../context";
+import { localDay } from "../dates";
 import { contactKey } from "../keys";
 import { m } from "../messages";
 import { requireRow } from "./shared";
@@ -88,6 +89,20 @@ export function sameSide(ctx: Ctx, ownerId: number, s: { person_id?: number | nu
 
 /** SQL for the touches of a company: written to the company itself or to one of its people (touch alias `t`, the company id twice) */
 export const COMPANY_TOUCHES = "(t.company_id = ? OR t.person_id IN (SELECT id FROM people WHERE company_id = ?))";
+
+/** SQL for the touches of a person (`p` is the people row) and of an opportunity (its row has the given alias): its own touches and any touch to its person */
+export const PERSON_TOUCHES = "t.person_id = p.id";
+export const opportunityTouches = (alias: string) => `(t.opportunity_id = ${alias}.id OR t.person_id = ${alias}.person_id)`;
+
+/**
+ * SQL for "the follow-up of a record is done": an outgoing touch to it happened on or after the follow-up date (`dateColumn`, a date).
+ * `touchesOf` picks the touches that belong to the record (touch alias `t`). The calendar feed, Today and the lists all take `done` from here.
+ * The first condition is a range on `happened_at` (the day before is enough for any time zone offset): it lets the check start from the recent touches
+ * instead of every touch of the record or, for an opportunity, every touch there is. The local day is the exact test.
+ * It reads the touches table directly on purpose: the table always exists, so it keeps working without the network module.
+ */
+export const followUpDone = (touchesOf: string, dateColumn: string) =>
+  `EXISTS (SELECT 1 FROM touches t WHERE t.happened_at >= date(substr(${dateColumn}, 1, 10), '-1 day') AND ${touchesOf} AND t.direction = 'giden' AND ${localDay("t.happened_at")} >= substr(${dateColumn}, 1, 10))`;
 
 /**
  * Şablondaki yer tutucular: {ad} {ad_soyad} {firma} {sektor}. Bilinmeyen yer tutucu olduğu gibi kalır.

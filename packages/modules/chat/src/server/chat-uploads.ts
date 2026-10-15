@@ -5,9 +5,7 @@ import type { Core } from "@fullfollow/core";
 import { cleanName, refuse, sniff } from "@fullfollow/core";
 import { BYTES_PER_MB } from "../constants";
 import { m } from "../messages";
-import { CHAT_ATTACHMENT_TYPES, CHAT_DATA_DIR, CHAT_LIMITS } from "./chat.config";
-
-const UPLOAD_DIR = path.join(CHAT_DATA_DIR, "uploads");
+import { CHAT_ATTACHMENT_TYPES, chatDataDir, CHAT_LIMITS } from "./chat.config";
 
 export function saveUpload(core: Core, sessionId: number, file: { originalname: string; buffer: Buffer; size: number }) {
   core.mod("chat")!.getSession(sessionId);
@@ -15,7 +13,7 @@ export function saveUpload(core: Core, sessionId: number, file: { originalname: 
   const d = sniff(file.buffer, name, CHAT_ATTACHMENT_TYPES);
   if (d.kind === "image" && file.size > CHAT_LIMITS.maxImageBytes) throw refuse(m.errors.imageTooBig(CHAT_LIMITS.maxImageBytes / BYTES_PER_MB), 413);
   if (file.size > CHAT_LIMITS.maxFileBytes) throw refuse(m.errors.fileTooBig(CHAT_LIMITS.maxFileBytes / BYTES_PER_MB), 413);
-  const dir = path.join(UPLOAD_DIR, String(sessionId));
+  const dir = path.join(chatDataDir(), "uploads", String(sessionId));
   fs.mkdirSync(dir, { recursive: true });
   const full = path.join(dir, `${randomUUID()}.${d.ext}`);
   fs.writeFileSync(full, file.buffer);

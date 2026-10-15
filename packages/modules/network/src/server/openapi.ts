@@ -3,7 +3,7 @@ import { CHANNELS, docKit } from "@fullfollow/core";
 import { ACTIVITY_PERIODS } from "../service/activity";
 import { adoptInput, touchCreate, touchUpdate } from "../service/schemas";
 
-const { crud, defineDocs, flag, object, positiveInt, saveResult } = docKit;
+const { crud, defineDocs, flag, limitOf, object, positiveInt, saveResult } = docKit;
 const id = positiveInt.optional();
 
 /** API documentation of the network routes (`GET /api/docs`); the request shapes are the module's own Zod schemas */
@@ -27,7 +27,7 @@ export const docs = defineDocs({
   },
   "GET /api/network": {
     summary: "List who waits for an answer and who went cold",
-    query: z.object({ limit: z.number().int().positive().optional().describe("Rows per list") }),
+    query: z.object({ limit: limitOf("Rows per list") }),
     response: object,
   },
   "GET /api/stats/week": { summary: "Get the touch counts of this week and last week", description: "Broken down by channel.", response: object },

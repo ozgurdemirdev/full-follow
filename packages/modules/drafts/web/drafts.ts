@@ -24,8 +24,6 @@ export const TABS: { key: DraftTab; label: string; test: (d: Draft) => boolean }
 
 /** Reason chips of the reject panel; picking one fills the text field, which can then be edited */
 export const REJECT_REASONS = [m.reasons.tooLong, m.reasons.wrongTone, m.reasons.notNow, m.reasons.wrongInfo];
-/** Reason sent when the field is left empty (the reject call needs a note) */
-export const REJECT_FALLBACK = m.rejectFallback;
 
 /** The side card lists this many of the latest touches with the person */
 export const SIDE_TOUCHES = 2;

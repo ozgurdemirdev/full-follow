@@ -126,6 +126,11 @@ async function checkServer(caseDir, env, installed, all) {
         }
       }
     }
+    // a garbage date is a 400 at once (it once looped until the server ran out of memory); without the calendar module the route is gone (404)
+    const started = Date.now();
+    const bad = await get(`${base}/api/plan?date=garbage`);
+    const calendarOn = installed.some((m) => m.key === "calendar");
+    if (bad.status !== (calendarOn ? 400 : 404) || Date.now() - started > 1000) throw new CheckError(`GET /api/plan?date=garbage answered ${bad.status || "no answer"} in ${Date.now() - started} ms (expected ${calendarOn ? 400 : 404} within 1000)`);
     const page = await get(`${base}/`);
     if (page.status !== 200) throw new CheckError(`GET / answered ${page.status || "no answer"}`);
     const bundle = /<script[^>]+src="([^"]+\.js)"/.exec(page.text)?.[1];

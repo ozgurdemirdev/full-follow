@@ -1,20 +1,14 @@
 import {
-  dayOf, daysBetween, keptRows, listThreads, LOCALE, page,
+  ALL_ROWS, dayOf, daysBetween, inIds, keptRows, listThreads, LOCALE, page,
   type CompaniesOverview, type CompanyOverviewRow, type CompanyRow, type CompanySegment, type CompanyTotals, type Ctx, type ListOpts,
 } from "@fullfollow/core";
-import { ALL_ROWS, TILE_PEOPLE } from "./constants";
+import { TILE_PEOPLE } from "./constants";
 import { companiesList } from "./list";
 
 type SortKey = "value" | "recent" | "name";
 
 /** What a company is worth on the screen: paid, still due and open (the sort by value and the money bar read it) */
 const worth = (c: CompanyRow) => c.money.won + c.money.due + c.money.open;
-
-/** A comma separated list of ids (`ids=3,7`) as a set; undefined when the filter is not given */
-function idSet(v: unknown): Set<number> | undefined {
-  if (v === undefined || v === null || v === "") return undefined;
-  return new Set(String(v).split(",").map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0));
-}
 
 /** The order the screen offers: most valuable first (default), most recently touched first (untouched last), by name */
 function sorter(key: SortKey, today: string): (a: CompanyRow, b: CompanyRow) => number {
@@ -30,7 +24,7 @@ function decorate(ctx: Ctx, list: CompanyRow[]): CompanyOverviewRow[] {
   if (!list.length) return [];
   const ids = JSON.stringify(list.map((c) => c.id));
   // the people table is read directly on purpose, like the people count of the list: the screen keeps its tiles without the people module
-  const people = keptRows<{ id: number; name: string; company_id: number }>(ctx, "SELECT id, name, company_id FROM people WHERE company_id IN (SELECT value FROM json_each(?))", ids);
+  const people = keptRows<{ id: number; name: string; company_id: number }>(ctx, `SELECT id, name, company_id FROM people WHERE ${inIds("company_id")}`, ids);
   const net = ctx.mod("network")?.stats();
   const byCompany = new Map<number, CompanyOverviewRow["people"]>();
   for (const p of people) {
@@ -52,13 +46,11 @@ function decorate(ctx: Ctx, list: CompanyRow[]): CompanyOverviewRow[] {
 
 /**
  * The page of the company list the screen shows. The list service filters (tags, sectors, source, status, search) run first;
- * then the screen's own: ids, the segment (after the counts) and the sort.
+ * then the screen's own: the segment (after the counts) and the sort.
  */
 export function companiesOverview(ctx: Ctx, o: ListOpts): CompaniesOverview {
   const f = o.filter ?? {};
-  const ids = idSet(f.ids);
   let list = companiesList(ctx, { q: o.q, filter: f, limit: ALL_ROWS }).rows;
-  if (ids) list = list.filter((c) => ids.has(c.id));
 
   const counts: CompaniesOverview["counts"] = { all: list.length, client: 0, lead: 0, partner: 0 };
   for (const c of list) counts[c.segment as CompanySegment]++;

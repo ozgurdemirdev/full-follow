@@ -15,3 +15,10 @@ export const LOGIN_WINDOW_MS = 60_000;
 
 /** Rows of the "today" screen when the request gives no limit */
 export const TODAY_ROWS_DEFAULT = 50;
+
+/** Host names that always mean this computer (a Host header outside this list, the machine's own addresses and FF_ALLOWED_HOSTS is refused) */
+export const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+/** Methods that change nothing: they pass the request guard without a declared body type */
+export const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
+/** Body types a data changing request may declare (a form or text body is how another site would send one without a preflight) */
+export const ALLOWED_BODY_TYPES = ["application/json", "multipart/form-data"];

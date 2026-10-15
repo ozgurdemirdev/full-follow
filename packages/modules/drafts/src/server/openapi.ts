@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DRAFT_STATUSES, docKit } from "@fullfollow/core";
-import { draftCreate, draftUpdate } from "../service/schemas";
+import { draftCreate, draftReject, draftUpdate } from "../service/schemas";
 
 const { crud, defineDocs, flag, object, positiveInt, saveResult } = docKit;
 const id = positiveInt.optional();
@@ -22,8 +22,8 @@ export const docs = defineDocs({
   "POST /api/drafts/:id/approve": { summary: "Approve a draft", description: "Only Özgür approves; the MCP host has no such tool.", response: saveResult },
   "POST /api/drafts/:id/reject": {
     summary: "Reject a draft with a note",
-    description: "The reason is required; it also joins the learned rules Claude reads before the next draft.",
-    body: z.object({ note: z.string() }),
+    description: "Send the reason as `note` (it also joins the learned rules Claude reads before the next draft) or `no_reason: true` when Özgür gave none.",
+    body: draftReject,
     response: saveResult,
   },
   "POST /api/drafts/:id/send": { summary: "Mark a draft as sent", description: "Özgür sent it himself: records an outgoing touch and applies the opportunity stage rule (when the network module is installed).", response: saveResult },

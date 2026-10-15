@@ -1,5 +1,5 @@
 import {
-  addDays, dayOf, keptRows, rows,
+  addDays, dayOf, followUpDone, keptRows, localDay, opportunityTouches, rows,
   type Ctx, type OpportunityFollowUp, type PersonPipelineStats, type SourceConversion,
 } from "@fullfollow/core";
 import { OPEN_SQL } from "./list";
@@ -43,7 +43,7 @@ export function bySource(ctx: Ctx): SourceConversion[] {
 export function followUpsDue(ctx: Ctx, from: string, to: string): OpportunityFollowUp[] {
   // the touch check reads the touches table directly on purpose: tables always exist, so `done` keeps working without the network module
   return rows<OpportunityFollowUp>(ctx, `SELECT 'opportunity' AS type, o.id, o.title AS name, substr(o.next_follow_up_at, 1, 10) AS date,
-      EXISTS (SELECT 1 FROM touches t WHERE (t.opportunity_id = o.id OR t.person_id = o.person_id) AND t.direction = 'giden' AND substr(t.happened_at, 1, 10) >= substr(o.next_follow_up_at, 1, 10)) AS done
+      ${followUpDone(opportunityTouches("o"), "o.next_follow_up_at")} AS done
     FROM opportunities o WHERE o.stage IN (${OPEN_SQL}) AND substr(o.next_follow_up_at, 1, 10) BETWEEN ? AND ?`, from, to)
     .map((r) => ({ ...r, done: !!r.done }));
 }
@@ -65,6 +65,6 @@ export const offerCreatedSince = (ctx: Ctx, since: string): string[] =>
 /** Opportunities lost in a month (YYYY-MM, by the day they were closed): how many and the sum of their estimated values */
 export function lostIn(ctx: Ctx, ym: string): { count: number; budget: number } {
   const r = keptRows<{ count: number; budget: number }>(ctx, `SELECT COUNT(*) AS count, COALESCE(SUM(estimated_value), 0) AS budget FROM opportunities
-    WHERE stage = 'kaybedildi' AND substr(closed_at, 1, 7) = ?`, ym)[0];
+    WHERE stage = 'kaybedildi' AND substr(${localDay("closed_at")}, 1, 7) = ?`, ym)[0];
   return { count: r?.count ?? 0, budget: r?.budget ?? 0 };
 }

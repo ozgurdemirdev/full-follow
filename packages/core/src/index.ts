@@ -34,10 +34,10 @@ export { assertOzgur, emit as writeEvent, keptRow, keptRows, money, norm, page, 
 export { placeInGroup, renumberGroup, requireRow, requireTarget, resolveRef, truncate, link as eventLink } from "./services/shared";
 export { filesOf } from "./services/files";
 export { announceTrashed, Bin } from "./services/trash";
-export { bool, has, labelFilter, stripKeys } from "./services/directory";
+export { bool, has, idsOf, inIds, labelFilter, stripKeys } from "./services/directory";
 export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
 export { assertUnique, keyList } from "./services/dupes";
-export { COMPANY_TOUCHES, isColdEmail, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
+export { COMPANY_TOUCHES, followUpDone, isColdEmail, opportunityTouches, PERSON_TOUCHES, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
 export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLinks } from "./services/sectors";
 export { hiddenModules, marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingsService, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
@@ -51,7 +51,7 @@ export * as coreSchemas from "./schemas";
 export * as docKit from "./openapi";
 export type { DocKey, HttpMethod, RouteDoc, RouteDocs } from "./openapi";
 export type { Q } from "./db/client";
-export { APP_TOKEN, CLAUDE_APP_TOKEN, intId, listOpts, withList } from "./http";
+export { APP_TOKEN, CLAUDE_APP_TOKEN, intId, intQuery, listLimit, listOpts, withList } from "./http";
 
 /** Toplu kayıt sonucu: eklenenler, mükerrer diye atlananlar, hata verenler (sıra numarasıyla) */
 export interface BulkResult {

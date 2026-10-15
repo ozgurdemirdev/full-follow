@@ -1,5 +1,3 @@
-/** A list read that must see every row (a person by id, the people of a company) */
-export const ALL_ROWS = 100000;
 /** Rows of each part of the person card */
 export const CARD_TOUCHES_LIMIT = 200;
 export const CARD_NOTES_LIMIT = 200;

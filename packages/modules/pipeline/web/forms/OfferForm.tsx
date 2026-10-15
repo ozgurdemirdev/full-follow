@@ -17,6 +17,8 @@ import { m as kit } from "@kit/messages";
 
 const AMOUNT_STEP = 1000;
 const PLAN_FULL = 100;
+/** The plan part every offer plan needs (the server's deposit milestone) */
+const DEPOSIT_KEY = "pesinat";
 type Related = { offers?: Offer[]; files?: FileRow[] };
 
 /** The payment template of the settings as plan rows: whole percents, the last part takes what the rounding leaves */
@@ -88,7 +90,7 @@ export function OfferForm(p: FormProps) {
     () => errorsOf({
       opp: !opp.id && m.offerForm.pickOpp,
       amount: !(value > 0) && m.offerForm.amountRequired,
-      plan: planRows.length > 0 && planSum(planRows) !== PLAN_FULL && m.offerForm.planTotal(PLAN_FULL),
+      plan: planRows.length > 0 && ((planSum(planRows) !== PLAN_FULL && m.offerForm.planTotal(PLAN_FULL)) || (!planRows.some((r) => r.key === DEPOSIT_KEY && r.pct > 0) && m.offerForm.planDeposit)),
     }),
   );
 

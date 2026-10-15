@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import {
-  announceTrashed, Bin, bool, COMPANY_TOUCHES, contactKey, eventLink as link, FFError, has, isColdEmail, page, parse, requireRow, resolveSubject, rows, sameSide, schema, stamp, truncate,
+  announceTrashed, Bin, bool, COMPANY_TOUCHES, contactKey, eventLink as link, FFError, has, isColdEmail, LIST_PAGE_SIZE, page, parse, requireRow, resolveSubject, row, rows, sameSide, schema, stamp, truncate,
   writeEvent as emit, type Ctx, type ListOpts, type Q, type TouchInput, type TouchListRow, type TouchRecord,
 } from "@fullfollow/core";
 import { m } from "../messages";
@@ -72,12 +72,12 @@ export function insertTouch(q: Q, ctx: Ctx, d: TouchInput): { row: TouchRecord; 
 
 type Selected = Omit<TouchListRow, "suggested_match"> & { contact_key: string | null };
 
-/** Touch rows with the names they hang on (and their address key); `where` narrows to one touch (`t.id = ?`) or to a company's scope */
-function selectTouches(ctx: Ctx, where = "", ...params: unknown[]): Selected[] {
+/** Touch rows with the names they hang on (and their address key); `where` narrows them in SQL, `window` cuts one page of the newest first order */
+function selectTouches(ctx: Ctx, where: string, params: unknown[], window?: { limit: number; offset: number }): Selected[] {
   const list = rows(ctx, `SELECT t.*, p.name AS person_name, COALESCE(c.name, pc.name) AS company_name, COALESCE(p.name, c.name, t.contact) AS to_name,
       i.title AS idea_title
     FROM touches t LEFT JOIN people p ON p.id = t.person_id LEFT JOIN companies c ON c.id = t.company_id LEFT JOIN companies pc ON pc.id = p.company_id
-    LEFT JOIN ideas i ON i.id = t.idea_id ${where} ORDER BY t.happened_at DESC, t.id DESC`, ...params);
+    LEFT JOIN ideas i ON i.id = t.idea_id ${where} ORDER BY t.happened_at DESC, t.id DESC${window ? " LIMIT ? OFFSET ?" : ""}`, ...params, ...(window ? [window.limit, window.offset] : []));
   // the opportunity titles come from the pipeline module (null without it)
   const titles = ctx.mod("pipeline")?.opportunities.titles(list.flatMap((t) => (t.opportunity_id ? [t.opportunity_id as number] : [])));
   return list.map((t) => ({ ...t, opportunity_title: titles?.get(t.opportunity_id) ?? null, expects_reply: !!t.expects_reply }));
@@ -174,19 +174,31 @@ export function touchesService(ctx: Ctx) {
     });
   }
 
-  /** Filters: loose (no person or company), channel, person_id, company_id, opportunity_id, project_id, idea_id, company_scope (the company and its people) */
+  /**
+   * Filters: loose (no person or company), channel, person_id, company_id, opportunity_id, project_id, idea_id, company_scope (the company and its people).
+   * The filters and, without a text search, the page are cut in SQL.
+   */
   function list(o: ListOpts) {
     const f = o.filter ?? {};
-    let list = f.company_scope ? selectTouches(ctx, `WHERE ${COMPANY_TOUCHES}`, Number(f.company_scope), Number(f.company_scope)) : selectTouches(ctx);
-    if (bool(f.loose)) list = list.filter(isLoose);
-    if (f.channel) list = list.filter((t) => t.channel === f.channel);
-    for (const k of ["person_id", "company_id", "opportunity_id", "project_id", "idea_id"] as const) if (f[k]) list = list.filter((t) => t[k] === Number(f[k]));
-    list = list.filter((t) => has(o.q, t.summary, t.to_name, t.contact));
-    const shown = page(list, o.limit, o.offset);
-    return { rows: present(ctx, shown.rows), total: shown.total };
+    const conditions: string[] = [];
+    const args: unknown[] = [];
+    if (f.company_scope) { conditions.push(COMPANY_TOUCHES); args.push(Number(f.company_scope), Number(f.company_scope)); }
+    if (bool(f.loose)) conditions.push("t.person_id IS NULL AND t.company_id IS NULL");
+    if (f.channel) { conditions.push("t.channel = ?"); args.push(f.channel); }
+    for (const k of ["person_id", "company_id", "opportunity_id", "project_id", "idea_id"] as const) if (f[k]) { conditions.push(`t.${k} = ?`); args.push(Number(f[k])); }
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const limit = o.limit ?? LIST_PAGE_SIZE;
+    const offset = o.offset ?? 0;
+    if (o.q) {
+      const found = selectTouches(ctx, where, args).filter((t) => has(o.q, t.summary, t.to_name, t.contact));
+      const shown = page(found, limit, offset);
+      return { rows: present(ctx, shown.rows), total: shown.total };
+    }
+    const total = row<{ n: number }>(ctx, `SELECT COUNT(*) AS n FROM touches t ${where}`, ...args)!.n;
+    return { rows: present(ctx, selectTouches(ctx, where, args, { limit, offset })), total };
   }
 
-  const get = (id: number): TouchListRow | undefined => present(ctx, selectTouches(ctx, "WHERE t.id = ?", id))[0];
+  const get = (id: number): TouchListRow | undefined => present(ctx, selectTouches(ctx, "WHERE t.id = ?", [id]))[0];
 
   return { create, insert: (q: Q, d: TouchInput) => insertTouch(q, ctx, d), update, adoptSuggested, remove, list, get };
 }

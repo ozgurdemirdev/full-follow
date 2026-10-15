@@ -5,6 +5,19 @@ export const m = defineMessages({
   tr: {
     unexpectedError: "beklenmeyen hata",
 
+    /** Errors Express raises before a route runs (an oversized or broken body), by status */
+    http: {
+      payloadTooLarge: "istek çok büyük",
+      badRequest: "istek okunamadı",
+      failed: "istek işlenemedi",
+    },
+
+    /** Refusals of the request guard */
+    guard: {
+      foreignHost: "bu adrese bu bilgisayardan başka bir ad ile ulaşılamaz (FF_ALLOWED_HOSTS ile eklenir)",
+      bodyType: "gövde application/json ya da multipart/form-data olmalı",
+    },
+
     auth: {
       required: "giriş gerekli",
       tooManyAttempts: "çok fazla deneme, bir dakika bekle",

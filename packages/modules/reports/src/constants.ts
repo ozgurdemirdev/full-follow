@@ -11,6 +11,8 @@ export const REVIEW_WEEKDAY = 5;
 export const WEEK_DAYS = 7;
 /** How many months the month chart shows when the request does not say */
 export const REPORT_MONTHS_DEFAULT = 6;
+/** The most months the month series can be asked for */
+export const REPORT_MONTHS_MAX = 60;
 
 /** The month insight: when the due payments leave the floor short by at most this share of it, the sentence says "only a little short" */
 export const INSIGHT_NEAR_SHARE = 0.1;

@@ -52,11 +52,17 @@ describe("drafts as a module", () => {
     reject("  çok uzun  ");
     reject("çok uzun");
     reject("resmi yazma");
-    // the note sent when no reason was given is kept on the draft but teaches nothing
-    reject("Neden yazılmadı");
+    // a reject without a reason (the explicit flag) keeps its note on the draft but teaches nothing; no text is matched to tell it apart
+    const bare = claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id;
+    expect(ozgur.drafts.reject(bare, { no_reason: true }).row.reject_note).toBe("Neden yazılmadı");
+    expect(() => ozgur.drafts.reject(claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id, {})).toThrow(/ret nedeni gerekli/);
     expect(ozgur.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma"]);
     expect(ozgur.today(5).draft_rules).toEqual(["çok uzun", "resmi yazma"]);
     expect(h.sqlite.prepare("SELECT COUNT(*) n FROM events WHERE type = 'draft.rejected'").get()).toEqual({ n: 4 });
+    // the same words typed as a real reason are a reason like any other
+    reject("Neden yazılmadı");
+    expect(ozgur.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma", "Neden yazılmadı"]);
+    ozgur.settings.set("draft_rules", ["çok uzun", "resmi yazma"]);
     for (let i = 0; i < DRAFT_RULES_MAX; i++) reject(`kural ${i}`);
     const kept = ozgur.settings.view().draft_rules as string[];
     expect(kept).toHaveLength(DRAFT_RULES_MAX);

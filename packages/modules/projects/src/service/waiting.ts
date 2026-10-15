@@ -1,4 +1,5 @@
 import { keptRows, MILESTONES, type Ctx, type OpenProjectTask, type ProjectWaiting } from "@fullfollow/core";
+import { CANCELLED_STAGE } from "./constants";
 import { paymentStatus } from "./payments";
 
 /** Who a project waits on and the TL that wait holds */
@@ -22,7 +23,7 @@ interface PaymentLine {
 const left = (p: PaymentLine) => Math.max(0, p.expected_amount - p.paid_amount);
 
 /**
- * Who each project waits on, for a whole list: two statements, never one per project.
+ * Who each project waits on, for a whole list: a few statements, never one per project. A cancelled project waits on nobody.
  * Late (gecikti): a payment is overdue, or an open task of Özgür or the client is. Otherwise the open task due first that is not Claude's decides:
  * Özgür's means sende, the client's means musteride, none means nobody. The amount is the overdue money for a late project, else what is left of the
  * first unpaid payment (in milestone order) while somebody waits. The tasks come from the calendar module (without it only overdue payments make a project wait).
@@ -37,7 +38,9 @@ export function waitingOf(ctx: Ctx, projectIds: number[]): Map<number, Waiting> 
     pays.set(p.project_id, [...(pays.get(p.project_id) ?? []), p]);
   }
   const tasks = ctx.mod("calendar")?.tasks.openOfProjects(projectIds);
+  const cancelled = new Set(keptRows<{ id: number }>(ctx, "SELECT id FROM projects WHERE stage = ? AND id IN (SELECT value FROM json_each(?))", CANCELLED_STAGE, ids).map((r) => r.id));
   for (const id of projectIds) {
+    if (cancelled.has(id)) { out.set(id, { waiting: null, waiting_amount: 0 }); continue; }
     const own = (pays.get(id) ?? []).sort((a, b) => MILESTONES.indexOf(a.milestone) - MILESTONES.indexOf(b.milestone) || a.id - b.id);
     const overdue = own.filter((p) => paymentStatus(p, today) === "gecikmis");
     const firstUnpaid = own.find((p) => paymentStatus(p, today) !== "odendi");

@@ -11,6 +11,7 @@ export const m = defineMessages({
     currency: "₺",
     /** Month name of a month number (1 = January) */
     monthName: (month: number) => MONTH_NAMES[month - 1],
+    badMonth: "ay YYYY-AA olmalı (örn. 2026-10)",
     badWeek: "hafta YYYY-Www (örn. 2026-W41) ya da bir tarih olmalı",
     /**
      * The wording of the month insight, one sentence per case. {due}, {surplus}, {missing}, {gap}, {month}, {count} and {budget} are filled in;

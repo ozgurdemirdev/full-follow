@@ -24,6 +24,7 @@ export const m = defineMessages({
 
     forbiddenAction: (what: string) => `${what} sadece Özgür tarafından yapılır`,
     invalidId: (id: unknown) => `geçersiz id "${id}"`,
+    invalidNumber: (name: string, min: number, max: number) => `${name}, ${max === Number.MAX_SAFE_INTEGER ? `${min} ya da daha büyük` : `${min} ile ${max} arasında`} bir tam sayı olmalı`,
     notFound: (what: string, id: unknown) => `${what} #${id} bulunamadı`,
     moduleNotInstalled: (type: string, owner: string) => `"${type}" türü için "${owner}" modülü kurulu değil`,
     unknownType: (type: string, valid: string) => `bilinmeyen tür "${type}" (geçerli: ${valid})`,
@@ -137,9 +138,11 @@ export const m = defineMessages({
       warmupDate: "tarih YYYY-AA-GG olmalı",
       unknown: (key: string, valid: string) => `bilinmeyen ayar "${key}" (geçerli: ${valid})`,
       templateTotal: (sum: number) => `ödeme şablonu yüzdeleri toplamı 100 olmalı (şu an ${sum})`,
+      templateDeposit: "ödeme şablonunda peşinat tam bir kez olmalı",
       moduleNotInstalled: (unknown: string, installed: string) => `kurulu olmayan modül: ${unknown} (kurulu: ${installed})`,
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",
+      pinnedNotesAction: "sabit notları değiştirmek",
     },
 
     // ---- Trash
@@ -148,6 +151,7 @@ export const m = defineMessages({
       missing: (what: string, id: number) => `çöp kutusunda ${what} #${id} yok`,
       restored: (what: string, label: string) => `Geri yüklendi (${what}): ${label}`,
       restoreBlocked: (label: string) => `${label} geri yüklenemedi: bağlı olduğu kayıt da silinmiş, önce onu geri yükle`,
+      restoreDuplicate: (label: string, holder: string) => `${label} geri yüklenemedi: aynı kayıt zaten var (${holder})`,
       restoredEffect: (label: string) => `${label} geri yüklendi`,
       categoryDeleted: (what: string, name: string) => `${cap(what)} silindi: ${name}`,
     },

@@ -22,7 +22,7 @@ export function statusOf(p: Person, today = todayIso()): PStatus {
   if (p.next_follow_up_at && p.next_follow_up_at <= today) return "due";
   if (p.awaiting) return "wait";
   if (p.cooling) return "cold";
-  if (daysFrom(p.created_at.slice(0, 10), today) >= -FRESH_DAYS) return "fresh";
+  if (daysFrom(p.created_at, today) >= -FRESH_DAYS) return "fresh";
   return "ok";
 }
 

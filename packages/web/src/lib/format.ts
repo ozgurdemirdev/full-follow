@@ -19,15 +19,15 @@ export const pct = (r: number | null | undefined) => (r == null ? "—" : `%${Ma
 export function toDate(s: string): Date {
   return s.length === 10 ? new Date(`${s}T12:00:00`) : new Date(s);
 }
-export function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+const localIso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const todayIso = () => localIso(new Date());
 export function addDaysIso(iso: string, days: number): string {
   const d = toDate(iso);
   d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return localIso(d);
 }
+/** The local day of a date or a timestamp (a created_at near midnight UTC belongs to the next local day) */
+export const dayOfIso = (s: string) => (s.length <= 10 ? s : localIso(new Date(s)));
 
 export const fmtDay = (s: string | null | undefined) => (s ? dayMonth.format(toDate(s)) : "");
 export const fmtDayLong = (s: string | null | undefined) => (s ? dayMonthLong.format(toDate(s)) : "");
@@ -38,7 +38,7 @@ const cap = (s: string) => s.charAt(0).toLocaleUpperCase(LOCALE) + s.slice(1);
 
 /** Gün farkı: pozitif = gelecekte */
 export function daysFrom(iso: string, from = todayIso()): number {
-  return Math.round((toDate(iso.slice(0, 10)).getTime() - toDate(from).getTime()) / 86_400_000);
+  return Math.round((toDate(dayOfIso(iso)).getTime() - toDate(from).getTime()) / 86_400_000);
 }
 
 /** "5 saat önce", "dün", "3 gün önce" */

@@ -10,5 +10,3 @@ export const DELIVERED_STAGES: readonly string[] = ["teslim", "bakim"];
 export const LATE_PAYMENT = "gecikmis";
 /** Lists of other modules are read whole */
 export const ALL_ROWS = 100_000;
-/** Length of an ISO date (YYYY-MM-DD) cut from a timestamp */
-export const ISO_DATE_LENGTH = 10;

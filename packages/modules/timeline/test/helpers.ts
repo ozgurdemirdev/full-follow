@@ -16,6 +16,15 @@ export const feedKinds = defineModule({
   },
 });
 
+/** Stand-in for the projects module: the money received in a range (here the payment events by their day; the real one reads its ledger by payment date) */
+export const fakeProjects = defineModule({
+  key: "projects",
+  label: "Pr",
+  api: (ctx) => ({
+    collectedBetween: (from: string, to: string) => (ctx.sqlite.prepare("SELECT COALESCE(SUM(json_extract(data, '$.amount')), 0) AS v FROM events WHERE type = 'payment.paid' AND substr(created_at, 1, 10) BETWEEN ? AND ?").get(from, to) as { v: number }).v,
+  }),
+});
+
 /** Stand-in for the people module: the record type a person's timeline is asked for, by its Turkish alias and by name */
 export const fakePeople = defineModule({
   key: "people",

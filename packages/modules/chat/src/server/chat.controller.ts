@@ -1,9 +1,11 @@
 import { Body, BadRequestException, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import fs from "node:fs";
+import { pipeline } from "node:stream";
 import type { Request, Response } from "express";
 import { APP_TOKEN, type Core } from "@fullfollow/core";
 import { intId } from "@fullfollow/core";
+import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
 import { cardRecords } from "./chat-records";
@@ -22,7 +24,7 @@ const frame = (e: { seq: number; name: string; data: unknown }) => `id: ${e.seq}
 
 @Controller("api/chat")
 export class ChatController {
-  constructor(@Inject(APP_TOKEN) private core: Core, private runner: ClaudeRunner, private hub: ChatHub) {}
+  constructor(@Inject(APP_TOKEN) private core: Core, @Inject(ClaudeRunner) private runner: ClaudeRunner, @Inject(ChatHub) private hub: ChatHub) {}
 
   private get chat() {
     return this.core.mod("chat")!;
@@ -85,7 +87,7 @@ export class ChatController {
   @Post("sessions/:id/attachments")
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: CHAT_LIMITS.maxFileBytes } }))
   upload(@Param("id") id: string, @UploadedFile() file: { originalname: string; buffer: Buffer; size: number } | undefined) {
-    if (!file) throw new BadRequestException("dosya gerekli");
+    if (!file) throw new BadRequestException(m.errors.fileRequired);
     return saveUpload(this.core, intId(id), file);
   }
 
@@ -98,7 +100,8 @@ export class ChatController {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, max-age=86400");
     res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(a.name)}`);
-    fs.createReadStream(a.path).pipe(res);
+    // pipeline destroys the file stream when the response closes early, so an aborted download never holds the file handle
+    pipeline(fs.createReadStream(a.path), res, () => {});
   }
 
   @Post("sessions/:id/stop")

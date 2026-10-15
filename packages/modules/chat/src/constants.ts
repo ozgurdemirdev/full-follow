@@ -48,3 +48,21 @@ export const NOTES_VERSION_CHARS = 12;
 /** Turkish text stored in chat_messages.error and shown by the web; the server picks one by error code */
 export const CHAT_ERROR_TEXT = m.errorTexts;
 export type ChatErrorCode = keyof typeof CHAT_ERROR_TEXT;
+
+/**
+ * Environment variables the Claude CLI process receives (nothing else: no FF_PASSWORD, no cookie secret, no other tool's tokens).
+ * Names are matched case-insensitively (Windows spells Path, ProgramFiles and so on in mixed case).
+ */
+export const CLI_ENV_NAMES = [
+  // finding programs and the user's folders
+  "PATH", "PATHEXT", "HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "APPDATA", "LOCALAPPDATA", "TEMP", "TMP", "TMPDIR",
+  "USER", "USERNAME", "LOGNAME", "SHELL", "COMSPEC", "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR", "PROGRAMDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", "PROGRAMW6432",
+  "COMMONPROGRAMFILES", "COMMONPROGRAMFILES(X86)", "COMMONPROGRAMW6432", "OS", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE",
+  "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "XDG_RUNTIME_DIR",
+  // language and terminal
+  "LANG", "LANGUAGE", "LC_ALL", "LC_CTYPE", "TERM", "COLORTERM", "NO_COLOR", "FORCE_COLOR", "TZ",
+  // network: proxies and certificate files
+  "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY", "SSL_CERT_FILE", "SSL_CERT_DIR", "NODE_EXTRA_CA_CERTS",
+] as const;
+/** Variable name prefixes passed on as well: the CLI's own settings and sign-in (API key, OAuth token, Bedrock or Vertex credentials) */
+export const CLI_ENV_PREFIXES = ["ANTHROPIC_", "CLAUDE_", "AWS_", "GOOGLE_", "CLOUD_ML_", "VERTEX_"] as const;

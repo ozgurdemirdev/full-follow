@@ -57,7 +57,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private brief = "";
   private notes = "";
 
-  constructor(@Inject(APP_TOKEN) private core: Core, private hub: ChatHub) {}
+  constructor(@Inject(APP_TOKEN) private core: Core, @Inject(ChatHub) private hub: ChatHub) {}
 
   private get chat() {
     return this.core.mod("chat")!;

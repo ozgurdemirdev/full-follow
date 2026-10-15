@@ -1,6 +1,6 @@
-import { addDays, daysBetween, LOCALE, type Ctx, type ReferralSuggestion, type ReferralSuggestions } from "@fullfollow/core";
+import { addDays, dayOf, daysBetween, LOCALE, type Ctx, type ReferralSuggestion, type ReferralSuggestions } from "@fullfollow/core";
 import { m } from "../messages";
-import { ALL_ROWS, ASK_RECENT_DAYS, DELIVERED_STAGES, ISO_DATE_LENGTH, LATE_PAYMENT, SUGGESTIONS_SHOWN, THANKS_RECENT_DAYS } from "./constants";
+import { ALL_ROWS, ASK_RECENT_DAYS, DELIVERED_STAGES, LATE_PAYMENT, SUGGESTIONS_SHOWN, THANKS_RECENT_DAYS } from "./constants";
 
 type Kind = keyof typeof m.requestTitle;
 
@@ -31,7 +31,7 @@ export function referralSuggestions(ctx: Ctx): ReferralSuggestions {
   const thanks: ReferralSuggestion[] = [];
   const since = addDays(today, -THANKS_RECENT_DAYS);
   const won = (ctx.mod("pipeline")?.opportunities.list({ filter: { stage: "kazanildi" }, limit: ALL_ROWS }).rows ?? [])
-    .map((o) => ({ o, at: (o.closed_at ?? o.updated_at).slice(0, ISO_DATE_LENGTH) }))
+    .map((o) => ({ o, at: dayOf(o.closed_at ?? o.updated_at) }))
     .filter(({ at }) => at >= since)
     .sort((a, b) => b.at.localeCompare(a.at));
   const thanked = new Set<number>();
@@ -51,7 +51,7 @@ export function referralSuggestions(ctx: Ctx): ReferralSuggestions {
   }
   const delivered = (projects?.projects.list({ limit: ALL_ROWS }).rows ?? [])
     .filter((p) => DELIVERED_STAGES.includes(p.stage))
-    .map((p) => ({ p, ago: daysBetween((p.delivered_at ?? p.updated_at).slice(0, ISO_DATE_LENGTH), today) }))
+    .map((p) => ({ p, ago: daysBetween(dayOf(p.delivered_at ?? p.updated_at), today) }))
     .filter(({ ago }) => ago >= 0 && ago <= ASK_RECENT_DAYS)
     .sort((a, b) => a.ago - b.ago);
   const rows: ReferralSuggestion[] = [];

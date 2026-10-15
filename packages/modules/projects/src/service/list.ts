@@ -2,6 +2,7 @@ import {
   addDays, bool, has, keptRow, keptRows, page, rows,
   type CompanyProjectMoney, type Ctx, type DuePayment, type ListOpts, type NextPayment, type PaymentRow, type PersonProjectStats, type ProjectRef, type ProjectRow,
 } from "@fullfollow/core";
+import { CANCELLED_STAGE, NOT_CANCELLED } from "./constants";
 import { paymentStatus } from "./payments";
 import { waitingOf } from "./waiting";
 
@@ -17,7 +18,7 @@ type Listed = Omit<ProjectRow, "next_payment" | "next_task" | "waiting" | "waiti
 function withNext(ctx: Ctx, list: Listed[]): ProjectRow[] {
   const waiting = waitingOf(ctx, list.map((p) => p.id));
   return list.map((p) => {
-    const np = keptRow<NextPayment>(ctx, `SELECT id, milestone, expected_amount - paid_amount AS remaining, due_date FROM payments
+    const np = p.stage === CANCELLED_STAGE ? undefined : keptRow<NextPayment>(ctx, `SELECT id, milestone, expected_amount - paid_amount AS remaining, due_date FROM payments
       WHERE project_id = ? AND paid_amount < expected_amount ORDER BY (due_date IS NULL), due_date, id LIMIT 1`, p.id);
     return { ...p, next_payment: np ?? null, next_task: ctx.mod("calendar")?.tasks.next(p.id) ?? null, ...waiting.get(p.id)! };
   });
@@ -33,7 +34,7 @@ export function projectList(ctx: Ctx, o: ListOpts): { rows: ProjectRow[]; total:
     const people = new Set(String(f.person_ids).split(",").map(Number));
     list = list.filter((p) => people.has(p.person_id));
   }
-  if (bool(f.active)) list = list.filter((p) => p.stage !== "iptal" && p.stage !== "bakim" && p.stage !== "teslim");
+  if (bool(f.active)) list = list.filter((p) => p.stage !== CANCELLED_STAGE && p.stage !== "bakim" && p.stage !== "teslim");
   list = list.filter((p) => has(o.q, p.name, p.person_name));
   const sliced = page(list, o.limit, o.offset);
   return { rows: withNext(ctx, sliced.rows), total: sliced.total };
@@ -73,7 +74,7 @@ export function personStats(ctx: Ctx): Map<number, PersonProjectStats> {
 export function moneyByCompany(ctx: Ctx): Map<number, CompanyProjectMoney> {
   return new Map(keptRows<CompanyProjectMoney & { company_id: number }>(ctx, `
     SELECT pe.company_id, COUNT(DISTINCT pr.id) AS projects, COALESCE(SUM(pa.paid_amount), 0) AS paid,
-      COALESCE(SUM(MAX(pa.expected_amount - pa.paid_amount, 0)), 0) AS due, MIN(pr.started_at) AS first_started
+      COALESCE(SUM(CASE WHEN ${NOT_CANCELLED} THEN MAX(pa.expected_amount - pa.paid_amount, 0) ELSE 0 END), 0) AS due, MIN(pr.started_at) AS first_started
     FROM projects pr JOIN people pe ON pe.id = pr.person_id LEFT JOIN payments pa ON pa.project_id = pr.id
     WHERE pe.company_id IS NOT NULL GROUP BY pe.company_id`).map(({ company_id, ...money }): [number, CompanyProjectMoney] => [company_id, money]));
 }
@@ -83,12 +84,18 @@ const PAYMENT_SELECT = `
   FROM payments pa JOIN projects pr ON pr.id = pa.project_id JOIN people pe ON pe.id = pr.person_id`;
 const PAYMENT_ORDER = "ORDER BY (pa.due_date IS NULL), pa.due_date, pa.id";
 
-/** Payment list, by due date (undated last). Filters: project_id, status, overdue, unpaid, due_within_days. The status is computed. */
+/**
+ * Payment list, by due date (undated last). Filters: project_id, status, overdue, unpaid, due_within_days. The status is computed.
+ * A filter for unpaid money (every status but odendi, overdue, unpaid, due_within_days) leaves out the payments of cancelled projects.
+ */
 export function paymentList(ctx: Ctx, o: ListOpts): { rows: PaymentRow[]; total: number } {
   const f = o.filter ?? {};
   const today = ctx.clock.today();
-  let list = rows<Omit<PaymentRow, "status">>(ctx, `${PAYMENT_SELECT} ${PAYMENT_ORDER}`).map((p) => ({ ...p, status: paymentStatus(p, today) }));
-  if (f.project_id) list = list.filter((p) => p.project_id === Number(f.project_id));
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (f.project_id) { where.push("pa.project_id = ?"); args.push(Number(f.project_id)); }
+  if ((f.status && f.status !== "odendi") || bool(f.overdue) || bool(f.unpaid) || f.due_within_days !== undefined) where.push(NOT_CANCELLED);
+  let list = rows<Omit<PaymentRow, "status">>(ctx, `${PAYMENT_SELECT}${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ${PAYMENT_ORDER}`, ...args).map((p) => ({ ...p, status: paymentStatus(p, today) }));
   if (f.status) list = list.filter((p) => p.status === f.status);
   if (bool(f.overdue)) list = list.filter((p) => p.status === "gecikmis");
   if (bool(f.unpaid)) list = list.filter((p) => p.status !== "odendi");
@@ -108,9 +115,10 @@ export function paymentGet(ctx: Ctx, id: number): PaymentRow | undefined {
 export const paymentRef = (ctx: Ctx, id: number) =>
   keptRow<{ id: number; project_id: number; milestone: PaymentRow["milestone"] }>(ctx, "SELECT id, project_id, milestone FROM payments WHERE id = ?", id);
 
-/** Payments whose due date falls in the range (paid ones too, they show as done); the calendar feed reads this */
+/** Payments whose due date falls in the range (paid ones too, they show as done; the unpaid ones of a cancelled project are left out); the calendar feed reads this */
 export function paymentsDue(ctx: Ctx, from: string, to: string): DuePayment[] {
   return rows<DuePayment>(ctx, `SELECT p.id, p.project_id, pr.name AS project_name, p.milestone, p.expected_amount, p.paid_amount, p.due_date, p.paid_amount >= p.expected_amount AS done
-    FROM payments p JOIN projects pr ON pr.id = p.project_id WHERE p.due_date BETWEEN ? AND ? ORDER BY p.id`, from, to)
+    FROM payments p JOIN projects pr ON pr.id = p.project_id
+    WHERE p.due_date BETWEEN ? AND ? AND (p.paid_amount >= p.expected_amount OR ${NOT_CANCELLED}) ORDER BY p.id`, from, to)
     .map((r) => ({ ...r, done: !!r.done }));
 }

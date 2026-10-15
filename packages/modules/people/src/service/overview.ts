@@ -1,8 +1,8 @@
 import {
-  bool, dayOf, daysBetween, keptRow, page,
+  ALL_ROWS, bool, dayOf, daysBetween, keptRow, page,
   type Ctx, type ListOpts, type PeopleOverview, type PersonRow, type PersonState,
 } from "@fullfollow/core";
-import { ALL_ROWS, CHANNEL_ACCOUNT, FRESH_DAYS, TOUCH_QUEUE_DEFAULT } from "./constants";
+import { CHANNEL_ACCOUNT, FRESH_DAYS, TOUCH_QUEUE_DEFAULT } from "./constants";
 import { peopleList } from "./list";
 
 /** Rank of a state on the people screen (lower first) */
@@ -26,18 +26,16 @@ function idSet(v: unknown): Set<number> | undefined {
 
 /**
  * The page of the people list the screen shows. The list service filters (tags, sectors, source, status, search ...) run first;
- * then the screen's own: ids, company_ids, post_ids, has_channel (an account on that channel) and, after the counts, state.
+ * then the screen's own: company_ids, post_ids, has_channel (an account on that channel) and, after the counts, state.
  */
 export function peopleOverview(ctx: Ctx, o: ListOpts): PeopleOverview {
   const f = o.filter ?? {};
   const today = ctx.clock.today();
-  const ids = idSet(f.ids);
   const companies = idSet(f.company_ids);
   const posts = idSet(f.post_ids);
   const account = f.has_channel ? CHANNEL_ACCOUNT[String(f.has_channel) as keyof typeof CHANNEL_ACCOUNT] : undefined;
 
   let list = peopleList(ctx, { q: o.q, filter: f, limit: ALL_ROWS }).rows;
-  if (ids) list = list.filter((p) => ids.has(p.id));
   if (companies) list = list.filter((p) => p.company_id !== null && companies.has(p.company_id));
   if (posts) list = list.filter((p) => p.post_id !== null && posts.has(p.post_id));
   if (account) list = list.filter((p) => !!p[account]);

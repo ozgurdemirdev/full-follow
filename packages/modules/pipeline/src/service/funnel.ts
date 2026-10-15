@@ -1,5 +1,5 @@
 import {
-  addDays, FFError, LOCALE, OFFER_STAGES, RATE_MIN_SAMPLE, REPLIED_AFTER, rows, SOURCE_FUNNEL_DEFAULT_PERIOD, SOURCE_FUNNEL_PERIODS, SOURCE_FUNNEL_STEPS, SOURCE_WEAK_SHARE,
+  addDays, FFError, LOCALE, localDay, OFFER_STAGES, RATE_MIN_SAMPLE, REPLIED_AFTER, rows, SOURCE_FUNNEL_DEFAULT_PERIOD, SOURCE_FUNNEL_PERIODS, SOURCE_FUNNEL_STEPS, SOURCE_WEAK_SHARE,
   type Ctx, type ContactStatus, type SourceFunnel,
 } from "@fullfollow/core";
 import { m } from "../messages";
@@ -46,7 +46,7 @@ function recordFlags(ctx: Ctx, kind: keyof typeof KIND, since: string | null) {
       (r.contact_status = '${MET}' OR EXISTS (SELECT 1 FROM touches x WHERE ${k.touch} AND x.kind = 'gorusme')) AS meeting,
       EXISTS (SELECT 1 FROM opportunities o WHERE ${k.opp} AND ${OFFERED}) AS offer,
       EXISTS (SELECT 1 FROM opportunities o WHERE ${k.opp} AND o.stage = 'kazanildi') AS won
-    FROM ${k.table} r WHERE r.source_id IS NOT NULL AND (? IS NULL OR substr(r.created_at, 1, 10) >= ?)`, since, since);
+    FROM ${k.table} r WHERE r.source_id IS NOT NULL AND (? IS NULL OR ${localDay("r.created_at")} >= ?)`, since, since);
 }
 
 /**

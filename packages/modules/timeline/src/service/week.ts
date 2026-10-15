@@ -5,7 +5,6 @@ import { m } from "../messages";
 /** Events of the feed types in a range, counted per type and actor; the `events_feed` index serves the range */
 const COUNTS = `SELECT e.type, e.created_by, COUNT(*) AS n FROM events e
   WHERE e.type IN (SELECT value FROM json_each(?)) AND e.created_at >= ? AND e.created_at < ? GROUP BY e.type, e.created_by`;
-const SUM = "SELECT COALESCE(SUM(json_extract(e.data, ?)), 0) AS v FROM events e WHERE e.type = ? AND e.created_at >= ? AND e.created_at < ?";
 
 /** Claude's drafts of a range that are approved or sent: the draft row is the one the event points at */
 const approvedDrafts = (table: string) => `SELECT COUNT(*) AS n FROM events e WHERE e.type = ? AND e.created_by = 'claude' AND e.created_at >= ? AND e.created_at < ?
@@ -29,8 +28,8 @@ export function weekOf(ctx: Ctx, kinds: Record<string, TimelineEventDef>, start?
 
   const now = count(from, to);
   const before = count(dayStart(addDays(monday, -WEEK_DAYS)), from);
-  const collected = Object.entries(kinds).filter(([, d]) => d.amount)
-    .reduce((sum, [type, d]) => sum + (keptRow<{ v: number }>(ctx, SUM, `$.${d.amount}`, type, from, to)?.v ?? 0), 0);
+  // the money received is the projects module's ledger by payment date, the same figure the reports show (null without the module)
+  const collected = ctx.mod("projects")?.collectedBetween(monday, addDays(monday, WEEK_DAYS - 1)) ?? null;
   const approved = Object.entries(kinds).filter(([, d]) => d.kind === "taslak" && d.row)
     .reduce((sum, [type, d]) => sum + (keptRow<{ n: number }>(ctx, approvedDrafts(d.row!.table), type, from, to, `$.${d.row!.key}`, JSON.stringify(DRAFT_APPROVED_STATUSES))?.n ?? 0), 0);
   return {

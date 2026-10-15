@@ -36,6 +36,7 @@ export const m = defineMessages({
       imageTooBig: (mb: number) => `Resim en fazla ${mb} MB olabilir`,
       fileTooBig: (mb: number) => `Dosya en fazla ${mb} MB olabilir`,
       fileMissing: "Dosya bulunamadı",
+      fileRequired: "dosya gerekli",
     },
     events: {
       created: "Yeni sohbet açıldı",

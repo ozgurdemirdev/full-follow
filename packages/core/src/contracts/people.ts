@@ -101,7 +101,7 @@ export interface PeopleApi {
   update(id: number, input: unknown): { row: PersonRecord; effects: string[] };
   /** the person goes to the trash with its notes, drafts, comments, touches and tasks; a person with opportunities or projects stays */
   remove(id: number): { effects: string[]; trash: { type: string; id: number } };
-  /** filters: tag, sector, source, status, awaiting, cooling, channel, company_id, referred_by_id, post_id, follow_up_due */
+  /** filters: ids (only these people), tag, sector, source, status, awaiting, cooling, channel, company_id, referred_by_id, post_id, follow_up_due */
   list(opts: ListOpts): { rows: PersonRow[]; total: number };
   get(id: number): PersonRow | undefined;
   /**

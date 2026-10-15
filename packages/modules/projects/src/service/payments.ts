@@ -5,6 +5,7 @@ import {
   type Ctx, type PaymentStatus,
 } from "@fullfollow/core";
 import { m } from "../messages";
+import { NOT_CANCELLED } from "./constants";
 import { paymentCreate, paymentUpdate } from "./schemas";
 
 const { payments } = schema;
@@ -38,14 +39,18 @@ export function ledgerOf(ctx: Ctx, paymentId: number): { date: string; amount: n
   return rows(ctx, `SELECT date, SUM(amount) AS amount FROM (${LEDGER_SQL}) WHERE payment_id = ? GROUP BY date ORDER BY date`, paymentId);
 }
 
-/** Bir ayda (YYYY-MM) tahsil edilen toplam */
-export function collectedIn(ctx: Ctx, ym: string): number {
-  return (keptRow(ctx, `SELECT COALESCE(SUM(amount), 0) AS v FROM (${LEDGER_SQL}) WHERE substr(date, 1, 7) = ?`, ym)?.v ?? 0) as number;
+/** İki tarih arasında (ikisi dahil) tahsil edilen toplam: tahsilatın tek tanımı */
+export function collectedBetween(ctx: Ctx, from: string, to: string): number {
+  return (keptRow(ctx, `SELECT COALESCE(SUM(amount), 0) AS v FROM (${LEDGER_SQL}) WHERE date BETWEEN ? AND ?`, from, to)?.v ?? 0) as number;
 }
 
-/** What is still unpaid of the payments due in a month (YYYY-MM) */
+/** Bir ayda (YYYY-MM) tahsil edilen toplam */
+export const collectedIn = (ctx: Ctx, ym: string): number => collectedBetween(ctx, `${ym}-01`, `${ym}-31`);
+
+/** What is still unpaid of the payments due in a month (YYYY-MM), without the projects that were cancelled */
 export function outstandingDue(ctx: Ctx, ym: string): number {
-  return (keptRow(ctx, "SELECT COALESCE(SUM(expected_amount - paid_amount),0) v FROM payments WHERE due_date IS NOT NULL AND substr(due_date,1,7) = ? AND paid_amount < expected_amount", ym)?.v ?? 0) as number;
+  return (keptRow(ctx, `SELECT COALESCE(SUM(pa.expected_amount - pa.paid_amount),0) v FROM payments pa JOIN projects pr ON pr.id = pa.project_id
+    WHERE pa.due_date IS NOT NULL AND substr(pa.due_date,1,7) = ? AND pa.paid_amount < pa.expected_amount AND ${NOT_CANCELLED}`, ym)?.v ?? 0) as number;
 }
 
 export function paymentsService(ctx: Ctx) {

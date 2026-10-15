@@ -1,6 +1,5 @@
-import type { Ctx, PeopleApi } from "@fullfollow/core";
+import { ONE_ROW, type Ctx, type PeopleApi } from "@fullfollow/core";
 import { peopleServices } from "./service";
-import { ALL_ROWS } from "./service/constants";
 import { personCard } from "./service/card";
 import { peopleList } from "./service/list";
 import { peopleOverview, peopleSummary, touchQueue } from "./service/overview";
@@ -16,7 +15,7 @@ export function peopleApi(ctx: Ctx): PeopleApi {
     update: people.update as PeopleApi["update"],
     remove: people.remove,
     list: (opts) => peopleList(ctx, opts),
-    get: (id) => peopleList(ctx, { limit: ALL_ROWS }).rows.find((p) => p.id === id),
+    get: (id) => peopleList(ctx, { filter: { ids: [id] }, limit: ONE_ROW }).rows[0],
     overview: (opts) => peopleOverview(ctx, opts),
     summary: () => peopleSummary(ctx),
     touchQueue: (opts) => touchQueue(ctx, opts),

@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, Put, Query } from "@nestjs/common";
 import {
   CHANNELS, DIRECTIONS,
   SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
-  CONTACT_STATUSES, TAG_COLORS,
+  CONTACT_STATUSES, TAG_COLORS, listLimit,
 } from "@fullfollow/core";
 import { TODAY_ROWS_DEFAULT } from "../constants";
 import { CORE, type Core } from "../core.provider";
@@ -37,7 +37,7 @@ export class MiscController {
   /** Bugün ekranı */
   @Get("today")
   today(@Query("limit") limit?: string) {
-    return this.core.today(limit ? Number(limit) : TODAY_ROWS_DEFAULT);
+    return this.core.today(listLimit(limit) ?? TODAY_ROWS_DEFAULT);
   }
 
   @Get("settings")
@@ -47,7 +47,7 @@ export class MiscController {
 
   @Put("settings")
   saveSettings(@Body() b: Record<string, unknown>) {
-    this.core.settings.setMany(b);
+    this.core.settings.setMany(b ?? {});
     return this.core.settings.view();
   }
 }

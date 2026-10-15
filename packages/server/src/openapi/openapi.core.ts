@@ -2,7 +2,7 @@ import { z } from "zod";
 import { coreSchemas, docKit, SETTING_KEYS } from "@fullfollow/core";
 import type { RouteDocs } from "@fullfollow/core";
 
-const { crud, defineDocs, filtered, flag, listOf, object, ok, positiveInt, saveResult } = docKit;
+const { crud, defineDocs, filtered, flag, limitOf, listOf, object, ok, positiveInt, saveResult } = docKit;
 const { commentCreate, commentUpdate, linkCreate, linkUpdate, noteCreate, noteUpdate, sectorCreate, sectorUpdate, sourceCreate, sourceUpdate, tagCreate, tagUpdate } = coreSchemas;
 const all = { all: flag("Include hidden (deleted) entries; they still show on the records that use them") };
 
@@ -39,7 +39,7 @@ export const coreDocs: RouteDocs = defineDocs({
   "GET /api/today": {
     summary: "Get the Today view",
     description: "What needs attention now; every installed module contributes a section.",
-    query: z.object({ limit: z.number().int().positive().optional().describe("Rows per section") }),
+    query: z.object({ limit: limitOf("Rows per section") }),
     response: object,
   },
   "GET /api/settings": { summary: "Read the settings", description: "The stored settings plus the figures installed modules compute from them.", response: object },

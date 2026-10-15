@@ -8,3 +8,5 @@ export const NOTE_CUT_CHARS = 80;
 export const OPENED_LABEL_CHARS = 60;
 /** Rows per section of `today` when the call gives no limit */
 export const TODAY_ROWS = 10;
+/** Most rows one `find` call returns, whatever limit it asks for (a long list would fill Claude's context) */
+export const FIND_LIMIT_MAX = 50;

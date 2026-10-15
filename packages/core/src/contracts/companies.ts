@@ -96,13 +96,15 @@ export interface CompaniesApi {
   update(id: number, input: unknown): { row: CompanyRecord; effects: string[] };
   /** the company goes to the trash with its own touches, drafts and comments; its people stay and lose the link (it comes back on restore) */
   remove(id: number): { effects: string[]; trash: { type: string; id: number } };
-  /** filters: tag, sector, source, status */
+  /** filters: ids (only these companies), tag, sector, source, status */
   list(opts: ListOpts): { rows: CompanyRow[]; total: number };
   get(id: number): CompanyRow | undefined;
   /** The list the companies screen pages through. The `list` filters plus: segment, sort (value, recent, name) and ids (comma separated) */
   overview(opts: ListOpts): CompaniesOverview;
   /** Money and decision makers of every company, whatever the filters */
   totals(): CompanyTotals;
+  /** names of these companies (one statement; lists of other modules show them) */
+  names(ids: number[]): Map<number, string>;
   card(id: number): CompanyCard;
   /** moves the company's contact status forward, never back; returns what changed */
   bumpStatus(id: number, next: ContactStatus): string[];

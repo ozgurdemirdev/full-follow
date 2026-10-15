@@ -41,10 +41,10 @@ async function alreadyRunning(port: number): Promise<boolean> {
 }
 
 async function load() {
-  const [{ NestFactory }, core, app, auth] = await Promise.all([
-    import("@nestjs/core"), import("@fullfollow/core"), import("./app.module"), import("./auth"),
+  const [{ NestFactory }, core, app, auth, setup] = await Promise.all([
+    import("@nestjs/core"), import("@fullfollow/core"), import("./app.module"), import("./auth"), import("./setup"),
   ]);
-  return { NestFactory, core, AppModule: app.AppModule, authEnabled: auth.authEnabled };
+  return { NestFactory, core, AppModule: app.AppModule, authEnabled: auth.authEnabled, configureApp: setup.configureApp };
 }
 
 async function bootstrap() {
@@ -65,7 +65,8 @@ async function bootstrap() {
   let app: NestExpressApplication;
   try {
     // rota listesi gibi ayrıntılar yazılmaz; sadece uyarı ve hata
-    app = await mods.NestFactory.create<NestExpressApplication>(mods.AppModule, { logger: ["error", "warn"] });
+    app = await mods.NestFactory.create<NestExpressApplication>(mods.AppModule, { logger: ["error", "warn"], bodyParser: false });
+    mods.configureApp(app);
   } catch (e) {
     die(m.dbOpenFailed(mods.core.defaultDbPath()), m.dbOpenFailedHint, e);
   }

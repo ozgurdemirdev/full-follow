@@ -157,9 +157,23 @@ export function restoreFromTrash(ctx: Ctx, type: string, recordId: number, check
     if (e instanceof Error && /FOREIGN KEY/i.test(e.message)) {
       throw new FFError("rule", m.trash.restoreBlocked(t.label));
     }
+    // a unique key that something took after the delete (a project of an opportunity that was won again): name the record that holds it
+    const clash = e instanceof Error ? /UNIQUE constraint failed: (.+)/i.exec(e.message) : null;
+    const holder = clash && holderOf(ctx, clash[1], parts);
+    if (holder) throw new FFError("rule", m.trash.restoreDuplicate(t.label, holder));
     throw e;
   }
   return { label: t.label as string, effects: [m.trash.restoredEffect(t.label)] };
+}
+
+/** The record that holds the unique key a restore ran into ("projects.opportunity_id": the row of that table with the value the restored row carries), as "kind #id" */
+function holderOf(ctx: Ctx, failed: string, parts: Part[]): string | null {
+  const cols = failed.split(",").map((c) => c.trim().split("."));
+  const table = cols[0][0];
+  const restored = parts.find((p) => p.table === table)?.rows[0];
+  if (!restored || cols.some(([t, c]) => t !== table || restored[c] == null)) return null;
+  const found = row<{ id: number }>(ctx, `SELECT id FROM ${table} WHERE ${cols.map(([, c]) => `${c} = ?`).join(" AND ")}`, ...cols.map(([, c]) => restored[c]));
+  return found ? `${TABLE_LABEL[table] ?? table} #${found.id}` : null;
 }
 
 /** Geri yüklenen kaydın olayı kişi/fırsat/proje zaman çizelgesinde de görünsün */

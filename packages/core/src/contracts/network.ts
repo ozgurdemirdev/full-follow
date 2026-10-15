@@ -190,10 +190,10 @@ export interface NetworkApi {
     list(opts: ListOpts): { rows: TouchListRow[]; total: number };
     get(id: number): TouchListRow | undefined;
   };
-  /** every person's touch state in one query */
-  stats(): Map<number, PersonNet>;
-  /** touches per ISO week of the last weeks for every person that has any, oldest week first */
-  rhythm(): Map<number, number[]>;
+  /** every person's touch state in one query; `ids` computes it only for those people */
+  stats(ids?: number[]): Map<number, PersonNet>;
+  /** touches per ISO week of the last weeks for every person that has any (or only for `ids`), oldest week first */
+  rhythm(ids?: number[]): Map<number, number[]>;
   /** touch counts of one person by channel; `net.awaiting` marks the channel that waits for an answer */
   channels(personId: number, net?: Pick<PersonNet, "awaiting">): ChannelSummary[];
   /** touch counts by channel of a company and its people */

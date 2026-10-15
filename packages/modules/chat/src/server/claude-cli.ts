@@ -2,7 +2,7 @@ import { execFile, spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { m } from "../messages";
-import { CHAT_DATA_DIR, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, TOOL_SEARCH, WEB_TOOLS } from "./chat.config";
+import { chatDataDir, CLI_ENV_NAMES, CLI_ENV_PREFIXES, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, TOOL_SEARCH, WEB_TOOLS } from "./chat.config";
 
 export interface CliTarget {
   command: string;
@@ -57,8 +57,8 @@ export function resolveCli(): CliTarget | null {
 export function chatCwd(): string {
   const want = process.env[ENV.cwd] || DEFAULT_CHAT_CWD;
   if (fs.existsSync(want)) return want;
-  console.warn(m.log.noCwd(want, CHAT_DATA_DIR));
-  return CHAT_DATA_DIR;
+  console.warn(m.log.noCwd(want, chatDataDir()));
+  return chatDataDir();
 }
 
 /** User text never appears here: it goes through stdin only. Model and effort are pre-validated against the whitelists. */
@@ -73,17 +73,28 @@ export function buildArgv(s: RunSession): string[] {
     "--effort", s.effort,
     s.cli_started ? "--resume" : "--session-id", s.cli_session_id,
     "--strict-mcp-config",
-    "--mcp-config", path.join(CHAT_DATA_DIR, "mcp.json"),
+    "--mcp-config", path.join(chatDataDir(), "mcp.json"),
     "--allowedTools", `mcp__${MCP_SERVER_NAME}`, ...WEB_TOOLS,
     "--tools", [TOOL_SEARCH, ...WEB_TOOLS].join(","),
     "--setting-sources", "project",
-    "--append-system-prompt-file", path.join(CHAT_DATA_DIR, "system.md"),
+    "--append-system-prompt-file", path.join(chatDataDir(), "system.md"),
   ];
+}
+
+/** The server's environment reduced to what the CLI needs (the allowlist in constants.ts); the server's own secrets (FF_PASSWORD, FF_COOKIE_SECRET) never reach it */
+export function cliEnv(source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const names = new Set<string>(CLI_ENV_NAMES);
+  const env: NodeJS.ProcessEnv = {};
+  for (const [key, value] of Object.entries(source)) {
+    const upper = key.toUpperCase();
+    if (value !== undefined && (names.has(upper) || CLI_ENV_PREFIXES.some((p) => upper.startsWith(p)))) env[key] = value;
+  }
+  return env;
 }
 
 /** shell: false always; on POSIX the process leads its own group so the whole tree can be killed */
 export function spawnClaude(target: CliTarget, s: RunSession): ChildProcess {
-  const env = { ...process.env };
+  const env = cliEnv();
   if (process.env[ENV.configDir]) env.CLAUDE_CONFIG_DIR = process.env[ENV.configDir];
   return spawn(target.command, [...target.prefix, ...buildArgv(s)], {
     cwd: chatCwd(), env, shell: false, windowsHide: true, detached: !IS_WIN, stdio: ["pipe", "pipe", "pipe"],

@@ -9,6 +9,8 @@ import { m } from "../messages";
 import { m as kit } from "@kit/messages";
 
 type Rows = PriceFloor["payment_template"];
+/** The template part every plan needs exactly once (the server's deposit milestone) */
+const DEPOSIT_KEY = "pesinat";
 
 /** Payment template: the percentages must add up to 100, so it saves with a button instead of autosave */
 export function TemplateEditor() {
@@ -22,6 +24,7 @@ function Editor({ saved }: { saved: Rows }) {
   const [rows, setRows] = useState<Rows>(() => saved.map((r) => ({ ...r })));
   const [busy, setBusy] = useState(false);
   const sum = rows.reduce((a, r) => a + (Number(r.percent) || 0), 0);
+  const hasDeposit = rows.filter((r) => r.milestone === DEPOSIT_KEY).length === 1;
   const dirty = JSON.stringify(rows) !== JSON.stringify(saved);
   const used = new Set(rows.map((r) => r.milestone));
   const free = Object.keys(MILESTONE).filter((x) => !used.has(x));
@@ -60,8 +63,9 @@ function Editor({ saved }: { saved: Rows }) {
           </select>
         ) : null}
         <span className="set-template-sum" data-ok={sum === TEMPLATE_TOTAL_PERCENT ? "" : undefined}>{m.settings.total(sum)}</span>
+        {hasDeposit ? null : <span className="set-template-sum">{m.settings.depositRequired}</span>}
         {dirty ? <button type="button" className="set-btn" onClick={() => setRows(saved.map((r) => ({ ...r })))}>{kit.undo}</button> : null}
-        <button type="button" className="set-btn" data-primary="" disabled={busy || !dirty || sum !== TEMPLATE_TOTAL_PERCENT} onClick={save}>{kit.save}</button>
+        <button type="button" className="set-btn" data-primary="" disabled={busy || !dirty || sum !== TEMPLATE_TOTAL_PERCENT || !hasDeposit} onClick={save}>{kit.save}</button>
       </div>
     </div>
   );
