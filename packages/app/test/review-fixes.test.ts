@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { openDb, type Clock, type DbHandle } from "@fullfollow/core";
+import { addDays, dayOf, openDb, type Clock, type DbHandle } from "@fullfollow/core";
 import { appFor, suite, type TestApp } from "./helpers";
 
 let today = "2026-10-15";
@@ -127,5 +127,28 @@ suite("the fixes of the service review", () => {
     expect(figures()).toEqual({ outstanding: 0, overdue: 0, unpaid: 0, soon: 0, late: 0, calendar: 0, companyDue: 0, waiting: null });
     expect(projects.payments.list({ filter: { project_id: pr.id } }).total).toBe(before.unpaid);
     expect(projects.projects.get(pr.id)!.next_payment).toBeNull();
+  });
+
+  it("every daily bucket of a timestamp uses the local day: a message sent near midnight UTC counts on the day the clock shows", () => {
+    // 21:30 UTC is already the next day wherever the offset is positive (Istanbul); the expected day is computed, so the test also holds at UTC
+    const sentAt = "2026-10-11T21:30:00Z";
+    const day = dayOf(sentAt);
+    now = "2026-10-01T10:00:00Z";
+    const goal = app.goals.create({ title: "Mesaj", target: 1, channel: "email" }).row;
+    const records = app.goals.create({ title: "Kayıt", target: 1, metric: "new_records" }).row;
+    now = sentAt;
+    today = day;
+    const ada = app.people.create({ name: "Ada" }).row;
+    app.touches.create({ person_id: ada.id, channel: "email", direction: "giden", kind: "mesaj", summary: "merhaba" });
+    expect(app.quota(day).channels.find((c) => c.channel === "email")!.sent).toBe(1);
+    expect((app.today(10) as any).week.sent).toBe(1);
+    const plan = app.goals.plan(day).goals;
+    expect(plan.find((g) => g.id === goal.id)).toMatchObject({ auto: 1, complete: true });
+    expect(plan.find((g) => g.id === records.id)).toMatchObject({ auto: 1 });
+    expect(app.mod("drafts")!.outgoingMessageCounts(day, day).get(`email|${day}`)).toBe(1);
+    // the channel numbers look back a fixed number of days from today: the message is exactly on the first day
+    today = addDays(day, 30);
+    now = `${today}T10:00:00Z`;
+    expect(app.mod("reports")!.marketing().channels.find((c) => c.channel === "email")).toMatchObject({ people: 1, sent: 1 });
   });
 });

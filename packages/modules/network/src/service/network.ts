@@ -1,5 +1,5 @@
 import {
-  addDays, CHANNELS, CONNECTION_TAGS, COMPANY_TOUCHES, dayOf, daysBetween, inIds, labelFields, LOCALE, networkSettings, RHYTHM_WEEKS, rows, sectorsOf, tagsOf, weekStart,
+  addDays, CHANNELS, CONNECTION_TAGS, COMPANY_TOUCHES, dayOf, daysBetween, inIds, labelFields, LOCALE, localDay, networkSettings, RHYTHM_WEEKS, rows, sectorsOf, tagsOf, weekStart,
   type ChannelSummary, type Ctx, type NetworkLists, type PersonNet, type WeekStats,
 } from "@fullfollow/core";
 import { NETWORK_LIST_LIMIT, SILENT_OFFER_DAYS, WEEK_DAYS } from "./constants";
@@ -151,19 +151,20 @@ export function weekToday(ctx: Ctx) {
   const day = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7;
   const start = addDays(date, -day);
   const prev = addDays(start, -WEEK_DAYS);
+  const at = localDay("happened_at");
   const t = rows<{ sent: number; sent_prev: number; replies: number; meetings: number }>(ctx, `SELECT
-      SUM(direction = 'giden' AND substr(happened_at, 1, 10) >= ?) AS sent,
-      SUM(direction = 'giden' AND substr(happened_at, 1, 10) < ?) AS sent_prev,
-      SUM(direction = 'gelen' AND substr(happened_at, 1, 10) >= ?) AS replies,
-      SUM(kind = 'gorusme' AND substr(happened_at, 1, 10) >= ?) AS meetings
-    FROM touches WHERE substr(happened_at, 1, 10) >= ?`, start, start, start, start, prev)[0];
+      SUM(direction = 'giden' AND ${at} >= ?) AS sent,
+      SUM(direction = 'giden' AND ${at} < ?) AS sent_prev,
+      SUM(direction = 'gelen' AND ${at} >= ?) AS replies,
+      SUM(kind = 'gorusme' AND ${at} >= ?) AS meetings
+    FROM touches WHERE ${at} >= ?`, start, start, start, start, prev)[0];
   // open offers come from the pipeline module (none without it); a silent one was last touched three days ago or earlier
   const offerTimes = ctx.mod("pipeline")?.openOfferTimes() ?? [];
   const silentBefore = addDays(date, -SILENT_OFFER_DAYS);
   const w = weekStats(ctx);
   return {
     start, sent: t?.sent ?? 0, sent_prev: t?.sent_prev ?? 0, replies: t?.replies ?? 0, meetings: t?.meetings ?? 0,
-    offers: offerTimes.length, offers_silent: offerTimes.filter((t) => t.slice(0, 10) <= silentBefore).length,
+    offers: offerTimes.length, offers_silent: offerTimes.filter((t) => dayOf(t) <= silentBefore).length,
     replies_prev: w.last_week.replies, new_people: w.this_week.new_people, by_channel: w.by_channel,
   };
 }

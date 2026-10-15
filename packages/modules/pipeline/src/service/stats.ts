@@ -1,5 +1,5 @@
 import {
-  addDays, dayOf, keptRows, rows,
+  addDays, dayOf, keptRows, localDay, rows,
   type Ctx, type OpportunityFollowUp, type PersonPipelineStats, type SourceConversion,
 } from "@fullfollow/core";
 import { OPEN_SQL } from "./list";
@@ -65,6 +65,6 @@ export const offerCreatedSince = (ctx: Ctx, since: string): string[] =>
 /** Opportunities lost in a month (YYYY-MM, by the day they were closed): how many and the sum of their estimated values */
 export function lostIn(ctx: Ctx, ym: string): { count: number; budget: number } {
   const r = keptRows<{ count: number; budget: number }>(ctx, `SELECT COUNT(*) AS count, COALESCE(SUM(estimated_value), 0) AS budget FROM opportunities
-    WHERE stage = 'kaybedildi' AND substr(closed_at, 1, 7) = ?`, ym)[0];
+    WHERE stage = 'kaybedildi' AND substr(${localDay("closed_at")}, 1, 7) = ?`, ym)[0];
   return { count: r?.count ?? 0, budget: r?.budget ?? 0 };
 }

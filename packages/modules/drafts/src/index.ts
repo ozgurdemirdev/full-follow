@@ -1,4 +1,4 @@
-import { defineModule, DRAFT_STATUSES, MARKETING_DEFAULTS, type RecordTrashed, type TouchCreated, row } from "@fullfollow/core";
+import { dayOf, defineModule, DRAFT_STATUSES, MARKETING_DEFAULTS, type RecordTrashed, type TouchCreated, row } from "@fullfollow/core";
 import { draftsApi } from "./api";
 import { chatCard } from "./chat";
 import { entities } from "./entities";
@@ -26,7 +26,7 @@ export default defineModule({
   entities,
   hooks: {
     /** A touch was written: send warnings (daily limit, email warmup). */
-    "touch.created": (ctx, { touch, input, cold }: TouchCreated) => sendWarnings(ctx, input, touch.happened_at.slice(0, 10), cold),
+    "touch.created": (ctx, { touch, input, cold }: TouchCreated) => sendWarnings(ctx, input, dayOf(touch.happened_at), cold),
     /**
      * A record goes to the trash: the drafts about an opportunity or project are kept, only their link is emptied (restoring ties them back);
      * a person's and a company's drafts go with them (and the comments on the drafts).

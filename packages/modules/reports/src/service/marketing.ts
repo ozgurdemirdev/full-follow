@@ -1,4 +1,4 @@
-import { addDays, CHANNELS, rows, type ChannelPerformance, type Ctx, type MarketingReport } from "@fullfollow/core";
+import { addDays, CHANNELS, localDay, rows, type ChannelPerformance, type Ctx, type MarketingReport } from "@fullfollow/core";
 import { CHANNEL_PERFORMANCE_DAYS } from "../constants";
 
 /**
@@ -10,7 +10,7 @@ export function channelPerformance(ctx: Ctx, days = CHANNEL_PERFORMANCE_DAYS): C
   const list = rows<{ channel: string; people: number; replied: number; sent: number }>(ctx, `
     WITH o AS (
       SELECT channel, person_id, MIN(happened_at) AS first_at, COUNT(*) AS n FROM touches
-      WHERE direction = 'giden' AND substr(happened_at, 1, 10) >= ? GROUP BY channel, person_id
+      WHERE direction = 'giden' AND ${localDay("happened_at")} >= ? GROUP BY channel, person_id
     )
     SELECT o.channel, COUNT(*) AS people, SUM(o.n) AS sent,
       SUM(EXISTS (SELECT 1 FROM touches g WHERE g.person_id = o.person_id AND g.direction = 'gelen' AND g.happened_at > o.first_at)) AS replied
