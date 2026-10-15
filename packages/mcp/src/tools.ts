@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { FFError, type Core } from "@fullfollow/core";
 import { z } from "zod";
 import { describer } from "./describe";
-import { OPENED_LABEL_CHARS, TODAY_ROWS } from "./constants";
+import { FIND_LIMIT_MAX, OPENED_LABEL_CHARS, TODAY_ROWS } from "./constants";
 import { block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs } from "./format";
 import { m } from "./messages";
 
@@ -71,8 +71,8 @@ export function registerTools(server: McpServer, core: Core) {
       [500, m.tools.findDeleted],
       [604, "trash {type:'person'}."],
     ]),
-    inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().optional(), offset: z.number().optional() },
-  }, ({ type, q, filter, limit, offset }) => run(() => list(core.normalizeType(type), core.find(type, { q, filter, limit, offset }), offset ?? 0)));
+    inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().int().min(1).optional(), offset: z.number().int().min(0).optional() },
+  }, ({ type, q, filter, limit, offset }) => run(() => list(core.normalizeType(type), core.find(type, { q, filter, limit: limit === undefined ? undefined : Math.min(limit, FIND_LIMIT_MAX), offset }), offset ?? 0)));
 
   server.registerTool("get", {
     description: describe("get", [
