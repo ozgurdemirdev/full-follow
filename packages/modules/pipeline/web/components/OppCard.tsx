@@ -10,6 +10,7 @@ import { opportunityPath } from "../paths";
 import { m } from "../messages";
 import { ageMeter, isLive, percentOf, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { Meter } from "@kit/components/ui";
 import { m as kit } from "@kit/messages";
 import { stroke as STROKE } from "@kit/styles/tokens.json";
@@ -36,6 +37,7 @@ export interface OppCardProps {
 /** One deal: company, person, value, age against the stage's stale limit, next step, and expandable details */
 export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, overlay, onToggle, onMove }: OppCardProps) {
   const [asked, setAsked] = useState(false);
+  const tasksOn = useTasksOn();
   const live = isLive(o);
   const rules = useStageRules();
   const age = live ? ageMeter(o, rules) : null;
@@ -99,7 +101,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
             </select>
           ) : null}
           <span className="pipe-actions">
-            <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void draft()}>{asked ? m.card.asked : m.card.askDraft}</button>
+            {tasksOn ? <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void draft()}>{asked ? m.card.asked : m.card.askDraft}</button> : null}
             {personHref ? <Link href={personHref} className="pipe-btn">{m.card.person}</Link> : null}
           </span>
           <span className="pipe-actions">

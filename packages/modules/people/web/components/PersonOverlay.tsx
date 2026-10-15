@@ -8,6 +8,7 @@ import { useRegistry } from "@kit/app/modules/registry";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
 import { askDraft, defaultChannel, statusOf, useDayMarks } from "@kit/lib/people";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { STATUS_LABEL } from "../people";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
@@ -62,6 +63,7 @@ function Body({ p, card }: { p: Person; card?: PersonCard }) {
 export function PersonOverlay({ id, from, p, onClose }: { id: number | null; from: DOMRect | null; p: Person | undefined; onClose: () => void }) {
   const d = useQuery<PersonCard>(id ? cardKey(id) : null);
   const [drafted, markDrafted] = useDayMarks("drafted");
+  const tasksOn = useTasksOn();
   const row = d.data?.row ?? p;
   const s = row ? statusOf(row) : "ok";
 
@@ -92,10 +94,12 @@ export function PersonOverlay({ id, from, p, onClose }: { id: number | null; fro
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="ppl-ask" onClick={ask}>
-              <BoardIcon name="pen" className="size-icon-chip" />
-              {drafted.has(row.id) ? m.actions.draftAsked : m.actions.askDraft}
-            </button>
+            {tasksOn ? (
+              <button type="button" className="ppl-ask" onClick={ask}>
+                <BoardIcon name="pen" className="size-icon-chip" />
+                {drafted.has(row.id) ? m.actions.draftAsked : m.actions.askDraft}
+              </button>
+            ) : null}
             <HeaderMenu p={row} onClose={onClose} />
             <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
               <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />

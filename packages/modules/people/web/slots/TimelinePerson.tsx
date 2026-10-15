@@ -5,6 +5,7 @@ import { RecordLink } from "@kit/app/modules/RecordLink";
 import { openSheet } from "@kit/app/ui";
 import { Avatar, Chip, Tags, Who } from "@kit/components/ui";
 import { todayIso } from "@kit/lib/format";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { useRecordHref } from "@kit/lib/useRecordHref";
 import { STAGE, STAGE_TONE } from "@kit/lib/labels";
 import { m as kit } from "@kit/messages";
@@ -44,6 +45,7 @@ function Referrals({ by, name, referrals }: { by: { id: number; name: string } |
 
 /** The person's contact summary, their opportunities and their referral network beside the timeline of a focused person */
 export default function TimelinePerson({ type, detail, touches }: AsideProps) {
+  const tasksOn = useTasksOn();
   if (type !== "person") return null;
   const p = detail.row as Person;
   const mine = touches.filter((t) => t.person_id === p.id);
@@ -80,7 +82,7 @@ export default function TimelinePerson({ type, detail, touches }: AsideProps) {
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn btn-pri" onClick={() => openSheet("touch", { person_id: p.id })}>{m.actions.addTouch}</button>
-          <button type="button" className="btn btn-sec" onClick={ask}>{m.actions.askDraft}</button>
+          {tasksOn ? <button type="button" className="btn btn-sec" onClick={ask}>{m.actions.askDraft}</button> : null}
           <button type="button" className="btn btn-sec" onClick={() => openSheet("person", { person_id: p.id })}>{kit.edit}</button>
         </div>
       </section>

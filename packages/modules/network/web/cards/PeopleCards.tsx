@@ -7,6 +7,7 @@ import { SHOWN } from "@kit/lib/dashboard";
 import { initials, todayIso } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { channelName } from "@kit/lib/network";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Card } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
@@ -64,6 +65,7 @@ export function AwaitingCard({ list, waitDays }: { list: List<Person>; waitDays:
 export function CoolingCard({ list, coolingDays }: { list: List<Person>; coolingDays: number }) {
   const ex = useExpand();
   const reg = useRegistry();
+  const tasksOn = useTasksOn();
   const personHref = (p: Person) => reg.link("person", p.id) ?? PATHS.today;
   const shown = list.rows.slice(0, SHOWN.cooling);
   const rows: ExRow[] = list.rows.map((p) => {
@@ -93,7 +95,7 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
             </span>
           </RecordLink>
         ))}
-        {shown.length ? (
+        {shown.length && tasksOn ? (
           <button type="button" className="dash-btn is-claude mt-auto" onClick={ask}>
             <BoardIcon name="sparkle" className="size-icon-chip" />
             {m.cooling.ask}

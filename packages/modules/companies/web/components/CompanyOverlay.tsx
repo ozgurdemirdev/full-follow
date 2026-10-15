@@ -10,6 +10,7 @@ import { askCompanyDraft, SEGMENT_LABEL, siteLabel, type CompanyView } from "../
 import { initials } from "@kit/lib/format";
 import { webUrl } from "@kit/lib/network";
 import { useDayMarks } from "@kit/lib/people";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
@@ -68,6 +69,7 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
   const [drafted, markDrafted] = useDayMarks("companyDrafted");
   const [claude, setClaude] = useState<ClaudeMode | null>(null);
   const { quickByKind } = useRegistry();
+  const tasksOn = useTasksOn();
 
   const ask = () => {
     if (!v) return;
@@ -99,10 +101,12 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
           </div>
           <div className="flex flex-wrap gap-3">
             {quickByKind.has("person") ? <button type="button" className="co-btn" onClick={() => openSheet("person", { company_id: v.c.id })}>{m.overlay.addPerson}</button> : null}
-            <button type="button" className="ppl-ask" onClick={ask}>
-              <BoardIcon name="pen" className="size-icon-chip" />
-              {drafted.has(v.c.id) ? m.overlay.draftAsked : m.overlay.askDraft}
-            </button>
+            {tasksOn ? (
+              <button type="button" className="ppl-ask" onClick={ask}>
+                <BoardIcon name="pen" className="size-icon-chip" />
+                {drafted.has(v.c.id) ? m.overlay.draftAsked : m.overlay.askDraft}
+              </button>
+            ) : null}
             <HeaderMenu v={v} onClaude={() => setClaude({ id: v.c.id, replyTo: null })} onClose={onClose} />
             <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
               <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />

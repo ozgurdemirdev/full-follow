@@ -5,6 +5,7 @@ import { openSheet } from "@kit/app/ui";
 import { ago } from "@kit/lib/format";
 import { askDraft, STREAM_SHOWN, type PStatus } from "@kit/lib/people";
 import { channelName } from "@kit/lib/network";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { BoardIcon, type BoardIconName } from "@kit/components/boardIcons";
 import { m } from "../messages";
 import { matchesFilter, STREAM_FILTERS, type StreamFilter, type StreamItem, type StreamKind } from "./streamItems";
@@ -53,6 +54,7 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
 }) {
   const { touch: t, note: n, comment: c, thread: th } = item;
   const [draft, setDraft] = useState<string | null>(null);
+  const tasksOn = useTasksOn();
   const claudeBy = (t?.created_by ?? item.note?.created_by) === "claude";
   const who = t
     ? m.stream.who(t.direction === "gelen" ? m.stream.incoming : m.stream.outgoing, channelName(t.channel), t.kind !== "mesaj" ? KIND_LABEL[t.kind] : undefined, claudeBy)
@@ -78,7 +80,7 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
         {waiting ? (
           <span className="flex flex-wrap gap-2">
             <button type="button" className="ppl-small" onClick={() => void stopWaiting(t!.id)}>{m.stream.stopWaiting}</button>
-            <button type="button" className="ppl-small is-soft" onClick={() => void askDraft(p).catch(() => {})}>{m.stream.remind}</button>
+            {tasksOn ? <button type="button" className="ppl-small is-soft" onClick={() => void askDraft(p).catch(() => {})}>{m.stream.remind}</button> : null}
           </span>
         ) : null}
         {answer ? (

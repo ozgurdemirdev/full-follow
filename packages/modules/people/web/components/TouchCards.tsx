@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Person } from "@kit/api/types";
 import { askDraft, compareTouch, draftKind, statusOf, useDayMarks, type PStatus } from "@kit/lib/people";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { STATUS_LABEL, TOUCH_CARDS, whyText } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { toast } from "@kit/components/toast";
@@ -16,6 +17,7 @@ const CARD_STATUSES: PStatus[] = ["due", "wait", "cold"];
 export function TouchCards({ people, today, onOpen }: { people: Person[]; today: string; onOpen: (id: number, from: HTMLElement) => void }) {
   const [gone, markGone] = useDayMarks("gone");
   const [drafted, markDrafted] = useDayMarks("drafted");
+  const tasksOn = useTasksOn();
   const cards = useMemo(
     () => people
       .filter((p) => CARD_STATUSES.includes(statusOf(p, today)) && !gone.has(p.id))
@@ -46,9 +48,11 @@ export function TouchCards({ people, today, onOpen }: { people: Person[]; today:
               <span className="ppl-tag"><i />{STATUS_LABEL[s]}</span>
               <p className="m-0 flex-grow text-base leading-snug text-text-soft">{whyText(p, s)}</p>
               <div className="ppl-acts">
-                <button type="button" className={`ppl-draft ${asked ? "is-asked" : ""}`} onClick={() => { if (!asked) askDraft(p).then(() => markDrafted(p.id)).catch(() => {}); }}>
-                  {asked ? m.touch.drafted : m.touch.claudeWrites(draftKind(p, s))}
-                </button>
+                {tasksOn ? (
+                  <button type="button" className={`ppl-draft ${asked ? "is-asked" : ""}`} onClick={() => { if (!asked) askDraft(p).then(() => markDrafted(p.id)).catch(() => {}); }}>
+                    {asked ? m.touch.drafted : m.touch.claudeWrites(draftKind(p, s))}
+                  </button>
+                ) : null}
                 <button type="button" className="ppl-done" title={m.touch.done} aria-label={m.touch.doneFor(p.name)} onClick={() => { markGone(p.id); toast(m.touch.doneToast(p.name.split(" ")[0])); }}>
                   <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.medium} />
                 </button>

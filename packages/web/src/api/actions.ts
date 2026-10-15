@@ -5,8 +5,13 @@ import { toast, type ToastAction } from "../components/toast";
 import { m as kit } from "../messages";
 import { api as m } from "../messages.api";
 import { api, ApiError } from "./client";
+import { endpointOn } from "./modules";
 import { invalidate } from "./store";
 import type { Mutation } from "./types";
+
+/** What a write to an endpoint of a module that is not installed fails with, without a request */
+const MODULE_OFF_STATUS = 404;
+const MODULE_OFF_CODE = "module_off";
 
 /** Her yazma işleminden sonra hangi listelerin tazeleneceği (modüller kendi verilerini manifest `invalidates` ile ekler) */
 const AFFECTS: Record<string, string[]> = {
@@ -66,6 +71,8 @@ export async function run<T = unknown>(
   } = {},
 ): Promise<Mutation<T> & Record<string, unknown>> {
   try {
+    // the same rule as a read: nothing is sent to an endpoint whose module is not installed
+    if (!endpointOn(path)) throw new ApiError(m.moduleOff, MODULE_OFF_STATUS, MODULE_OFF_CODE);
     const res = (await (method === "del" ? api.del(path) : api[method](path, body))) as Mutation<T> & Record<string, unknown>;
     const resource = path.split("/")[1];
     invalidate(...(AFFECTS[resource] ?? [`/${resource}`]), ...invalidatesFor(resource));

@@ -5,6 +5,7 @@ export const api = defineMessages({
   tr: {
     unreachable: "Sunucuya ulaşılamadı",
     failed: "Bir hata oldu",
+    moduleOff: "Bu özellik kapalı",
     goToRecord: "Kayda git",
     restored: "Geri yüklendi",
     deleted: (label: string) => `${label} silindi`,

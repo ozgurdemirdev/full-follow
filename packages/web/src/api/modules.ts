@@ -44,13 +44,15 @@ export const setHiddenModules = (keys: readonly string[]) => publish({ hidden: n
 const installedIn = (s: State, key: string | null | undefined) => !key || !s.installed || s.installed.has(key);
 const visibleIn = (s: State, key: string | null | undefined) => installedIn(s, key) && !(key && s.hidden.has(key));
 
-/** Whether the server has the endpoint behind a data key (`/people?limit=5`): a read for one that is gone is never sent */
-export function endpointOn(path: string) {
+/** The module key that owns an endpoint (`/people?limit=5`, `/tasks/12`), undefined for a core endpoint */
+function ownerOf(path: string): string | undefined {
   const [, tail = ""] = path.match(/^(\/[^?]*)/) ?? [];
   owners ??= [...ownerSource()].sort((a, b) => b[0].length - a[0].length);
-  const hit = owners.find(([prefix]) => tail === prefix || tail.startsWith(`${prefix}/`));
-  return installedIn(state, hit?.[1]);
+  return owners.find(([prefix]) => tail === prefix || tail.startsWith(`${prefix}/`))?.[1];
 }
+
+/** Whether the server has the endpoint behind a data key (`/people?limit=5`): a read or a write for one that is gone is never sent */
+export const endpointOn = (path: string) => installedIn(state, ownerOf(path));
 
 const subscribe = (fn: () => void) => {
   listeners.add(fn);
@@ -68,6 +70,11 @@ export function useModules() {
     visible: (key: string | null | undefined) => visibleIn(snapshot, key),
     hidden: snapshot.hidden,
   }), [snapshot]);
+}
+
+/** The module behind an endpoint is installed and not hidden: a button that writes there is only drawn then (the endpoint itself stays open while hidden) */
+export function useEndpointVisible(path: string): boolean {
+  return visibleIn(useSyncExternalStore(subscribe, () => state), ownerOf(path));
 }
 
 /** A read the server answered with "no such endpoint": the module behind it is switched off */

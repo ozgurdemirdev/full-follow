@@ -9,6 +9,7 @@ import { Card, Empty, ErrorBox, Meter, order, PageSkeleton } from "@kit/componen
 import { fmtDay, pct } from "@kit/lib/format";
 import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { channelName } from "@kit/lib/network";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { PERCENT } from "../constants";
 import { m } from "../messages";
 
@@ -74,6 +75,7 @@ function Highlights({ r }: { r: WeeklyReview }) {
 
 function Suggestion({ s, due }: { s: ReviewSuggestion; due: string }) {
   const [added, setAdded] = useState(false);
+  const tasksOn = useTasksOn();
   const toTask = async () => {
     await run("post", "/tasks", { title: s.task_title, due_date: due }, { ok: m.review.taskAdded(fmtDay(due)) });
     setAdded(true);
@@ -81,9 +83,11 @@ function Suggestion({ s, due }: { s: ReviewSuggestion; due: string }) {
   return (
     <div className="rev-row">
       <span className="rev-row-text">{s.text}</span>
-      <button type="button" className="rev-btn" disabled={added} onClick={() => void toTask().catch(() => {})}>
-        {added ? m.review.taskDone : m.review.toTask}
-      </button>
+      {tasksOn ? (
+        <button type="button" className="rev-btn" disabled={added} onClick={() => void toTask().catch(() => {})}>
+          {added ? m.review.taskDone : m.review.toTask}
+        </button>
+      ) : null}
     </div>
   );
 }

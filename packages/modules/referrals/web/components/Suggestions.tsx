@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RefSuggestion } from "../types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
+import { useTasksOn } from "@kit/lib/taskAccess";
 import { requestDraft, type RequestKind } from "../referrals";
 import { Avatar, order } from "@kit/components/ui";
 import { m } from "../messages";
@@ -10,6 +11,7 @@ const DONE: Record<RefSuggestion["state"], string> = { idle: "", asked: m.sugges
 
 function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
   const [busy, setBusy] = useState(false);
+  const tasksOn = useTasksOn();
   const done = s.state !== "idle";
   const send = async () => {
     if (busy || done) return;
@@ -27,7 +29,7 @@ function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
         <b>{s.person.name}</b>
         <span data-late={s.ready ? undefined : ""}>{s.why}</span>
       </RecordLink>
-      {s.ready ? (
+      {s.ready && tasksOn ? (
         <button type="button" className="ref-act" data-claude={kind === "thanks" && !done ? "" : undefined} data-done={done || busy ? "" : undefined} disabled={busy && !done} onClick={() => void send()}>
           {done ? DONE[s.state] : busy ? DONE.asked : LABEL[kind]}
         </button>
