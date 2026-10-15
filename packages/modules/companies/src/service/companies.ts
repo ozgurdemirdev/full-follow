@@ -3,14 +3,12 @@ import {
   announceTrashed, assertUnique, assignSectors, assignTags, Bin, checkSource, companyKeys, keyList, parse, requireRow, schema, stamp, withSectorList,
   writeEvent as emit, type Ctx,
 } from "@fullfollow/core";
+import { m } from "../messages";
 import { companyCreate, companyUpdate } from "./schemas";
 
 const { companies } = schema;
 
-const FIELD_NAMES: Record<string, string> = {
-  name: "ad", website: "web sitesi", email: "e-posta", phone: "telefon", instagram: "Instagram", linkedin: "LinkedIn",
-  source_id: "nereden", contact_status: "durum", notes: "not", city: "şehir", tags: "etiket", sectors: "sektör",
-};
+const FIELD_NAMES: Record<string, string> = m.fieldNames;
 
 /**
  * Firma: kişiler firmaya bağlanır; firmaya doğrudan (info@ gibi) temas ve taslak da yazılır.
@@ -29,7 +27,7 @@ export function companiesService(ctx: Ctx) {
       const r = tx.insert(companies).values({ ...d, ...keys, ...stamp(ctx) }).returning().get();
       assignTags(tx, ctx, "company", r.id, { set: tags, add: add_tags, remove: remove_tags });
       assignSectors(tx, ctx, "company", r.id, sectors);
-      emit(tx, ctx, { type: "company.created", summary: `Firma eklendi: ${r.name}`, data: { company_id: r.id } });
+      emit(tx, ctx, { type: "company.created", summary: m.events.created(r.name), data: { company_id: r.id } });
       const effects = adopt({ company_id: r.id }, keyList(keys));
       return { row: requireRow(ctx, "companies", r.id), effects };
     });
@@ -50,7 +48,7 @@ export function companiesService(ctx: Ctx) {
       if (changed.length) {
         tx.update(companies).set({ updated_at: ctx.clock.now() }).where(eq(companies.id, id)).run();
         const names = [...new Set(changed)].map((k) => FIELD_NAMES[k] ?? k).join(", ");
-        emit(tx, ctx, { type: "company.updated", summary: `Firma güncellendi: ${d.name ?? cur.name} (${names})`, data: { company_id: id } });
+        emit(tx, ctx, { type: "company.updated", summary: m.events.updated(d.name ?? cur.name, names), data: { company_id: id } });
       }
       const effects = Object.keys(changedKeys).length ? adopt({ company_id: id }, keyList(changedKeys)) : [];
       return { row: requireRow(ctx, "companies", id), effects };
@@ -72,7 +70,7 @@ export function companiesService(ctx: Ctx) {
       bin.take("company_sectors", "company_id = ?", id);
       bin.take("companies", "id = ?", id);
       bin.commit(tx, "company", id, cur.name, keyList(companyKeys(cur)));
-      emit(tx, ctx, { type: "company.deleted", summary: `Firma silindi: ${cur.name}` });
+      emit(tx, ctx, { type: "company.deleted", summary: m.events.deleted(cur.name) });
       return { effects: [] as string[], trash: { type: "company", id } };
     });
   }
