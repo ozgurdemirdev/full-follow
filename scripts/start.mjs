@@ -95,7 +95,7 @@ if (!existsSync(main)) fail("Sunucu derlenmemiş", "npm start'ı --no-build olma
 
 // 3. Sunucu: çıktısı hem ekrana hem log'a
 say("• Sunucu açılıyor…");
-const server = spawn(process.execPath, [main], { cwd: root, env: { ...process.env, FF_OPEN: process.env.FF_OPEN ?? "1" } });
+const server = spawn(process.execPath, [main], { cwd: root, env: { ...process.env, NODE_ENV: "production", FF_OPEN: process.env.FF_OPEN ?? "1" } });
 const pipe = (src, dst) => src.on("data", (d) => {
   dst.write(d);
   log.write(d);

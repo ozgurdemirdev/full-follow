@@ -21,7 +21,12 @@ export function precompressed(root: string) {
   };
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== "GET" && req.method !== "HEAD") return next();
-    const rel = decodeURIComponent(req.path);
+    let rel: string;
+    try {
+      rel = decodeURIComponent(req.path);
+    } catch {
+      return next(); // a malformed escape (%zz) is no file of ours: the router answers it
+    }
     if (rel.startsWith("/api") || rel.includes("..")) return next();
     const file = path.join(root, rel);
     const type = TYPES[path.extname(file)];
