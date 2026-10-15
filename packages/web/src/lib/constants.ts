@@ -6,3 +6,11 @@ export const BLUR_CLOSE_MS = 120;
 export const LINKS_LIMIT = 200;
 /** Hits the top bar search lists */
 export const SEARCH_HITS = 8;
+
+/** The attribute the floating quick add button and the open quick add menu carry, so the mascot can keep clear of them without knowing their labels */
+export const QUICK_ADD_ATTR = "data-quick-add";
+export type QuickAddPart = "fab" | "menu";
+/** Props that mark an element as a part of quick add */
+export const quickAddMark = (part: QuickAddPart) => ({ [QUICK_ADD_ATTR]: part });
+/** CSS selector of a part of quick add */
+export const quickAddSelector = (part: QuickAddPart) => `[${QUICK_ADD_ATTR}="${part}"]`;

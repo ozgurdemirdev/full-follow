@@ -1,5 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { openSheet, type SheetKind } from "../../app/ui";
+import { quickAddMark } from "../../lib/constants";
 import { m as kit } from "../../messages";
 import { parts } from "../../messages.parts";
 import { BoardIcon } from "../boardIcons";
@@ -75,7 +76,7 @@ export function QuickAddFab() {
   useDismiss(open, root, trigger);
   return (
     <div ref={root}>
-      <button ref={trigger} type="button" className="quick-fab" aria-label={m.title} aria-haspopup="menu" aria-expanded={open} data-covered={covered} onClick={() => toggleQuick("fab")}>
+      <button ref={trigger} type="button" className="quick-fab" aria-label={m.title} aria-haspopup="menu" aria-expanded={open} data-covered={covered} {...quickAddMark("fab")} onClick={() => toggleQuick("fab")}>
         <BoardIcon name="plus" className="quick-plus size-icon-2xl" stroke={STROKE.bold} />
       </button>
       {open ? <Menu host="fab" trigger={trigger} /> : null}

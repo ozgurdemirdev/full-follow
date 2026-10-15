@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useRegistry } from "../../app/modules/registry";
 import type { QuickAddEntry } from "../../app/modules/types";
 import type { SheetKind } from "../../app/ui";
+import { quickAddMark } from "../../lib/constants";
 import { useIsDesktop } from "../../lib/media";
 import { norm } from "../../lib/format";
 import { parts } from "../../messages.parts";
@@ -52,7 +53,7 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
 
   let index = -1;
   return (
-    <div className="quick-pop" role="menu" aria-label={m.title} data-host={host} onKeyDown={key}>
+    <div className="quick-pop" role="menu" aria-label={m.title} data-host={host} {...quickAddMark("menu")} onKeyDown={key}>
       <span className="quick-grab" aria-hidden="true" />
       <div className="quick-search">
         <PathIcon d={FORM_ICON.search} className="size-icon-chip" />
