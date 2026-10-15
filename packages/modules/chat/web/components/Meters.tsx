@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import type { ChatLimits, ChatMeta, ChatSession } from "../../api/chat";
-import { CHAT_UI, T } from "../../lib/chatText";
-import { fmtNum } from "../../lib/format";
+import type { ChatLimits, ChatMeta, ChatSession } from "../api";
+import { CHAT_UI, T } from "../chatText";
+import { fmtNum } from "@kit/lib/format";
 
 const costFmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const resetFmt = new Intl.DateTimeFormat("tr-TR", { weekday: "short", hour: "2-digit", minute: "2-digit" });

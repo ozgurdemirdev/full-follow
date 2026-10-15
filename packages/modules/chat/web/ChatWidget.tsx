@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatMeta, type ChatSession, type ChatUsage } from "../api/chat";
-import { ChatButton } from "../components/chat/ChatButton";
-import { ChatPanel } from "../components/chat/ChatPanel";
-import { statusText, useElapsed } from "../components/chat/StatusLine";
-import { toast } from "../components/toast";
-import { chatBus, chatLive, chatPrefs, useChatOpener, type ChatLive } from "../lib/chatStore";
-import { T } from "../lib/chatText";
-import { CHAT_UI } from "../lib/chatText";
-import { isDesk } from "../lib/media";
-import { useOpenRecord } from "../lib/openRecord";
-import { useThread } from "../lib/useThread";
+import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatMeta, type ChatSession, type ChatUsage } from "./api";
+import { ChatButton } from "./components/ChatButton";
+import { ChatPanel } from "./components/ChatPanel";
+import { statusText, useElapsed } from "./components/StatusLine";
+import { toast } from "@kit/components/toast";
+import { chatBus, chatLive, chatPrefs, useChatOpener, type ChatLive } from "@kit/lib/chatStore";
+import { T } from "./chatText";
+import { CHAT_UI } from "./chatText";
+import { isDesk } from "@kit/lib/media";
+import { useOpenRecord } from "./openRecord";
+import { useThread } from "./useThread";
 
 /** Merge a session row into the list: update in place, or put a new one on top */
 const upsert = (list: ChatSession[], s: ChatSession) => (list.some((x) => x.id === s.id) ? list.map((x) => (x.id === s.id ? s : x)) : [s, ...list]);

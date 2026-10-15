@@ -1,4 +1,4 @@
-import type { ChatMeta } from "../api/chat";
+import type { ChatMeta } from "./api";
 import { T } from "./chatText";
 
 const BYTES_PER_MB = 1024 * 1024;

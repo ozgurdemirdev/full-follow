@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { useLocation } from "wouter";
-import { currentRegistry } from "../app/modules/registry";
-import { PATHS } from "../app/routes";
-import { openSheet } from "../app/ui";
+import { currentRegistry } from "@kit/app/modules/registry";
+import { PATHS } from "@kit/app/routes";
+import { openSheet } from "@kit/app/ui";
 import { CHAT_UI } from "./chatText";
 
 const ms = (v: string) => parseFloat(v);

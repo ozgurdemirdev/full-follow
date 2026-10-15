@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type Ref } from "react";
-import type { ChatLimits, ChatMessage, ChatMeta, ChatSession } from "../../api/chat";
-import { T } from "../../lib/chatText";
-import type { Connection } from "../../lib/useChatStream";
-import type { Live } from "../../lib/useThread";
+import type { ChatLimits, ChatMessage, ChatMeta, ChatSession } from "../api";
+import { T } from "../chatText";
+import type { Connection } from "../useChatStream";
+import type { Live } from "../useThread";
 import { ChatHeader } from "./ChatHeader";
 import { Composer, type ComposerApi } from "./Composer";
 import { Meters, meterState } from "./Meters";

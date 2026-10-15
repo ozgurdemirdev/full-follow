@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { T } from "../../lib/chatText";
-import { fmtBytes, isImage } from "../../lib/chatFiles";
-import { Icon } from "../icons";
+import { T } from "../chatText";
+import { fmtBytes, isImage } from "../chatFiles";
+import { Icon } from "@kit/components/icons";
 import { Lightbox } from "./Lightbox";
 
 interface Props {

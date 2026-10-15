@@ -1,5 +1,5 @@
 // What the chat is doing, as the mascot shows it (packet E). Pure data and no Three.js, so Mascot.tsx can use it without the 3D chunk.
-import type { ChatPhase } from "@kit/api/chat";
+import type { ChatPhase } from "@kit/lib/chatStore";
 
 export type Activity = "idle" | "queued" | "thinking" | "search" | "work" | "writing" | "error";
 

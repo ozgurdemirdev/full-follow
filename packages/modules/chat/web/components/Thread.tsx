@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { ChatMessage } from "../../api/chat";
-import { CHAT_UI, T } from "../../lib/chatText";
+import type { ChatMessage } from "../api";
+import { CHAT_UI, T } from "../chatText";
 import { MessageBubble } from "./MessageBubble";
 
 interface Props {

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { run } from "../../api/actions";
-import type { Suggest } from "../../lib/chatReply";
-import { chatPrefs } from "../../lib/chatStore";
-import { T } from "../../lib/chatText";
+import { run } from "@kit/api/actions";
+import type { Suggest } from "../chatReply";
+import { chatPrefs } from "@kit/lib/chatStore";
+import { T } from "../chatText";
 
 /** Two buttons under Özgür's message after "hallettim": the label and "Gerek yok". Only task_done exists; it calls the task endpoint directly, not Claude. */
 export function SuggestRow({ suggest, messageId }: { suggest: Suggest; messageId: number }) {

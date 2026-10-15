@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { T } from "../../lib/chatText";
-import { Icon } from "../icons";
+import { T } from "../chatText";
+import { Icon } from "@kit/components/icons";
 
 /** Full size view of an image attachment: click outside, the close button or Esc closes it (Esc does not minimize the chat behind it) */
 export function Lightbox({ url, name, onClose }: { url: string; name: string; onClose: () => void }) {

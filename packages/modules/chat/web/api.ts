@@ -1,7 +1,8 @@
-import { api, ApiError, qs } from "./client";
+import { api, ApiError, qs } from "@kit/api/client";
+import type { ChatPhase } from "@kit/lib/chatStore";
 
 export type ChatState = "pending" | "streaming" | "done" | "error" | "stopped";
-export type ChatPhase = "queued" | "thinking" | "tool" | "writing";
+export type { ChatPhase };
 
 export interface ChatSession {
   id: number;

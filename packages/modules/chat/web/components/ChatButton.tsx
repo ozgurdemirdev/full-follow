@@ -1,6 +1,6 @@
 import type { Ref } from "react";
-import { T } from "../../lib/chatText";
-import { Icon } from "../icons";
+import { T } from "../chatText";
+import { Icon } from "@kit/components/icons";
 
 interface Props {
   open: boolean;

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { run } from "../../api/actions";
-import { chatApi, type CardRecord } from "../../api/chat";
-import { toast } from "../toast";
-import { fmtDay, pct, tl } from "../../lib/format";
-import { cardKey, parseCards, type CardGroup, type CardItem } from "../../lib/chatReply";
-import { T } from "../../lib/chatText";
-import { CHANNEL, CONTACT_STATUS, IDEA_STAGE, MILESTONE, PLATFORM, STAGE, TEMPLATE_KIND } from "../../lib/labels";
-import { useOpenRecord } from "../../lib/openRecord";
-import { Icon } from "../icons";
+import { run } from "@kit/api/actions";
+import { chatApi, type CardRecord } from "../api";
+import { toast } from "@kit/components/toast";
+import { fmtDay, pct, tl } from "@kit/lib/format";
+import { cardKey, parseCards, type CardGroup, type CardItem } from "../chatReply";
+import { T } from "../chatText";
+import { CHANNEL, CONTACT_STATUS, IDEA_STAGE, MILESTONE, PLATFORM, STAGE, TEMPLATE_KIND } from "@kit/lib/labels";
+import { useOpenRecord } from "../openRecord";
+import { Icon } from "@kit/components/icons";
 
 const DOT: Record<string, string> = {
   task: "var(--color-entity-task)", goal: "var(--color-entity-payment)", person: "var(--color-entity-person)", company: "var(--color-entity-company)",

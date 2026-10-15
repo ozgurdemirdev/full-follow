@@ -49,12 +49,6 @@ export const T = {
   mic: "Sesle yaz",
   listening: "Dinliyorum, söylediğin kelime kelime yazılıyor",
   listenDone: "Bitir",
-  micDenied: "Mikrofon izni verilmedi",
-  micFailed: "Ses tanıma çalışmadı, tekrar dene",
-  micInsecure: "Mikrofon yalnızca localhost ya da https adreslerinde açılır",
-  micNetwork: "Tarayıcının ses tanıma servisine ulaşılamadı (internet gerekir)",
-  micNone: "Mikrofon bulunamadı",
-  micBrowser: "Opera ses tanımayı desteklemiyor, Chrome ya da Edge'de aç",
   micStalled: "Ses gelmiyor: tarayıcının mikrofon iznini ve seçili mikrofonu kontrol et",
   micHeard: "Ses alınıyor",
   openChip: (kind: string, id: number) => `${kind} #${id} · aç`,
@@ -104,8 +98,6 @@ export const T = {
   charCount: (n: number, max: number) => `${n.toLocaleString("tr-TR")} / ${max.toLocaleString("tr-TR")}`,
 } as const;
 
-/** Why dictation failed, by the code useDictation reports */
-export const MIC_ERROR = { denied: T.micDenied, insecure: T.micInsecure, network: T.micNetwork, nomic: T.micNone, browser: T.micBrowser, failed: T.micFailed } as const;
 
 /** Sizes the UI formats; not design tokens */
 export const CHAT_UI = {

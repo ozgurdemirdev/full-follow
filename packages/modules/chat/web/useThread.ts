@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError } from "../api/client";
-import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatPhase, type ChatSession, type ChatUsage } from "../api/chat";
+import { ApiError } from "@kit/api/client";
+import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatPhase, type ChatSession, type ChatUsage } from "./api";
 import { useChatStream, type Connection } from "./useChatStream";
 
 export interface Live {

@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useRef } from "react";
-import type { ChatSession } from "../../api/chat";
-import { fmtDay } from "../../lib/format";
-import { T } from "../../lib/chatText";
-import { Icon } from "../icons";
+import type { ChatSession } from "../api";
+import { fmtDay } from "@kit/lib/format";
+import { T } from "../chatText";
+import { Icon } from "@kit/components/icons";
 
 const DAY_MS = 86_400_000;
 const WEEK_DAYS = 7;

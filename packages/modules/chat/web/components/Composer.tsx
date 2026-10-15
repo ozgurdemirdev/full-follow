@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type RefObject, type Ref } from "react";
-import type { ChatMeta } from "../../api/chat";
-import { CHAT_UI, MIC_ERROR, T } from "../../lib/chatText";
-import { acceptAttr, isImage, refuseReason } from "../../lib/chatFiles";
-import { chatPrefs } from "../../lib/chatStore";
-import { useDictation } from "../../lib/useDictation";
+import type { ChatMeta } from "../api";
+import { CHAT_UI, T } from "../chatText";
+import { acceptAttr, isImage, refuseReason } from "../chatFiles";
+import { chatPrefs } from "@kit/lib/chatStore";
+import { MIC_ERROR, useDictation } from "@kit/lib/useDictation";
 import { Attachment } from "./Attachment";
-import { Icon } from "../icons";
+import { Icon } from "@kit/components/icons";
 
 const micError = (e: keyof typeof MIC_ERROR | null) => (e ? MIC_ERROR[e] : null);
 

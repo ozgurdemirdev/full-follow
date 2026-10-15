@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import type { ChatMeta } from "../../api/chat";
-import { T } from "../../lib/chatText";
-import { Icon } from "../icons";
+import type { ChatMeta } from "../api";
+import { T } from "../chatText";
+import { Icon } from "@kit/components/icons";
 
 interface Props {
   /** session title; "" before the first message creates the chat */

@@ -1,15 +1,15 @@
 import { Children, isValidElement, memo, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { parseTools, type ChatMessage } from "../../api/chat";
-import { fmtDay } from "../../lib/format";
-import { KIND_LABEL, T } from "../../lib/chatText";
-import { chatApi } from "../../api/chat";
+import { parseTools, type ChatMessage } from "../api";
+import { fmtDay } from "@kit/lib/format";
+import { KIND_LABEL, T } from "../chatText";
+import { chatApi } from "../api";
 import { Attachment } from "./Attachment";
-import { extractSuggest, splitOpenFence } from "../../lib/chatReply";
+import { extractSuggest, splitOpenFence } from "../chatReply";
 import { CardsSkeleton, RecordCards } from "./RecordCards";
 import { SuggestRow } from "./SuggestRow";
-import { Icon } from "../icons";
+import { Icon } from "@kit/components/icons";
 
 const timeFmt = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" });
 

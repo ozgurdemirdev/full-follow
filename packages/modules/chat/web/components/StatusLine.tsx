@@ -1,6 +1,6 @@
-import { T } from "../../lib/chatText";
-import { useElapsed } from "../../lib/useElapsed";
-import type { Live } from "../../lib/useThread";
+import { T } from "../chatText";
+import { useElapsed } from "@kit/lib/useElapsed";
+import type { Live } from "../useThread";
 
 export { useElapsed };
 
