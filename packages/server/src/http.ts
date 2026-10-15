@@ -28,6 +28,12 @@ export class ErrorFilter implements ExceptionFilter {
       if (typeof body === "string") return res.status(e.getStatus()).json({ error: body, code: "http" });
       return res.status(e.getStatus()).json({ error: body.message ?? e.message, code: body.code ?? "http" });
     }
+    // errors Express raises before a route runs (an oversized or unreadable body) carry their own status
+    const status = (e as { status?: unknown; statusCode?: unknown } | null)?.status ?? (e as { statusCode?: unknown } | null)?.statusCode;
+    if (typeof status === "number" && status >= HttpStatus.BAD_REQUEST && status < HttpStatus.INTERNAL_SERVER_ERROR) {
+      const error = status === HttpStatus.PAYLOAD_TOO_LARGE ? m.http.payloadTooLarge : status === HttpStatus.BAD_REQUEST ? m.http.badRequest : m.http.failed;
+      return res.status(status).json({ error, code: "http" });
+    }
     console.error(e);
     return res.status(500).json({ error: m.unexpectedError, code: "internal" });
   }

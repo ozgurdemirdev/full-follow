@@ -28,8 +28,8 @@ export async function request<T>(method: string, path: string, body?: unknown, s
       method,
       signal,
       credentials: "same-origin",
-      // a FormData body (file upload) sets its own multipart header
-      headers: body === undefined || body instanceof FormData ? undefined : { "content-type": "application/json" },
+      // a FormData body (file upload) sets its own multipart header; every other request declares JSON, even without a body (the server refuses a data changing request that does not)
+      headers: body instanceof FormData ? undefined : { "content-type": "application/json" },
       body: body === undefined || body instanceof FormData ? (body as FormData | undefined) : JSON.stringify(body),
     });
   } catch (e) {
