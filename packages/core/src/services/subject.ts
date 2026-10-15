@@ -97,10 +97,12 @@ export const opportunityTouches = (alias: string) => `(t.opportunity_id = ${alia
 /**
  * SQL for "the follow-up of a record is done": an outgoing touch to it happened on or after the follow-up date (`dateColumn`, a date).
  * `touchesOf` picks the touches that belong to the record (touch alias `t`). The calendar feed, Today and the lists all take `done` from here.
+ * The first condition is a range on `happened_at` (the day before is enough for any time zone offset): it lets the check start from the recent touches
+ * instead of every touch of the record or, for an opportunity, every touch there is. The local day is the exact test.
  * It reads the touches table directly on purpose: the table always exists, so it keeps working without the network module.
  */
 export const followUpDone = (touchesOf: string, dateColumn: string) =>
-  `EXISTS (SELECT 1 FROM touches t WHERE ${touchesOf} AND t.direction = 'giden' AND ${localDay("t.happened_at")} >= substr(${dateColumn}, 1, 10))`;
+  `EXISTS (SELECT 1 FROM touches t WHERE t.happened_at >= date(substr(${dateColumn}, 1, 10), '-1 day') AND ${touchesOf} AND t.direction = 'giden' AND ${localDay("t.happened_at")} >= substr(${dateColumn}, 1, 10))`;
 
 /**
  * Şablondaki yer tutucular: {ad} {ad_soyad} {firma} {sektor}. Bilinmeyen yer tutucu olduğu gibi kalır.
