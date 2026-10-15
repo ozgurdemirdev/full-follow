@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { run } from "@kit/api/actions";
 import type { Draft } from "@kit/api/types";
+import { m } from "../messages";
 
 /** Edit, send and reject of one draft through the existing calls; every action resolves to whether it went through */
 export function useDraftEdit(d: Draft, sendOk: string) {
@@ -24,7 +25,7 @@ export function useDraftEdit(d: Draft, sendOk: string) {
   const patch = (opts: { ok?: string; silent?: boolean }) => run("patch", `/drafts/${d.id}`, { body: text, subject }, opts);
 
   const save = () => act(async () => {
-    if (changed) await patch({ ok: "Taslak güncellendi" });
+    if (changed) await patch({ ok: m.edit.updated });
     setEditing(false);
   });
   const send = () => act(async () => {

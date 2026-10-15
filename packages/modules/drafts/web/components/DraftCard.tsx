@@ -1,4 +1,4 @@
-import * as m from "motion/react-m";
+import * as mo from "motion/react-m";
 import { useState } from "react";
 import type { Draft, Person } from "@kit/api/types";
 import { toast } from "@kit/components/toast";
@@ -7,6 +7,7 @@ import { CHANNEL } from "@kit/lib/labels";
 import { channelIcon, companyOf, copyTextOf, draftKind, firstName, handleOf, STACK, SUBJECT_CHANNEL, wordsLabel, type DraftResult } from "../drafts";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Avatar } from "@kit/components/ui";
+import { m } from "../messages";
 import { RejectPanel } from "./RejectPanel";
 import { useDraftEdit } from "./useDraftEdit";
 
@@ -28,7 +29,7 @@ const VARIANTS = {
 /** The draft on top of the stack: recipient, subject, text with the edit, copy, reject and approve actions */
 export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; onResult: (r: DraftResult) => void }) {
   const first = firstName(d.to_name);
-  const { editing, setEditing, text, setText, subject, setSubject, busy, save, send, reject } = useDraftEdit(d, `Gönderildi, ${first} için temas kaydedildi`);
+  const { editing, setEditing, text, setText, subject, setSubject, busy, save, send, reject } = useDraftEdit(d, m.review.sentOk(first));
   const [rejecting, setRejecting] = useState(false);
   const [copied, setCopied] = useState(false);
   const handle = handleOf(d, person);
@@ -37,20 +38,20 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
     if (await send()) onResult("sent");
   };
   const confirmReject = async (note: string) => {
-    if (await reject(note, "Reddedildi, Claude bunu öğrendi")) onResult("rejected");
+    if (await reject(note, m.review.rejectedOk)) onResult("rejected");
   };
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(copyTextOf(subject, text));
       setCopied(true);
-      toast("Metin kopyalandı");
+      toast(m.review.copied);
     } catch {
-      toast("Kopyalanamadı", "error");
+      toast(m.review.copyFailed, "error");
     }
   };
 
   return (
-    <m.article data-record={`draft-${d.id}`} className="drf-top" aria-label={`${d.to_name} için taslak`} variants={VARIANTS} initial="enter" animate="show" exit="leave">
+    <mo.article data-record={`draft-${d.id}`} className="drf-top" aria-label={m.review.forDraft(d.to_name)} variants={VARIANTS} initial="enter" animate="show" exit="leave">
       <div className="drf-who">
         <Avatar name={d.to_name} id={d.person_id ?? undefined} size="tile" />
         <span className="drf-who-text">
@@ -64,12 +65,12 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
       </div>
       {editing && d.channel === SUBJECT_CHANNEL ? (
         <label className="drf-subject is-edit">
-          <span>Konu</span>
-          <input className="drf-subject-edit" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} aria-label="E-posta konusu" />
+          <span>{m.shared.subject}</span>
+          <input className="drf-subject-edit" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} aria-label={m.review.emailSubject} />
         </label>
-      ) : subject.trim() ? <div className="drf-subject"><span>Konu</span><span>{subject}</span></div> : null}
+      ) : subject.trim() ? <div className="drf-subject"><span>{m.shared.subject}</span><span>{subject}</span></div> : null}
       {editing ? (
-        <textarea className="drf-edit" value={text} onChange={(e) => setText(e.target.value)} aria-label="Taslak metni" rows={8} autoFocus />
+        <textarea className="drf-edit" value={text} onChange={(e) => setText(e.target.value)} aria-label={m.card.editLabel} rows={8} autoFocus />
       ) : (
         <p className="drf-text">{text}</p>
       )}
@@ -78,16 +79,16 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
         <RejectPanel busy={busy} onCancel={() => setRejecting(false)} onConfirm={(n) => void confirmReject(n)} />
       ) : (
         <div className="drf-actions">
-          <button type="button" className="drf-act is-reject" disabled={busy} onClick={() => { setRejecting(true); setEditing(false); }}>Reddet</button>
-          <button type="button" className="drf-act" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? "Bitti" : "Düzenle"}</button>
+          <button type="button" className="drf-act is-reject" disabled={busy} onClick={() => { setRejecting(true); setEditing(false); }}>{m.review.reject}</button>
+          <button type="button" className="drf-act" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? m.review.done : m.shared.edit}</button>
           <span className="flex-grow" />
-          <button type="button" className="drf-act is-copy" onClick={() => void copy()}>{copied ? "Kopyalandı" : "Kopyala"}</button>
+          <button type="button" className="drf-act is-copy" onClick={() => void copy()}>{copied ? m.shared.copied : m.shared.copy}</button>
           <button type="button" className="drf-act is-approve" disabled={busy} onClick={() => void approve()}>
-            Onayla, gönderdim
+            {m.card.approve}
             <span className="drf-act-circle"><BoardIcon name="check" className="size-icon-xs" stroke={2.4} /></span>
           </button>
         </div>
       )}
-    </m.article>
+    </mo.article>
   );
 }

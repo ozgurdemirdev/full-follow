@@ -4,6 +4,8 @@ import type { BoardIconName } from "@kit/components/boardIcons";
 import { drafts as T } from "@kit/styles/tokens.json";
 import { daysFrom } from "@kit/lib/format";
 import { CHANNELS as PERSON_CHANNELS } from "@kit/lib/people";
+import { DRAFTS_LIMIT } from "./constants";
+import { m } from "./messages";
 
 /** The part of GET /settings the screen reads (learned rules from reject notes) */
 export interface DraftRules {
@@ -15,15 +17,15 @@ export type DraftTab = "pending" | DraftResult;
 
 export const isPending = (d: Draft) => d.status === "bekliyor" || d.status === "onaylandi";
 export const TABS: { key: DraftTab; label: string; test: (d: Draft) => boolean }[] = [
-  { key: "pending", label: "Onay bekliyor", test: isPending },
-  { key: "sent", label: "Gönderildi", test: (d) => d.status === "gonderildi" },
-  { key: "rejected", label: "Reddedildi", test: (d) => d.status === "reddedildi" },
+  { key: "pending", label: m.tabs.pending, test: isPending },
+  { key: "sent", label: m.tabs.sent, test: (d) => d.status === "gonderildi" },
+  { key: "rejected", label: m.tabs.rejected, test: (d) => d.status === "reddedildi" },
 ];
 
 /** Reason chips of the reject panel; picking one fills the text field, which can then be edited */
-export const REJECT_REASONS = ["Çok uzun", "Ton yanlış", "Zamanı değil", "Bilgi yanlış"];
+export const REJECT_REASONS = [m.reasons.tooLong, m.reasons.wrongTone, m.reasons.notNow, m.reasons.wrongInfo];
 /** Reason sent when the field is left empty (the reject call needs a note) */
-export const REJECT_FALLBACK = "Neden yazılmadı";
+export const REJECT_FALLBACK = m.rejectFallback;
 
 /** The side card lists this many of the latest touches with the person */
 export const SIDE_TOUCHES = 2;
@@ -43,17 +45,17 @@ export function handleOf(d: Draft, person?: Person): string {
 }
 
 /** Label of the kind chip: the follow-up step when the draft comes from the follow-up sequence */
-export const draftKind = (d: Draft) => (d.followup_step ? `${d.followup_step}. takip` : "Taslak");
+export const draftKind = (d: Draft) => (d.followup_step ? m.followup(d.followup_step) : m.noun);
 
 export const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 export const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
-export const wordsLabel = (text: string) => `${wordCount(text)} kelime`;
+export const wordsLabel = (text: string) => m.words(wordCount(text));
 
 /** The company shown next to the recipient: none when the recipient is the company itself */
 export const companyOf = (d: Draft) => (d.company_name && d.company_name !== d.to_name ? d.company_name : null);
 
 /** What "Kopyala" puts on the clipboard: the subject line above the text when the draft has one */
-export const copyTextOf = (subject: string, text: string) => (subject.trim() ? `Konu: ${subject.trim()}\n\n${text}` : text);
+export const copyTextOf = (subject: string, text: string) => (subject.trim() ? m.copyText(subject.trim(), text) : text);
 /** Only an email has a subject line: its field shows while editing (any draft that already has a subject keeps it) */
 export const SUBJECT_CHANNEL = "email";
 
@@ -67,17 +69,17 @@ const MS_PER_HOUR = 3_600_000;
 /** "2 gün", "3 hafta", "1 ay"; "dün" and "bugün" for the last two days */
 export function shortAge(iso: string): string {
   const days = -daysFrom(iso);
-  if (days <= 0) return "bugün";
-  if (days === 1) return "dün";
-  if (days < WEEKS_FROM_DAYS) return `${days} gün`;
-  if (days < MONTHS_FROM_DAYS) return `${Math.floor(days / DAYS_PER_WEEK)} hafta`;
-  return `${Math.floor(days / DAYS_PER_MONTH)} ay`;
+  if (days <= 0) return m.age.today;
+  if (days === 1) return m.age.yesterday;
+  if (days < WEEKS_FROM_DAYS) return m.age.days(days);
+  if (days < MONTHS_FROM_DAYS) return m.age.weeks(Math.floor(days / DAYS_PER_WEEK));
+  return m.age.months(Math.floor(days / DAYS_PER_MONTH));
 }
 /** Age of a draft change on the sent and rejected lists: "şimdi" within the hour */
-export const historyAge = (iso: string) => (Date.now() - new Date(iso).getTime() < MS_PER_HOUR ? "şimdi" : shortAge(iso));
+export const historyAge = (iso: string) => (Date.now() - new Date(iso).getTime() < MS_PER_HOUR ? m.age.now : shortAge(iso));
 
 /** "Gelen: ...", "Giden: ..." line of a touch */
-export const touchLine = (t: Touch) => `${t.direction === "gelen" ? "Gelen" : "Giden"}: ${t.summary}`;
+export const touchLine = (t: Touch) => m.touch.line(t.direction === "gelen" ? m.touch.incoming : m.touch.outgoing, t.summary);
 export const byRecent = (a: Touch, b: Touch) => b.happened_at.localeCompare(a.happened_at);
 
 // ------------------------------------------------------------ card stack motion (values come from tokens.json)
@@ -91,4 +93,4 @@ export const STACK = {
 };
 
 /** The drafts list the screen reads: every draft, one request (the same list the dashboard card is built from) */
-export const DRAFTS_KEY = "/drafts?limit=1000";
+export const DRAFTS_KEY = `/drafts?limit=${DRAFTS_LIMIT}`;

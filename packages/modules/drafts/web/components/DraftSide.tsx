@@ -5,6 +5,7 @@ import { useQuery } from "@kit/api/store";
 import type { CompanyCard, Draft, Person, PersonCard } from "@kit/api/types";
 import { useLinkTo } from "@kit/app/modules/registry";
 import { byRecent, firstName, shortAge, SIDE_TOUCHES, touchLine } from "../drafts";
+import { m } from "../messages";
 
 /** Arrow of the record link, as on the board */
 const LINK_ARROW = "M7 17 17 7M9 7h8v8";
@@ -12,11 +13,11 @@ const LINK_ARROW = "M7 17 17 7M9 7h8v8";
 /** Where "Neden şimdi" leads: the opportunity in the funnel, else the person's card, else the company's */
 function recordLink(d: Draft, person: Person | undefined, linkTo: (type: string, id: number) => string | null): { href: string; name: string } | null {
   const opportunity = d.opportunity_id ? linkTo("opportunity", d.opportunity_id) : null;
-  if (opportunity) return { href: opportunity, name: "Satış hunisinde aç" };
+  if (opportunity) return { href: opportunity, name: m.side.openFunnel };
   const personPage = d.person_id ? linkTo("person", d.person_id) : null;
-  if (personPage) return { href: personPage, name: `${firstName(person?.name ?? d.to_name)}’in kartı` };
+  if (personPage) return { href: personPage, name: m.side.personCard(firstName(person?.name ?? d.to_name)) };
   const companyPage = d.company_id ? linkTo("company", d.company_id) : null;
-  if (companyPage) return { href: companyPage, name: `${d.to_name} firma kartı` };
+  if (companyPage) return { href: companyPage, name: m.side.companyCard(d.to_name) };
   return null;
 }
 
@@ -29,7 +30,7 @@ function RecentTouches({ d }: { d: Draft }) {
   if (!latest.length) return null;
   return (
     <section className="drf-sec is-tight">
-      <span className="drf-sec-label">{firstName(d.to_name)} ile son temaslar</span>
+      <span className="drf-sec-label">{m.side.recent(firstName(d.to_name))}</span>
       {latest.map((t) => (
         <div key={t.id} className="drf-touch">
           <span className="drf-touch-at">{shortAge(t.happened_at)}</span>
@@ -47,8 +48,8 @@ function Rules({ rules }: { rules: string[] }) {
   return (
     <section className="drf-sec">
       <div className="drf-rules-head">
-        <span className="flex-grow text-base">Claude’un öğrendikleri</span>
-        <span className="drf-sec-label">retlerinden</span>
+        <span className="flex-grow text-base">{m.side.learned}</span>
+        <span className="drf-sec-label">{m.side.fromRejects}</span>
       </div>
       {rules.map((r) => (
         <div key={r} className="drf-rule">
@@ -65,10 +66,10 @@ export function DraftSide({ d, person, rules }: { d: Draft; person?: Person; rul
   const linkTo = useLinkTo();
   const link = recordLink(d, person, linkTo);
   return (
-    <aside className="drf-side" aria-label="Bağlam">
+    <aside className="drf-side" aria-label={m.side.label}>
       {d.reason || link ? (
         <section className="drf-sec">
-          <span className="drf-sec-label">Neden şimdi</span>
+          <span className="drf-sec-label">{m.side.whyNow}</span>
           {d.reason ? <p className="drf-why">{d.reason}</p> : null}
           {link ? (
             <Link href={link.href} className="drf-link">

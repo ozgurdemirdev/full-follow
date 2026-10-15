@@ -3,6 +3,7 @@ import { draftsApi } from "./api";
 import { chatCard } from "./chat";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { sendWarnings } from "./service/quota";
 import { draftRules } from "./service/rules";
 
@@ -18,7 +19,7 @@ const FOLLOWUP_EVERY_MS = 60 * 60 * 1000;
  */
 export default defineModule({
   key: "drafts",
-  label: "Taslaklar",
+  label: m.label,
   smoke: ["/api/drafts", "/api/followups"],
   uses: ["templates", "people", "network", "pipeline", "projects"],
   api: draftsApi,
@@ -47,7 +48,7 @@ export default defineModule({
     timelineKinds: {
       "draft.created": { kind: "taslak", row: { key: "draft_id", table: "drafts" } },
     },
-    trashTypes: [{ type: "draft", label: "taslak" }],
+    trashTypes: [{ type: "draft", label: m.noun }],
     commentTargets: {
       draft: {
         table: "drafts",
@@ -91,9 +92,9 @@ export default defineModule({
       run: (app) => {
         try {
           const r = app.mod("drafts")?.followups.generate();
-          if (r?.created.length) console.log(`  Takip taslağı hazırlandı: ${r.effects.join(", ")}`);
+          if (r?.created.length) console.log(m.job.created(r.effects.join(", ")));
         } catch (e) {
-          console.warn("  Takip taslakları hazırlanamadı:", e instanceof Error ? e.message : e);
+          console.warn(m.job.failed, e instanceof Error ? e.message : e);
         }
       },
     }],

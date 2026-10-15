@@ -2,6 +2,7 @@ import type { Quota, QuotaState, Today } from "@kit/api/types";
 import { Card, Meter } from "@kit/components/ui";
 import { fmtDay } from "@kit/lib/format";
 import { channelName } from "@kit/lib/network";
+import { m } from "../messages";
 
 const PERCENT = 100;
 
@@ -11,13 +12,13 @@ const QUOTA_TONE: Record<QuotaState, { bar: string; text: string }> = {
   near: { bar: "bg-warning", text: "text-warning" },
   over: { bar: "bg-danger", text: "text-danger" },
 };
-const QUOTA_NOTE: Partial<Record<QuotaState, string>> = { near: "limite yakın", over: "limit doldu" };
+const QUOTA_NOTE: Partial<Record<QuotaState, string>> = { near: m.quota.near, over: m.quota.over };
 
 /** Messages sent today against each channel's daily limit, plus the cold email warmup notice */
 function QuotaBody({ quota }: { quota: Quota }) {
   const { channels, email_warmup: warmup } = quota;
   return (
-    <Card title="Günlük kota" className="dash-gap-6 rise" actions={<span className="text-base-sm text-text-secondary">giden mesaj / limit</span>}>
+    <Card title={m.quota.title} className="dash-gap-6 rise" actions={<span className="text-base-sm text-text-secondary">{m.quota.aside}</span>}>
       {channels.map((c) => {
         const tone = QUOTA_TONE[c.state];
         return (
@@ -29,11 +30,11 @@ function QuotaBody({ quota }: { quota: Quota }) {
                 {c.sent} / {c.limit}
               </span>
             </div>
-            <Meter value={(c.sent / c.limit) * PERCENT} size="sm" color={tone.bar} label={`${channelName(c.channel)} günlük kota`} />
+            <Meter value={(c.sent / c.limit) * PERCENT} size="sm" color={tone.bar} label={m.quota.label(channelName(c.channel))} />
           </div>
         );
       })}
-      {warmup.active && warmup.until ? <p className="m-0 text-base-sm text-warning">Soğuk e-posta kapalı: ısınma dönemi {fmtDay(warmup.until)} tarihine kadar sürüyor.</p> : null}
+      {warmup.active && warmup.until ? <p className="m-0 text-base-sm text-warning">{m.quota.warmup(fmtDay(warmup.until))}</p> : null}
     </Card>
   );
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CHANNELS, zodKit } from "@fullfollow/core";
-import { DRAFT_SUBJECT_MAX } from "./constants";
+import { DRAFT_SUBJECT_MAX, FOLLOWUP_STEP_MAX } from "./constants";
 
 const { id, text, optText, patch, subjectShape, needSubject, subjectMsg } = zodKit;
 
@@ -16,6 +16,6 @@ export const draftCreate = z.strictObject({
   body: optText,
   reason: optText,
   template_id: id.nullish(),
-  followup_step: z.coerce.number().int().min(1).max(10).nullish(),
+  followup_step: z.coerce.number().int().min(1).max(FOLLOWUP_STEP_MAX).nullish(),
 }).refine(needSubject, subjectMsg);
 export const draftUpdate = patch({ channel: z.enum(CHANNELS), subject, body: text, reason: optText, template_id: id.nullable() });

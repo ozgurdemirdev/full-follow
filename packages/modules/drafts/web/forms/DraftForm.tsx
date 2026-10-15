@@ -10,11 +10,13 @@ import { ComboField, SuggField, type Suggestion } from "@kit/components/forms/fi
 import { emptyRef, ensureCompany, ensurePerson, type Ref } from "@kit/forms/helpers";
 import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 import { TEMPLATE_KIND } from "@kit/lib/labels";
+import { TEMPLATES_LIMIT } from "../constants";
+import { m } from "../messages";
 
 const TOKENS = ["{ad}", "{firma}"];
 const SUGGESTED = 8;
 const EMAIL_CHANNEL = "email";
-const TO_KINDS = [{ value: "person" as const, label: "Kişi" }, { value: "company" as const, label: "Firma" }];
+const TO_KINDS = [{ value: "person" as const, label: m.form.person }, { value: "company" as const, label: m.form.company }];
 
 export function DraftForm(p: FormProps) {
   const pre = p.sheet.preset;
@@ -45,13 +47,13 @@ export function DraftForm(p: FormProps) {
   const companyId = pre?.company_id ?? (toKind === "company" ? toCompany.id : null);
   const subject = companyId ? `company_id=${companyId}` : toKind === "person" && person.id ? `person_id=${person.id}` : "";
   const sug = useQuery<Template[]>(subject ? `/templates/suggest?${subject}&channel=${ch}` : null);
-  const all = useQuery<{ rows: Template[] }>(subject ? null : `/templates?channel=${ch}&limit=50`);
+  const all = useQuery<{ rows: Template[] }>(subject ? null : `/templates?channel=${ch}&limit=${TEMPLATES_LIMIT}`);
   const list = (subject ? sug.data : all.data?.rows) ?? [];
   const suggestions = useMemo(
     () => list.slice(0, SUGGESTED).map((t): Suggestion => ({
       key: t.id,
       name: t.name,
-      meta: `${TEMPLATE_KIND[t.kind]}${t.sector_path ? ` · ${t.sector_path}` : ""}`,
+      meta: m.form.suggestionMeta(TEMPLATE_KIND[t.kind], t.sector_path ?? null),
       rate: t.sent ? t.replied / t.sent : null,
     })),
     [list],
@@ -80,41 +82,41 @@ export function DraftForm(p: FormProps) {
     async () => {
       const to = companyId || toKind === "company"
         ? { company_id: companyId ?? await ensureCompany(toCompany) }
-        : { person_id: await ensurePerson(person, { tags: ["aday"] }) };
+        : { person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }) };
       await saveRecord(p, null, {
         ...to, channel: ch, subject: ch === EMAIL_CHANNEL ? subjectLine.trim() || undefined : undefined, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
         opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,
       });
     },
     () => errorsOf({
-      to: !pre?.company_id && !(toKind === "company" ? toCompany.text : person.text).trim() && "Alıcıyı seç",
-      body: !body.trim() && "Metin boş olamaz",
+      to: !pre?.company_id && !(toKind === "company" ? toCompany.text : person.text).trim() && m.form.pickRecipient,
+      body: !body.trim() && m.form.bodyRequired,
     }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
       {pre?.company_id ? (
-        <Note>Firmaya: {company?.name ?? ""}{company?.email ? ` · ${company.email}` : ""}</Note>
+        <Note>{m.form.toNote(company?.name ?? "", company?.email ? company.email : null)}</Note>
       ) : (
         <>
-          <SegField label="Kime" options={TO_KINDS} value={toKind} onChange={(v) => (setToKind(v), setTemplateId(null))} />
+          <SegField label={m.form.to} options={TO_KINDS} value={toKind} onChange={(v) => (setToKind(v), setTemplateId(null))} />
           {toKind === "person" ? (
-            <ComboField name="to" label="Alıcı" req value={person} onChange={(v) => (setPerson(v), setTemplateId(null))} options={personOptions} placeholder="Kişi ara" newLabel="Yeni kişi" />
+            <ComboField name="to" label={m.form.recipient} req value={person} onChange={(v) => (setPerson(v), setTemplateId(null))} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
           ) : (
-            <ComboField name="to" label="Alıcı" req value={toCompany} onChange={(v) => (setToCompany(v), setTemplateId(null))} options={companyOptions} placeholder="Firma ara" newLabel="Yeni firma" />
+            <ComboField name="to" label={m.form.recipient} req value={toCompany} onChange={(v) => (setToCompany(v), setTemplateId(null))} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
           )}
         </>
       )}
-      <ChipsField label="Kanal" value={ch} onChange={(v) => (v && setChannel(v), setTemplateId(null))} options={CHANNEL_OPTIONS} />
+      <ChipsField label={m.shared.channel} value={ch} onChange={(v) => (v && setChannel(v), setTemplateId(null))} options={CHANNEL_OPTIONS} />
       {suggestions.length ? (
-        <SuggField label="Şablon önerisi" hint="Uygun olan önce, seçince metne yazılır" options={suggestions} value={templateId} onPick={(s) => void pick(list.find((t) => t.id === s.key) ?? { id: Number(s.key), body: "" })} />
+        <SuggField label={m.form.templateSuggestion} hint={m.form.templateHint} options={suggestions} value={templateId} onPick={(s) => void pick(list.find((t) => t.id === s.key) ?? { id: Number(s.key), body: "" })} />
       ) : (
-        <Field label="Şablon"><span className="form-hint">Bu kanal için şablon yok. Şablonlar sayfasından ekleyebilirsin.</span></Field>
+        <Field label={m.form.template}><span className="form-hint">{m.form.noTemplate}</span></Field>
       )}
-      {ch === EMAIL_CHANNEL ? <TextField label="Konu" value={subjectLine} onChange={setSubjectLine} placeholder="E-postada görünür" /> : null}
-      <AreaField name="body" label="Metin" req value={body} onChange={setBody} placeholder="Mesaj metni" rows={6} tokens={TOKENS} />
-      <TextField label="Neden şimdi" opt value={reason} onChange={setReason} placeholder="Örn. paylaşıma yorum yaptı" />
+      {ch === EMAIL_CHANNEL ? <TextField label={m.shared.subject} value={subjectLine} onChange={setSubjectLine} placeholder={m.form.subjectPlaceholder} /> : null}
+      <AreaField name="body" label={m.shared.text} req value={body} onChange={setBody} placeholder={m.form.bodyPlaceholder} rows={6} tokens={TOKENS} />
+      <TextField label={m.form.whyNow} opt value={reason} onChange={setReason} placeholder={m.form.whyPlaceholder} />
     </Form>
   );
 }

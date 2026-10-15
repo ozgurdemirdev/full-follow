@@ -2,6 +2,7 @@ import {
   addDays, CHANNELS, keptRows, label, marketingSettings, QUOTA_NEAR_RATIO,
   type Channel, type Ctx, type Quota, type QuotaOverDays, type QuotaState,
 } from "@fullfollow/core";
+import { m } from "../messages";
 
 /** Outgoing messages per channel and day ("channel|date" → count); daily goals and the daily quota both count from here */
 export function outgoingMessageCounts(ctx: Ctx, from: string, to: string): Map<string, number> {
@@ -57,7 +58,7 @@ export function sendWarnings(ctx: Ctx, t: { channel: string; direction: string; 
   const q = quotaFor(ctx, day);
   const out: string[] = [];
   const c = q.channels.find((x) => x.channel === t.channel);
-  if (c?.state === "over") out.push(`Uyarı: ${label(c.channel)} günlük limiti ${c.sent > c.limit ? "aşıldı" : "doldu"} (${c.sent}/${c.limit})`);
-  if (cold && q.email_warmup.active) out.push(`Uyarı: soğuk e-posta ısınma döneminde kapalı (${dayMonth(q.email_warmup.until!)} tarihine kadar)`);
+  if (c?.state === "over") out.push(m.warning.limit(label(c.channel), c.sent > c.limit, c.sent, c.limit));
+  if (cold && q.email_warmup.active) out.push(m.warning.warmup(dayMonth(q.email_warmup.until!)));
   return out;
 }

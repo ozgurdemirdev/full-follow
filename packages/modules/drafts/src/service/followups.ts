@@ -1,7 +1,8 @@
 import {
-  dayOf, daysBetween, keptRow, keptRows, label, marketingSettings, renderTemplate, subjectWhere,
+  dayOf, daysBetween, keptRow, keptRows, label, LOCALE, marketingSettings, renderTemplate, subjectWhere,
   type Ctx, type FollowupDue, type FollowUpDate,
 } from "@fullfollow/core";
+import { m } from "../messages";
 import { draftsServices } from "./index";
 
 /** Follow-up dates of people and (through the pipeline module) open opportunities in the range; the calendar feed reads this */
@@ -12,12 +13,6 @@ export function followUpDates(ctx: Ctx, from: string, to: string): FollowUpDate[
   const opps = ctx.mod("pipeline")?.followUpsDue(from, to) ?? [];
   return [...people, ...opps].map((r) => ({ ...r, done: !!r.done }));
 }
-
-/** Şablon yoksa kullanılan takip metinleri (adım sırasıyla; son metin sonraki adımlarda da kullanılır) */
-const DEFAULT_BODIES = [
-  "Merhaba {ad}, geçen gün yazdığım mesajı görme fırsatın oldu mu? Uygun olduğunda kısaca konuşabilirsek sevinirim.",
-  "Merhaba {ad}, tekrar yazıyorum; şu an önceliğin değilse sorun değil, haber vermen yeterli. İleride ihtiyaç olursa buradayım.",
-];
 
 /** Temasın muhatap anahtarı: kişi, firma (kişisiz) ya da adres */
 const SUBJECT_KEY = "CASE WHEN person_id IS NOT NULL THEN 'p' || person_id WHEN company_id IS NOT NULL THEN 'c' || company_id ELSE 'x' || contact_key END";
@@ -70,7 +65,7 @@ export function followupsDue(ctx: Ctx): FollowupDue[] {
       channel: r.channel, step, steps: followup_days.length, days, attempts: r.attempts, since: r.first_out,
     });
   }
-  return out.sort((a, b) => b.days - a.days || a.name.localeCompare(b.name, "tr"));
+  return out.sort((a, b) => b.days - a.days || a.name.localeCompare(b.name, LOCALE));
 }
 
 /**
@@ -87,12 +82,12 @@ export function generateFollowups(ctx: Ctx) {
     const [where, params] = subjectWhere(subject);
     if (keptRow(ctx, `SELECT 1 x FROM drafts WHERE ${where} AND status IN ('bekliyor', 'onaylandi')`, ...params)) continue;
     const t = ctx.mod("templates")?.suggest(subject, f.channel, "takip")[0];
-    const body = renderTemplate(ctx, t?.body ?? DEFAULT_BODIES[Math.min(f.step, DEFAULT_BODIES.length) - 1], subject);
+    const body = renderTemplate(ctx, t?.body ?? m.followupBody(f.step), subject);
     const r = drafts.create({
       ...subject, channel: f.channel, body, template_id: t?.id ?? null, followup_step: f.step,
-      reason: `Otomatik takip ${f.step}/${f.steps}: ${f.days} gündür cevap yok (${label(f.channel)})`,
+      reason: m.followupReason(f.step, f.steps, f.days, label(f.channel)),
     });
     created.push({ draft_id: r.row.id, person_id: f.person_id, company_id: f.company_id, name: f.name, step: f.step });
   }
-  return { created, effects: created.map((c) => `${c.name}: ${c.step}. takip taslağı`) };
+  return { created, effects: created.map((c) => m.effect.followupDraft(c.name, c.step)) };
 }

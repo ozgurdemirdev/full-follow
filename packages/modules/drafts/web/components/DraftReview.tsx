@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Draft, Person } from "@kit/api/types";
 import { STACK, draftKind, type DraftResult } from "../drafts";
 import { BoardIcon } from "@kit/components/boardIcons";
+import { m } from "../messages";
 import { DraftCard } from "./DraftCard";
 import { DraftSide } from "./DraftSide";
 
@@ -51,8 +52,8 @@ export function DraftReview({ pending, handled, onHandled, personOf, rules }: {
             ) : (
               <div key="done" className="drf-done">
                 <span className="drf-done-mark"><BoardIcon name="check" className="size-icon-2xl" stroke={2.4} /></span>
-                <span className="drf-done-title">Bekleyen taslak kalmadı</span>
-                <span className="text-base text-text-secondary">Kişi ya da fırsat kartından Claude’dan yeni taslak isteyebilirsin.</span>
+                <span className="drf-done-title">{m.review.empty}</span>
+                <span className="text-base text-text-secondary">{m.review.emptyHint}</span>
               </div>
             )}
           </AnimatePresence>
