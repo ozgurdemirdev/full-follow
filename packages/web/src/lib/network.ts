@@ -1,22 +1,7 @@
-// Network durum metinleri: cevap bekliyor / soğuyor / son temas
-import type { Person } from "../api/types";
-import { CHANNEL, type Tone } from "./labels";
+// Contact channel names and the links to a website or an account: shared by the people, companies, network, drafts and templates screens
+import { CHANNEL } from "./labels";
 
 export const channelName = (c: string | null | undefined) => (c ? (CHANNEL[c] ?? c) : "");
-
-const days = (n: number) => (n === 0 ? "bugün" : n === 1 ? "dün" : `${n} gün`);
-
-/** Kişinin network durumu tek satır: liste satırı ve kart başlığı */
-export function netStatus(p: Pick<Person, "awaiting" | "cooling" | "last_touch_at" | "last_channel" | "days_since">): { text: string; tone: Tone; late: boolean } | null {
-  if (p.awaiting) {
-    const a = p.awaiting;
-    const when = a.days === 0 ? "bugün yazıldı" : `${a.days} gündür`;
-    return { text: `Cevap bekliyor · ${channelName(a.channel)} · ${when}${a.attempts > 1 ? ` · ${a.attempts}. mesaj` : ""}`, tone: a.late ? "warning" : "opportunity", late: a.late };
-  }
-  if (p.cooling) return { text: `Soğuyor · ${p.days_since} gündür temas yok`, tone: "payment", late: true };
-  if (p.last_touch_at) return { text: `Son temas ${channelName(p.last_channel)} · ${p.days_since === 0 ? "bugün" : `${days(p.days_since)}${p.days_since > 1 ? " önce" : ""}`}`, tone: "neutral", late: false };
-  return null;
-}
 
 /** Website as typed (with or without the scheme) → link */
 export const webUrl = (v: string): string => (/^https?:\/\//i.test(v) ? v : `https://${v}`);

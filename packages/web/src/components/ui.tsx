@@ -1,5 +1,4 @@
 import { useRef, type CSSProperties, type ReactNode } from "react";
-import { Link } from "wouter";
 import type { ApiError } from "../api/client";
 import { useTags } from "../api/keys";
 import { initials } from "../lib/format";
@@ -194,16 +193,6 @@ export function Card({ title, label, count, onExpand, actions, children, classNa
       ) : null}
       {children}
     </section>
-  );
-}
-
-/** Link with the arrow circle that sits in the header of a card */
-export function MoreLink({ href, children }: { href: string; children: string }) {
-  return (
-    <Link href={href} className="ff-more">
-      {children}
-      <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
-    </Link>
   );
 }
 

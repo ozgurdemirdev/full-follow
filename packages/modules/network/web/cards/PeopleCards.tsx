@@ -3,7 +3,7 @@ import type { List, Person } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { useRegistry } from "@kit/app/modules/registry";
 import { PATHS } from "@kit/app/routes";
-import { SHOWN, isCold } from "@kit/lib/dashboard";
+import { SHOWN } from "@kit/lib/dashboard";
 import { initials, todayIso } from "@kit/lib/format";
 import { channelName } from "@kit/lib/network";
 import { BoardIcon } from "@kit/components/boardIcons";
@@ -11,6 +11,9 @@ import { Card } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 
+/** Silent for this many times the cooling limit reads "Soğuk" instead of "Soğuyor" */
+const COLD_FACTOR = 5 / 3;
+const isCold = (p: Pick<Person, "days_since">, coolingDays: number) => p.days_since >= coolingDays * COLD_FACTOR;
 const daysText = (n: number) => (n === 0 ? "bugün" : `${n} gün`);
 
 /** "Cevap bekleyenler": people who got a message and have not answered; the longest wait that is late stands out */

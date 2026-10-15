@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { Link } from "wouter";
-import { timelinePath } from "@kit/app/routes";
+import { timelinePath } from "./paths";
 
 type Props = Omit<ComponentProps<"a">, "href" | "id" | "type" | "ref"> & { type: string; id: number; label: string };
 

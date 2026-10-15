@@ -2,6 +2,7 @@
 // touches of the people and companies screens (the stream of a person, the touches of a company, the loose touches under the company tiles).
 import { CONTACT_DATA } from "@kit/api/contacts";
 import { defineWebModule } from "@kit/app/modules/define";
+import { pageTo } from "@kit/app/modules/links";
 import { PATHS } from "@kit/app/routes";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { CompanyTouches } from "./components/CompanyTouches";
@@ -24,7 +25,7 @@ export default defineWebModule({
   ],
   quickAdd: [{
     kind: "touch", name: "Temas", key: "T", dest: "Kişinin zaman çizelgesi", icon: BOARD_ICON.comment, tone: "info", group: "Kişiler ve iletişim", order: 30,
-    form: { noun: "Temas", dest: "Kişinin zaman çizelgesine eklenir", icon: BOARD_ICON.comment, base: "/touches", editId: (p) => p.edit, page: () => PATHS.timeline },
+    form: { noun: "Temas", dest: "Kişinin zaman çizelgesine eklenir", icon: BOARD_ICON.comment, base: "/touches", editId: (p) => p.edit, page: () => pageTo("timeline") ?? PATHS.today },
     load: () => import("./forms/TouchForm").then((m) => ({ default: m.TouchForm })),
   }],
   slots: {

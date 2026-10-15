@@ -82,3 +82,6 @@ export function fmtSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / 1024 / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB`;
 }
+
+/** A share (0 to 1) as a whole percent */
+export const ratePct = (rate: number) => Math.round(rate * 100);

@@ -7,7 +7,8 @@ import { SHOWN } from "@kit/lib/dashboard";
 import { followNote, initials } from "@kit/lib/format";
 import { STAGE } from "@kit/lib/labels";
 import { useRecordHref } from "@kit/lib/useRecordHref";
-import { Card, MoreLink } from "@kit/components/ui";
+import { Card } from "@kit/components/ui";
+import { MoreLink } from "@kit/components/dash/MoreLink";
 import { PEOPLE_PATH } from "./paths";
 
 interface FollowItem {

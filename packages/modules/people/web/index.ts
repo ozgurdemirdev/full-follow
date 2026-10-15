@@ -1,5 +1,6 @@
 // The people module's web part: the manifest the shell builds its route, nav item, dashboard card, form and search from.
-// It also fills the company overlay with the people inside the company (slot "company.overlay.main").
+// It also fills the company overlay with the people inside the company (slot "company.overlay.main") and the timeline and post screens with its side cards.
+import { lazy } from "react";
 import { K } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
 import { CONTACT_DATA } from "@kit/api/contacts";
@@ -39,6 +40,10 @@ export default defineWebModule({
         : null
     ),
   }],
-  slots: { "company.overlay.main": { order: 10, Component: OrgPeople } },
+  slots: {
+    "company.overlay.main": { order: 10, Component: OrgPeople },
+    "timeline.aside": { order: 10, Component: lazy(() => import("./slots/TimelinePerson")) },
+    "post.overlay.side": { order: 10, Component: lazy(() => import("./slots/PostPeople")) },
+  },
   invalidates: { people: [...CONTACT_DATA, "/opportunities", "/sectors", "/tags", "/sources", "/report", "/posts", "/ideas", "/trash"] },
 });

@@ -1,11 +1,12 @@
 import { useCallback } from "react";
-import { useModules } from "../api/modules";
-import { useLinkTo } from "../app/modules/registry";
-import { PATHS, timelinePath } from "../app/routes";
+import { useRegistry } from "../app/modules/registry";
+import { PATHS } from "../app/routes";
 
-/** Where a person, project or opportunity name leads: its history when the timeline module is installed, its own page when not */
+/** Where a person, project or opportunity name leads: its history when a timeline page is there, its own page when not */
 export function useRecordHref() {
-  const { visible } = useModules();
-  const linkTo = useLinkTo();
-  return useCallback((type: string, id: number) => (visible("timeline") ? timelinePath(type, id) : (linkTo(type, id) ?? PATHS.today)), [visible, linkTo]);
+  const { link, pagePath } = useRegistry();
+  return useCallback((type: string, id: number) => {
+    const history = pagePath("timeline");
+    return history ? `${history}/${type}/${id}` : (link(type, id) ?? PATHS.today);
+  }, [link, pagePath]);
 }

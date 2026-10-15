@@ -8,19 +8,14 @@ import type { Mutation } from "./types";
 
 /** Her yazma işleminden sonra hangi listelerin tazeleneceği (modüller kendi verilerini manifest `invalidates` ile ekler) */
 const AFFECTS: Record<string, string[]> = {
-  sectors: ["/sectors", "/people", "/companies", "/trash", "/templates", "/ideas"],
+  sectors: ["/sectors", "/people", "/companies", "/trash"],
   tags: ["/tags", "/people", "/companies", "/trash"],
-  notes: ["/notes", "/people", "/timeline", "/trash"],
-  links: ["/links", "/own-projects", "/timeline", "/trash"],
-  files: ["/opportunities", "/projects", "/timeline", "/trash"],
-  sources: ["/sources", "/opportunities", "/report", "/people", "/companies", "/trash"],
-  drafts: ["/drafts", "/settings", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
-  comments: ["/comments", "/own-projects", "/today", "/timeline", "/people", "/companies", "/trash"],
-  settings: ["/settings", "/report", "/review", "/today", "/people", "/network", "/followups"],
-  posts: ["/posts", "/today", "/people", "/ideas", "/report", "/trash"],
-  templates: ["/templates", "/trash"],
-  ideas: ["/ideas", "/own-projects", "/people", "/posts", "/touches", "/timeline", "/trash"],
-  followups: ["/followups", "/drafts", "/today", "/people", "/companies"],
+  notes: ["/notes", "/people", "/trash"],
+  links: ["/links", "/own-projects", "/trash"],
+  files: ["/opportunities", "/projects", "/trash"],
+  sources: ["/sources", "/opportunities", "/people", "/companies", "/trash"],
+  comments: ["/comments", "/own-projects", "/today", "/people", "/companies", "/trash"],
+  settings: ["/settings", "/today", "/people", "/network"],
   // geri yükleme her şeyi etkileyebilir
   trash: ["/"],
 };

@@ -1,8 +1,8 @@
 import { Link } from "wouter";
-import { PATHS } from "@kit/app/routes";
+import { DRAFTS_PATH } from "./paths";
 
 /** "N taslak onay bekliyor" under a person's or a company's deals (slots "person.overlay.deals" and "company.overlay.work.after"): `card` is the card of that record */
 export function DraftsWaiting({ card }: { card?: { drafts: unknown[] } }) {
   const n = card?.drafts.length ?? 0;
-  return n ? <Link href={PATHS.drafts} className="text-base-sm">{n} taslak onay bekliyor</Link> : null;
+  return n ? <Link href={DRAFTS_PATH} className="text-base-sm">{n} taslak onay bekliyor</Link> : null;
 }

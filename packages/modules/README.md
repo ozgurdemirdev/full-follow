@@ -94,7 +94,7 @@ defineWebModule({
 
 Package.json of the module carries the two things build tools need without running the manifest: `"fullfollow": { "module": "<key>", "endpoints": ["/tasks", ...], "webMarkers": ["/takvim"] }`. `endpoints` are the API prefixes the module owns: the web never sends a read for a module that is not installed (the generated list includes switched off modules, as data only). `webMarkers` are strings that are in the web build exactly when the module is installed (a route path, a storage key): `npm run check:modules` searches every case's build for them. Add them when the module's path is no longer in `packages/web/src/app/routes.ts` (`PATHS`).
 
-Slots that exist: `app.overlay` (props `{ onActivate }`, the mascot), `dashboard.strip` (props `{ today }`, above the cards: the goal strip), `dashboard.tools` (the buttons next to "Yeni kayıt"). A screen that shows another module's data renders `<Slot name="person.overlay.side" props={{ id }} />` (from `@kit/app/modules/Slot`) and the owner registers a component under that name; the host knows nothing of the owner. Name a slot `<screen>.<place>`, list it here when you add one.
+Slots that exist: `app.overlay` (props `{ onActivate }`, the mascot and the chat window), `dashboard.strip` (props `{ today }`, above the cards: the goal strip), `dashboard.tools` (the buttons next to "Yeni kayıt"). The other slots are named after the screen that hosts them: `report.sections` (the report page: the pipeline's source funnel, the templates' comparison), `timeline.aside` (props `{ type, id, detail, touches }`: the person, opportunity and project cards beside a focused record, each from the module that owns it), `opportunity.feed` (props `{ id, label }`: the timeline's feed on the opportunity page), `post.overlay.side` (props `{ post, people }`: the people and the opportunities of a post), `idea.actions` (props `{ idea }`: the own projects' "Projeye dönüştür" button). A screen that shows another module's data renders `<Slot name="person.overlay.side" props={{ id }} />` (from `@kit/app/modules/Slot`) and the owner registers a component under that name; the host knows nothing of the owner. Name a slot `<screen>.<place>`, list it here when you add one.
 
 ### Order numbers (one scale across modules; pick the number that keeps today's layout)
 
@@ -106,7 +106,9 @@ Slots that exist: `app.overlay` (props `{ onActivate }`, the mascot), `dashboard
 | Dashboard cards (global order, column) | review 10, plan 20 (col 0), drafts 30 (0), awaiting 40 (1), followups-due 50, follow-ups 60, payments 70 (1), activity 80 (1), quota 90, projects 100 (2), funnel 110 (2), cooling 120 (2), posts-due 130, comments 140 (2), status 150 |
 | Quick add groups | Kişiler ve iletişim (person 10, company 20, touch 30, draft 40, comment 50), Satış (opportunity 10, offer 20, project 30), Plan (task 10, goal 20), Pazarlama (post 10, idea 20, template 30), Kendi işlerin (own_project 10) |
 | Settings categories | hesap 10, isletme 20, takip 30, claude 40, maskot 50, liste 60, moduller 70, cop 80 |
-| Settings rows of isletme | money and floor 10, weekly target 20, daily goals 30 (calendar), payment template 40 |
+| Settings rows of isletme | money and floor 10 (reports), weekly target 20, daily goals 30 (calendar), payment template 40 (reports) |
+| Settings rows of takip | reply wait and cooling 10, follow-up days 20 (drafts), post refresh 30 (posts), daily send limits and warmup 40 (drafts) |
+| Settings rows of claude | connection 10, sending without asking and learned rules 20 (drafts), pinned notes 30 (chat) |
 
 Two modules may register the same dashboard `id` (projects and own-projects both show the projects card): the first one wins.
 

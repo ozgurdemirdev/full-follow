@@ -1,7 +1,8 @@
 import type { PersonCard } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { Chip } from "@kit/components/ui";
-import { IDEA_STAGE, INTEREST, INTEREST_TONE } from "@kit/lib/labels";
+import { IDEA_STAGE } from "@kit/lib/labels";
+import { INTEREST, INTEREST_TONE } from "../labels";
 
 /** The ideas a person was told about, in the "Pazarlama" panel of the person overlay (slot "person.overlay.marketing") */
 export function PersonIdeas({ card }: { card: PersonCard }) {

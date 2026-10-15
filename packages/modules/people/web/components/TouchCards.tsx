@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Person } from "@kit/api/types";
-import { askDraft, compareTouch, draftKind, statusOf, STATUS_LABEL, TOUCH_CARDS, useDayMarks, whyText, type PStatus } from "@kit/lib/people";
+import { askDraft, compareTouch, draftKind, statusOf, useDayMarks, type PStatus } from "@kit/lib/people";
+import { STATUS_LABEL, TOUCH_CARDS, whyText } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { toast } from "@kit/components/toast";
 import { Avatar } from "@kit/components/ui";

@@ -1,0 +1,10 @@
+/* Panel chat: floating window above every page (design: docs/design/panel-chat.html).
+   Mobile first: the base rules are the phone bottom sheet, `desk:` adds the floating window.
+   Only tokens; no literal colors, sizes or durations (npm run check enforces it). */
+
+@import "./styles/button.css";
+@import "./styles/window.css";
+@import "./styles/thread.css";
+@import "./styles/composer.css";
+@import "./styles/cards.css";
+@import "./styles/popover-layout.css";

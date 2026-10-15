@@ -1,4 +1,4 @@
-import { AutoNumber, ControlSkeleton, DAY_SUFFIX, WithNetwork } from "@kit/components/settings/Fields";
+import { AutoNumber, ControlSkeleton, DAY_SUFFIX, WithNetworkCfg } from "@kit/components/settings/Fields";
 import { putSettings, useNetworkCfg, type SettingRow } from "@kit/lib/settings";
 
 const TARGET_STEP = 5;
@@ -6,9 +6,9 @@ const TARGET_STEP = 5;
 type DayKey = "reply_wait_days" | "cooling_days";
 
 const DaysField = ({ field, label }: { field: DayKey; label: string }) => (
-  <WithNetwork>
+  <WithNetworkCfg>
     {(cfg, reload) => <AutoNumber server={cfg[field]} save={(n) => putSettings({ [field]: n })} settle={reload} label={label} min={1} suffix={DAY_SUFFIX} />}
-  </WithNetwork>
+  </WithNetworkCfg>
 );
 
 /** The first two rows of the "Takip kuralları" category: how long a reply may take and when a contact counts as cooling */

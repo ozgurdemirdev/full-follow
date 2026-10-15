@@ -1,4 +1,6 @@
-import { WEEKDAY_SHORT } from "@kit/lib/labels";
+import { ASSIGNEE, WEEKDAY_SHORT, type TaskAssignee } from "@kit/lib/labels";
+
+export const ASSIGNEE_ITEMS = (Object.keys(ASSIGNEE) as TaskAssignee[]).map((value) => ({ value, label: ASSIGNEE[value] }));
 
 /** What a goal can count by itself besides a channel */
 export const GOAL_METRIC: Record<string, string> = { new_records: "Yeni kayıt (kişi ve firma)" };

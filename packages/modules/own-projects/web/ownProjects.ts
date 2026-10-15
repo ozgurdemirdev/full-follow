@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { run } from "@kit/api/actions";
 import type { OwnProject, OwnStage, Sellable } from "@kit/api/types";
-import { ago, daysFrom } from "@kit/lib/format";
+import { ago, daysFrom, ratePct } from "@kit/lib/format";
 import { useSettings } from "@kit/lib/settings";
 
 /** Journey steps in order; the bar of a step is done before the project's stage, current at it, hatched after it */
@@ -39,9 +39,6 @@ export const SELLABLE_CLS: Record<Sellable, string> = {
   belki: "bg-chip-ask-bg text-chip-ask-fg",
   hayir: "bg-chip-neutral-bg text-chip-neutral-fg",
 };
-
-/** The share of people who were interested, as a whole percent */
-export const ratePct = (rate: number) => Math.round(rate * 100);
 
 type Interest = Pick<OwnProject, "told" | "interested" | "interest_share">;
 export const rateText = (p: Interest) => (p.interest_share === null ? "–" : `%${ratePct(p.interest_share)}`);

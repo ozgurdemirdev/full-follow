@@ -9,9 +9,7 @@ import { BOARD_ICON } from "../../components/boardIcons";
 import { ago } from "../../lib/format";
 import { useSettings, type SettingCategory, type SettingRow } from "../../lib/settings";
 import { accountRows } from "./AccountRows";
-import { businessEntries } from "./BusinessRows";
 import { claudeRows } from "./ClaudeRows";
-import { followRows } from "./FollowRows";
 import { listRows } from "./ListRows";
 import { moduleRows } from "./ModuleRows";
 
@@ -40,9 +38,7 @@ const CORE_CATEGORIES: SettingsCategoryDef[] = [
 /** The kit's rows (each category's rows are sorted by `order`: 10, 20, ... so a module's rows can sit between) */
 const CORE_ENTRIES: SettingsEntry[] = [
   { id: "account", category: "hesap", order: 10, rows: ({ withSession }) => accountRows(withSession) },
-  ...businessEntries,
-  { id: "follow", category: "takip", order: 10, rows: () => followRows() },
-  { id: "claude", category: "claude", order: 10, rows: ({ hasRules }) => claudeRows(hasRules) },
+  { id: "claude", category: "claude", order: 10, rows: () => claudeRows() },
   { id: "lists", category: "liste", order: 10, rows: () => listRows() },
 ];
 

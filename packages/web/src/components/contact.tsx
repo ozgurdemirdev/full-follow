@@ -1,12 +1,10 @@
-// Kişi ve firma kartlarında ortak parçalar: bölüm başlığı, iletişim listesi, temaslar, yorumlar, düzenle/sil
+// Kayıt kartlarında ortak parçalar: bölüm başlığı, değer satırı, yorumlar, düzenle/sil
 import { useState, type ReactNode } from "react";
-import { remove, run } from "../api/actions";
-import type { Labeled, Thread, Touch } from "../api/types";
+import { run } from "../api/actions";
+import type { Thread } from "../api/types";
 import { openSheet } from "../app/ui";
 import { ago } from "../lib/format";
-import { CHANNEL_DOT } from "../lib/labels";
-import { channelName, profileUrl, webUrl } from "../lib/network";
-import { Chip, StatusChip, Tags, Who } from "./ui";
+import { Who } from "./ui";
 
 /** A label above a value (the facts panels of the person overlay, and the contributions other modules make to them) */
 export const Fact = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -35,85 +33,6 @@ export function EditDelete({ onEdit, onDelete, label = "" }: { onEdit?: () => vo
       {onEdit ? <button type="button" className="btn btn-ghost btn-sm" aria-label={`${label} düzenle`.trim()} onClick={onEdit}>Düzenle</button> : null}
       {onDelete ? <button type="button" className="btn btn-ghost btn-sm text-danger" aria-label={`${label} sil`.trim()} onClick={onDelete}>Sil</button> : null}
     </span>
-  );
-}
-
-/** Etiketler, sektörler, nereden buldum ve temas durumu tek satır */
-export function LabelLine({ r, children }: { r: Labeled; children?: ReactNode }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <StatusChip status={r.contact_status} />
-      <Tags ids={r.tag_ids} />
-      {r.sectors.map((s) => <Chip key={s.id}>{s.path}</Chip>)}
-      {r.source_name ? <Chip tone="source">{r.source_name}</Chip> : null}
-      {children}
-    </div>
-  );
-}
-
-export interface ContactFields {
-  email?: string | null;
-  phone?: string | null;
-  instagram?: string | null;
-  linkedin?: string | null;
-  website?: string | null;
-  handle?: string | null;
-}
-
-export function ContactList({ c }: { c: ContactFields }) {
-  const items: { label: string; node: ReactNode }[] = [];
-  if (c.email) items.push({ label: "E-posta", node: <a href={`mailto:${c.email}`}>{c.email}</a> });
-  if (c.phone) items.push({ label: "Telefon", node: <a href={`tel:${c.phone}`}>{c.phone}</a> });
-  if (c.website) items.push({ label: "Web", node: <a href={webUrl(c.website)} target="_blank" rel="noreferrer">{c.website}</a> });
-  if (c.instagram) items.push({ label: "Instagram", node: <a href={profileUrl("instagram", c.instagram)} target="_blank" rel="noreferrer">{c.instagram}</a> });
-  if (c.linkedin) items.push({ label: "LinkedIn", node: <a href={profileUrl("linkedin", c.linkedin)} target="_blank" rel="noreferrer">{c.linkedin}</a> });
-  if (c.handle) items.push({ label: "Diğer", node: <span>{c.handle}</span> });
-  if (!items.length) return null;
-  return (
-    <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-2 text-base-sm desk:grid-cols-2">
-      {items.map((it) => (
-        <div key={it.label} className="flex min-w-0 gap-3">
-          <dt className="flex-none text-text-muted">{it.label}</dt>
-          <dd className="m-0 min-w-0 truncate text-text-primary">{it.node}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-/** Temas listesi: her temasta düzenle ve sil (geri alınabilir); firma kartında kime yazıldığı da görünür */
-export function TouchList({ list, showTo }: { list: Touch[]; showTo?: boolean }) {
-  const [all, setAll] = useState(false);
-  const shown = all ? list : list.slice(0, 8);
-  const stopWaiting = (t: Touch) => run("patch", `/touches/${t.id}`, { expects_reply: false }, { ok: "Cevap beklenmiyor olarak işaretlendi" }).catch(() => {});
-  return (
-    <ol className="m-0 flex list-none flex-col gap-0 p-0">
-      {shown.map((t) => (
-        <li key={t.id} className="row flex gap-4 py-4">
-          <span className={`dot mt-2 ${CHANNEL_DOT[t.channel] ?? "bg-entity-neutral"}`} />
-          <div className="flex min-w-0 flex-grow flex-col gap-1">
-            <div className="flex flex-wrap items-baseline gap-2 text-sm text-text-secondary">
-              <span className={t.direction === "gelen" ? "text-success" : "text-text-primary"}>{t.direction === "gelen" ? "Gelen" : "Giden"}</span>
-              <span>{channelName(t.channel)}{t.kind !== "mesaj" ? ` · ${t.kind === "arama" ? "arama" : "görüşme"}` : ""}</span>
-              {showTo ? <span className="text-text-primary">· {t.person_id ? t.to_name : "firmaya"}</span> : null}
-              <span className="text-text-muted">{ago(t.happened_at)}</span>
-              {t.opportunity_title ? <span className="truncate text-text-muted">· {t.opportunity_title}</span> : null}
-              <Who actor={t.created_by} />
-            </div>
-            <p className="m-0 whitespace-pre-line text-base-sm leading-normal text-text-primary">{t.summary}</p>
-            {t.outcome ? <span className="text-sm text-text-secondary">→ {t.outcome}</span> : null}
-            <div className="flex flex-wrap items-center gap-1">
-              {t.expects_reply ? <button type="button" className="btn btn-ghost btn-sm px-0" onClick={() => stopWaiting(t)}>Cevap beklemiyorum</button> : null}
-              <span className="flex-grow" />
-              <EditDelete label="Temas" onEdit={() => openSheet("touch", { edit: t.id })} onDelete={() => void remove(`/touches/${t.id}`, "Temas").catch(() => {})} />
-            </div>
-          </div>
-        </li>
-      ))}
-      {list.length > 8 && !all ? (
-        <li><button type="button" className="btn btn-ghost px-0 text-base-sm" onClick={() => setAll(true)}>{list.length - 8} temas daha</button></li>
-      ) : null}
-    </ol>
   );
 }
 

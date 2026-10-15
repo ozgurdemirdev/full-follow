@@ -1,4 +1,5 @@
 // The own projects module's web part: the manifest the shell builds its route, nav item, dashboard card and form from.
+import { lazy } from "react";
 import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
@@ -22,5 +23,6 @@ export default defineWebModule({
     load: () => import("./forms/OwnProjectForm").then((m) => ({ default: m.OwnProjectForm })),
   }],
   links: { own_project: (id) => `${OWN_PROJECTS_PATH}/${id}` },
+  slots: { "idea.actions": lazy(() => import("./slots/IdeaToProject")) },
   invalidates: { "own-projects": ["/own-projects", "/ideas", "/links", "/comments", "/trash"] },
 });

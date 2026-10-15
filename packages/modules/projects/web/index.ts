@@ -1,4 +1,5 @@
-// The projects module's web part: the manifest the shell builds its route, nav item, dashboard cards, form, settings row and search from.
+// The projects module's web part: the manifest the shell builds its route, nav item, dashboard cards, form and search from.
+import { lazy } from "react";
 import { K } from "@kit/api/keys";
 import type { Project } from "@kit/api/types";
 import { defineWebModule } from "@kit/app/modules/define";
@@ -8,7 +9,6 @@ import { norm } from "@kit/lib/format";
 import { PROJECT_STAGE } from "@kit/lib/labels";
 import { CompanyProjects, PersonProjects } from "./components/ProjectRows";
 import { PROJECTS_PATH } from "./paths";
-import { paymentTemplateRows } from "./settings";
 
 export default defineWebModule({
   key: "projects",
@@ -20,7 +20,6 @@ export default defineWebModule({
     // one card for both project lists (it stays in the kit, the own-projects module registers it too): the first one wins
     { id: "projects", column: 2, order: 100, load: () => import("@kit/components/dash/ProjectsCard").then((m) => ({ default: m.ProjectsCard })) },
   ],
-  settings: [{ id: "payment-template", category: "isletme", order: 40, rows: paymentTemplateRows }],
   quickAdd: [{
     kind: "project", name: "Proje", key: "P", dest: "Müşteri projeleri", icon: BOARD_ICON.folder, tone: "accent", group: "Satış", order: 30,
     form: { noun: "Proje", dest: "Müşteri projelerine eklenir", icon: BOARD_ICON.folder, base: "/projects", page: byRecord("project") },
@@ -35,10 +34,11 @@ export default defineWebModule({
         : null
     ),
   }],
-  // the projects on a person's and a company's overlay
+  // the projects on a person's and a company's overlay, and the side card of the timeline
   slots: {
     "person.overlay.deals": { order: 30, Component: PersonProjects },
     "company.overlay.work": { order: 10, Component: CompanyProjects },
+    "timeline.aside": { order: 10, Component: lazy(() => import("./slots/TimelineProject")) },
   },
   invalidates: {
     projects: ["/projects", "/timeline", "/today", "/payments", "/trash"],

@@ -5,12 +5,13 @@ import { lazy, useEffect, useState, type ComponentType, type LazyExoticComponent
 import { endpointOwners, webModules } from "../../modules.generated";
 import { moduleVisible, setEndpointOwners, useModules } from "../../api/modules";
 import { core } from "./core";
-import { setLinkResolver } from "./links";
+import { setLinkResolver, setPageResolver } from "./links";
 import type { DashboardEntry, Lazy, NavEntry, QuickAddEntry, RouteEntry, SearchSource, SettingsCategoryDef, SettingsEntry, SlotEntry, WebModule } from "./types";
 
 // handed over as a function: the generated list is read on first use, after the manifests (which import the kit) have all loaded
 setEndpointOwners(() => endpointOwners);
 setLinkResolver((type, id) => currentRegistry().link(type, id));
+setPageResolver((page) => currentRegistry().pagePath(page));
 
 /** Sidebar groups in display order (a group a module names that is not here follows them) */
 export const NAV_GROUPS = ["Network", "Pazarlama", "Satış ve projeler"];
@@ -61,7 +62,7 @@ function build(visible: (key: string) => boolean): Registry {
   const slots = new Map<string, { key: string; order: number; Component: ComponentType<any> }[]>();
   for (const m of active) {
     for (const [name, v] of Object.entries(m.slots ?? {})) {
-      const entry: SlotEntry = typeof v === "function" ? { Component: v } : (v as SlotEntry);
+      const entry: SlotEntry = typeof v === "object" && "Component" in v ? v : { Component: v };
       slots.set(name, [...(slots.get(name) ?? []), { key: `${m.key}:${name}`, order: entry.order ?? DEFAULT_SLOT_ORDER, Component: entry.Component }]);
     }
   }

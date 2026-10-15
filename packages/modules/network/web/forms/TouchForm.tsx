@@ -6,15 +6,14 @@ import type { Detail, Touch } from "@kit/api/types";
 import { Form, Note } from "@kit/components/forms/Form";
 import { AreaField, ChipsField, DateField, SegField, TextField, ToggleField } from "@kit/components/forms/fields";
 import { ComboField } from "@kit/components/forms/fields-rich";
-import { STAGE, CHANNEL, CHANNELS } from "@kit/lib/labels";
+import { STAGE } from "@kit/lib/labels";
 import { ensureCompany, ensurePerson, localToIso, nowLocal, toLocal, useRefText, type Ref } from "@kit/forms/helpers";
-import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 
 type Target = "person" | "company" | "contact";
 const TARGETS = [{ value: "person" as const, label: "Kişi" }, { value: "company" as const, label: "Firma" }, { value: "contact" as const, label: "Sadece adres" }];
 const DIRECTIONS = [{ value: "giden" as const, label: "Giden" }, { value: "gelen" as const, label: "Gelen" }];
 const KINDS = [{ value: "mesaj" as const, label: "Mesaj" }, { value: "arama" as const, label: "Arama" }, { value: "gorusme" as const, label: "Görüşme" }];
-const CHANNEL_OPTIONS = CHANNELS.map((c) => ({ value: c, label: CHANNEL[c] }));
 const WAIT_HINT = "Cevap gelmezse takip zamanında Bugün dokun listesine düşer";
 
 export function TouchForm(p: FormProps) {

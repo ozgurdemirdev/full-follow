@@ -23,22 +23,13 @@ export const CHANNEL: Record<string, string> = {
   email: "E-posta", instagram: "Instagram DM", linkedin: "LinkedIn", telefon: "Telefon", yuz_yuze: "Yüz yüze",
   whatsapp: "WhatsApp", r10: "R10 mesajı", diger: "Diğer",
 };
-/** Kanal noktası rengi */
-export const CHANNEL_DOT: Record<string, string> = {
-  email: "bg-entity-opportunity", instagram: "bg-entity-source", linkedin: "bg-chip-opportunity-fg", telefon: "bg-entity-payment",
-  yuz_yuze: "bg-accent", whatsapp: "bg-success", r10: "bg-danger", diger: "bg-entity-neutral",
-};
 export const CHANNELS = Object.keys(CHANNEL);
-/** Channels that get a daily outgoing message limit in Settings */
-export const QUOTA_CHANNELS = ["email", "instagram", "linkedin", "whatsapp"];
 
 /** Firma ve kişinin temas durumu (temaslarla ilerler; "olumsuz" ve "es geçildi" elle) */
 export const CONTACT_STATUS: Record<string, string> = {
   yazilmadi: "Yazılmadı", yazildi: "Yazıldı", cevap_geldi: "Cevap geldi", gorusuldu: "Görüşüldü", olumsuz: "Olumsuz", es_gecildi: "Es geçildi", tanidik: "Tanıdık", arkadas: "Arkadaş",
 };
 export const CONTACT_STATUSES = Object.keys(CONTACT_STATUS);
-/** People already known personally: no cold-outreach prompts for them */
-export const isKnown = (status: string) => status === "tanidik" || status === "arkadas";
 export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi: "opportunity", cevap_geldi: "payment", gorusuldu: "success", olumsuz: "warning", es_gecildi: "neutral", tanidik: "source", arkadas: "success" };
 
 export const TARGET: Record<string, string> = {
@@ -50,23 +41,8 @@ export const ACTOR: Record<Actor, string> = { ozgur: "Özgür", claude: "Claude"
 
 // ---- Paket 2: pazarlama ----
 export const PLATFORM: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
-export const PLATFORMS = Object.keys(PLATFORM);
-export const POST_FORMAT: Record<PostFormat, string> = { metin: "Metin", gorsel: "Görsel", video: "Video", karusel: "Karusel" };
-export const POST_FORMATS = Object.keys(POST_FORMAT) as PostFormat[];
-export const PLATFORM_DOT: Record<string, string> = { r10: "bg-danger", linkedin: "bg-chip-opportunity-fg", instagram: "bg-entity-source", diger: "bg-entity-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
-export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);
-export const FUNNEL_STEP: Record<string, string> = { found: "Bulundu", written: "Yazıldı", replied: "Cevap", meeting: "Görüşme", offer: "Teklif", won: "Kazanıldı" };
-/** Funnel period choices; the values are what the endpoint accepts */
-export const FUNNEL_PERIODS = [{ value: "30", label: "Son 30 gün" }, { value: "90", label: "Son 90 gün" }, { value: "all", label: "Tümü" }];
 export const IDEA_STAGE: Record<string, string> = { fikir: "Fikir", dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" };
-export const IDEA_STAGES = Object.keys(IDEA_STAGE);
-export const IDEA_TONE: Record<string, Tone> = { fikir: "neutral", dogrulaniyor: "payment", demo: "opportunity", urun: "success" };
-export const PRIORITY: Record<string, string> = { yuksek: "Yüksek", orta: "Orta", dusuk: "Düşük" };
-export const PRIORITIES = Object.keys(PRIORITY);
-export const PRIORITY_TONE: Record<string, Tone> = { yuksek: "warning", orta: "payment", dusuk: "neutral" };
-export const INTEREST: Record<string, string> = { anlatildi: "Anlatıldı", ilgilendi: "İlgilendi", ilgilenmedi: "İlgilenmedi" };
-export const INTEREST_TONE: Record<string, Tone> = { anlatildi: "neutral", ilgilendi: "success", ilgilenmedi: "warning" };
 
 /** Yazar çipi */
 export const WHO_CLS: Record<Actor, string> = {
@@ -108,7 +84,6 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
 /** Who a task belongs to: Özgür, Claude, or the client (the project then waits on the client) */
 export type TaskAssignee = Actor | "musteri";
 export const ASSIGNEE: Record<TaskAssignee, string> = { ozgur: "Sen", claude: "Claude", musteri: "Müşteri" };
-export const ASSIGNEE_ITEMS = (Object.keys(ASSIGNEE) as TaskAssignee[]).map((value) => ({ value, label: ASSIGNEE[value] }));
 
 /** Weekday short names (ISO order, Monday first) */
 export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];

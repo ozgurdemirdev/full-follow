@@ -2,10 +2,12 @@ import { useState } from "react";
 import { isMissing } from "@kit/api/modules";
 import { useQuery } from "@kit/api/store";
 import type { Activity, ActivityBucket } from "@kit/api/types";
-import { ACTIVITY_DAYS } from "@kit/lib/dashboard";
 import { fmtNum, toDate } from "@kit/lib/format";
 import { WEEKDAY_SHORT } from "@kit/lib/labels";
 import { Card } from "@kit/components/ui";
+
+/** Days shown in the weekly activity card (the current day is the last bar) */
+const ACTIVITY_DAYS = 7;
 
 const METRICS = [
   { key: "temas", label: "Temas", unit: "temas", count: (b: ActivityBucket) => b.sent + b.replies },

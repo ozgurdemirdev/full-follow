@@ -95,10 +95,10 @@ function OpportunityPage({ id }: { id: number }) {
           <div className="order-2 desk:order-none">
             <OffersCard opportunityId={id} offers={detail.data?.related.offers ?? []} files={files} />
           </div>
-          <Slot name="opportunity.main" props={{ id, label: o.title, className: "order-6 flex min-w-0 flex-col gap-5 desk:order-none" }} />
+          <Slot name="opportunity.feed" props={{ id, label: o.title }} />
         </div>
         <div className="contents desk:col-start-2 desk:flex desk:flex-col desk:gap-7">
-          <Slot name="opportunity.side" props={{ id, personId: o.person_id, followUp: o.next_follow_up_at, className: "order-1 desk:order-none" }} />
+          <Slot name="opportunity.side" props={{ type: "opportunity", id, personId: o.person_id, followUp: o.next_follow_up_at, className: "order-1 desk:order-none" }} />
           <div className="order-3 desk:order-none"><TeamCard opp={o} team={detail.data?.related.people ?? []} /></div>
           <div className="order-4 desk:order-none"><FilesCard type="opportunity" id={id} files={files} /></div>
           <div className="order-5 desk:order-none"><LinksCard type="opportunity" id={id} /></div>

@@ -26,6 +26,16 @@ const ctor = (): Ctor | undefined => {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition;
 };
 
+/** Why dictation failed, by the code useDictation reports (the texts of the toast and of the chat composer) */
+export const MIC_ERROR = {
+  denied: "Mikrofon izni verilmedi",
+  insecure: "Mikrofon yalnızca localhost ya da https adreslerinde açılır",
+  network: "Tarayıcının ses tanıma servisine ulaşılamadı (internet gerekir)",
+  nomic: "Mikrofon bulunamadı",
+  browser: "Opera ses tanımayı desteklemiyor, Chrome ya da Edge'de aç",
+  failed: "Ses tanıma çalışmadı, tekrar dene",
+} as const;
+
 export interface Dictation {
   supported: boolean;
   listening: boolean;

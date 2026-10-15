@@ -1,4 +1,5 @@
-import { CHANNELS, FILTERS, type PStatus } from "@kit/lib/people";
+import { CHANNELS, type PStatus } from "@kit/lib/people";
+import { FILTERS } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { MoreFilters, type LabelFilter } from "@kit/components/filters";
 

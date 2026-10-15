@@ -1,4 +1,5 @@
 // The pipeline module's web part: the manifest the shell builds its routes, nav item, dashboard card, forms and search from.
+import { lazy } from "react";
 import { K, useBoard } from "@kit/api/keys";
 import type { Opportunity } from "@kit/api/types";
 import { defineWebModule } from "@kit/app/modules/define";
@@ -48,11 +49,14 @@ export default defineWebModule({
         : null
     ),
   }],
-  // the opportunities on a person's and a company's overlay (rows, and the open deal fact)
+  // the opportunities on a person's and a company's overlay (rows, and the open deal fact); the funnel report section; the side cards of the timeline and the posts
   slots: {
     "person.overlay.deals": { order: 20, Component: PersonOpportunities },
     "person.overlay.facts": PersonOpenDeal,
     "company.overlay.work": { order: 20, Component: CompanyOpportunities },
+    "report.sections": { order: 10, Component: lazy(() => import("./components/SourceFunnel")) },
+    "timeline.aside": { order: 10, Component: lazy(() => import("./slots/TimelineOpportunity")) },
+    "post.overlay.side": { order: 20, Component: lazy(() => import("./slots/PostOpps")) },
   },
   invalidates: {
     offers: ["/opportunities", "/timeline", "/trash"],

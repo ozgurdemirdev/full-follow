@@ -1,4 +1,4 @@
-import { rhythmLevel } from "@kit/lib/people";
+import { rhythmLevel } from "../people";
 
 /** Weekly touch rhythm as bars (oldest week first); the colour is the warmth set on a parent as data-warm */
 export function Rhythm({ weeks, large = false }: { weeks: number[]; large?: boolean }) {

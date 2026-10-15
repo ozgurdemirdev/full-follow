@@ -4,7 +4,6 @@ import { useBoard } from "@kit/api/keys";
 import { isMissing } from "@kit/api/modules";
 import { useQuery } from "@kit/api/store";
 import type { Opportunity, Report } from "@kit/api/types";
-import { FUNNEL_SOURCES } from "@kit/lib/dashboard";
 import { initials, lira, pct } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE } from "@kit/lib/labels";
 import { BOARD_STAGES, STAGE_BG } from "../labels";
@@ -13,6 +12,9 @@ import { opportunityPath, PIPELINE_PATH } from "../paths";
 import { Card, Meter } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
+
+/** Source pills in the funnel card */
+const FUNNEL_SOURCES = 3;
 
 /** Rows of the overlay: the biggest open opportunities first */
 const OVERLAY_ROWS = 12;

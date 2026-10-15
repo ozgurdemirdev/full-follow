@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { Person, Task } from "@kit/api/types";
-import { agoText, nextStep, STATUS_LABEL, statusOf, warmth, type PStatus } from "@kit/lib/people";
+import { statusOf, type PStatus } from "@kit/lib/people";
+import { agoText, nextStep, STATUS_LABEL, warmth } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Avatar } from "@kit/components/ui";
 import { Rhythm } from "./Rhythm";

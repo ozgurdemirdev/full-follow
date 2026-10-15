@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow chat module: the panel chat sessions and messages, and the Claude runner behind them",
-  "fullfollow": { "module": "chat", "endpoints": ["/chat"] },
+  "fullfollow": { "module": "chat", "endpoints": ["/chat"], "webMarkers": ["Sesle yaz"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },
