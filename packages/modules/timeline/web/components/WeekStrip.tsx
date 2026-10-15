@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { TlWeek } from "../../api/types";
+import type { TlWeek } from "../types";
 
 const PERCENT = 100;
 const share = (n: number, total: number) => `${total ? Math.round((n / total) * PERCENT) : 0}%`;

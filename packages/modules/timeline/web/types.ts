@@ -1,4 +1,17 @@
-import type { Actor } from "../lib/labels";
+import type { Actor } from "@kit/lib/labels";
+
+/** One row of `GET /api/timeline/:type/:id`: an event the core wrote */
+export interface TimelineEvent {
+  id: number;
+  type: string;
+  person_id: number | null;
+  opportunity_id: number | null;
+  project_id: number | null;
+  summary: string;
+  data: Record<string, unknown> | null;
+  created_by: Actor;
+  created_at: string;
+}
 
 /** Event kinds of the timeline board, in the order of its type pills */
 export type TlType = "temas" | "odeme" | "gorev" | "asama" | "taslak" | "yorum";

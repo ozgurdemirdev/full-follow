@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { TL_PREFETCH_MARGIN } from "../../lib/timeline";
+import { TL_PREFETCH_MARGIN } from "../timeline";
 
 /** "Daha eski olaylar": pressed by hand, or by itself once it comes within reach of the viewport while the list is scrolled */
 export function LoadMore({ onMore, busy }: { onMore: () => void; busy: boolean }) {

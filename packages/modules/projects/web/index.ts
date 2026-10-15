@@ -1,4 +1,5 @@
 // The projects module's web part (the manifest); pages, cards and forms are still loaded from the kit.
+import { lazy } from "react";
 import { K } from "@kit/api/keys";
 import type { Project } from "@kit/api/types";
 import { defineWebModule } from "@kit/app/modules/define";
@@ -32,4 +33,5 @@ export default defineWebModule({
         : null
     ),
   }],
+  slots: { "timeline.aside": { order: 10, Component: lazy(() => import("./slots/TimelineProject")) } },
 });

@@ -1,7 +1,7 @@
-import type { TlType } from "../../api/types";
-import type { Actor } from "../../lib/labels";
-import { ACTOR_PILLS, TL_TYPES } from "../../lib/timeline";
-import { Filters } from "../ui";
+import type { TlType } from "../types";
+import type { Actor } from "@kit/lib/labels";
+import { ACTOR_PILLS, TL_TYPES } from "../timeline";
+import { Filters } from "@kit/components/ui";
 
 /** Who did it (Hepsi, Sen, Claude) and the event type toggles */
 export function FeedFilters({ actor, onActor, hidden, onToggle }: {

@@ -1,8 +1,8 @@
 import { memo } from "react";
-import { useModules } from "../../api/modules";
-import type { TlRec, TlRow } from "../../api/types";
-import { lira } from "../../lib/format";
-import { canFocus, fmtClock, recTone, TL_TYPE, type TlDay } from "../../lib/timeline";
+import { useModules } from "@kit/api/modules";
+import type { TlRec, TlRow } from "../types";
+import { lira } from "@kit/lib/format";
+import { canFocus, fmtClock, recTone, TL_TYPE, type TlDay } from "../timeline";
 import { PathIcon } from "./PathIcon";
 
 const Row = memo(function Row({ e, onFocus }: { e: TlRow; onFocus: (r: TlRec) => void }) {

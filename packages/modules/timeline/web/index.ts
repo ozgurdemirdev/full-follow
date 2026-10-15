@@ -1,10 +1,26 @@
-// The timeline module's web part (the manifest); its page is still loaded from the kit.
+// The timeline module's web part: the manifest the shell builds its route and nav item from, and the feed it gives the opportunity page.
+import { lazy } from "react";
 import { defineWebModule } from "@kit/app/modules/define";
-import { PATHS } from "@kit/app/routes";
+import { TIMELINE_PATH } from "./paths";
 
 export default defineWebModule({
   key: "timeline",
   label: "Zaman çizelgesi",
-  routes: [{ page: "timeline", path: PATHS.timeline, params: "/:type?/:id?", load: () => import("@kit/pages/Timeline") }],
-  nav: [{ group: "Satış ve projeler", order: 40, label: "Zaman çizelgesi", icon: "clock", path: PATHS.timeline }],
+  routes: [{ page: "timeline", path: TIMELINE_PATH, params: "/:type?/:id?", load: () => import("./pages/Timeline") }],
+  nav: [{ group: "Satış ve projeler", order: 40, label: "Zaman çizelgesi", icon: "clock", path: TIMELINE_PATH }],
+  slots: { "opportunity.feed": lazy(() => import("./components/OpportunityFeed")) },
+  invalidates: {
+    notes: ["/timeline"],
+    links: ["/timeline"],
+    offers: ["/timeline"],
+    files: ["/timeline"],
+    "opportunity-people": ["/timeline"],
+    opportunities: ["/timeline"],
+    projects: ["/timeline"],
+    payments: ["/timeline"],
+    comments: ["/timeline"],
+    people: ["/timeline"],
+    companies: ["/timeline"],
+    touches: ["/timeline"],
+  },
 });

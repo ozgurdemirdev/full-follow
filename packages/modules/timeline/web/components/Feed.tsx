@@ -1,16 +1,17 @@
 // Olay akışı: bir kişi, fırsat ya da projenin olayları, temasları ve yorumları tek kronolojik listede.
 // Zaman çizelgesi sayfası ve fırsat sayfası aynı parçaları kullanır.
 import { useMemo, useState } from "react";
-import { run } from "../api/actions";
-import { qs } from "../api/client";
-import { useQuery } from "../api/store";
-import type { List, Thread, TimelineEvent, Touch } from "../api/types";
-import { fmtDay } from "../lib/format";
+import { run } from "@kit/api/actions";
+import { qs } from "@kit/api/client";
+import { useQuery } from "@kit/api/store";
+import type { List, Thread, Touch } from "@kit/api/types";
+import type { TimelineEvent } from "../types";
+import { fmtDay } from "@kit/lib/format";
 import {
   ACTOR, PROJECT_STAGE, STAGE, STAGE_TONE, TONE_CLS,
   type OppStage, type ProjectStage, type Tone,
-} from "../lib/labels";
-import { Chip, Empty, order, Who } from "./ui";
+} from "@kit/lib/labels";
+import { Chip, Empty, order, Who } from "@kit/components/ui";
 
 export type FeedKind = "person" | "opportunity" | "project";
 export type FeedGroup = "Temaslar" | "Yorumlar" | "Aşama" | "Görevler" | "Ödemeler" | "Diğer";

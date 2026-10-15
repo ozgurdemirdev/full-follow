@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
-import type { TlRec } from "../../api/types";
-import { linkTo } from "../../app/modules/links";
-import { recKind, recTone } from "../../lib/timeline";
+import type { TlRec } from "../types";
+import { linkTo } from "@kit/app/modules/links";
+import { recKind, recTone } from "../timeline";
 import { PathIcon } from "./PathIcon";
 
 /** "Kişi geçmişi" card above the feed while one record is focused: opens the record or goes back to everything */

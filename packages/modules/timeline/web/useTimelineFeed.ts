@@ -1,9 +1,9 @@
 // The feed of the Timeline screen: pages of `GET /api/timeline`, newest first, the next one by the cursor of the last.
 // Filters go to the server; a request whose filters changed (or whose screen went away) is aborted, never left to land late.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, ApiError, qs } from "../api/client";
-import { onInvalidate } from "../api/store";
-import type { TlDayCount, TlPage, TlRow } from "../api/types";
+import { api, ApiError, qs } from "@kit/api/client";
+import { onInvalidate } from "@kit/api/store";
+import type { TlDayCount, TlPage, TlRow } from "./types";
 import { TL_PAGE } from "./timeline";
 
 const FEED = "/timeline";

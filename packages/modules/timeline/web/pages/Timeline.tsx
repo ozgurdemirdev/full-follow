@@ -1,25 +1,26 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useParams } from "wouter";
-import { qs } from "../api/client";
-import { useCompanies, useOwnProjects } from "../api/keys";
-import { useModules } from "../api/modules";
-import { useQuery } from "../api/store";
-import type { Detail, List, Thread, TimelineEvent, TlPage, TlRec, TlType, TlWeekData, Touch } from "../api/types";
-import { Page } from "../app/Page";
-import { PATHS, timelinePath } from "../app/routes";
-import { BoardIcon } from "../components/boardIcons";
+import { qs } from "@kit/api/client";
+import { useCompanies, useOwnProjects } from "@kit/api/keys";
+import { useModules } from "@kit/api/modules";
+import { useQuery } from "@kit/api/store";
+import type { Detail, List, Thread, Touch } from "@kit/api/types";
+import type { TimelineEvent, TlPage, TlRec, TlType, TlWeekData } from "../types";
+import { Page } from "@kit/app/Page";
+import { TIMELINE_PATH, timelinePath } from "../paths";
+import { BoardIcon } from "@kit/components/boardIcons";
 import { FeedComposer } from "../components/Feed";
-import { DayGroups } from "../components/timeline/DayGroups";
-import { FeedFilters } from "../components/timeline/Filters";
-import { FocusCard } from "../components/timeline/FocusCard";
-import { LoadMore } from "../components/timeline/LoadMore";
-import { detailKey, RecordAside, type AnyRow } from "../components/timeline/RecordCards";
-import { WeekStrip } from "../components/timeline/WeekStrip";
-import { Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
-import type { Actor } from "../lib/labels";
-import { canFocus, focusSummary, groupDays, isAsideKind, STAGE_EVENTS_LIMIT, TL_SEARCH_DEBOUNCE_MS, TL_TYPES, weekView } from "../lib/timeline";
-import { useDebounced } from "../lib/useDebounced";
-import { useTimelineFeed } from "../lib/useTimelineFeed";
+import { DayGroups } from "../components/DayGroups";
+import { FeedFilters } from "../components/Filters";
+import { FocusCard } from "../components/FocusCard";
+import { LoadMore } from "../components/LoadMore";
+import { detailKey, RecordAside, type AnyRow } from "../components/RecordCards";
+import { WeekStrip } from "../components/WeekStrip";
+import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
+import type { Actor } from "@kit/lib/labels";
+import { canFocus, focusSummary, groupDays, isAsideKind, STAGE_EVENTS_LIMIT, TL_SEARCH_DEBOUNCE_MS, TL_TYPES, weekView } from "../timeline";
+import { useDebounced } from "@kit/lib/useDebounced";
+import { useTimelineFeed } from "../useTimelineFeed";
 
 /** Rows the side cards of a focused record ask for: the person's touches (their counts) and the record's comment threads (the open one) */
 const SIDE_LIMIT = 1000;
@@ -105,7 +106,7 @@ export default function Timeline() {
 
   return frame(
     <>
-      {focus ? <FocusCard rec={focus} summary={focusSummary(latest.data, stageEvents.data?.[0]?.created_at)} onClear={() => navigate(PATHS.timeline)} /> : null}
+      {focus ? <FocusCard rec={focus} summary={focusSummary(latest.data, stageEvents.data?.[0]?.created_at)} onClear={() => navigate(TIMELINE_PATH)} /> : null}
       {weekTiles ? <WeekStrip week={weekTiles} className="rise" style={order(2)} /> : null}
       {aside && detail.data ? (
         <div className="tlx-with-aside">

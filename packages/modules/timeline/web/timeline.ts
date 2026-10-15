@@ -1,10 +1,10 @@
 // Timeline (Zaman çizelgesi): labels and icons of the screen, the day groups and the week strip numbers.
 // The rows themselves come from the timeline module (`GET /api/timeline`, see useTimelineFeed.ts); nothing is composed in the browser.
-import type { ModuleKey } from "../api/modules";
-import type { TlDayCount, TlPage, TlRow, TlType, TlWeek, TlWeekData } from "../api/types";
-import { BOARD_ICON } from "../components/boardIcons";
-import { lira, toDate } from "./format";
-import type { Actor } from "./labels";
+import type { ModuleKey } from "@kit/api/modules";
+import type { TlDayCount, TlPage, TlRow, TlType, TlWeek, TlWeekData } from "./types";
+import { BOARD_ICON } from "@kit/components/boardIcons";
+import { lira, toDate } from "@kit/lib/format";
+import type { Actor } from "@kit/lib/labels";
 
 /** Events requested for a focused record: enough to hold its whole stage history (its oldest one dates "ilk kayıt") */
 export const STAGE_EVENTS_LIMIT = 500;
