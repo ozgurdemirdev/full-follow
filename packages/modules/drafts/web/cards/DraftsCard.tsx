@@ -1,15 +1,15 @@
-import type { Draft, List } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { openSheet } from "../../app/ui";
-import { CHANNEL } from "../../lib/labels";
-import { SHOWN } from "../../lib/dashboard";
-import { companyOf } from "../../lib/drafts";
-import { initials } from "../../lib/format";
-import { BoardIcon } from "../boardIcons";
-import { useDraftEdit } from "../drafts/useDraftEdit";
-import { Card } from "../ui";
-import { useExpand } from "../ExpandOverlay";
-import { DashOverlay, type ExRow } from "./DashOverlay";
+import type { Draft, Today } from "@kit/api/types";
+import { DRAFTS_PATH } from "../paths";
+import { openSheet } from "@kit/app/ui";
+import { CHANNEL } from "@kit/lib/labels";
+import { SHOWN } from "@kit/lib/dashboard";
+import { companyOf } from "../drafts";
+import { initials } from "@kit/lib/format";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { useDraftEdit } from "../components/useDraftEdit";
+import { Card } from "@kit/components/ui";
+import { useExpand } from "@kit/components/ExpandOverlay";
+import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 
 /** One draft waiting for approval: approve and send, or edit the text in place */
 function DraftItem({ d }: { d: Draft }) {
@@ -42,11 +42,12 @@ function DraftItem({ d }: { d: Draft }) {
 }
 
 /** "Onay bekleyen taslaklar": the first drafts of the approval queue */
-export function DraftsCard({ list }: { list: List<Draft> }) {
+export function DraftsCard({ today }: { today: Today }) {
+  const list = today.drafts!;
   const ex = useExpand();
   const rows: ExRow[] = list.rows.map((d) => ({
     key: d.id, lead: initials(d.to_name), title: d.to_name, sub: `${CHANNEL[d.channel] ?? d.channel} · ${d.body}`,
-    tag: d.followup_step ? `${d.followup_step}. takip` : "Yeni", dot: d.followup_step ? "bg-claude" : "bg-entity-later", href: PATHS.drafts,
+    tag: d.followup_step ? `${d.followup_step}. takip` : "Yeni", dot: d.followup_step ? "bg-claude" : "bg-entity-later", href: DRAFTS_PATH,
   }));
   const fromSequence = list.rows.filter((d) => d.followup_step).length;
 
@@ -60,7 +61,7 @@ export function DraftsCard({ list }: { list: List<Draft> }) {
         </div>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Onay bekleyen taslaklar", sub: "Claude hazırladı · onaylayınca temas olarak kaydedilir", page: "Taslaklar", href: PATHS.drafts, foot: `${fromSequence} taslak takip dizisinden geldi`, rows }} />
+        spec={{ title: "Onay bekleyen taslaklar", sub: "Claude hazırladı · onaylayınca temas olarak kaydedilir", page: "Taslaklar", href: DRAFTS_PATH, foot: `${fromSequence} taslak takip dizisinden geldi`, rows }} />
     </>
   );
 }

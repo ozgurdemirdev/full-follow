@@ -1,8 +1,8 @@
 import { AnimatePresence } from "motion/react";
 import { useState } from "react";
-import type { Draft, Person } from "../../api/types";
-import { STACK, draftKind, type DraftResult } from "../../lib/drafts";
-import { BoardIcon } from "../boardIcons";
+import type { Draft, Person } from "@kit/api/types";
+import { STACK, draftKind, type DraftResult } from "../drafts";
+import { BoardIcon } from "@kit/components/boardIcons";
 import { DraftCard } from "./DraftCard";
 import { DraftSide } from "./DraftSide";
 

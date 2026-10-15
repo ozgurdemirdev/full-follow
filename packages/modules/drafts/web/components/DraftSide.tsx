@@ -1,19 +1,22 @@
 import { useMemo, useRef } from "react";
 import { Link } from "wouter";
-import { cardKey, companyCardKey } from "../../api/keys";
-import { useQuery } from "../../api/store";
-import type { CompanyCard, Draft, Person, PersonCard } from "../../api/types";
-import { PATHS, opportunityPath } from "../../app/routes";
-import { byRecent, firstName, shortAge, SIDE_TOUCHES, touchLine } from "../../lib/drafts";
+import { cardKey, companyCardKey } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { CompanyCard, Draft, Person, PersonCard } from "@kit/api/types";
+import { useLinkTo } from "@kit/app/modules/registry";
+import { byRecent, firstName, shortAge, SIDE_TOUCHES, touchLine } from "../drafts";
 
 /** Arrow of the record link, as on the board */
 const LINK_ARROW = "M7 17 17 7M9 7h8v8";
 
 /** Where "Neden şimdi" leads: the opportunity in the funnel, else the person's card, else the company's */
-function recordLink(d: Draft, person: Person | undefined): { href: string; name: string } | null {
-  if (d.opportunity_id) return { href: opportunityPath(d.opportunity_id), name: "Satış hunisinde aç" };
-  if (d.person_id) return { href: `${PATHS.people}/${d.person_id}`, name: `${firstName(person?.name ?? d.to_name)}’in kartı` };
-  if (d.company_id) return { href: `${PATHS.companies}/${d.company_id}`, name: `${d.to_name} firma kartı` };
+function recordLink(d: Draft, person: Person | undefined, linkTo: (type: string, id: number) => string | null): { href: string; name: string } | null {
+  const opportunity = d.opportunity_id ? linkTo("opportunity", d.opportunity_id) : null;
+  if (opportunity) return { href: opportunity, name: "Satış hunisinde aç" };
+  const personPage = d.person_id ? linkTo("person", d.person_id) : null;
+  if (personPage) return { href: personPage, name: `${firstName(person?.name ?? d.to_name)}’in kartı` };
+  const companyPage = d.company_id ? linkTo("company", d.company_id) : null;
+  if (companyPage) return { href: companyPage, name: `${d.to_name} firma kartı` };
   return null;
 }
 
@@ -59,7 +62,8 @@ function Rules({ rules }: { rules: string[] }) {
 
 /** Context of the draft on top: why now, the latest touches, what Claude learned from rejects */
 export function DraftSide({ d, person, rules }: { d: Draft; person?: Person; rules: string[] }) {
-  const link = recordLink(d, person);
+  const linkTo = useLinkTo();
+  const link = recordLink(d, person, linkTo);
   return (
     <aside className="drf-side" aria-label="Bağlam">
       {d.reason || link ? (

@@ -1,9 +1,9 @@
 // Drafts screen: tabs, reject reasons, how a draft reads (kind, handle, ages) and the motion values of the card stack
-import type { Draft, Person, Touch } from "../api/types";
-import type { BoardIconName } from "../components/boardIcons";
-import { drafts as T } from "../styles/tokens.json";
-import { daysFrom } from "./format";
-import { CHANNELS as PERSON_CHANNELS } from "./people";
+import type { Draft, Person, Touch } from "@kit/api/types";
+import type { BoardIconName } from "@kit/components/boardIcons";
+import { drafts as T } from "@kit/styles/tokens.json";
+import { daysFrom } from "@kit/lib/format";
+import { CHANNELS as PERSON_CHANNELS } from "@kit/lib/people";
 
 /** The part of GET /settings the screen reads (learned rules from reject notes) */
 export interface DraftRules {
@@ -89,3 +89,6 @@ export const STACK = {
   /** the next two drafts show behind the top card */
   peeks: [T["peek-near"], T["peek-far"]],
 };
+
+/** The drafts list the screen reads: every draft, one request (the same list the dashboard card is built from) */
+export const DRAFTS_KEY = "/drafts?limit=1000";

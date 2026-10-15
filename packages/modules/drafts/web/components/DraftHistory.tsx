@@ -1,8 +1,8 @@
 import { useState } from "react";
-import type { Draft } from "../../api/types";
-import { CHANNEL } from "../../lib/labels";
-import { historyAge, HISTORY_PAGE } from "../../lib/drafts";
-import { Avatar } from "../ui";
+import type { Draft } from "@kit/api/types";
+import { CHANNEL } from "@kit/lib/labels";
+import { historyAge, HISTORY_PAGE } from "../drafts";
+import { Avatar } from "@kit/components/ui";
 
 /** Sent and rejected drafts, newest change first */
 export function DraftHistory({ rows, rejected }: { rows: Draft[]; rejected: boolean }) {

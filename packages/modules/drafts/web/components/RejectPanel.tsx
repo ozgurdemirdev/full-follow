@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { REJECT_FALLBACK, REJECT_REASONS } from "../../lib/drafts";
+import { REJECT_FALLBACK, REJECT_REASONS } from "../drafts";
 
 /** "Neden?" panel: reason chips fill the text field, the field can be edited; Claude learns from the note */
 export function RejectPanel({ busy, onCancel, onConfirm }: { busy: boolean; onCancel: () => void; onConfirm: (note: string) => void }) {

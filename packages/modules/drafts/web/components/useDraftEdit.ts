@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { run } from "../../api/actions";
-import type { Draft } from "../../api/types";
+import { run } from "@kit/api/actions";
+import type { Draft } from "@kit/api/types";
 
 /** Edit, send and reject of one draft through the existing calls; every action resolves to whether it went through */
 export function useDraftEdit(d: Draft, sendOk: string) {

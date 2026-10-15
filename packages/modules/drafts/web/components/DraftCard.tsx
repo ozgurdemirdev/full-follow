@@ -1,12 +1,12 @@
 import * as m from "motion/react-m";
 import { useState } from "react";
-import type { Draft, Person } from "../../api/types";
-import { toast } from "../../components/toast";
-import { dur, ease } from "../../lib/motion";
-import { CHANNEL } from "../../lib/labels";
-import { channelIcon, companyOf, copyTextOf, draftKind, firstName, handleOf, STACK, SUBJECT_CHANNEL, wordsLabel, type DraftResult } from "../../lib/drafts";
-import { BoardIcon } from "../boardIcons";
-import { Avatar } from "../ui";
+import type { Draft, Person } from "@kit/api/types";
+import { toast } from "@kit/components/toast";
+import { dur, ease } from "@kit/lib/motion";
+import { CHANNEL } from "@kit/lib/labels";
+import { channelIcon, companyOf, copyTextOf, draftKind, firstName, handleOf, STACK, SUBJECT_CHANNEL, wordsLabel, type DraftResult } from "../drafts";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Avatar } from "@kit/components/ui";
 import { RejectPanel } from "./RejectPanel";
 import { useDraftEdit } from "./useDraftEdit";
 

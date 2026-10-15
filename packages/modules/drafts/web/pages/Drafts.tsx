@@ -1,21 +1,21 @@
 import { useCallback, useMemo, useState } from "react";
-import { K, usePeople } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { Draft, List } from "../api/types";
-import { Page } from "../app/Page";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { DraftHistory } from "../components/drafts/DraftHistory";
-import { DraftReview, type Handled } from "../components/drafts/DraftReview";
-import { MotionScope } from "../components/MotionScope";
-import { ErrorBox, PageSkeleton, Segmented } from "../components/ui";
-import { TABS, type DraftRules } from "../lib/drafts";
+import { K, usePeople } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { Draft, List } from "@kit/api/types";
+import { Page } from "@kit/app/Page";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { DraftHistory } from "../components/DraftHistory";
+import { DraftReview, type Handled } from "../components/DraftReview";
+import { MotionScope } from "@kit/components/MotionScope";
+import { ErrorBox, PageSkeleton, Segmented } from "@kit/components/ui";
+import { DRAFTS_KEY, TABS, type DraftRules } from "../drafts";
 
 const NO_RULES: string[] = [];
 
 /** Drafts: the approval queue as a card stack, and the sent and rejected lists */
 export default function Drafts() {
-  const drafts = useQuery<List<Draft>>(K.drafts);
+  const drafts = useQuery<List<Draft>>(DRAFTS_KEY);
   const settings = useQuery<DraftRules>(K.settings);
   const people = usePeople();
   const [tab, setTab] = useState(0);
