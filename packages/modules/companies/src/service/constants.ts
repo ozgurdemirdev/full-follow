@@ -10,5 +10,7 @@ export const ALL_ROWS = 100000;
 export const CARD_PEOPLE_LIMIT = 500;
 export const CARD_TOUCHES_LIMIT = 200;
 export const CARD_DRAFTS_LIMIT = 50;
+/** People shown on a company tile of the companies screen (the most recently touched ones) */
+export const TILE_PEOPLE = 4;
 /** Related rows `get` loads per relation on the company page */
 export const RELATED_ROWS = 50;

@@ -11,6 +11,7 @@ export const docs = defineDocs({
     filters: {
       stage: z.enum(PROJECT_STAGES).optional(),
       person_id: positiveInt.optional(),
+      person_ids: z.string().optional().describe("Comma separated person ids"),
       active: flag("Not cancelled, in maintenance or delivered"),
     },
     create: projectCreate,

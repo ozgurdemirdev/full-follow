@@ -79,6 +79,19 @@ export interface PersonCard {
   ideas: any[];
 }
 
+/** Where a person sits on the people screen: a follow-up came due beats a reply that is awaited, beats a cooling relation, beats a new person */
+export type PersonState = "due" | "wait" | "cold" | "fresh" | "ok";
+
+/**
+ * The people screen's page of the list: the rows of this page in screen order (by state), the number of rows after the filters (`total`),
+ * and how many of them are in each state (`counts`, before the state filter).
+ */
+export interface PeopleOverview {
+  rows: PersonRow[];
+  total: number;
+  counts: Record<"all" | Exclude<PersonState, "ok">, number>;
+}
+
 /**
  * Public API of the people module (`ctx.mod("people")`): people, their tags and sectors, contact status, the referral tree
  * and the person card. The inputs are the JSON the web and MCP send; they are validated inside.
@@ -91,6 +104,15 @@ export interface PeopleApi {
   /** filters: tag, sector, source, status, awaiting, cooling, channel, company_id, referred_by_id, post_id, follow_up_due */
   list(opts: ListOpts): { rows: PersonRow[]; total: number };
   get(id: number): PersonRow | undefined;
+  /**
+   * The list the people screen pages through. The `list` filters plus: state (due, wait, cold, fresh), has_channel (the person has an account on
+   * linkedin, email, telefon or instagram), ids, company_ids and post_ids (comma separated). Sorted by state, then as `list` is.
+   */
+  overview(opts: ListOpts): PeopleOverview;
+  /** What the whole book holds whatever the filters: people, and how many of them are cooling */
+  summary(): { people: number; cooling: number };
+  /** The people to reach out to first: by state, then the most overdue. Only the due, awaiting and cooling ones unless `all`; `exclude` leaves ids out */
+  touchQueue(opts: { limit?: number; exclude?: number[]; all?: boolean }): PersonRow[];
   card(id: number): PersonCard;
   /** moves the person's contact status (and its company's) forward, never back; returns what changed */
   bumpStatus(id: number, next: ContactStatus): string[];

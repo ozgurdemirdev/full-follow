@@ -15,6 +15,18 @@ export class CompaniesController {
     return this.app.find("company", listOpts(query));
   }
 
+  /** The companies screen's page: the list filters plus segment, sort and ids; with the count of each segment */
+  @Get("overview")
+  overview(@Query() query: Record<string, any>) {
+    return this.companies.overview(listOpts(query));
+  }
+
+  /** Money and decision makers of the whole book, whatever the filters (the numbers on top of the screen) */
+  @Get("totals")
+  totals() {
+    return this.companies.totals();
+  }
+
   /** Firma kartı tek istekte: çalışanlar, temaslar (firmaya ve çalışanlarına), fırsatlar, taslaklar, yorumlar */
   @Get(":id/card")
   card(@Param("id") id: string) {

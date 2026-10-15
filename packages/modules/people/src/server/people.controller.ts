@@ -15,6 +15,25 @@ export class PeopleController {
     return this.app.find("person", listOpts(query));
   }
 
+  /** The people screen's page: the list filters plus state, has_channel, ids, company_ids, post_ids; with the count of each state */
+  @Get("overview")
+  overview(@Query() query: Record<string, any>) {
+    return this.people.overview(listOpts(query));
+  }
+
+  /** What the whole book holds, whatever the filters (the people screen's subtitle) */
+  @Get("summary")
+  summary() {
+    return this.people.summary();
+  }
+
+  /** The people to reach out to first (the "Bugün dokun" cards, the template recipients) */
+  @Get("touch-queue")
+  touchQueue(@Query("limit") limit?: string, @Query("exclude") exclude?: string, @Query("all") all?: string) {
+    const skip = (exclude ?? "").split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+    return { rows: this.people.touchQueue({ limit: limit ? Number(limit) : undefined, exclude: skip, all: all === "true" }) };
+  }
+
   /** Kişi kartı tek istekte (temaslar, notlar, yorumlar mesajlarıyla, referans ağı ve değeri) */
   @Get(":id/card")
   card(@Param("id") id: string) {

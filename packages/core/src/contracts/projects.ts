@@ -106,7 +106,7 @@ export interface ProjectsApi {
     move(id: number, input: unknown): { row: ProjectRecord; effects: string[] };
     /** into the trash with its payments; a project with money received stays */
     remove(id: number): { effects: string[]; trash: { type: string; id: number } };
-    /** filters: stage, person_id, active */
+    /** filters: stage, person_id, person_ids (comma separated), active */
     list(opts: ListOpts): { rows: ProjectRow[]; total: number };
     get(id: number): ProjectRow | undefined;
     /** a light lookup (one row) */
@@ -150,4 +150,6 @@ export interface CompanyProjectMoney {
   projects: number;
   paid: number;
   due: number;
+  /** the earliest start date among its projects (null when none has one) */
+  first_started: string | null;
 }

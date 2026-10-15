@@ -3,6 +3,7 @@ import { companiesServices } from "./service";
 import { ALL_ROWS } from "./service/constants";
 import { companyCard } from "./service/card";
 import { companiesList } from "./service/list";
+import { companiesOverview, companyTotals } from "./service/overview";
 import { bumpCompanyStatus } from "./service/status";
 
 /** The companies module's implementation of its contract (`CompaniesApi` in core's contracts) */
@@ -15,6 +16,8 @@ export function companiesApi(ctx: Ctx): CompaniesApi {
     remove: companies.remove,
     list: (opts) => companiesList(ctx, opts),
     get: (id) => companiesList(ctx, { limit: ALL_ROWS }).rows.find((c) => c.id === id),
+    overview: (opts) => companiesOverview(ctx, opts),
+    totals: () => companyTotals(ctx),
     card: (id) => companyCard(ctx, id),
     bumpStatus: (id, next) => bumpCompanyStatus(ctx, id, next),
   };

@@ -47,6 +47,34 @@ export interface CompanyRow extends CompanyRecord {
   money: CompanyMoney;
 }
 
+/** A company on the companies screen: the row plus the people to show on its tile (the most recently touched four), its first project and the latest open comment of Claude on it */
+export interface CompanyOverviewRow extends CompanyRow {
+  people: { id: number; name: string; last_touch_at: string | null }[];
+  /** the earliest start date among its projects */
+  first_project_at: string | null;
+  hint: string | null;
+}
+
+/** The companies screen's page: its rows (filtered, sorted), the rows after the filters (`total`) and how many of them are in each segment (before the segment filter) */
+export interface CompaniesOverview {
+  rows: CompanyOverviewRow[];
+  total: number;
+  counts: Record<"all" | CompanySegment, number>;
+}
+
+/** The money and the decision makers of the whole company book, whatever the filters */
+export interface CompanyTotals {
+  won: number;
+  due: number;
+  dueCompanies: number;
+  open: number;
+  openCompanies: number;
+  /** people marked as a decision maker, in all companies */
+  deciders: number;
+  /** names of the companies with a decision maker nobody has touched yet */
+  unreached: string[];
+}
+
 /** Everything the company page shows, in one object (the touch parts are empty without the network module) */
 export interface CompanyCard {
   row: CompanyRow;
@@ -71,6 +99,10 @@ export interface CompaniesApi {
   /** filters: tag, sector, source, status */
   list(opts: ListOpts): { rows: CompanyRow[]; total: number };
   get(id: number): CompanyRow | undefined;
+  /** The list the companies screen pages through. The `list` filters plus: segment, sort (value, recent, name) and ids (comma separated) */
+  overview(opts: ListOpts): CompaniesOverview;
+  /** Money and decision makers of every company, whatever the filters */
+  totals(): CompanyTotals;
   card(id: number): CompanyCard;
   /** moves the company's contact status forward, never back; returns what changed */
   bumpStatus(id: number, next: ContactStatus): string[];

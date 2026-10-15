@@ -3,6 +3,7 @@ import { peopleServices } from "./service";
 import { ALL_ROWS } from "./service/constants";
 import { personCard } from "./service/card";
 import { peopleList } from "./service/list";
+import { peopleOverview, peopleSummary, touchQueue } from "./service/overview";
 import { bumpPersonStatus } from "./service/status";
 import { referralTree } from "./service/tree";
 
@@ -16,6 +17,9 @@ export function peopleApi(ctx: Ctx): PeopleApi {
     remove: people.remove,
     list: (opts) => peopleList(ctx, opts),
     get: (id) => peopleList(ctx, { limit: ALL_ROWS }).rows.find((p) => p.id === id),
+    overview: (opts) => peopleOverview(ctx, opts),
+    summary: () => peopleSummary(ctx),
+    touchQueue: (opts) => touchQueue(ctx, opts),
     card: (id) => personCard(ctx, id),
     bumpStatus: (id, next) => bumpPersonStatus(ctx, id, next),
     referralTree: () => referralTree(ctx),

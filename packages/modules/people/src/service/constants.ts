@@ -13,3 +13,9 @@ export const CHAT_CARD_DRAFTS_LIMIT = 10;
 export const RELATED_ROWS = 50;
 /** Longest referral chain followed when checking a new introducer for a loop (a guard against a broken tree) */
 export const REFERRAL_CHAIN_MAX = 1000;
+/** A person added within this many days is "fresh" on the people screen (the web's FRESH_DAYS is the same number) */
+export const FRESH_DAYS = 14;
+/** Which person column holds the account of each channel (the channel filter of the people screen) */
+export const CHANNEL_ACCOUNT = { linkedin: "linkedin", email: "email", telefon: "phone", instagram: "instagram" } as const;
+/** People the touch queue returns when no limit is given */
+export const TOUCH_QUEUE_DEFAULT = 4;

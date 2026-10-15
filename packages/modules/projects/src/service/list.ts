@@ -23,12 +23,16 @@ function withNext(ctx: Ctx, list: Listed[]): ProjectRow[] {
   });
 }
 
-/** Project list, newest first. Filters: stage, person_id, active (not cancelled, in maintenance or delivered). */
+/** Project list, newest first. Filters: stage, person_id, person_ids (comma separated), active (not cancelled, in maintenance or delivered). */
 export function projectList(ctx: Ctx, o: ListOpts): { rows: ProjectRow[]; total: number } {
   const f = o.filter ?? {};
   let list = rows<Listed>(ctx, `${PROJECT_SELECT} ORDER BY pr.id DESC`);
   if (f.stage) list = list.filter((p) => p.stage === f.stage);
   if (f.person_id) list = list.filter((p) => p.person_id === Number(f.person_id));
+  if (f.person_ids !== undefined) {
+    const people = new Set(String(f.person_ids).split(",").map(Number));
+    list = list.filter((p) => people.has(p.person_id));
+  }
   if (bool(f.active)) list = list.filter((p) => p.stage !== "iptal" && p.stage !== "bakim" && p.stage !== "teslim");
   list = list.filter((p) => has(o.q, p.name, p.person_name));
   const sliced = page(list, o.limit, o.offset);
@@ -69,7 +73,7 @@ export function personStats(ctx: Ctx): Map<number, PersonProjectStats> {
 export function moneyByCompany(ctx: Ctx): Map<number, CompanyProjectMoney> {
   return new Map(keptRows<CompanyProjectMoney & { company_id: number }>(ctx, `
     SELECT pe.company_id, COUNT(DISTINCT pr.id) AS projects, COALESCE(SUM(pa.paid_amount), 0) AS paid,
-      COALESCE(SUM(MAX(pa.expected_amount - pa.paid_amount, 0)), 0) AS due
+      COALESCE(SUM(MAX(pa.expected_amount - pa.paid_amount, 0)), 0) AS due, MIN(pr.started_at) AS first_started
     FROM projects pr JOIN people pe ON pe.id = pr.person_id LEFT JOIN payments pa ON pa.project_id = pr.id
     WHERE pe.company_id IS NOT NULL GROUP BY pe.company_id`).map(({ company_id, ...money }): [number, CompanyProjectMoney] => [company_id, money]));
 }
