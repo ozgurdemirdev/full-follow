@@ -1,21 +1,22 @@
 // The reports module's web part: the manifest the shell builds the report and review routes, nav items, the review card and the money settings from.
 import { defineWebModule } from "@kit/app/modules/define";
+import { m } from "./messages";
 import { REPORT_PATH, REVIEW_PATH } from "./paths";
 import { floorRows, paymentTemplateRows } from "./settings";
 
 export default defineWebModule({
   key: "reports",
-  label: "Raporlar",
+  label: m.label,
   routes: [
     { page: "report", path: REPORT_PATH, load: () => import("./pages/Report") },
     { page: "review", path: REVIEW_PATH, load: () => import("./pages/Review") },
   ],
   nav: [
-    { group: "Satış ve projeler", order: 50, label: "Rapor", icon: "chart", path: REPORT_PATH },
-    { group: "Satış ve projeler", order: 60, label: "Haftalık inceleme", icon: "review", path: REVIEW_PATH },
+    { group: m.shared.salesAndProjects, order: 50, label: m.nav.report, icon: "chart", path: REPORT_PATH },
+    { group: m.shared.salesAndProjects, order: 60, label: m.nav.review, icon: "review", path: REVIEW_PATH },
   ],
   dashboard: [
-    { id: "review", order: 10, show: (t) => !!t.review?.ready, load: () => import("./cards/ReviewCard").then((m) => ({ default: m.ReviewCard })) },
+    { id: "review", order: 10, show: (t) => !!t.review?.ready, load: () => import("./cards/ReviewCard").then((mod) => ({ default: mod.ReviewCard })) },
   ],
   settings: [
     { id: "floor", category: "isletme", order: 10, rows: floorRows },

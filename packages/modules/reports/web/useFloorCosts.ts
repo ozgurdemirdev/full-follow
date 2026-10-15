@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { run } from "@kit/api/actions";
+import { m } from "./messages";
 import { COST_FIELDS, floorOf, SAVE_DELAY_MS, type CostKey, type Costs } from "./report";
 
 type Draft = Partial<Costs>;
@@ -19,7 +20,7 @@ export function useFloorCosts(server: Costs | undefined) {
     const body = unsent.current;
     unsent.current = {};
     if (!Object.keys(body).length) return;
-    run("put", "/settings", body, { ok: "Kaydedildi" }).catch(() => setDraft((d) => omit(d, Object.keys(body) as CostKey[])));
+    run("put", "/settings", body, { ok: m.shared.saved }).catch(() => setDraft((d) => omit(d, Object.keys(body) as CostKey[])));
   }, []);
 
   const set = useCallback((key: CostKey, value: number | null) => {

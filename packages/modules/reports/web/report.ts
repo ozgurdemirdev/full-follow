@@ -1,8 +1,11 @@
 // Report screen: floor maths, chart scale, expected payments
 import type { MonthReport, Payment, PriceFloor, SourceReport } from "@kit/api/types";
 import { daysFrom, fmtDay, fmtMonth, lira, toDate } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
 import { MILESTONE } from "@kit/lib/labels";
 import { PAYMENT_SOON_DAYS, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
+import { PERCENT, THOUSAND } from "./constants";
+import { m } from "./messages";
 
 /** Months in the bar chart (the current month is the last bar) */
 export const REPORT_MONTHS = 6;
@@ -14,11 +17,11 @@ export const SAVE_DELAY_MS = 700;
 export const TAX_MAX_PERCENT = 60;
 
 export const COST_FIELDS = [
-  { key: "bagkur_monthly", label: "Bağkur", prefix: "₺", dot: "bg-info" },
-  { key: "accounting_monthly", label: "Muhasebe", prefix: "₺", dot: "bg-entity-source" },
-  { key: "other_fixed_monthly", label: "Diğer sabit giderler", prefix: "₺", dot: "bg-entity-comment" },
-  { key: "target_net_monthly", label: "Hedeflenen net gelir", prefix: "₺", dot: "bg-accent" },
-  { key: "tax_rate_percent", label: "Vergi oranı", prefix: "%", dot: "bg-warning" },
+  { key: "bagkur_monthly", label: m.costs.bagkur, prefix: m.shared.currency, dot: "bg-info" },
+  { key: "accounting_monthly", label: m.costs.accounting, prefix: m.shared.currency, dot: "bg-entity-source" },
+  { key: "other_fixed_monthly", label: m.costs.otherFixed, prefix: m.shared.currency, dot: "bg-entity-comment" },
+  { key: "target_net_monthly", label: m.costs.targetNet, prefix: m.shared.currency, dot: "bg-accent" },
+  { key: "tax_rate_percent", label: m.costs.taxRate, prefix: m.shared.percent, dot: "bg-warning" },
 ] as const;
 export type CostKey = (typeof COST_FIELDS)[number]["key"];
 export type Costs = Pick<PriceFloor, CostKey>;
@@ -26,14 +29,14 @@ export type Costs = Pick<PriceFloor, CostKey>;
 /** Same rule as the core: (sum of costs and target net) divided by what is left after tax, rounded up */
 export function floorOf(c: Costs) {
   const subtotal = c.bagkur_monthly + c.accounting_monthly + c.other_fixed_monthly + c.target_net_monthly;
-  const rate = Math.min(TAX_MAX_PERCENT, Math.max(0, c.tax_rate_percent)) / 100;
+  const rate = Math.min(TAX_MAX_PERCENT, Math.max(0, c.tax_rate_percent)) / PERCENT;
   return { subtotal, floor: Math.ceil(subtotal / (1 - rate)) };
 }
 
 /** The stacked bar under the cost inputs: each part's share of the floor, tax is what the floor adds to the subtotal */
 export function stackOf(c: Costs) {
   const { subtotal, floor } = floorOf(c);
-  const share = (v: number) => (floor > 0 ? (v / floor) * 100 : 0);
+  const share = (v: number) => (floor > 0 ? (v / floor) * PERCENT : 0);
   return COST_FIELDS.map((f) => ({
     key: f.key,
     label: f.label,
@@ -42,13 +45,12 @@ export function stackOf(c: Costs) {
   }));
 }
 
-const SUFFIX: Record<number, string> = { 0: "ı", 1: "i", 2: "si", 3: "ü", 4: "ü", 5: "i", 6: "sı", 7: "si", 8: "i", 9: "u" };
 /** "Son 5 ayın 3’ü tabanın üstünde" needs the Turkish possessive of the number */
-export const possessive = (n: number) => `${n}’${SUFFIX[n % 10]}`;
+export const possessive = m.possessive;
 
 export const monthName = (ym: string) => fmtMonth(ym).split(" ")[0];
 /** "₺52B" for 52.000 */
-export const shortLira = (n: number) => `₺${(n / 1000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })}B`;
+export const shortLira = (n: number) => m.shortLira((n / THOUSAND).toLocaleString(LOCALE, { maximumFractionDigits: 1 }));
 
 export interface Incoming {
   id: number;
@@ -59,7 +61,7 @@ export interface Incoming {
   amount: number;
 }
 
-const weekday = new Intl.DateTimeFormat("tr-TR", { weekday: "long" });
+const weekday = new Intl.DateTimeFormat(LOCALE, { weekday: "long" });
 /** Colour classes of an expected payment: its dot and its date text */
 export const INCOMING_COLOR: Record<PaymentGroup, { dot: string; text: string }> = {
   late: { dot: "bg-danger", text: "text-danger" },
@@ -69,9 +71,9 @@ export const INCOMING_COLOR: Record<PaymentGroup, { dot: string; text: string }>
 
 function whenText(p: Payment, today: string): string {
   const d = daysFrom(p.due_date!, today);
-  if (d < 0) return `${-d} gün gecikti`;
-  if (d === 0) return "bugün";
-  return d <= PAYMENT_SOON_DAYS ? weekday.format(toDate(p.due_date!)).toLocaleLowerCase("tr-TR") : fmtDay(p.due_date);
+  if (d < 0) return m.when.late(-d);
+  if (d === 0) return m.when.today;
+  return d <= PAYMENT_SOON_DAYS ? weekday.format(toDate(p.due_date!)).toLocaleLowerCase(LOCALE) : fmtDay(p.due_date);
 }
 
 /** Unpaid payments that are due this month or are already late, oldest due date first (what "bu ay gelmesi beklenen" means) */
@@ -83,7 +85,7 @@ export function incomingOf(payments: Payment[], today: string): Incoming[] {
     .map((p) => ({
       id: p.id,
       projectId: p.project_id,
-      name: `${p.project_name} ${(MILESTONE[p.milestone] ?? p.milestone).toLocaleLowerCase("tr-TR")}`,
+      name: `${p.project_name} ${(MILESTONE[p.milestone] ?? p.milestone).toLocaleLowerCase(LOCALE)}`,
       group: paymentGroup(p, today),
       when: whenText(p, today),
       amount: remaining(p),
@@ -127,18 +129,18 @@ export function scaleTop(months: MonthReport[], floor: number, pendingNow: numbe
   return tallest * SCALE_HEADROOM || 1;
 }
 
-export function heroOf(m: MonthReport, floor: number, pendingNow: number, top: number, today: string): Hero {
-  const now = m.month === today.slice(0, 7);
+export function heroOf(month: MonthReport, floor: number, pendingNow: number, top: number, today: string): Hero {
+  const now = month.month === today.slice(0, 7);
   const pendingAmount = now ? pendingNow : 0;
-  const fill = Math.min(100, (m.collected / top) * 100);
+  const fill = Math.min(PERCENT, (month.collected / top) * PERCENT);
   return {
-    label: `${monthName(m.month)}${now ? ` (${Number(today.slice(8, 10))} gün geçti)` : ""}`,
-    collected: m.collected,
+    label: `${monthName(month.month)}${now ? m.hero.daysPassed(Number(today.slice(8, 10))) : ""}`,
+    collected: month.collected,
     floor,
-    gap: floor - m.collected,
+    gap: floor - month.collected,
     fill,
-    pending: Math.min(100 - fill, (pendingAmount / top) * 100),
-    floorX: (floor / top) * 100,
+    pending: Math.min(PERCENT - fill, (pendingAmount / top) * PERCENT),
+    floorX: (floor / top) * PERCENT,
     pendingAmount,
   };
 }
@@ -150,7 +152,7 @@ export function floorHint(floor: number, sources: SourceReport[]): string | null
   if (!won || !value || !floor) return null;
   const avg = value / won;
   if (floor < avg) return null;
-  return `Ayda ortalama ${(floor / avg).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} proje demek (kazanılan işlerin ortalaması ${lira(Math.round(avg))}).`;
+  return m.floorHint((floor / avg).toLocaleString(LOCALE, { maximumFractionDigits: 1 }), lira(Math.round(avg)));
 }
 
 /** How many of the earlier months reached the floor */

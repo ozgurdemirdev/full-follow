@@ -1,6 +1,8 @@
-import { INSIGHT_NEAR_SHARE, INSIGHT_TEXT, MONTH_NAMES } from "../constants";
+import { LOCALE } from "@fullfollow/core";
+import { INSIGHT_NEAR_SHARE } from "../constants";
+import { m } from "../messages";
 
-type Key = keyof typeof INSIGHT_TEXT;
+type Key = keyof typeof m.insight;
 
 /** What the sentence is built from: a month's collections, what is still due in it, the floor and the opportunities lost in it (null without the pipeline module) */
 export interface InsightInput {
@@ -13,8 +15,8 @@ export interface InsightInput {
   lost: { count: number; budget: number } | null;
 }
 
-const tl = (n: number) => `₺${Math.round(n).toLocaleString("tr-TR")}`;
-const say = (key: Key, vars: Record<string, string>) => INSIGHT_TEXT[key].replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
+const tl = (n: number) => `${m.currency}${Math.round(n).toLocaleString(LOCALE)}`;
+const say = (key: Key, vars: Record<string, string>) => m.insight[key].replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
 
 /**
  * One Turkish sentence about a month against the floor. The current month looks ahead: the floor is reached, or the due payments would reach it,
@@ -23,12 +25,12 @@ const say = (key: Key, vars: Record<string, string>) => INSIGHT_TEXT[key].replac
 export function insightOf(i: InsightInput): string | null {
   if (i.floor <= 0 || i.month > i.current) return null;
   if (i.month < i.current) {
-    const month = MONTH_NAMES[Number(i.month.slice(5, 7)) - 1];
+    const month = m.monthName(Number(i.month.slice(5, 7)));
     if (i.collected >= i.floor) return say("pastAbove", { month });
     const lost = i.lost?.count ? say(i.lost.budget ? "lost" : "lostNoBudget", { count: String(i.lost.count), budget: tl(i.lost.budget) }) : "";
     return say("pastBelow", { month }) + lost;
   }
-  if (i.collected >= i.floor) return INSIGHT_TEXT.reached;
+  if (i.collected >= i.floor) return m.insight.reached;
   const gap = i.floor - i.collected;
   if (i.due <= 0) return say("nothingDue", { gap: tl(gap) });
   if (i.due >= gap) return say("covered", { due: tl(i.due), surplus: tl(i.due - gap) });

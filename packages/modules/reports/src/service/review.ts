@@ -1,5 +1,6 @@
 import { addDays, daysBetween, FFError, isIsoDate, isoWeekOf, isoWeekStart, label, marketingSettings, SOURCE_FUNNEL_DEFAULT_PERIOD, weekStart, type Ctx, type ReviewSuggestion, type WeekStats, type WeeklyReview } from "@fullfollow/core";
 import { REVIEW_LIMIT_DAYS, REVIEW_MAX_SUGGESTIONS, REVIEW_MIN_SUGGESTIONS, REVIEW_TARGET_MISS_SHARE, REVIEW_TARGET_STEP, REVIEW_WEEKDAY, WEEK_DAYS } from "../constants";
+import { m } from "../messages";
 
 const pct = (r: number | null | undefined) => `%${Math.round((r ?? 0) * 100)}`;
 
@@ -7,7 +8,7 @@ const pct = (r: number | null | undefined) => `%${Math.round((r ?? 0) * 100)}`;
 function weekStartOf(ctx: Ctx, week?: string): string {
   if (!week) return weekStart(ctx.clock.today());
   const monday = isIsoDate(week) ? weekStart(week) : isoWeekStart(week);
-  if (!monday) throw new FFError("validation", "hafta YYYY-Www (örn. 2026-W41) ya da bir tarih olmalı");
+  if (!monday) throw new FFError("validation", m.badWeek);
   return monday;
 }
 
@@ -45,8 +46,8 @@ type Facts = ReturnType<typeof buildFacts>;
 /** Facts the suggestions are built from */
 function buildFacts(ctx: Ctx, ws: string) {
   const w = ctx.mod("network")?.weekStats(ws) ?? { ...NO_WEEK, week_start: ws };
-  const until = addDays(ws, 6);
-  const prev = addDays(ws, -7);
+  const until = addDays(ws, WEEK_DAYS - 1);
+  const prev = addDays(ws, -WEEK_DAYS);
   return {
     stats: w,
     /** days of the week already lived: 7 for a finished week */
@@ -70,44 +71,44 @@ function suggestions(f: Facts): ReviewSuggestion[] {
   const pace = Math.round((sent * WEEK_DAYS) / f.days);
   if (f.target && f.days >= REVIEW_WEEKDAY && pace < f.target * REVIEW_TARGET_MISS_SHARE) {
     const rounded = Math.ceil(pace / REVIEW_TARGET_STEP) * REVIEW_TARGET_STEP;
-    const lower = pace > 0 && rounded < f.target ? `hedefi ${rounded} yap ya da ` : "";
+    const lowered = pace > 0 && rounded < f.target ? rounded : undefined;
     out.push({
       key: "target",
-      text: `Haftalık hedef ${f.target}, ${f.days < WEEK_DAYS ? `bu tempoyla ${pace}` : `giden ${sent}`}: ${lower}her güne ayrı bir giden mesaj hedefi ekle.`,
-      task_title: `Haftalık hedefi gözden geçir (${f.target}, bu hafta ${sent})`,
+      text: m.suggestion.target(f.target, f.days < WEEK_DAYS, pace, sent, lowered),
+      task_title: m.suggestion.targetTask(f.target, sent),
     });
   }
   const group = f.templates.filter((g) => g.leader && g.loser).sort((a, b) => (b.leader!.reply_rate! - b.loser!.reply_rate!) - (a.leader!.reply_rate! - a.loser!.reply_rate!))[0];
   if (group) {
     out.push({
       key: "template",
-      text: `${label(group.kind)} / ${group.channel ? label(group.channel) : "tüm kanallar"}: "${group.loser!.name}" şablonunu bırak, "${group.leader!.name}" önde (${pct(group.leader!.reply_rate)} / ${pct(group.loser!.reply_rate)}).`,
-      task_title: `"${group.loser!.name}" şablonunu bırak, "${group.leader!.name}" kullan`,
+      text: m.suggestion.template(label(group.kind), group.channel ? label(group.channel) : null, group.loser!.name, group.leader!.name, pct(group.leader!.reply_rate), pct(group.loser!.reply_rate)),
+      task_title: m.suggestion.templateTask(group.loser!.name, group.leader!.name),
     });
   }
   const { best, weakest } = f.sources;
   if (best && weakest) {
     out.push({
       key: "source",
-      text: `"${weakest.source}" kaynağı zayıf (cevap ${pct(weakest.reply_rate)}): zamanı "${best.source}" kaynağına kaydır (${pct(best.reply_rate)}).`,
-      task_title: `Zamanı "${weakest.source}" yerine "${best.source}" kaynağına ayır`,
+      text: m.suggestion.source(weakest.source, pct(weakest.reply_rate), best.source, pct(best.reply_rate)),
+      task_title: m.suggestion.sourceTask(weakest.source, best.source),
     });
   }
   const full = f.quota.filter((c) => c.over_days >= REVIEW_LIMIT_DAYS).sort((a, b) => b.over_days - a.over_days)[0];
   if (full) {
     out.push({
       key: "quota",
-      text: `${label(full.channel)} günlük limiti bu hafta ${full.over_days} gün doldu: limit işini görüyor, aynı kalsın.`,
-      task_title: `${label(full.channel)} günlük limitini koru (${full.limit})`,
+      text: m.suggestion.quota(label(full.channel), full.over_days),
+      task_title: m.suggestion.quotaTask(label(full.channel), full.limit),
     });
   }
   const added = f.stats.this_week.new_people + f.stats.this_week.new_companies;
   const fillers: ReviewSuggestion[] = [
     ...(!f.target
-      ? [{ key: "target_set", text: "Haftalık giden mesaj hedefi yok: Ayarlar'dan bir hedef koy, haftayı ona göre ölçersin.", task_title: "Haftalık giden mesaj hedefi koy" }]
-      : sent >= f.target ? [{ key: "target_met", text: `Haftalık hedef ${f.target}, giden ${sent}: bu tempoyu koru.`, task_title: "Haftalık giden mesaj temposunu koru" }] : []),
-    { key: "records", text: added ? `Bu hafta ${added} yeni kayıt eklendi: liste yenilemeyi gelecek hafta da sürdür.` : "Bu hafta yeni kayıt eklenmedi: liste yenileme için gelecek hafta bir gün ayır.", task_title: "Liste yenileme için bir gün ayır" },
-    { key: "data", text: "Şablon ve kaynak kıyası için örnek az: mesajlarda şablon seç, kayıtlara kaynak gir.", task_title: "Mesajlarda şablon seç, kayıtlara kaynak gir" },
+      ? [{ key: "target_set", text: m.suggestion.targetSet, task_title: m.suggestion.targetSetTask }]
+      : sent >= f.target ? [{ key: "target_met", text: m.suggestion.targetMet(f.target, sent), task_title: m.suggestion.targetMetTask }] : []),
+    { key: "records", text: m.suggestion.records(added), task_title: m.suggestion.recordsTask },
+    { key: "data", text: m.suggestion.data, task_title: m.suggestion.dataTask },
   ];
   for (const s of fillers) if (out.length < REVIEW_MIN_SUGGESTIONS && !out.some((o) => o.key === s.key)) out.push(s);
   return out.slice(0, REVIEW_MAX_SUGGESTIONS);
@@ -124,13 +125,13 @@ export function weeklyReview(ctx: Ctx, week?: string): WeeklyReview {
   const currentStart = weekStart(ctx.clock.today());
   const { this_week, last_week, by_channel } = f.stats;
   return {
-    week: isoWeekOf(ws), start: ws, end: addDays(ws, 6), current: ws === currentStart,
-    prev_week: isoWeekOf(addDays(ws, -7)), next_week: ws < currentStart ? isoWeekOf(addDays(ws, 7)) : null,
+    week: isoWeekOf(ws), start: ws, end: addDays(ws, WEEK_DAYS - 1), current: ws === currentStart,
+    prev_week: isoWeekOf(addDays(ws, -WEEK_DAYS)), next_week: ws < currentStart ? isoWeekOf(addDays(ws, WEEK_DAYS)) : null,
     target: f.target,
     this_week: { ...this_week, offers: f.offers.this_week }, last_week: { ...last_week, offers: f.offers.last_week },
     by_channel, templates: f.templates, sources: f.sources, quota: f.quota,
     suggestions: suggestions(f),
     /** "Göreve çevir" tasks are due on the Monday after today */
-    next_monday: addDays(currentStart, 7),
+    next_monday: addDays(currentStart, WEEK_DAYS),
   };
 }

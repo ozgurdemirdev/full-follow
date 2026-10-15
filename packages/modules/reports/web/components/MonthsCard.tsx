@@ -1,6 +1,7 @@
 import type { MonthReport } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { fmtMonth, fmtMonthShort, lira } from "@kit/lib/format";
+import { m } from "../messages";
 import { INCOMING_COLOR, possessive, shortLira, type Incoming } from "../report";
 import { Card, order } from "@kit/components/ui";
 
@@ -18,13 +19,13 @@ export function MonthsCard({ months, floor, top, now, picked, onPick, above, inc
   above: number;
   incoming: Incoming[];
 }) {
-  const earlier = months.filter((m) => m.month !== now).length;
+  const earlier = months.filter((x) => x.month !== now).length;
   const floorRatio = { ["--r" as string]: floor / top };
   return (
-    <Card title={`Son ${months.length} ay`} className="rep-card rep-gap-lg rise" style={order(2)} actions={<span className="rep-aside">Son {earlier} ayın {possessive(above)} tabanın üstünde</span>}>
+    <Card title={m.months.title(months.length)} className="rep-card rep-gap-lg rise" style={order(2)} actions={<span className="rep-aside">{m.months.aside(earlier, possessive(above))}</span>}>
       <div className="rep-chart">
         <span className="rep-floor" style={floorRatio} />
-        <span className="rep-floor-tag" style={floorRatio}>taban</span>
+        <span className="rep-floor-tag" style={floorRatio}>{m.months.floorTag}</span>
         {months.map((m, i) => (
           <button key={m.month} type="button" className="rep-month" aria-pressed={i === picked} aria-label={`${fmtMonth(m.month)} ${lira(m.collected)}`}
             data-ok={m.collected >= floor} data-now={m.month === now} onClick={() => onPick(i)}>
@@ -35,7 +36,7 @@ export function MonthsCard({ months, floor, top, now, picked, onPick, above, inc
         ))}
       </div>
       <div className="rep-incoming">
-        <span className="rep-incoming-title">Bu ay gelmesi beklenenler</span>
+        <span className="rep-incoming-title">{m.months.incoming}</span>
         {incoming.length ? incoming.map((p) => (
           <RecordLink key={p.id} type="project" id={p.projectId} className="rep-row">
             <span className={`rep-dot ${INCOMING_COLOR[p.group].dot}`} />
@@ -43,7 +44,7 @@ export function MonthsCard({ months, floor, top, now, picked, onPick, above, inc
             <span className={`rep-row-when ${INCOMING_COLOR[p.group].text}`}>{p.when}</span>
             <span className="rep-row-amount">{lira(p.amount)}</span>
           </RecordLink>
-        )) : <p className="rep-incoming-empty">Bu ay beklenen ödeme yok.</p>}
+        )) : <p className="rep-incoming-empty">{m.months.noIncoming}</p>}
       </div>
     </Card>
   );

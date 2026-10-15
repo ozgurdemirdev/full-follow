@@ -11,6 +11,8 @@ import { SourcesCard } from "../components/SourcesCard";
 import { ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { Icon } from "@kit/components/icons";
 import { todayIso } from "@kit/lib/format";
+import { PAYMENTS_LIMIT } from "../constants";
+import { m } from "../messages";
 import { REVIEW_PATH } from "../paths";
 import { expectedOf, floorHint, heroOf, incomingOf, monthsAbove, REPORT_MONTHS, scaleTop } from "../report";
 import { useFloorCosts } from "../useFloorCosts";
@@ -18,7 +20,7 @@ import { useFloorCosts } from "../useFloorCosts";
 export default function Report() {
   const months = useQuery<MonthReport[]>(`/report/months?count=${REPORT_MONTHS}`);
   const report = useQuery<ReportData>("/report");
-  const payments = useQuery<List<Payment>>("/payments?unpaid=true&limit=1000");
+  const payments = useQuery<List<Payment>>(`/payments?unpaid=true&limit=${PAYMENTS_LIMIT}`);
   const [sel, setSel] = useState<number | null>(null);
 
   const list = months.data;
@@ -27,28 +29,28 @@ export default function Report() {
   const { costs, set, floor } = useFloorCosts(list?.[list.length - 1]?.floor_detail);
 
   const i = sel ?? (list ? list.length - 1 : 0);
-  const m = list?.[i];
+  const month = list?.[i];
   const incoming = useMemo(() => incomingOf(payments.data?.rows ?? [], today), [payments.data, today]);
   const expected = useMemo(() => expectedOf(incoming), [incoming]);
 
-  if (!list || !m || !costs) {
+  if (!list || !month || !costs) {
     return (
-      <Page title="Rapor" sub="Bu ay ayakta kalmak için ne kadar lazım, ne kadarı geldi">
+      <Page title={m.page.title} sub={m.page.sub}>
         {months.error && !months.data ? <ErrorBox error={months.error} retry={months.reload} /> : <PageSkeleton />}
       </Page>
     );
   }
 
   const top = scaleTop(list, floor, expected.total, now);
-  const hero = heroOf(m, floor, expected.total, top, today);
+  const hero = heroOf(month, floor, expected.total, top, today);
 
   return (
     <Page
-      title="Rapor"
-      sub="Bu ay ayakta kalmak için ne kadar lazım, ne kadarı geldi"
-      right={<Link href={REVIEW_PATH} className="rep-link">Haftalık inceleme<Icon name="arrow" className="size-icon-md" /></Link>}
+      title={m.page.title}
+      sub={m.page.sub}
+      right={<Link href={REVIEW_PATH} className="rep-link">{m.page.review}<Icon name="arrow" className="size-icon-md" /></Link>}
     >
-      <Hero hero={hero} insight={m.insight} />
+      <Hero hero={hero} insight={month.insight} />
       <div className="rep-grid">
         <MonthsCard months={list} floor={floor} top={top} now={now} picked={i} onPick={setSel} above={monthsAbove(list, floor, now)} incoming={incoming} />
         <FloorCard costs={costs} floor={floor} hint={floorHint(floor, report.data?.sources ?? [])} onChange={set} />

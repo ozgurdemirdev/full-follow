@@ -2,6 +2,7 @@ import { defineModule, isoWeekday, isoWeekOf } from "@fullfollow/core";
 import { reportsApi } from "./api";
 import { REVIEW_WEEKDAY } from "./constants";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { floorOf } from "./service/floor";
 
 /**
@@ -11,7 +12,7 @@ import { floorOf } from "./service/floor";
  */
 export default defineModule({
   key: "reports",
-  label: "Raporlar",
+  label: m.label,
   smoke: ["/api/report", "/api/report/months", "/api/report/marketing", "/api/review"],
   uses: ["projects", "pipeline", "network", "drafts", "templates", "posts", "ideas", "referrals", "calendar"],
   api: reportsApi,
