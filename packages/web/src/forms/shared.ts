@@ -5,6 +5,7 @@ import { useCompanies, useOpps, usePeople, useProjects } from "../api/keys";
 import type { Mutation } from "../api/types";
 import { closeSheet, type SheetState } from "../app/ui";
 import type { Option } from "../components/Combo";
+import { CHANNEL, CHANNELS } from "../lib/labels";
 import { formMeta } from "./meta";
 
 export interface FormProps {
@@ -85,3 +86,6 @@ export function useCompanyOptions(withContact = false): Option[] {
 
 /** A typed e-mail that is not empty and does not look like one */
 export const badEmail = (v: string) => !!v.trim() && !/^\S+@\S+\.\S+$/.test(v.trim());
+
+/** The channels of a message as the chips of a form field */
+export const CHANNEL_OPTIONS = CHANNELS.map((c) => ({ value: c, label: CHANNEL[c] }));

@@ -42,7 +42,7 @@ const CORE_ENTRIES: SettingsEntry[] = [
   { id: "account", category: "hesap", order: 10, rows: ({ withSession }) => accountRows(withSession) },
   ...businessEntries,
   { id: "follow", category: "takip", order: 10, rows: () => followRows() },
-  { id: "claude", category: "claude", order: 10, rows: ({ hasRules }) => claudeRows(hasRules) },
+  { id: "claude", category: "claude", order: 10, rows: () => claudeRows() },
   { id: "lists", category: "liste", order: 10, rows: () => listRows() },
 ];
 

@@ -1,7 +1,7 @@
 /** Hook'lar on=false ile çağrılırsa istek yapılmaz (ör. arama ilk odaklanana kadar). */
 // Ekranlar arası paylaşılan sorgu anahtarları: aynı anahtar = tek istek, tek önbellek kaydı
 import { useMemo } from "react";
-import type { Company, Idea, List, OwnProject, Opportunity, Person, PipelineMeta, Post, Project, Sector, Source, Tag, Task, Template, Thread, TrashItem } from "./types";
+import type { Company, Idea, List, OwnProject, Opportunity, Person, PipelineMeta, Post, Project, Sector, Source, Tag, Task, Thread, TrashItem } from "./types";
 import { useQuery } from "./store";
 
 const ALL = 1000;
@@ -20,18 +20,15 @@ export const K = {
   openTasks: `/tasks?limit=${ALL}`,
   threads: `/comments?limit=${ALL}`,
   allThreads: `/comments?resolved=all&messages=true&limit=${ALL}`,
-  drafts: `/drafts?limit=${ALL}`,
   settings: "/settings",
   sectors: `/sectors?all=true&limit=${ALL}`,
   referrals: "/report/referrals",
-  marketing: "/report/marketing",
   posts: `/posts?limit=${ALL}`,
-  templates: `/templates?limit=${ALL}`,
   ideas: `/ideas?limit=${ALL}`,
   ownProjects: `/own-projects?limit=${ALL}`,
 };
 
-function useIndex<T extends { id: number }, Extra extends object = object>(key: string | null) {
+export function useIndex<T extends { id: number }, Extra extends object = object>(key: string | null) {
   const q = useQuery<List<T> & Extra>(key);
   const byId = useMemo(() => new Map((q.data?.rows ?? []).map((r) => [r.id, r])), [q.data]);
   return { ...q, rows: q.data?.rows ?? [], byId };
@@ -55,6 +52,5 @@ export const pickable = <T extends { id: number; deleted_at: string | null }>(ro
   rows.filter((r) => !r.deleted_at || keep.includes(r.id));
 export const useThreads = (on = true) => useIndex<Thread>(on ? K.threads : null);
 export const usePosts = (on = true) => useIndex<Post>(on ? K.posts : null);
-export const useTemplates = (on = true) => useIndex<Template>(on ? K.templates : null);
 export const useIdeas = (on = true) => useIndex<Idea>(on ? K.ideas : null);
 export const useOwnProjects = (on = true) => useIndex<OwnProject>(on ? K.ownProjects : null);

@@ -10,14 +10,11 @@ export const PATHS = {
   referrals: "/referanslar",
   projects: "/projeler",
   timeline: "/zaman",
-  report: "/rapor",
-  review: "/inceleme",
   drafts: "/taslaklar",
   comments: "/yorumlar",
   posts: "/paylasimlar",
   ideas: "/fikirler",
   ownProjects: "/projelerim",
-  templates: "/sablonlar",
   settings: "/ayarlar",
 };
 

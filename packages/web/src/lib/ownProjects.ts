@@ -2,8 +2,7 @@
 import { useEffect } from "react";
 import { run } from "../api/actions";
 import type { OwnProject, OwnStage, Sellable } from "../api/types";
-import { ago, daysFrom } from "./format";
-import { ratePct } from "./ideas";
+import { ago, daysFrom, ratePct } from "./format";
 import { useSettings } from "./settings";
 
 /** Journey steps in order; the bar of a step is done before the project's stage, current at it, hatched after it */

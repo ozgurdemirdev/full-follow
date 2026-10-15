@@ -1,7 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Redirect, Route, Switch } from "wouter";
 import { api, onAuthRequired } from "../api/client";
-import { loadModules, useModules } from "../api/modules";
+import { loadModules } from "../api/modules";
 import { PageSkeleton } from "../components/ui";
 import { requestChatOpen } from "../lib/chatStore";
 import { Fab } from "./Fab";
@@ -14,14 +14,12 @@ import { Sidebar } from "./Sidebar";
 // Formlar ve bildirimler (Motion dahil) ilk boyamadan sonra ayrı parçalar halinde yüklenir
 const QuickAdd = lazy(() => import("../forms/QuickAdd"));
 const Toasts = lazy(() => import("../components/Toasts"));
-const ChatWidget = lazy(() => import("./ChatWidget"));
 
 type Auth = "checking" | "in" | "out";
 
 export function App() {
   const [auth, setAuth] = useState<Auth>("checking");
   const [modulesKnown, setModulesKnown] = useState(false);
-  const { visible } = useModules();
   const { routes } = useRegistry();
 
   useEffect(() => {
@@ -62,7 +60,6 @@ export function App() {
         </Boundary>
       </div>
       <Suspense fallback={null}>
-        {visible("chat") ? <ChatWidget /> : null}
         <Slot name="app.overlay" props={{ onActivate: requestChatOpen }} />
       </Suspense>
       <Fab />

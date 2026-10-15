@@ -4,8 +4,10 @@ import { openSheet } from "../app/ui";
 import { fmtDay, followNote } from "../lib/format";
 import { ACTOR } from "../lib/labels";
 import { EditDelete } from "./contact";
-import type { FeedKind } from "./Feed";
 import { Card, Who } from "./ui";
+
+/** The records a next step card is shown for */
+type NextStepKind = "person" | "opportunity" | "project";
 
 /** Sort key of a task without a due date: after every real date */
 const NO_DUE = "9999-12-31";
@@ -15,7 +17,7 @@ const nearest = (tasks: Task[]) =>
   tasks.filter((x) => !x.done_at).sort((a, b) => (a.due_date ?? NO_DUE).localeCompare(b.due_date ?? NO_DUE))[0];
 
 /** Next follow-up date and the nearest open task of a person, opportunity or project, plus a button to add a task */
-export function NextStep({ tasks, type, id, personId, followUp }: { tasks: Task[]; type: FeedKind; id: number; personId?: number; followUp?: string | null }) {
+export function NextStep({ tasks, type, id, personId, followUp }: { tasks: Task[]; type: NextStepKind; id: number; personId?: number; followUp?: string | null }) {
   const t = nearest(tasks);
   const note = followNote(followUp);
   const preset = type === "person" ? { person_id: id } : type === "opportunity" ? { opportunity_id: id, person_id: personId } : { project_id: id, person_id: personId };

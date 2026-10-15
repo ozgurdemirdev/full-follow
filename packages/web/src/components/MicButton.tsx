@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { MIC_ERROR } from "../lib/chatText";
-import { useDictation } from "../lib/useDictation";
+import { MIC_ERROR, useDictation } from "../lib/useDictation";
 import { BoardIcon } from "./boardIcons";
 import { toast } from "./toast";
 

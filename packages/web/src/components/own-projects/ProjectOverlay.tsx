@@ -1,7 +1,7 @@
 import { remove, run } from "../../api/actions";
 import { useQuery } from "../../api/store";
 import type { Detail, Idea, OwnProject, Thread } from "../../api/types";
-import { ratePct } from "../../lib/ideas";
+import { ratePct } from "../../lib/format";
 import { openSheet } from "../../app/ui";
 import { OWN_STATUS, OWN_STATUSES } from "../../lib/labels";
 import { rateNote, rateText, setStage } from "../../lib/ownProjects";

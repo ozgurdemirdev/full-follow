@@ -1,4 +1,5 @@
 // The pipeline module's web part (the manifest); pages, cards and forms are still loaded from the kit.
+import { lazy } from "react";
 import { K, useBoard } from "@kit/api/keys";
 import type { Opportunity } from "@kit/api/types";
 import { defineWebModule } from "@kit/app/modules/define";
@@ -47,4 +48,5 @@ export default defineWebModule({
         : null
     ),
   }],
+  slots: { "report.sections": { order: 10, Component: lazy(() => import("./components/SourceFunnel")) }, "timeline.aside": { order: 10, Component: lazy(() => import("./slots/TimelineOpportunity")) }, "post.overlay.side": { order: 20, Component: lazy(() => import("./slots/PostOpps")) } },
 });

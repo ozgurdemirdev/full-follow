@@ -208,30 +208,6 @@ export interface Template extends Base {
   tip: string | null;
   score?: number;
 }
-export interface TemplateSectorStat {
-  sector_path: string;
-  sent: number;
-  replied: number;
-  reply_rate: number;
-  early: boolean;
-}
-export interface TemplateRank {
-  id: number;
-  name: string;
-  sent: number;
-  replied: number;
-  reply_rate: number | null;
-  early: boolean;
-  /** best rate of its group, claimed only with at least two non-early templates */
-  leader: boolean;
-  sectors: TemplateSectorStat[];
-}
-/** Templates of the same kind and channel (channel null = all channels), ranked */
-export interface TemplateGroup {
-  kind: Template["kind"];
-  channel: string | null;
-  templates: TemplateRank[];
-}
 export interface Idea extends Base {
   title: string;
   problem: string | null;
@@ -528,17 +504,6 @@ export interface Thread {
   last_body: string;
   comments?: Comment[];
 }
-export interface TimelineEvent {
-  id: number;
-  type: string;
-  person_id: number | null;
-  opportunity_id: number | null;
-  project_id: number | null;
-  summary: string;
-  data: Record<string, unknown> | null;
-  created_by: Actor;
-  created_at: string;
-}
 /** `GET /api/today`: date, comments, window_end and claude_last_at always come; every other section is added by its module and is absent when that module is not installed */
 export interface Today {
   date: string;
@@ -590,7 +555,34 @@ export interface PriceFloor {
   /** reject rules Claude learned, oldest first (PUT /settings { draft_rules } keeps the ones left in the list); absent when the drafts module is not installed */
   draft_rules?: string[];
 }
-export * from "./types-report";
+/** One month of the report against the price floor (also the shape of the `month` of `GET /api/report`) */
+export interface MonthReport {
+  month: string;
+  collected: number;
+  outstanding_due: number;
+  floor: number;
+  floor_detail: PriceFloor;
+  gap: number;
+  /** one sentence about the month from the server; null for a coming month and while no floor is set */
+  insight: string | null;
+  /** opportunities lost in the month; null when the pipeline module is not installed */
+  lost: { count: number; budget: number } | null;
+}
+export interface SourceReport {
+  source_id: number;
+  source: string;
+  total: number;
+  won: number;
+  lost: number;
+  open: number;
+  won_value: number;
+  conversion: number | null;
+}
+/** `GET /api/report`: the conversion by source and the current month; several modules draw their cards from it */
+export interface Report {
+  sources: SourceReport[];
+  month: MonthReport;
+}
 export interface Detail<T, R = { [k: string]: unknown[] | undefined }> {
   type: string;
   id: number;
@@ -659,6 +651,3 @@ export interface Activity {
 export type * from "./types-projects";
 export * from "./types-own";
 export type * from "./types-referrals";
-export type * from "./types-ideas";
-export type { RenderedTemplate } from "./types-templates";
-export type * from "./types-timeline";

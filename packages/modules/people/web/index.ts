@@ -1,5 +1,6 @@
 // The people module's web part (the manifest). Its pages and forms still live in the kit (packages/web/src) and are loaded from there;
 // moving them here is the next step (see packages/modules/README.md, "Web part").
+import { lazy } from "react";
 import { K } from "@kit/api/keys";
 import { useQuery } from "@kit/api/store";
 import type { Person, Today } from "@kit/api/types";
@@ -37,4 +38,5 @@ export default defineWebModule({
         : null
     ),
   }],
+  slots: { "timeline.aside": { order: 10, Component: lazy(() => import("./slots/TimelinePerson")) }, "post.overlay.side": { order: 10, Component: lazy(() => import("./slots/PostPeople")) } },
 });

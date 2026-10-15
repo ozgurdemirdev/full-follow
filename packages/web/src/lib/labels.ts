@@ -34,8 +34,6 @@ export const CHANNEL_DOT: Record<string, string> = {
   yuz_yuze: "bg-accent", whatsapp: "bg-success", r10: "bg-danger", diger: "bg-entity-neutral",
 };
 export const CHANNELS = Object.keys(CHANNEL);
-/** Channels that get a daily outgoing message limit in Settings */
-export const QUOTA_CHANNELS = ["email", "instagram", "linkedin", "whatsapp"];
 
 /** Firma ve kişinin temas durumu (temaslarla ilerler; "olumsuz" ve "es geçildi" elle) */
 export const CONTACT_STATUS: Record<string, string> = {
@@ -59,8 +57,6 @@ export const ACTOR: Record<Actor, string> = { ozgur: "Özgür", claude: "Claude"
 // ---- Paket 2: pazarlama ----
 export const PLATFORM: Record<string, string> = { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: "Diğer" };
 export const PLATFORMS = Object.keys(PLATFORM);
-export const POST_FORMAT: Record<PostFormat, string> = { metin: "Metin", gorsel: "Görsel", video: "Video", karusel: "Karusel" };
-export const POST_FORMATS = Object.keys(POST_FORMAT) as PostFormat[];
 export const PLATFORM_DOT: Record<string, string> = { r10: "bg-danger", linkedin: "bg-chip-opportunity-fg", instagram: "bg-entity-source", diger: "bg-entity-neutral" };
 export const TEMPLATE_KIND: Record<string, string> = { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: "Diğer" };
 export const TEMPLATE_KINDS = Object.keys(TEMPLATE_KIND);

@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
-import type { ChatPhase } from "../api/chat";
+
+/** What a running reply is doing: waiting its turn, thinking, using a tool, writing */
+export type ChatPhase = "queued" | "thinking" | "tool" | "writing";
 
 // Chat state that must survive F5: open or not, large or not, open session, unsent drafts.
 // localStorage can throw (private window), so every access is wrapped.

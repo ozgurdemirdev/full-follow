@@ -6,32 +6,27 @@ import { api, ApiError } from "./client";
 import { invalidate } from "./store";
 import type { Mutation } from "./types";
 
-const CONTACTS = ["/people", "/companies", "/today", "/timeline", "/network", "/touches", "/stats", "/review"];
+const CONTACTS = ["/people", "/companies", "/today", "/network", "/touches", "/stats"];
 
 /** Her yazma işleminden sonra hangi listelerin tazeleneceği (modüller kendi verilerini manifest `invalidates` ile ekler) */
 const AFFECTS: Record<string, string[]> = {
-  people: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/report", "/posts", "/ideas", "/trash"],
-  companies: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/drafts", "/trash"],
-  sectors: ["/sectors", "/people", "/companies", "/trash", "/templates", "/ideas"],
+  people: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/trash"],
+  companies: [...CONTACTS, "/opportunities", "/sectors", "/tags", "/sources", "/trash"],
+  sectors: ["/sectors", "/people", "/companies", "/trash"],
   tags: ["/tags", "/people", "/companies", "/trash"],
-  notes: ["/notes", "/people", "/timeline", "/trash"],
-  links: ["/links", "/own-projects", "/timeline", "/trash"],
-  offers: ["/opportunities", "/timeline", "/trash"],
-  files: ["/opportunities", "/projects", "/timeline", "/trash"],
-  "opportunity-people": ["/opportunities", "/timeline", "/trash"],
-  sources: ["/sources", "/opportunities", "/report", "/people", "/companies", "/trash"],
-  opportunities: ["/opportunities", "/today", "/timeline", "/projects", "/people", "/companies", "/report", "/payments", "/sources", "/trash"],
-  projects: ["/projects", "/timeline", "/today", "/payments", "/trash"],
-  payments: ["/payments", "/projects", "/today", "/report", "/timeline", "/trash"],
-  drafts: ["/drafts", "/settings", "/today", "/timeline", "/touches", "/opportunities", "/people", "/companies", "/network", "/templates", "/followups", "/trash"],
-  touches: [...CONTACTS, "/opportunities", "/ideas", "/followups", "/trash"],
-  comments: ["/comments", "/own-projects", "/today", "/timeline", "/people", "/companies", "/trash"],
-  settings: ["/settings", "/report", "/review", "/today", "/people", "/network", "/followups"],
-  posts: ["/posts", "/today", "/people", "/ideas", "/report", "/trash"],
-  templates: ["/templates", "/trash"],
-  ideas: ["/ideas", "/own-projects", "/people", "/posts", "/touches", "/timeline", "/trash"],
-  "own-projects": ["/own-projects", "/ideas", "/links", "/comments", "/trash"],
-  followups: ["/followups", "/drafts", "/today", "/people", "/companies"],
+  notes: ["/notes", "/people", "/trash"],
+  links: ["/links", "/own-projects", "/trash"],
+  offers: ["/opportunities", "/trash"],
+  files: ["/opportunities", "/projects", "/trash"],
+  "opportunity-people": ["/opportunities", "/trash"],
+  sources: ["/sources", "/opportunities", "/people", "/companies", "/trash"],
+  opportunities: ["/opportunities", "/today", "/projects", "/people", "/companies", "/payments", "/sources", "/trash"],
+  projects: ["/projects", "/today", "/payments", "/trash"],
+  payments: ["/payments", "/projects", "/today", "/trash"],
+  touches: [...CONTACTS, "/opportunities", "/trash"],
+  comments: ["/comments", "/own-projects", "/today", "/people", "/companies", "/trash"],
+  settings: ["/settings", "/today", "/people", "/network"],
+  "own-projects": ["/own-projects", "/links", "/comments", "/trash"],
   // geri yükleme her şeyi etkileyebilir
   trash: ["/"],
 };

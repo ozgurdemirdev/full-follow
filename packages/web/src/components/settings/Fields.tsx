@@ -1,5 +1,6 @@
-import type { ComponentProps } from "react";
-import { useAutosave } from "../../lib/settings";
+import type { ComponentProps, ReactNode } from "react";
+import type { NetworkSettings } from "../../api/types";
+import { useAutosave, useNetworkCfg } from "../../lib/settings";
 import { NumberField } from "../NumberField";
 import { Skeleton } from "../ui";
 
@@ -25,4 +26,14 @@ export function AutoText({ server, save, settle, label, ...input }: Save<string>
 } & Pick<ComponentProps<"input">, "type" | "placeholder" | "maxLength">) {
   const [value, change] = useAutosave(server, save, settle);
   return <input className="set-input" aria-label={label} autoComplete="off" value={value} onChange={(e) => change(e.target.value)} {...input} />;
+}
+
+/** Suffix of a stepper that counts days */
+export const DAY_SUFFIX = " gün";
+
+/** Reads the network settings (they ride in the dashboard payload) and hands them to a field; nothing while they are absent */
+export function WithNetworkCfg({ children }: { children: (cfg: NetworkSettings, reload: () => Promise<unknown>) => ReactNode }) {
+  const { cfg, loading, reload } = useNetworkCfg();
+  if (!cfg) return loading ? <ControlSkeleton /> : null;
+  return <>{children(cfg, reload)}</>;
 }

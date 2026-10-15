@@ -59,7 +59,7 @@ function build(visible: (key: string) => boolean): Registry {
   const slots = new Map<string, { key: string; order: number; Component: ComponentType<any> }[]>();
   for (const m of active) {
     for (const [name, v] of Object.entries(m.slots ?? {})) {
-      const entry: SlotEntry = typeof v === "function" ? { Component: v } : (v as SlotEntry);
+      const entry: SlotEntry = typeof v === "object" && "Component" in v ? v : { Component: v };
       slots.set(name, [...(slots.get(name) ?? []), { key: `${m.key}:${name}`, order: entry.order ?? DEFAULT_SLOT_ORDER, Component: entry.Component }]);
     }
   }
