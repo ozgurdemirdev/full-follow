@@ -34,7 +34,7 @@ export { assertOzgur, emit as writeEvent, keptRow, keptRows, money, norm, page, 
 export { placeInGroup, renumberGroup, requireRow, requireTarget, resolveRef, truncate, link as eventLink } from "./services/shared";
 export { filesOf } from "./services/files";
 export { announceTrashed, Bin } from "./services/trash";
-export { bool, has, labelFilter, stripKeys } from "./services/directory";
+export { bool, has, idsOf, inIds, labelFilter, stripKeys } from "./services/directory";
 export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sectorsOf, tagsOf, withSectorList } from "./services/categories";
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, isColdEmail, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";

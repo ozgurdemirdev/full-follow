@@ -6,14 +6,10 @@ const SELECT = `SELECT d.*, p.name AS person_name, COALESCE(d.company_id, p.comp
 
 type Raw = Omit<DraftRow, "company_name"> & { company_ref: number | null };
 
-/** The names of the companies the drafts point at, looked up once per distinct company through the companies module (null for all without it) */
+/** The names of the companies the drafts point at, looked up in one statement through the companies module (null for all without it) */
 function withCompanyNames(ctx: Ctx, list: Raw[]): DraftRow[] {
-  const companies = ctx.mod("companies");
-  const names = new Map<number, string | null>();
-  for (const d of list) {
-    if (companies && d.company_ref && !names.has(d.company_ref)) names.set(d.company_ref, companies.get(d.company_ref)?.name ?? null);
-  }
-  return list.map(({ company_ref, ...d }) => ({ ...d, company_name: (company_ref && names.get(company_ref)) || null }));
+  const names = ctx.mod("companies")?.names(list.flatMap((d) => (d.company_ref ? [d.company_ref] : [])));
+  return list.map(({ company_ref, ...d }) => ({ ...d, company_name: (company_ref && names?.get(company_ref)) || null }));
 }
 
 /** Filters: status, person_id, company_id, opportunity_id, project_id, company_scope (the company and its people), template_id, followup; q searches the text and the recipient; newest first */
