@@ -5,9 +5,10 @@ import { parts } from "../../messages.parts";
 import { BoardIcon } from "../boardIcons";
 import { QuickPanel } from "./QuickPanel";
 import { closeQuick, openQuick, registerHeader, toggleQuick, useHeaderMounted, useQuickOpen, type QuickHost } from "./store";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const m = parts.quick;
-const NOT_TYPING ="input, textarea, select, [contenteditable]";
+const NOT_TYPING = "input, textarea, select, [contenteditable]";
 const MODAL = '[role="dialog"][aria-modal="true"]';
 
 /** While the menu is open: Esc and a press outside close it, and focus goes back to the button that opened it */
@@ -56,7 +57,7 @@ export function QuickAddButton() {
   return (
     <div ref={root} className="quick-host">
       <button ref={trigger} type="button" className="quick-new" aria-haspopup="menu" aria-expanded={open} onClick={() => toggleQuick("header")}>
-        <BoardIcon name="plus" className="quick-plus size-icon-md" stroke={2.2} />
+        <BoardIcon name="plus" className="quick-plus size-icon-md" stroke={STROKE.medium} />
         {m.title}
         <span className="quick-key">{m.shortcutKey}</span>
       </button>
@@ -75,7 +76,7 @@ export function QuickAddFab() {
   return (
     <div ref={root}>
       <button ref={trigger} type="button" className="quick-fab" aria-label={m.title} aria-haspopup="menu" aria-expanded={open} data-covered={covered} onClick={() => toggleQuick("fab")}>
-        <BoardIcon name="plus" className="quick-plus size-icon-2xl" stroke={2.4} />
+        <BoardIcon name="plus" className="quick-plus size-icon-2xl" stroke={STROKE.bold} />
       </button>
       {open ? <Menu host="fab" trigger={trigger} /> : null}
     </div>

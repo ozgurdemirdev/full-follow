@@ -8,6 +8,7 @@ import { NumberField } from "../NumberField";
 import { useFieldError } from "./context";
 import { Field, type FieldProps } from "./fields";
 import { FORM_ICON, PathIcon } from "./icons";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const m = forms.rich;
 
@@ -70,7 +71,7 @@ export function TagsField({ name, label, req, opt, hint, half, tags, suggestions
           <span key={t.key} className="form-tag">
             {t.label}
             <button type="button" aria-label={m.remove(t.label)} onClick={() => onRemove(t.key)}>
-              <PathIcon d={FORM_ICON.close} className="size-form-icon-10" stroke={2.6} />
+              <PathIcon d={FORM_ICON.close} className="size-form-icon-10" stroke={STROKE.heavy} />
             </button>
           </span>
         ))}
@@ -128,7 +129,7 @@ export function ItemsField({ name, label, req, opt, hint, half, items, onChange 
               <NumberField className="" value={it.unit} min={0} ariaLabel={m.unitAria} onChange={(unit) => set(it.key, { unit })} />
             </span>
             <button type="button" className="form-item-remove" aria-label={m.removeItem} onClick={() => (touch(), onChange(items.filter((x) => x.key !== it.key)))}>
-              <PathIcon d={FORM_ICON.close} className="size-form-icon-13" stroke={2.2} />
+              <PathIcon d={FORM_ICON.close} className="size-form-icon-13" stroke={STROKE.medium} />
             </button>
           </div>
         ))}

@@ -8,6 +8,7 @@ import { dur, ease, overlayRise } from "../lib/motion";
 import { m as kit } from "../messages";
 import { BoardIcon } from "./boardIcons";
 import { MotionScope } from "./MotionScope";
+import { stroke as STROKE } from "../styles/tokens.json";
 
 const px = (s: string) => parseInt(s, 10);
 const MOBILE_MAX = px(layout["breakpoint-mobile"]);
@@ -40,7 +41,7 @@ export function ExpandLink({ href, children }: { href: string; children: ReactNo
   return (
     <Link href={href} className="ff-ex-link">
       {children}
-      <span><BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.2} /></span>
+      <span><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.medium} /></span>
     </Link>
   );
 }
@@ -166,7 +167,7 @@ function Panel({ from, title, sub, toolbar, footer, header, headerClassName, bod
                 {sub ? <m.span className="ff-ex-sub" {...body(dur["overlay-body-delay"])}>{sub}</m.span> : null}
               </div>
               <button type="button" className="ff-ex-close" data-close aria-label={kit.collapse} onClick={onClose}>
-                <BoardIcon name="shrink" className="size-icon-btn" stroke={2.2} />
+                <BoardIcon name="shrink" className="size-icon-btn" stroke={STROKE.medium} />
               </button>
             </div>
             {toolbar ? <m.div {...body(dur["overlay-body-delay"])}>{toolbar}</m.div> : null}

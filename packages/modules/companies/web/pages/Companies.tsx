@@ -16,8 +16,9 @@ import { COMPANIES_PATH } from "../paths";
 import { searchText, SORT, TILE_PAGE, totalsOf, useCompanyViews, type SegmentFilter, type SortKey } from "../companies";
 import { norm } from "@kit/lib/format";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a company is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -65,12 +66,12 @@ export default function Companies() {
       right={
         <div className="ppl-tools">
           <label className="ppl-search co-search">
-            <BoardIcon name="search" className="size-icon-md" stroke={STROKE.search} />
+            <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
             <span className="sr-only">{m.page.searchLabel}</span>
             <input type="search" value={q} onChange={(e) => reset(setQ)(e.target.value)} placeholder={m.page.searchPlaceholder} />
           </label>
           <button type="button" className="dash-new" onClick={() => openSheet("company")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.add} />
+            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
             {m.page.add}
           </button>
         </div>

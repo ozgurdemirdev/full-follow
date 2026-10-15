@@ -7,6 +7,7 @@ import { m as kit } from "../../messages";
 import { comments as msg } from "../../messages.comments";
 import { BoardIcon } from "../boardIcons";
 import { Bubble } from "./Bubble";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 /** The comments of a thread; a list that came without them still shows its last one */
 const messagesOf = (t: Thread) =>
@@ -102,11 +103,11 @@ export const ThreadCard = memo(function ThreadCard({ t, state, onSeen, onReopene
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send(e))} />
             <button type="submit" className="cmt-send" aria-label={kit.send} disabled={busy}>
-              <BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} />
+              <BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.bold} />
             </button>
           </form>
           <button type="button" className="cmt-close" title={msg.thread.close} aria-label={msg.thread.close} disabled={busy} onClick={() => void setResolved(true)}>
-            <BoardIcon name="check" className="size-icon-chip" stroke={2.2} />
+            <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.medium} />
           </button>
         </div>
       ) : (

@@ -7,6 +7,7 @@ import { MicButton } from "../MicButton";
 import { NumberField } from "../NumberField";
 import { useFieldError } from "./context";
 import { FORM_ICON, PathIcon } from "./icons";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const m = forms.fields;
 
@@ -39,7 +40,7 @@ export function Field({ id, label, req, opt, hint, half, error, children }: {
       {children}
       {error ? (
         <span role="alert" className="form-err">
-          <PathIcon d={FORM_ICON.alert} className="size-form-icon-13" stroke={2.2} />
+          <PathIcon d={FORM_ICON.alert} className="size-form-icon-13" stroke={STROKE.medium} />
           {error}
         </span>
       ) : null}

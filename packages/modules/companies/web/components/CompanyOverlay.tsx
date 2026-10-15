@@ -16,9 +16,10 @@ import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { toast } from "@kit/components/toast";
 import { avatarPair, ErrorBox } from "@kit/components/ui";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { Aside } from "./Aside";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Claude mode of the composer: `id` is the company it was switched on for, `replyTo` the thread being answered */
 interface ClaudeMode {
@@ -35,7 +36,7 @@ function HeaderMenu({ v, onClaude, onClose }: { v: CompanyView; onClaude: () => 
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.menu} />
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
         {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { company_id: c.id }))}>{m.overlay.addTouch}</button> : null}
@@ -104,7 +105,7 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
             </button>
             <HeaderMenu v={v} onClaude={() => setClaude({ id: v.c.id, replyTo: null })} onClose={onClose} />
             <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
-              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.close} />
+              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           </div>
         </>

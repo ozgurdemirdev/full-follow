@@ -16,8 +16,9 @@ import { ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { norm, todayIso } from "@kit/lib/format";
 import { channelsOf, STATUS_RANK, statusOf } from "@kit/lib/people";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a person is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -73,12 +74,12 @@ export default function People() {
       right={
         <div className="ppl-tools">
           <label className="ppl-search">
-            <BoardIcon name="search" className="size-icon-md" stroke={STROKE.search} />
+            <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
             <span className="sr-only">{m.searchPerson}</span>
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.page.searchPlaceholder} />
           </label>
           <button type="button" className="dash-new" onClick={() => openSheet("person")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.add} />
+            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
             {m.page.add}
           </button>
         </div>

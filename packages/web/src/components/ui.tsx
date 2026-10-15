@@ -6,6 +6,7 @@ import { ACTOR, CONTACT_STATUS, STATUS_TONE, TAG_CLS, TONE_CLS, WHO_CLS, type Ac
 import { m as kit } from "../messages";
 import { parts } from "../messages.parts";
 import { BoardIcon } from "./boardIcons";
+import { stroke as STROKE } from "../styles/tokens.json";
 
 export function Chip({ tone = "neutral", children, className = "" }: { tone?: Tone; children: ReactNode; className?: string }) {
   return <span className={`chip ${TONE_CLS[tone]} ${className}`}>{children}</span>;
@@ -186,7 +187,7 @@ export function Card({ title, label, count, onExpand, actions, children, classNa
               {onExpand && count !== undefined ? (
                 <button type="button" className="ff-more" aria-label={parts.ui.expandCard(title)} onClick={() => root.current && onExpand(root.current.getBoundingClientRect())}>
                   {count}
-                  <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
+                  <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={STROKE.medium} /></span>
                 </button>
               ) : null}
             </div>

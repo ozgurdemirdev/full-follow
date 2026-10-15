@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { api, ApiError } from "../api/client";
 import { FORM_ICON, PathIcon } from "../components/forms/icons";
 import { shell } from "../messages.shell";
+import { stroke as STROKE } from "../styles/tokens.json";
 
 const HTTP_UNAUTHORIZED = 401;
 const TEXT = shell.login;
@@ -74,7 +75,7 @@ export function Login({ onDone }: { onDone: () => void }) {
               </button>
             </div>
             <span id="ff-pass-msg" className="login-msg" role={error ? "alert" : "status"}>
-              {error ? <PathIcon d={FORM_ICON.alert} className="size-icon-xs" stroke={2} /> : null}
+              {error ? <PathIcon d={FORM_ICON.alert} className="size-icon-xs" stroke={STROKE.regular} /> : null}
               {error}
             </span>
           </div>

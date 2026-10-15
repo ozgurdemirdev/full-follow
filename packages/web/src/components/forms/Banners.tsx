@@ -4,6 +4,7 @@ import type { ApiError } from "../../api/client";
 import { m as kit } from "../../messages";
 import { forms } from "../../messages.forms";
 import { FORM_ICON, PathIcon } from "./icons";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 /** Amber "Zaten var" banner: the server refused a duplicate key; the existing record can be opened (or restored from the trash) */
 export function DuplicateBanner({ error, onOpen, onRestored }: { error: ApiError; onOpen: () => void; onRestored: () => void }) {
@@ -12,7 +13,7 @@ export function DuplicateBanner({ error, onOpen, onRestored }: { error: ApiError
   return (
     <div className="form-dup" role="alert">
       <span className="form-dup-text">
-        <PathIcon d={FORM_ICON.warn} className="size-icon-md" stroke={2} />
+        <PathIcon d={FORM_ICON.warn} className="size-icon-md" stroke={STROKE.regular} />
         {error.message}
       </span>
       <span className="form-dup-actions">
@@ -31,7 +32,7 @@ export function ErrorSummary({ count }: { count: number }) {
   if (!count) return null;
   return (
     <div className="form-sum" role="alert">
-      <PathIcon d={FORM_ICON.alert} className="size-icon-chip" stroke={2} />
+      <PathIcon d={FORM_ICON.alert} className="size-icon-chip" stroke={STROKE.regular} />
       {forms.banners.fix(count)}
     </div>
   );

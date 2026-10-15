@@ -4,6 +4,7 @@ import { kindOf, type Target } from "../../lib/comments";
 import { BoardIcon } from "../boardIcons";
 import { comments } from "../../messages.comments";
 import { MicButton } from "../MicButton";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const m = comments.newThread;
 
@@ -46,7 +47,7 @@ export function NewThread({ targets, onOpened }: { targets: Target[]; onOpened: 
         <input type="text" value={text} aria-label={m.writeToClaude} placeholder={m.about(target.label)} onChange={(e) => setText(e.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
         <button type="submit" className="ff-field-go" aria-label={m.open} disabled={busy}>
-          <BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} />
+          <BoardIcon name="arrowRight" className="size-icon-chip" stroke={STROKE.bold} />
         </button>
       </form>
     </section>

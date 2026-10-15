@@ -4,6 +4,7 @@ import { norm } from "../../lib/format";
 import { dash } from "../../messages.dash";
 import { BoardIcon } from "../boardIcons";
 import { ExpandLink, ExpandOverlay } from "../ExpandOverlay";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const m = dash.overlay;
 
@@ -47,7 +48,7 @@ export function DashOverlay({ open, from, onClose, spec }: { open: boolean; from
       onClose={onClose}
       toolbar={
         <label className="dash-ex-search">
-          <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
+          <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
           <span className="sr-only">{m.search}</span>
           <input type="search" placeholder={m.search} value={q} onChange={(e) => setQ(e.target.value)}
             className="min-w-0 flex-grow border-0 bg-transparent text-base text-text-primary outline-0 placeholder:text-text-muted [&::-webkit-search-cancel-button]:hidden" />

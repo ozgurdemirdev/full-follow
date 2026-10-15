@@ -4,9 +4,10 @@ import { statusOf, type PStatus } from "@kit/lib/people";
 import { agoText, nextStep, STATUS_LABEL, warmth } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Avatar } from "@kit/components/ui";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { Rhythm } from "./Rhythm";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const NEXT_TONE = { late: "text-danger", today: "text-accent", later: "text-text-muted" } as const;
 
@@ -40,7 +41,7 @@ export const PersonRow = memo(function PersonRow({ p, tasks, today, onOpen }: { 
       </span>
       <span className="flex min-w-0 items-center gap-4">
         <span className={`ppl-dir ${dir ? "" : "invisible"}`} data-d={dir === "gelen" ? "in" : "out"} title={dir === "gelen" ? m.row.incoming : m.row.outgoing}>
-          <BoardIcon name={dir === "gelen" ? "dirIn" : "dirOut"} className="size-icon-sm" stroke={STROKE.arrow} />
+          <BoardIcon name={dir === "gelen" ? "dirIn" : "dirOut"} className="size-icon-sm" stroke={STROKE.bold} />
         </span>
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-base-sm text-text-soft">{msg}</span>
@@ -58,7 +59,7 @@ export const PersonRow = memo(function PersonRow({ p, tasks, today, onOpen }: { 
           <span className="truncate text-base-sm">{next?.text ?? ""}</span>
           <span className={`text-sm ${next ? NEXT_TONE[next.tone] : ""}`}>{next?.at ?? ""}</span>
         </span>
-        <span className="ppl-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.arrow} /></span>
+        <span className="ppl-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.bold} /></span>
       </span>
     </button>
   );

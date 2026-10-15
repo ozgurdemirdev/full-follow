@@ -5,8 +5,9 @@ import { STATUS_LABEL, TOUCH_CARDS, whyText } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { toast } from "@kit/components/toast";
 import { Avatar } from "@kit/components/ui";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** The statuses that become a card: a follow-up that came due, a reply that is awaited, a cooling relation */
 const CARD_STATUSES: PStatus[] = ["due", "wait", "cold"];
@@ -49,7 +50,7 @@ export function TouchCards({ people, today, onOpen }: { people: Person[]; today:
                   {asked ? m.touch.drafted : m.touch.claudeWrites(draftKind(p, s))}
                 </button>
                 <button type="button" className="ppl-done" title={m.touch.done} aria-label={m.touch.doneFor(p.name)} onClick={() => { markGone(p.id); toast(m.touch.doneToast(p.name.split(" ")[0])); }}>
-                  <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.done} />
+                  <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.medium} />
                 </button>
               </div>
             </article>

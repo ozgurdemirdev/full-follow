@@ -11,6 +11,7 @@ import { m as kit } from "../messages";
 import { shell } from "../messages.shell";
 import { useRegistry } from "./modules/registry";
 import type { SearchCtx, SearchHit, SearchSource } from "./modules/types";
+import { stroke as STROKE } from "../styles/tokens.json";
 
 const m = shell.search;
 
@@ -73,7 +74,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
     <div className={board ? "relative flex-none" : "relative hidden flex-none desk:block"}>
       {sources.map((src) => <SourceRunner key={src.id} source={src} armed={armed} q={folded} ctx={ctx} report={report} />)}
       <label className={board ? "dash-search" : "flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
-        {board ? <BoardIcon name="search" className="size-icon-btn" stroke={1.8} /> : <Icon name="search" className="size-icon-md" />}
+        {board ? <BoardIcon name="search" className="size-icon-btn" stroke={STROKE.thin} /> : <Icon name="search" className="size-icon-md" />}
         <input
           ref={input}
           type="search"

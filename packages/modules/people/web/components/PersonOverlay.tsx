@@ -16,9 +16,10 @@ import { toast } from "@kit/components/toast";
 import { Avatar, ErrorBox } from "@kit/components/ui";
 import { PersonAside } from "./PersonAside";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { PersonExtras } from "./PersonExtras";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Menu of the header: the things the board leaves out (forms for touch and draft, editing the accounts, delete, timeline) */
 function HeaderMenu({ p, onClose }: { p: Person; onClose: () => void }) {
@@ -28,7 +29,7 @@ function HeaderMenu({ p, onClose }: { p: Person; onClose: () => void }) {
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.menu} />
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
         {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { person_id: p.id }))}>{m.actions.addTouch}</button> : null}
@@ -97,7 +98,7 @@ export function PersonOverlay({ id, from, p, onClose }: { id: number | null; fro
             </button>
             <HeaderMenu p={row} onClose={onClose} />
             <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
-              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.close} />
+              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           </div>
         </>

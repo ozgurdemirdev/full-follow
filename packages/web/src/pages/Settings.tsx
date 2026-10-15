@@ -8,6 +8,7 @@ import { norm } from "../lib/format";
 import { rowMatches } from "../lib/settings";
 import { settings } from "../messages.settings";
 import { useSettingCategories } from "./settings/registry";
+import { stroke as STROKE } from "../styles/tokens.json";
 
 /** Links to the first versions of the categories keep working */
 const m = settings.page;
@@ -55,7 +56,7 @@ export default function Settings() {
       className=""
       right={(
         <label className="set-search">
-          <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
+          <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
           <span className="sr-only">{m.search}</span>
           <input
             ref={search}

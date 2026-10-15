@@ -3,6 +3,7 @@ import { m as kit } from "../../messages";
 import { forms } from "../../messages.forms";
 import { layout, motion } from "../../styles/tokens.json";
 import { FORM_ICON, PathIcon } from "./icons";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const px = (s: string) => parseInt(s, 10);
 const ms = (s: string) => parseFloat(s);
@@ -138,7 +139,7 @@ function Panel({ title, icon, dest, formId, busy, saveLabel, onDelete, onClose, 
             <span className="form-dest">{dest}</span>
           </div>
           <button type="button" className="form-close" aria-label={kit.close} onClick={onClose}>
-            <PathIcon d={FORM_ICON.close} className="size-icon-chip" stroke={2} />
+            <PathIcon d={FORM_ICON.close} className="size-icon-chip" stroke={STROKE.regular} />
           </button>
         </header>
         <div className="form-body">

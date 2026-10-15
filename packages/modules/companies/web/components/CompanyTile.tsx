@@ -4,9 +4,10 @@ import { COLD_DAYS, lastText } from "@kit/lib/people";
 import { initials, lira } from "@kit/lib/format";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { avatarPair } from "@kit/components/ui";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { MoneyBar } from "./MoneyBar";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** One tile of the list: name, money bar, people, last touch and the hint line of Claude */
 export const CompanyTile = memo(function CompanyTile({ v, max, onOpen }: { v: CompanyView; max: number; onOpen: (id: number, from: HTMLElement) => void }) {
@@ -22,7 +23,7 @@ export const CompanyTile = memo(function CompanyTile({ v, max, onOpen }: { v: Co
           <span className="co-name">{c.name}</span>
           <span className="co-sub">{sub}</span>
         </span>
-        <span className="co-go"><BoardIcon name="arrowUpRight" className="size-icon-xs" stroke={STROKE.arrow} /></span>
+        <span className="co-go"><BoardIcon name="arrowUpRight" className="size-icon-xs" stroke={STROKE.bold} /></span>
       </button>
 
       <div className="co-money-block">

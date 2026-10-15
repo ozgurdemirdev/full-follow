@@ -9,6 +9,7 @@ import { TARGET } from "../../lib/labels";
 import { m as kit } from "../../messages";
 import { comments } from "../../messages.comments";
 import { BoardIcon } from "../boardIcons";
+import { stroke as STROKE } from "../../styles/tokens.json";
 
 const m = comments.asks;
 
@@ -72,7 +73,7 @@ export function Asks() {
         <span className="text-base-sm text-text-secondary">{m.count(rows.length)}</span>
         <Link href={COMMENTS_WAITING} className="ff-more">
           {kit.all}
-          <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
+          <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={STROKE.medium} /></span>
         </Link>
       </div>
       <div className="dash-waits">
