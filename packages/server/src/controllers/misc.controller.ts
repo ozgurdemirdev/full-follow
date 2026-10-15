@@ -4,6 +4,7 @@ import {
   SOURCE_KINDS, TAGS, TOUCH_KINDS, LABELS, CONNECTION_TAGS, NETWORK_DEFAULTS,
   CONTACT_STATUSES, TAG_COLORS,
 } from "@fullfollow/core";
+import { TODAY_ROWS_DEFAULT } from "../constants";
 import { CORE, type Core } from "../core.provider";
 
 @Controller("api")
@@ -36,7 +37,7 @@ export class MiscController {
   /** Bugün ekranı */
   @Get("today")
   today(@Query("limit") limit?: string) {
-    return this.core.today(limit ? Number(limit) : 50);
+    return this.core.today(limit ? Number(limit) : TODAY_ROWS_DEFAULT);
   }
 
   @Get("settings")
