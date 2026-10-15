@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api, qs } from "@kit/api/client";
 import { useIndex } from "@kit/api/keys";
 import type { Person, Template } from "@kit/api/types";
+import { m } from "./messages";
 import type { RenderedTemplate } from "./types";
 import { todayIso } from "@kit/lib/format";
 import { channelName } from "@kit/lib/network";
@@ -26,15 +27,15 @@ export const rateTone = (rate: number | null): RateTone =>
 export const TONE_BAR: Record<RateTone, string> = { none: "bg-text-disabled", good: "bg-accent", fair: "bg-warning", poor: "bg-danger" };
 export const TONE_TEXT: Record<RateTone, string> = { none: "text-text-disabled", good: "text-accent", fair: "text-warning", poor: "text-danger" };
 
-export const meta = (t: Template) => `${t.channel ? channelName(t.channel) : "Tüm kanallar"} · ${t.sector_path ?? "Hepsi"}`;
+export const meta = (t: Template) => `${t.channel ? channelName(t.channel) : m.allChannels} · ${t.sector_path ?? m.allSectors}`;
 
 /** Tiles by reply rate, best first; templates without a measurement last */
 export const byRate = (a: Template, b: Template) => (b.reply_rate ?? -1) - (a.reply_rate ?? -1);
 
 /** Small text on the tile corner: the retire flag, or "erken" while the sample is too small to trust the rate */
 export function flagOf(t: Template): { text: string; retire: boolean } | null {
-  if (t.retire) return { text: "emekliye ayır", retire: true };
-  return t.sent && t.early ? { text: "erken", retire: false } : null;
+  if (t.retire) return { text: m.retire, retire: true };
+  return t.sent && t.early ? { text: m.early, retire: false } : null;
 }
 
 export interface Segment {

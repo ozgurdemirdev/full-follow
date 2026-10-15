@@ -10,11 +10,12 @@ import { emptyRef, type Ref } from "@kit/forms/helpers";
 import { CHANNEL_OPTIONS, errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shared";
 import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { TEMPLATE_KINDS } from "../labels";
+import { m } from "../messages";
 
 const ALL_TOKENS = ["{ad}", "{ad_soyad}", "{firma}", "{sektor}"];
 
 const KIND_OPTIONS = TEMPLATE_KINDS.map((k) => ({ value: k, label: TEMPLATE_KIND[k] }));
-const PREVIEW: Record<string, string> = { "{ad}": "Ayşe", "{ad_soyad}": "Ayşe Demir", "{firma}": "Gülüş Diş", "{sektor}": "Diş hekimi" };
+const PREVIEW: Record<string, string> = { "{ad}": m.form.sampleFirstName, "{ad_soyad}": m.form.sampleFullName, "{firma}": m.form.sampleCompany, "{sektor}": m.form.sampleSector };
 
 export function TemplateForm(p: FormProps) {
   const editId = p.sheet.preset?.template_id;
@@ -44,18 +45,18 @@ export function TemplateForm(p: FormProps) {
     async () => {
       await saveRecord(p, editId, { name: name.trim(), kind, channel: channel || null, sector: sector.text.trim() || null, body });
     },
-    () => errorsOf({ name: !name.trim() && "Şablon adı gerekli", body: !body.trim() && "Metin boş olamaz" }),
+    () => errorsOf({ name: !name.trim() && m.form.nameRequired, body: !body.trim() && m.form.bodyRequired }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="name" label="Şablon adı" req value={name} onChange={setName} placeholder="Örn. Diş hekimi ilk mesaj" autoFocus />
-      <SegField label="Tür" options={KIND_OPTIONS} value={kind} onChange={setKind} />
-      <ChipsField label="Kanal" hint="Seçmezsen tüm kanallarda kullanılır" clearable value={channel} onChange={setChannel} options={CHANNEL_OPTIONS} />
-      <ComboField label="Sektör" opt hint="Boş = hepsi, ya da Ana > Alt yaz" value={sector} onChange={setSector} options={sectorOptions} placeholder="Sağlık > Diş hekimi" />
-      <AreaField name="body" label="Metin" req value={body} onChange={setBody} placeholder="Merhaba {ad}, {firma} için..." rows={5} tokens={ALL_TOKENS} hint="Gönderirken {ad} ve {firma} kişinin bilgisiyle dolar" />
+      <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
+      <SegField label={m.shared.kind} options={KIND_OPTIONS} value={kind} onChange={setKind} />
+      <ChipsField label={m.shared.channel} hint={m.form.channelHint} clearable value={channel} onChange={setChannel} options={CHANNEL_OPTIONS} />
+      <ComboField label={m.shared.sector} opt hint={m.form.sectorHint} value={sector} onChange={setSector} options={sectorOptions} placeholder={m.form.sectorPlaceholder} />
+      <AreaField name="body" label={m.form.body} req value={body} onChange={setBody} placeholder={m.form.bodyPlaceholder} rows={5} tokens={ALL_TOKENS} hint={m.form.bodyHint} />
       {body.includes("{") ? (
-        <Field label="Önizleme"><p className="form-preview">{preview}</p></Field>
+        <Field label={m.form.preview}><p className="form-preview">{preview}</p></Field>
       ) : null}
     </Form>
   );

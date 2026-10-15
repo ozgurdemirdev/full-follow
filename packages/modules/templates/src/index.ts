@@ -3,6 +3,7 @@ import { templatesApi } from "./api";
 import { chatCard } from "./chat";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 
 /**
  * Templates: message templates with {ad} {firma} {sektor} placeholders, picked by channel and sector, their reply statistics
@@ -11,13 +12,13 @@ import { mcp } from "./mcp";
  */
 export default defineModule({
   key: "templates",
-  label: "Şablonlar",
+  label: m.label,
   smoke: ["/api/templates"],
   uses: ["drafts"],
   api: templatesApi,
   entities,
   contribute: {
-    trashTypes: [{ type: "template", label: "şablon" }],
+    trashTypes: [{ type: "template", label: m.noun }],
     chatCards: { template: chatCard },
     meta: { template_kinds: TEMPLATE_KINDS },
   },

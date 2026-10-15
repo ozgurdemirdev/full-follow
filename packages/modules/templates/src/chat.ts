@@ -1,10 +1,11 @@
 import type { ChatCard } from "@fullfollow/core";
+import { m } from "./messages";
 
 /** Stored text, reply stats, and the text filled for the person with the same placeholder fill the follow-up drafts use (`template:5@12`) */
 export const chatCard: ChatCard = (ctx, id, personId) => {
   const templates = ctx.mod("templates")!;
   const t = templates.get(id);
-  if (!t) throw new Error("template not found");
+  if (!t) throw new Error(m.notFound);
   let filled: string | null = null;
   let forName: string | null = null;
   if (personId) {

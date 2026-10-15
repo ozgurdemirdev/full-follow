@@ -2,7 +2,8 @@ import {
   CHANNELS, keptRows, NO_SECTOR_LABEL, REPLIED_AFTER, subjectInfo, TEMPLATE_KINDS, TEMPLATE_MIN_SAMPLE,
   type Ctx, type Subject, type TemplateGroup, type TemplateStats, type TemplateSuggestion,
 } from "@fullfollow/core";
-import { percent, RETIRE_RATE, TIP } from "./constants";
+import { m } from "../messages";
+import { percent, RETIRE_RATE } from "./constants";
 
 type Counted = Omit<TemplateStats, "retire" | "tip">;
 
@@ -20,13 +21,13 @@ const groupKey = (t: Pick<Counted, "kind" | "channel">) => `${t.kind}/${t.channe
 
 /** One sentence about a template, read against the sent templates of its kind and channel */
 function tipOf(t: Counted, retire: boolean, group: Counted[]): string | null {
-  if (!t.sent) return TIP.unmeasured;
+  if (!t.sent) return m.tip.unmeasured;
   if (retire) {
     const best = group.filter((x) => x.id !== t.id && !x.early && x.reply_rate! > t.reply_rate!).sort((a, b) => b.reply_rate! - a.reply_rate!)[0];
-    return TIP.retire(t.sent, t.replied) + (best ? TIP.retireBest(best.name, percent(best.reply_rate!)) : TIP.retireAlone);
+    return m.tip.retire(t.sent, t.replied) + (best ? m.tip.retireBest(best.name, percent(best.reply_rate!)) : m.tip.retireAlone);
   }
-  if (t.early) return TIP.early;
-  return rankGroup(group).leaderId === t.id ? TIP.leader(percent(t.reply_rate!)) : null;
+  if (t.early) return m.tip.early;
+  return rankGroup(group).leaderId === t.id ? m.tip.leader(percent(t.reply_rate!)) : null;
 }
 
 /**

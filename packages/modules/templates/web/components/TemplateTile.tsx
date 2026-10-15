@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import type { Template } from "@kit/api/types";
 import { pct } from "@kit/lib/format";
 import { TEMPLATE_KIND } from "@kit/lib/labels";
+import { m } from "../messages";
 import { flagOf, meta, openSegments, rateTone, TONE_BAR, TONE_TEXT } from "../templates";
 import { Meter } from "@kit/components/ui";
 
@@ -12,7 +13,7 @@ export const TemplateTile = memo(function TemplateTile({ t, onOpen }: { t: Templ
   const parts = useMemo(() => openSegments(t.body), [t.body]);
   return (
     <article className="tpl-tile" data-record={`template-${t.id}`}>
-      <button type="button" className="tpl-open" aria-label={`${t.name} şablonunu aç`} onClick={(e) => onOpen(t.id, e.currentTarget.closest("article")!.getBoundingClientRect())}>
+      <button type="button" className="tpl-open" aria-label={m.tile.open(t.name)} onClick={(e) => onOpen(t.id, e.currentTarget.closest("article")!.getBoundingClientRect())}>
         <span className="tpl-head">
           <span className="tpl-kind">{TEMPLATE_KIND[t.kind]}</span>
           <span className="tpl-meta">{meta(t)}</span>
@@ -24,10 +25,10 @@ export const TemplateTile = memo(function TemplateTile({ t, onOpen }: { t: Templ
           {parts.map((s, i) => <span key={i} className={s.kind === "open" ? "text-warning" : undefined}>{s.text}</span>)}
         </span>
         <span className="tpl-rate">
-          <Meter size="sm" value={(t.reply_rate ?? 0) * 100} color={TONE_BAR[tone]} label={`${t.name} cevap oranı`} />
-          <span className={`tpl-pct ${TONE_TEXT[tone]}`}>{t.reply_rate === null ? "ölçüm yok" : `${pct(t.reply_rate)} cevap`}</span>
+          <Meter size="sm" value={(t.reply_rate ?? 0) * 100} color={TONE_BAR[tone]} label={m.tile.rateLabel(t.name)} />
+          <span className={`tpl-pct ${TONE_TEXT[tone]}`}>{t.reply_rate === null ? m.tile.noMeasure : m.tile.replyPct(pct(t.reply_rate))}</span>
         </span>
-        <span className="tpl-meta">{t.used ? `${t.used} kez kullanıldı · ${t.replied} cevap` : "Henüz kullanılmadı"}</span>
+        <span className="tpl-meta">{t.used ? m.tile.usedCount(t.used, t.replied) : m.tile.unused}</span>
       </button>
     </article>
   );
