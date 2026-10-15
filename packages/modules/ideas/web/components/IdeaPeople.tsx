@@ -1,15 +1,14 @@
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { remove, run } from "../../api/actions";
-import type { Interest } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { emptyRef, type Ref } from "../../forms/helpers";
-import { usePersonOptions } from "../../forms/shared";
-import { NEXT_INTEREST } from "../../lib/ideas";
-import { INTEREST } from "../../lib/labels";
-import { BoardIcon } from "../boardIcons";
-import { Combo } from "../Combo";
-import { Avatar } from "../ui";
+import { remove, run } from "@kit/api/actions";
+import type { Interest } from "@kit/api/types";
+import { RecordLink } from "@kit/components/RecordLink";
+import { emptyRef, type Ref } from "@kit/forms/helpers";
+import { usePersonOptions } from "@kit/forms/shared";
+import { NEXT_INTEREST } from "../ideas";
+import { INTEREST } from "@kit/lib/labels";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Combo } from "@kit/components/Combo";
+import { Avatar } from "@kit/components/ui";
 
 function PersonRow({ x }: { x: Interest }) {
   const cycle = () => run("patch", `/ideas/people/${x.id}`, { interest: NEXT_INTEREST[x.interest] }, { silent: true }).catch(() => {});
@@ -19,7 +18,7 @@ function PersonRow({ x }: { x: Interest }) {
     <div className="ideas-person">
       <Avatar name={x.person_name} id={x.person_id} size="md" />
       <span className="ideas-person-text">
-        <Link href={`${PATHS.people}/${x.person_id}`}>{x.person_name}</Link>
+        <RecordLink type="person" id={x.person_id}>{x.person_name}</RecordLink>
         {note ? <span>{note}</span> : null}
       </span>
       <button type="button" className="ideas-react" data-r={x.interest} aria-label={`${x.person_name}: ${INTEREST[x.interest]}, değiştir`} onClick={cycle}>

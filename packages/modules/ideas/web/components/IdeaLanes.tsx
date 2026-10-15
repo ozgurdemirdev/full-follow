@@ -1,7 +1,8 @@
 import { memo } from "react";
-import type { Idea } from "../../api/types";
-import { dotsOf, LANE_RATE_GOOD, ratePct, type Lane } from "../../lib/ideas";
-import { IDEA_STAGE } from "../../lib/labels";
+import type { Idea } from "@kit/api/types";
+import { ratePct } from "@kit/lib/format";
+import { dotsOf, LANE_RATE_GOOD, type Lane } from "../ideas";
+import { IDEA_STAGE } from "@kit/lib/labels";
 
 const LaneCard = memo(function LaneCard({ idea, on, onPick }: { idea: Idea; on: boolean; onPick: (id: number) => void }) {
   const rate = idea.interest_share;

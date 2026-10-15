@@ -1,4 +1,5 @@
 // The own projects module's web part (the manifest); pages, cards and forms are still loaded from the kit.
+import { lazy } from "react";
 import { defineWebModule } from "@kit/app/modules/define";
 import { byRecord } from "@kit/app/modules/links";
 import { PATHS } from "@kit/app/routes";
@@ -22,4 +23,5 @@ export default defineWebModule({
     load: () => import("@kit/forms/OwnProjectForm").then((m) => ({ default: m.OwnProjectForm })),
   }],
   links: { own_project: (id) => `${PATHS.ownProjects}/${id}` },
+  slots: { "idea.actions": lazy(() => import("./slots/IdeaToProject")) },
 });

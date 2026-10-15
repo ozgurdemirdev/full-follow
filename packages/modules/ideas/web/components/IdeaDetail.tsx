@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
-import { useLocation } from "wouter";
-import { run } from "../../api/actions";
-import type { IdeaRelated, Idea } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { askPitch, IDEA_FLOW, ratePct } from "../../lib/ideas";
-import { IDEA_STAGE } from "../../lib/labels";
-import { useDayMarks } from "../../lib/people";
-import { BoardIcon } from "../boardIcons";
+import { run } from "@kit/api/actions";
+import type { Idea } from "@kit/api/types";
+import type { IdeaRelated } from "../types";
+import { Slot } from "@kit/app/modules/Slot";
+import { ratePct } from "@kit/lib/format";
+import { askPitch, IDEA_FLOW } from "../ideas";
+import { IDEA_STAGE } from "@kit/lib/labels";
+import { useDayMarks } from "@kit/lib/people";
 import { IdeaExtras } from "./IdeaExtras";
 import { IdeaMenu } from "./IdeaMenu";
 
@@ -61,19 +61,10 @@ function MoneyNote({ idea }: { idea: Idea }) {
 
 /** Left panel: stage, stepper, problem, money note, interest ring with the verdict, the two actions */
 export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
-  const [, navigate] = useLocation();
   const [pitched, markPitched] = useDayMarks("pitched");
   const asked = pitched.has(idea.id);
   const stageIdx = IDEA_FLOW.indexOf(idea.stage);
   const move = (stage: string) => stage !== idea.stage && run("patch", `/ideas/${idea.id}`, { stage }, { ok: `Aşama: ${IDEA_STAGE[stage]}` }).catch(() => {});
-  const toProject = async () => {
-    try {
-      const r = await run<{ id: number }>("post", `/own-projects/from-idea/${idea.id}`, {}, { ok: "Proje açıldı, Kendi projelerim’de" });
-      if (r.row) navigate(`${PATHS.ownProjects}/${r.row.id}`);
-    } catch {
-      /* the notice is shown by run() */
-    }
-  };
 
   return (
     <section aria-label={idea.title} className="ideas-detail" data-lane={idea.stage}>
@@ -107,12 +98,7 @@ export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelate
         </div>
       </div>
       <div className="ideas-actions">
-        {!idea.parent_id ? (
-          <button type="button" className="ideas-project" onClick={() => void toProject()}>
-            Projeye dönüştür
-            <span className="ideas-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} /></span>
-          </button>
-        ) : null}
+        <Slot name="idea.actions" props={{ idea }} />
         <button type="button" className={`ideas-pitch ${asked ? "is-asked" : ""}`} onClick={() => { if (!asked) askPitch(idea).then(() => markPitched(idea.id)).catch(() => {}); }}>
           {asked ? "Anlatım metni istendi" : "Claude anlatım metni yazsın"}
         </button>

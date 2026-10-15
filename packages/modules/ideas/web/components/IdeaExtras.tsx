@@ -1,9 +1,9 @@
-import { Link } from "wouter";
-import type { IdeaRelated, Idea } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { ago } from "../../lib/format";
-import { PLATFORM } from "../../lib/labels";
-import { channelName } from "../../lib/network";
+import type { Idea } from "@kit/api/types";
+import type { IdeaRelated } from "../types";
+import { RecordLink } from "@kit/components/RecordLink";
+import { ago } from "@kit/lib/format";
+import { PLATFORM } from "@kit/lib/labels";
+import { channelName } from "@kit/lib/network";
 
 /** What the board leaves out but the page had: notes, the touches that told this idea, the posts about it (blocks of the board's inner style) */
 export function IdeaExtras({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
@@ -33,7 +33,7 @@ export function IdeaExtras({ idea, related }: { idea: Idea; related?: IdeaRelate
         <div className="ideas-block">
           <h3>Paylaşımlar</h3>
           {posts.map((p) => (
-            <Link key={p.id} href={`${PATHS.posts}/${p.id}`} className="text-base-sm">{PLATFORM[p.platform]} · {p.title} · {p.people_count} kişi</Link>
+            <RecordLink key={p.id} type="post" id={p.id} className="text-base-sm">{PLATFORM[p.platform]} · {p.title} · {p.people_count} kişi</RecordLink>
           ))}
         </div>
       ) : null}

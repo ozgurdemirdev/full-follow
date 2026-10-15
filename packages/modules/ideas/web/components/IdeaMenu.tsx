@@ -1,10 +1,10 @@
 import { Link } from "wouter";
-import { remove } from "../../api/actions";
-import type { Idea } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { openSheet } from "../../app/ui";
-import { usePopover } from "../../lib/usePopover";
-import { BoardIcon } from "../boardIcons";
+import { remove } from "@kit/api/actions";
+import type { Idea } from "@kit/api/types";
+import { IDEAS_PATH } from "../paths";
+import { openSheet } from "@kit/app/ui";
+import { usePopover } from "@kit/lib/usePopover";
+import { BoardIcon } from "@kit/components/boardIcons";
 
 /** Menu of the detail header: what the board leaves out (sectors, parent idea, edit, touch and post forms, delete) */
 export function IdeaMenu({ idea }: { idea: Idea }) {
@@ -18,7 +18,7 @@ export function IdeaMenu({ idea }: { idea: Idea }) {
       <div role="menu" aria-hidden={!open} className="ppl-pop ideas-pop" inert={!open}>
         {idea.sectors.length ? <span className="ideas-pop-note">Sektör: {idea.sectors.map((s) => s.path).join(", ")}</span> : null}
         {idea.parent_id ? (
-          <Link href={`${PATHS.ideas}/${idea.parent_id}`} role="menuitem" className="ppl-pop-item" onClick={() => setOpen(false)}>
+          <Link href={`${IDEAS_PATH}/${idea.parent_id}`} role="menuitem" className="ppl-pop-item" onClick={() => setOpen(false)}>
             <span>Üst fikir: {idea.parent_title}</span>
           </Link>
         ) : null}

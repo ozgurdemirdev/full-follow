@@ -1,6 +1,6 @@
-import { run } from "../api/actions";
-import type { Idea, IdeaStage, InterestLevel } from "../api/types";
-import { todayIso } from "./format";
+import { run } from "@kit/api/actions";
+import type { Idea, IdeaStage, InterestLevel } from "@kit/api/types";
+import { todayIso } from "@kit/lib/format";
 
 /** The four lanes, left to right: the stage order of an idea */
 export const IDEA_FLOW: readonly IdeaStage[] = ["fikir", "dogrulaniyor", "demo", "urun"];
@@ -19,7 +19,6 @@ export const LANE_RATE_GOOD = 0.5;
 
 export type Reaction = "yes" | "no" | "told";
 
-export const ratePct = (rate: number) => Math.round(rate * 100);
 
 /** One dot per person, interested first, capped at DOTS_MAX */
 export function dotsOf(i: Pick<Idea, "told" | "interested" | "not_interested" | "answered">): Reaction[] {

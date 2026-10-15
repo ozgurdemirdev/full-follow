@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
-import { useIdeas } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { Detail, IdeaRelated, Idea } from "../api/types";
-import { Page } from "../app/Page";
-import { PATHS } from "../app/routes";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { IdeaDetail } from "../components/ideas/IdeaDetail";
-import { IdeaLanes } from "../components/ideas/IdeaLanes";
-import { IdeaPeople } from "../components/ideas/IdeaPeople";
-import { Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
-import { groupByStage } from "../lib/ideas";
+import { useIdeas } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { Detail, Idea } from "@kit/api/types";
+import type { IdeaRelated } from "../types";
+import { Page } from "@kit/app/Page";
+import { useLinkTo } from "@kit/app/modules/registry";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { IdeaDetail } from "../components/IdeaDetail";
+import { IdeaLanes } from "../components/IdeaLanes";
+import { IdeaPeople } from "../components/IdeaPeople";
+import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
+import { groupByStage } from "../ideas";
+import { IDEAS_PATH } from "../paths";
 
 /** Gelir fikirleri: four stage lanes, the chosen idea with its interest numbers, and who it was told to */
 export default function Ideas() {
@@ -21,12 +23,14 @@ export default function Ideas() {
   const lanes = useMemo(() => groupByStage(rows), [rows]);
   const params = useParams<{ id?: string }>();
   const [, navigate] = useLocation();
+  const linkTo = useLinkTo();
   const inProject = params.id ? all.byId.get(Number(params.id))?.own_project_id : null;
+  const projectPage = inProject ? linkTo("own_project", inProject) : null;
   useEffect(() => {
-    if (inProject) navigate(`${PATHS.ownProjects}/${inProject}`, { replace: true });
-  }, [inProject, navigate]);
+    if (projectPage) navigate(projectPage, { replace: true });
+  }, [projectPage, navigate]);
   const sel = rows.find((i) => i.id === Number(params.id)) ?? lanes.find((l) => l.ideas.length)?.ideas[0];
-  const pick = useCallback((id: number) => navigate(`${PATHS.ideas}/${id}`, { replace: true }), [navigate]);
+  const pick = useCallback((id: number) => navigate(`${IDEAS_PATH}/${id}`, { replace: true }), [navigate]);
   const detail = useQuery<Detail<Idea, IdeaRelated>>(sel ? `/ideas/${sel.id}?with=people,touches,posts` : null);
 
   return (
