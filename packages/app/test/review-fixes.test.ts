@@ -255,4 +255,14 @@ suite("the fixes of the service review", () => {
     app.touches.create({ person_id: ada.id, channel: "email", direction: "giden", kind: "mesaj", summary: "tekrar" });
     expect(sql("SELECT COUNT(*) AS n FROM events WHERE type LIKE '%.status'")[0].n).toBe(2);
   });
+
+  it("a comment update that fails while closing the thread does not keep the new text", () => {
+    const ada = app.people.create({ name: "Ada" }).row;
+    const c = app.comments.add({ target_type: "person", target_id: ada.id, body: "ilk" }).row;
+    h.sqlite.exec("CREATE TRIGGER stop_close BEFORE UPDATE OF resolved_at ON comments BEGIN SELECT RAISE(ABORT, 'kapatilamadi'); END");
+    expect(() => app.comments.update(c.id, { body: "yeni", resolved: true })).toThrow(/kapatilamadi/);
+    expect(sql("SELECT body, resolved_at FROM comments WHERE id = ?", c.id)[0]).toEqual({ body: "ilk", resolved_at: null });
+    h.sqlite.exec("DROP TRIGGER stop_close");
+    expect(app.comments.update(c.id, { body: "yeni", resolved: true }).row).toMatchObject({ body: "yeni" });
+  });
 });

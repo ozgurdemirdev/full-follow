@@ -137,16 +137,18 @@ export function commentsService(ctx: Ctx) {
     });
   }
 
-  /** Metni sadece yazarı değiştirebilir; resolved alanı konuyu kapatır/açar */
+  /** Metni sadece yazarı değiştirebilir; resolved alanı konuyu kapatır/açar. Metin ve kapatma tek transaction'da: biri düşerse ikisi de geri alınır */
   function update(id: number, input: unknown) {
     const { body, resolved } = parse(commentUpdate, input);
     const cur = requireRow(ctx, "comments", id);
-    if (body !== undefined) {
-      if (cur.created_by !== ctx.actor) throw new FFError("forbidden", m.comments.authorOnlyEdit);
-      ctx.db.update(comments).set({ body, updated_at: ctx.clock.now() }).where(eq(comments.id, id)).run();
-    }
-    if (resolved !== undefined) resolve(id, resolved);
-    return { row: withOptions(requireRow(ctx, "comments", id)), effects: [] as string[] };
+    return ctx.db.transaction((tx) => {
+      if (body !== undefined) {
+        if (cur.created_by !== ctx.actor) throw new FFError("forbidden", m.comments.authorOnlyEdit);
+        tx.update(comments).set({ body, updated_at: ctx.clock.now() }).where(eq(comments.id, id)).run();
+      }
+      if (resolved !== undefined) resolve(id, resolved);
+      return { row: withOptions(requireRow(ctx, "comments", id)), effects: [] as string[] };
+    });
   }
 
   /**
