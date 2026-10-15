@@ -4,7 +4,8 @@ import { chatApi, type CardRecord } from "../api";
 import { toast } from "@kit/components/toast";
 import { fmtDay, pct, tl } from "@kit/lib/format";
 import { cardKey, parseCards, type CardGroup, type CardItem } from "../chatReply";
-import { T } from "../chatText";
+import { T } from "../messages";
+import { COPIED_FEEDBACK_MS, STROKE } from "../constants";
 import { CHANNEL, CONTACT_STATUS, IDEA_STAGE, MILESTONE, PLATFORM, STAGE, TEMPLATE_KIND } from "@kit/lib/labels";
 import { useOpenRecord } from "../openRecord";
 import { Icon } from "@kit/components/icons";
@@ -41,7 +42,7 @@ function metaOf(r: CardRecord): string {
     case "person": return join(r.role, r.company, CONTACT_STATUS[r.status]);
     case "company": return CONTACT_STATUS[r.status] ?? "";
     case "opportunity": return join(STAGE[r.stage as keyof typeof STAGE], r.value ? tl(r.value) : null, r.person);
-    case "draft": return join(CHANNEL[r.channel], r.status === "bekliyor" ? T.draftWaiting : r.status === "gonderildi" ? T.draftSent : r.status === "onaylandi" ? "Onaylandı" : "Reddedildi");
+    case "draft": return join(CHANNEL[r.channel], r.status === "bekliyor" ? T.draftWaiting : r.status === "gonderildi" ? T.draftSent : r.status === "onaylandi" ? T.draftApproved : T.draftRejected);
     case "idea": return IDEA_STAGE[r.stage] ?? "";
     case "payment": return join(MILESTONE[r.milestone], tl(r.expected), r.due_date ? fmtDay(r.due_date) : null);
     case "post": return PLATFORM[r.platform] ?? "";
@@ -78,7 +79,7 @@ function Row({ r, reload }: { r: CardRecord; reload: () => Promise<void> }) {
           disabled={busy}
           onClick={() => void act(() => run("patch", `/tasks/${r.id}`, { done: !r.done }, { silent: true }))}
         >
-          <Icon name="check" className="size-icon-sm" stroke={2.6} />
+          <Icon name="check" className="size-icon-sm" stroke={STROKE.heavy} />
         </button>
       ) : (
         <span className="rc-dot" style={{ background: DOT[r.type] }} />
@@ -111,6 +112,9 @@ function TemplateCard({ r }: { r: CardRecord }) {
   const open = useOpenRecord();
   const [view, setView] = useState<"filled" | "raw">(r.filled ? "filled" : "raw");
   const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // the "copied" note must not outlive the card
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
   const [saved, setSaved] = useState(false);
   const bodyRef = useRef<HTMLPreElement>(null);
   const text: string = view === "filled" && r.filled ? r.filled : r.body;
@@ -119,7 +123,8 @@ function TemplateCard({ r }: { r: CardRecord }) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1_600);
+      clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
     } catch {
       const sel = getSelection();
       if (bodyRef.current && sel) {

@@ -1,3 +1,5 @@
+import { LOG_LINE_CHARS } from "../constants";
+import { m } from "../messages";
 import type { ChatErrorCode } from "./chat.config";
 import { MCP_SERVER_NAME, MCP_TOOL_PREFIX, TOOL_SEARCH, TOOL_SEARCH_LABEL, TOOL_SUMMARY_CHARS } from "./chat.config";
 
@@ -126,7 +128,7 @@ export function createParser() {
     try {
       o = JSON.parse(line);
     } catch {
-      console.warn("  chat: JSON olmayan satır atlandı:", line.slice(0, 120));
+      console.warn(m.log.nonJsonLine, line.slice(0, LOG_LINE_CHARS));
       return [];
     }
     switch (o.type) {

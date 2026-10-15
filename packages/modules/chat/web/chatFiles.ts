@@ -1,5 +1,5 @@
 import type { ChatMeta } from "./api";
-import { T } from "./chatText";
+import { T } from "./messages";
 
 const BYTES_PER_MB = 1024 * 1024;
 const KB = 1024;
