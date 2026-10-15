@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { LOST_NO_REASON, LOST_PRESETS } from "../lib/pipeline";
+import { LOST_NO_REASON, LOST_PRESETS } from "../pipeline";
 
 const FOCUSABLE = "button:not([tabindex='-1']), input";
 

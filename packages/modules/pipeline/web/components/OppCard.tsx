@@ -1,14 +1,15 @@
 import { memo, useState } from "react";
 import { Link } from "wouter";
-import { remove, run } from "../../api/actions";
-import type { Opportunity } from "../../api/types";
-import { opportunityPath, PATHS } from "../../app/routes";
-import { openSheet } from "../../app/ui";
-import { fmtDay, lira, todayIso } from "../../lib/format";
-import { STAGE, type OppStage } from "../../lib/labels";
-import { ageMeter, isLive, percentOf, useStageRules } from "../../lib/pipeline";
-import { BoardIcon } from "../boardIcons";
-import { Meter } from "../ui";
+import { remove, run } from "@kit/api/actions";
+import type { Opportunity } from "@kit/api/types";
+import { useLinkTo } from "@kit/app/modules/registry";
+import { openSheet } from "@kit/app/ui";
+import { fmtDay, lira, todayIso } from "@kit/lib/format";
+import { STAGE, type OppStage } from "@kit/lib/labels";
+import { opportunityPath } from "../paths";
+import { ageMeter, isLive, percentOf, useStageRules } from "../pipeline";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Meter } from "@kit/components/ui";
 
 /** Stages a card can be moved to by the picker of the phone list */
 const MOVE_TARGETS: OppStage[] = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"];
@@ -35,6 +36,9 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
   const live = isLive(o);
   const rules = useStageRules();
   const age = live ? ageMeter(o, rules) : null;
+  const linkTo = useLinkTo();
+  const projectHref = o.project_id ? linkTo("project", o.project_id) : null;
+  const personHref = linkTo("person", o.person_id);
   const title = o.company_name ?? o.title;
   const sub = `${o.company_name ? `${o.title} · ` : ""}${o.person_name}`;
 
@@ -74,8 +78,8 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
         <span className="sr-only">Ayrıntılar</span>
         {o.stage === "kaybedildi" && o.lost_reason ? <span className="text-sm text-danger-soft">{o.lost_reason}</span> : null}
       </button>
-      {o.stage === "kazanildi" && o.project_id ? (
-        <Link href={`${PATHS.projects}/${o.project_id}`} draggable={false} className="pipe-won">
+      {o.stage === "kazanildi" && projectHref ? (
+        <Link href={projectHref} draggable={false} className="pipe-won">
           Projeye dönüştü
           <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={OUT_PATH} /></svg>
         </Link>
@@ -93,7 +97,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
           ) : null}
           <span className="pipe-actions">
             <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void draft()}>{asked ? "Taslak istendi" : "Claude takip yazsın"}</button>
-            <Link href={`${PATHS.people}/${o.person_id}`} className="pipe-btn">Kişi</Link>
+            {personHref ? <Link href={personHref} className="pipe-btn">Kişi</Link> : null}
           </span>
           <span className="pipe-actions">
             <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { edit: o.id })}>Düzenle</button>

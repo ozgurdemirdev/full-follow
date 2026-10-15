@@ -1,19 +1,19 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { pickable,useBoard, useOpenTasks, useOpps, useSources, useThreads } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { Report } from "../api/types";
-import { Page } from "../app/Page";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { Board, scrollToStage } from "../components/pipeline/Board";
-import { LostReasons, SourceWins } from "../components/pipeline/Breakdowns";
-import { Kpis } from "../components/pipeline/Kpis";
-import { StageFunnel } from "../components/pipeline/StageFunnel";
-import { ErrorBox, Filters, PageSkeleton } from "../components/ui";
-import { lira, norm } from "../lib/format";
-import { useIsDesktop } from "../lib/media";
-import { BOARD_STAGES, type OppStage } from "../lib/labels";
-import { hintsByOpportunity, nextSteps, pipelineStats, StageRulesProvider, stageRates, stageRulesOf } from "../lib/pipeline";
+import { pickable,useBoard, useOpenTasks, useOpps, useSources, useThreads } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { Report } from "@kit/api/types";
+import { Page } from "@kit/app/Page";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Board, scrollToStage } from "../components/Board";
+import { LostReasons, SourceWins } from "../components/Breakdowns";
+import { Kpis } from "../components/Kpis";
+import { StageFunnel } from "../components/StageFunnel";
+import { ErrorBox, Filters, PageSkeleton } from "@kit/components/ui";
+import { lira, norm } from "@kit/lib/format";
+import { useIsDesktop } from "@kit/lib/media";
+import { BOARD_STAGES, type OppStage } from "@kit/lib/labels";
+import { hintsByOpportunity, nextSteps, pipelineStats, StageRulesProvider, stageRates, stageRulesOf } from "../pipeline";
 
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
 

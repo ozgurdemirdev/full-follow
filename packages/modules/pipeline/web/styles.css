@@ -474,9 +474,6 @@
 .ff-card.opp-summary {
   gap: var(--spacing-9);
 }
-.ff-card.opp-side {
-  gap: var(--spacing-7);
-}
 
 /* ---------- lost reason dialog ---------- */
 .pipe-scrim {

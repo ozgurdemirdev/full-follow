@@ -19,5 +19,5 @@ export default defineWebModule({
     load: () => import("@kit/forms/MarketingForms").then((m) => ({ default: m.IdeaForm })),
   }],
   links: { idea: (id) => `${PATHS.ideas}/${id}` },
-  slots: { "own-project.overlay.ideas": ProjectIdeas },
+  slots: { "own-project.overlay.ideas": { Component: ProjectIdeas } },
 });

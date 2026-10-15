@@ -1,6 +1,7 @@
 // The timeline module's web part (the manifest); its page is still loaded from the kit.
 import { defineWebModule } from "@kit/app/modules/define";
 import { PATHS } from "@kit/app/routes";
+import { OpportunityFeed } from "./OpportunityFeed";
 import { RecordTimelineLink } from "./RecordTimelineLink";
 
 export default defineWebModule({
@@ -13,6 +14,7 @@ export default defineWebModule({
     "person.overlay.menu": RecordTimelineLink,
     "person.overlay.side": RecordTimelineLink,
     "opportunity.actions": RecordTimelineLink,
+    "opportunity.main": OpportunityFeed,
     "project.detail.actions": RecordTimelineLink,
   },
 });

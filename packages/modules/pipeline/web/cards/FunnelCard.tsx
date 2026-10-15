@@ -1,17 +1,17 @@
 import { useMemo } from "react";
 import { Link } from "wouter";
-import { useBoard } from "../../api/keys";
-import { isMissing } from "../../api/modules";
-import { useQuery } from "../../api/store";
-import type { Opportunity, Report } from "../../api/types";
-import { opportunityPath, PATHS } from "../../app/routes";
-import { FUNNEL_SOURCES } from "../../lib/dashboard";
-import { initials, lira, pct } from "../../lib/format";
-import { BOARD_STAGES, OPEN_STAGES, STAGE, STAGE_BG } from "../../lib/labels";
-import { BoardIcon } from "../boardIcons";
-import { Card, Meter } from "../ui";
-import { useExpand } from "../ExpandOverlay";
-import { DashOverlay, type ExRow } from "./DashOverlay";
+import { useBoard } from "@kit/api/keys";
+import { isMissing } from "@kit/api/modules";
+import { useQuery } from "@kit/api/store";
+import type { Opportunity, Report } from "@kit/api/types";
+import { FUNNEL_SOURCES } from "@kit/lib/dashboard";
+import { initials, lira, pct } from "@kit/lib/format";
+import { BOARD_STAGES, OPEN_STAGES, STAGE, STAGE_BG } from "@kit/lib/labels";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { opportunityPath, PIPELINE_PATH } from "../paths";
+import { Card, Meter } from "@kit/components/ui";
+import { useExpand } from "@kit/components/ExpandOverlay";
+import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 
 /** Rows of the overlay: the biggest open opportunities first */
 const OVERLAY_ROWS = 12;
@@ -74,7 +74,7 @@ export function FunnelCard() {
           {BOARD_STAGES.map((s) => {
             const n = counts.get(s) ?? 0;
             return (
-              <Link key={s} href={PATHS.pipeline} className="dash-funnel-row dash-row">
+              <Link key={s} href={PIPELINE_PATH} className="dash-funnel-row dash-row">
                 <span className="flex items-center gap-3 text-base-sm text-text-neutral-chip"><span className={`dash-dot ${STAGE_BG[s]}`} />{STAGE[s]}</span>
                 <Meter value={(n / max) * PERCENT} className="dash-funnel-bar" color={s === "kazanildi" ? "bg-accent" : "bg-border-strong"} label={`${STAGE[s]} ${n}`} />
                 <span className="text-right font-mono text-md">{n}</span>
@@ -84,7 +84,7 @@ export function FunnelCard() {
         </div>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Satış hunisi", sub: `${lira(value)} ${tail}`, page: "Satış hunisi", href: PATHS.pipeline, foot: open.length > OVERLAY_ROWS ? `ve ${open.length - OVERLAY_ROWS} fırsat daha` : `${open.length} açık fırsat`, rows }} />
+        spec={{ title: "Satış hunisi", sub: `${lira(value)} ${tail}`, page: "Satış hunisi", href: PIPELINE_PATH, foot: open.length > OVERLAY_ROWS ? `ve ${open.length - OVERLAY_ROWS} fırsat daha` : `${open.length} açık fırsat`, rows }} />
     </>
   );
 }

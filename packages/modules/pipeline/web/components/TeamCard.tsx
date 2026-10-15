@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { Link } from "wouter";
-import { remove, run } from "../api/actions";
-import { usePeople } from "../api/keys";
-import type { OppPerson, Opportunity } from "../api/types";
-import { PATHS } from "../app/routes";
-import { emptyRef, type Ref } from "../forms/helpers";
-import { OPP_ROLE, OPP_ROLES } from "../lib/labels";
-import { Combo } from "./Combo";
-import { Avatar, Card, Chip } from "./ui";
+import { remove, run } from "@kit/api/actions";
+import { usePeople } from "@kit/api/keys";
+import type { OppPerson, Opportunity } from "@kit/api/types";
+import { RecordLink } from "@kit/app/modules/RecordLink";
+import { emptyRef, type Ref } from "@kit/forms/helpers";
+import { OPP_ROLE, OPP_ROLES } from "@kit/lib/labels";
+import { Combo } from "@kit/components/Combo";
+import { Avatar, Card, Chip } from "@kit/components/ui";
 
 /** The people on an opportunity: the main contact first, then the team with a role each */
 export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] }) {
@@ -32,7 +31,7 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
     <Card title="Ekip" className="opp-side rise">
       <div className="flex items-center gap-4">
         <Avatar name={opp.person_name} />
-        <Link href={`${PATHS.people}/${opp.person_id}`} className="min-w-0 flex-grow truncate text-base">{opp.person_name}</Link>
+        <RecordLink type="person" id={opp.person_id} className="min-w-0 flex-grow truncate text-base">{opp.person_name}</RecordLink>
         <Chip tone="success">Ana muhatap</Chip>
       </div>
       {team.map((t) => (
@@ -40,7 +39,7 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
           <div className="flex flex-wrap items-center gap-3">
             <Avatar name={t.person_name} />
             <div className="flex min-w-0 flex-grow flex-col">
-              <Link href={`${PATHS.people}/${t.person_id}`} className="truncate text-base">{t.person_name}</Link>
+              <RecordLink type="person" id={t.person_id} className="truncate text-base">{t.person_name}</RecordLink>
               {t.company_name ? <span className="truncate text-sm text-text-secondary">{t.company_name}</span> : null}
             </div>
             <select className="inp h-control-height-sm w-auto" aria-label={`${t.person_name} rolü`} value={t.role}

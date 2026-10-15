@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import type { Opportunity, SourceReport } from "../../api/types";
-import { pct } from "../../lib/format";
-import { lostReasons, shortLira } from "../../lib/pipeline";
-import { Card, Empty, Meter } from "../ui";
+import type { Opportunity, SourceReport } from "@kit/api/types";
+import { pct } from "@kit/lib/format";
+import { lostReasons, shortLira } from "../pipeline";
+import { Card, Empty, Meter } from "@kit/components/ui";
 
 const PERCENT = 100;
 

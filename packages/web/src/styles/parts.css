@@ -568,3 +568,6 @@
 .prj-sec[data-gap="loose"] .prj-sec-label {
   padding-bottom: 0;
 }
+.ff-card.opp-side {
+  gap: var(--spacing-7);
+}

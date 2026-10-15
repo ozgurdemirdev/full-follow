@@ -1,9 +1,9 @@
 // Pipeline screen logic: forecast, age meter, funnel rates. Pure functions over the lists the page already loaded;
 // the stage rules (win probability, stale days) and the stage to stage rates come from core with the opportunity list.
 import { createContext, useContext } from "react";
-import type { Opportunity, PipelineMeta, Task, Thread } from "../api/types";
-import { daysFrom, followNote, lira, todayIso } from "./format";
-import { OPEN_STAGES, type OppStage } from "./labels";
+import type { Opportunity, PipelineMeta, Task, Thread } from "@kit/api/types";
+import { daysFrom, followNote, lira, todayIso } from "@kit/lib/format";
+import { OPEN_STAGES, type OppStage } from "@kit/lib/labels";
 
 /** Win probability (0 to 1) and stale limit (days) per open stage */
 export type StageRules = ReadonlyMap<string, { prob: number; staleDays: number }>;

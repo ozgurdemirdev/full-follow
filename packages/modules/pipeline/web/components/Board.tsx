@@ -5,16 +5,16 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
-import { run } from "../../api/actions";
-import { K } from "../../api/keys";
-import { mutate } from "../../api/store";
-import type { List, Opportunity } from "../../api/types";
-import { openSheet } from "../../app/ui";
-import { lira } from "../../lib/format";
-import { BOARD_STAGES, STAGE, STAGE_BG, type OppStage } from "../../lib/labels";
-import { isLive, percentOf, useStageRules } from "../../lib/pipeline";
-import { BoardIcon } from "../boardIcons";
-import { LostReason } from "../LostReason";
+import { run } from "@kit/api/actions";
+import { K } from "@kit/api/keys";
+import { mutate } from "@kit/api/store";
+import type { List, Opportunity } from "@kit/api/types";
+import { openSheet } from "@kit/app/ui";
+import { lira } from "@kit/lib/format";
+import { BOARD_STAGES, STAGE, STAGE_BG, type OppStage } from "@kit/lib/labels";
+import { isLive, percentOf, useStageRules } from "../pipeline";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { LostReason } from "./LostReason";
 import { OppCard } from "./OppCard";
 
 type Cols = Record<OppStage, number[]>;

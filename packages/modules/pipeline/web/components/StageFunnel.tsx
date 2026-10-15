@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import type { Opportunity } from "../../api/types";
-import { pct } from "../../lib/format";
-import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "../../lib/labels";
-import { shortLira } from "../../lib/pipeline";
-import { BoardIcon } from "../boardIcons";
-import { Card } from "../ui";
+import type { Opportunity } from "@kit/api/types";
+import { pct } from "@kit/lib/format";
+import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "@kit/lib/labels";
+import { shortLira } from "../pipeline";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { Card } from "@kit/components/ui";
 
 /** The last open stage has no rate: nothing comes after it in this funnel */
 const LAST_STAGE = OPEN_STAGES[OPEN_STAGES.length - 1];

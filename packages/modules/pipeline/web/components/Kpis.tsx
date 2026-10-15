@@ -1,6 +1,6 @@
-import { lira } from "../../lib/format";
-import type { PipelineStats } from "../../lib/pipeline";
-import { Card } from "../ui";
+import { lira } from "@kit/lib/format";
+import type { PipelineStats } from "../pipeline";
+import { Card } from "@kit/components/ui";
 
 /** The four numbers on top: open value, weighted forecast, won this month against the monthly floor, stale count */
 export function Kpis({ stats, floor }: { stats: PipelineStats; floor: number }) {

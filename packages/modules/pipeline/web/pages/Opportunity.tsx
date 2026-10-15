@@ -1,30 +1,27 @@
 import { useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { remove, run } from "../api/actions";
-import { qs } from "../api/client";
-import { useModules } from "../api/modules";
-import { useQuery } from "../api/store";
-import type { Detail, FileRow, List, Offer, OppPerson, Opportunity as Opp, Task } from "../api/types";
-import { Page } from "../app/Page";
-import { PATHS, timelinePath } from "../app/routes";
-import { openSheet } from "../app/ui";
-import { EditDelete } from "../components/contact";
-import { FeedComposer, FeedItems, useFeed, type FeedGroup } from "../components/Feed";
-import { FilesCard } from "../components/FilesCard";
-import { LinksCard } from "../components/LinksCard";
+import { remove, run } from "@kit/api/actions";
+import { useQuery } from "@kit/api/store";
+import type { Detail, FileRow, Offer, OppPerson, Opportunity as Opp } from "@kit/api/types";
+import { Page } from "@kit/app/Page";
+import { RecordLink } from "@kit/app/modules/RecordLink";
+import { useLinkTo } from "@kit/app/modules/registry";
+import { Slot } from "@kit/app/modules/Slot";
+import { openSheet } from "@kit/app/ui";
+import { EditDelete } from "@kit/components/contact";
+import { FilesCard } from "@kit/components/FilesCard";
+import { LinksCard } from "@kit/components/LinksCard";
 import { LostReason } from "../components/LostReason";
-import { NextStep } from "../components/NextStep";
 import { OffersCard } from "../components/OffersCard";
 import { TeamCard } from "../components/TeamCard";
-import { Card, Chip, ErrorBox, Filters, PageSkeleton, Who } from "../components/ui";
-import { fmtDay, lira, tl } from "../lib/format";
-import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "../lib/labels";
+import { Card, Chip, ErrorBox, Filters, PageSkeleton, Who } from "@kit/components/ui";
+import { fmtDay, lira, tl } from "@kit/lib/format";
+import { OPEN_STAGES, STAGE, STAGE_BG, type OppStage } from "@kit/lib/labels";
+import { PIPELINE_PATH } from "../paths";
 
 type Related = { people?: OppPerson[]; offers?: Offer[]; files?: FileRow[] };
 /** Stage bar: the open stages, then the two ways an opportunity ends */
 const BAR_STAGES: OppStage[] = [...OPEN_STAGES, "kazanildi", "kaybedildi"];
-/** Feed filter chips of the opportunity page (events outside these groups only show under "Hepsi") */
-const FEED_GROUPS: FeedGroup[] = ["Temaslar", "Yorumlar", "Aşama"];
 
 export default function Opportunity() {
   const id = Number(useParams<{ id: string }>().id);
@@ -33,11 +30,8 @@ export default function Opportunity() {
 
 function OpportunityPage({ id }: { id: number }) {
   const [, navigate] = useLocation();
-  const { has } = useModules();
+  const linkTo = useLinkTo();
   const detail = useQuery<Detail<Opp, Related>>(`/opportunities/${id}?with=people,offers,files`);
-  const tasks = useQuery<List<Task>>(`/tasks${qs({ opportunity_id: id, limit: 50 })}`);
-  const { events, items, commentById, openThread } = useFeed("opportunity", id);
-  const [filter, setFilter] = useState<FeedGroup | "Hepsi">("Hepsi");
   const [lostAsk, setLostAsk] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -46,7 +40,7 @@ function OpportunityPage({ id }: { id: number }) {
   if (!o) return <Page title="Fırsat"><PageSkeleton /></Page>;
 
   const files = detail.data?.related.files ?? [];
-  const shown = filter === "Hepsi" ? items : items.filter((x) => x.k.group === filter);
+  const projectHref = o.project_id ? linkTo("project", o.project_id) : null;
   const move = async (stage: OppStage, reason?: string) => {
     setBusy(true);
     try {
@@ -57,14 +51,14 @@ function OpportunityPage({ id }: { id: number }) {
       setBusy(false);
     }
   };
-  const del = () => remove(`/opportunities/${id}`, o.title).then(() => navigate(PATHS.pipeline)).catch(() => {});
+  const del = () => remove(`/opportunities/${id}`, o.title).then(() => navigate(PIPELINE_PATH)).catch(() => {});
 
   return (
     <Page
       title={o.title}
       sub={<>
-        <Link href={`${PATHS.people}/${o.person_id}`}>{o.person_name}</Link>
-        {o.company_name ? <> · <Link href={`${PATHS.companies}/${o.company_id}`}>{o.company_name}</Link></> : null}
+        <RecordLink type="person" id={o.person_id}>{o.person_name}</RecordLink>
+        {o.company_name && o.company_id ? <> · <RecordLink type="company" id={o.company_id}>{o.company_name}</RecordLink></> : null}
       </>}
       right={<EditDelete label={o.title} onEdit={() => openSheet("opportunity", { edit: id })} onDelete={o.project_id ? undefined : del} />}
       className="flex flex-col gap-7"
@@ -88,9 +82,9 @@ function OpportunityPage({ id }: { id: number }) {
           items={BAR_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: STAGE_BG[s] }))} />
         {o.lost_reason ? <p className="m-0 text-base-sm text-danger-soft">Neden: {o.lost_reason}</p> : null}
         <div className="flex flex-wrap gap-3">
-          {o.project_id ? <Link href={`${PATHS.projects}/${o.project_id}`} className="dash-btn is-primary">Projeye git</Link> : null}
+          {projectHref ? <Link href={projectHref} className="dash-btn is-primary">Projeye git</Link> : null}
           <button type="button" className="dash-btn" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>Temas ekle</button>
-          {has("timeline") ? <Link href={timelinePath("opportunity", id)} className="dash-btn is-ghost">Zaman çizelgesi</Link> : null}
+          <Slot name="opportunity.actions" props={{ type: "opportunity", id, className: "dash-btn is-ghost", label: "Zaman çizelgesi" }} />
         </div>
       </Card>
 
@@ -100,22 +94,10 @@ function OpportunityPage({ id }: { id: number }) {
           <div className="order-2 desk:order-none">
             <OffersCard opportunityId={id} offers={detail.data?.related.offers ?? []} files={files} />
           </div>
-          <section aria-label="Akış" className="order-6 flex min-w-0 flex-col gap-5 desk:order-none">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-md font-semibold">Akış</span>
-              <span className="flex-grow" />
-              <Filters label="Olay türü" value={filter} onChange={setFilter} items={[{ value: "Hepsi" as const, label: "Hepsi" }, ...FEED_GROUPS.map((g) => ({ value: g, label: g }))]} />
-            </div>
-            <div className="flex flex-col">
-              <FeedItems items={shown} commentById={commentById} loaded={!!events.data} />
-              <FeedComposer type="opportunity" id={id} label={o.title} openThread={openThread} />
-            </div>
-          </section>
+          <Slot name="opportunity.main" props={{ id, label: o.title, className: "order-6 flex min-w-0 flex-col gap-5 desk:order-none" }} />
         </div>
         <div className="contents desk:col-start-2 desk:flex desk:flex-col desk:gap-7">
-          <div className="order-1 desk:order-none">
-            <NextStep tasks={tasks.data?.rows ?? []} type="opportunity" id={id} personId={o.person_id} followUp={o.next_follow_up_at} />
-          </div>
+          <Slot name="opportunity.side" props={{ id, personId: o.person_id, followUp: o.next_follow_up_at, className: "order-1 desk:order-none" }} />
           <div className="order-3 desk:order-none"><TeamCard opp={o} team={detail.data?.related.people ?? []} /></div>
           <div className="order-4 desk:order-none"><FilesCard type="opportunity" id={id} files={files} /></div>
           <div className="order-5 desk:order-none"><LinksCard type="opportunity" id={id} /></div>

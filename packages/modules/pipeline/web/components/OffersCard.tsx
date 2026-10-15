@@ -1,9 +1,9 @@
-import { remove, run } from "../api/actions";
-import { openSheet } from "../app/ui";
-import type { FileRow, Offer } from "../api/types";
-import { fmtDay, tl } from "../lib/format";
-import { fileHref } from "./FilesCard";
-import { Card, Chip, Empty } from "./ui";
+import { remove, run } from "@kit/api/actions";
+import { openSheet } from "@kit/app/ui";
+import type { FileRow, Offer } from "@kit/api/types";
+import { fmtDay, tl } from "@kit/lib/format";
+import { fileHref } from "@kit/components/FilesCard";
+import { Card, Chip, Empty } from "@kit/components/ui";
 
 /** Offer versions of an opportunity: newest first, one can be accepted (its amount becomes the opportunity value) */
 export function OffersCard({ opportunityId, offers, files }: { opportunityId: number; offers: Offer[]; files: FileRow[] }) {

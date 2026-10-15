@@ -1,16 +1,16 @@
 // Opportunity form of the sheet: create (person, company, source, stage, first step and comment) and edit
 import { useEffect, useMemo, useState } from "react";
-import { run } from "../api/actions";
-import { pickable, usePeople, useSources } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { Detail, Opportunity, Source } from "../api/types";
-import { Form, Note } from "../components/forms/Form";
-import { AreaField, ChipsField, DateField, NumField, TextField } from "../components/forms/fields";
-import { ComboField } from "../components/forms/fields-rich";
-import { addDaysIso, todayIso } from "../lib/format";
-import { OPEN_STAGES, STAGE, type OppStage } from "../lib/labels";
-import { emptyRef, ensurePerson, type Ref } from "./helpers";
-import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "./shared";
+import { run } from "@kit/api/actions";
+import { pickable, usePeople, useSources } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { Detail, Opportunity, Source } from "@kit/api/types";
+import { Form, Note } from "@kit/components/forms/Form";
+import { AreaField, ChipsField, DateField, NumField, TextField } from "@kit/components/forms/fields";
+import { ComboField } from "@kit/components/forms/fields-rich";
+import { addDaysIso, todayIso } from "@kit/lib/format";
+import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
+import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
+import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 
 const VALUE_STEP = 1000;
 const STAGE_OPTIONS = OPEN_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: `var(--color-stage-${s})` }));
