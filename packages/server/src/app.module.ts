@@ -1,24 +1,18 @@
 import { Module } from "@nestjs/common";
-import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, DiscoveryModule } from "@nestjs/core";
 import { AuthController, AuthGuard } from "./auth";
-import { CommentsController } from "./controllers/comments.controller";
-import { FilesController } from "./controllers/files.controller";
-import { LinksController } from "./controllers/links.controller";
-import { NotesController } from "./controllers/notes.controller";
-import { SectorsController } from "./controllers/sectors.controller";
-import { MiscController } from "./controllers/misc.controller";
-import { SourcesController } from "./controllers/sources.controller";
-import { TagsController, TrashController } from "./controllers/tags.controller";
+import { coreControllers } from "./controllers";
 import { claudeProvider, coreProvider } from "./core.provider";
 import { ErrorFilter } from "./http";
 import { JobHost } from "./jobs";
 import { moduleControllers, moduleProviders } from "./modules.generated";
+import { OpenApiController, OpenApiService } from "./openapi/openapi.controller";
 
 @Module({
+  imports: [DiscoveryModule],
   controllers: [
-    AuthController, MiscController, SourcesController,
-    CommentsController, SectorsController, NotesController, LinksController, FilesController,
-    TagsController, TrashController,
+    AuthController, OpenApiController,
+    ...coreControllers,
     // controllers of the installed feature modules (generated list)
     ...moduleControllers,
   ],
@@ -26,6 +20,7 @@ import { moduleControllers, moduleProviders } from "./modules.generated";
     coreProvider,
     claudeProvider,
     JobHost,
+    OpenApiService,
     // providers of the installed modules (the chat module's event hub and Claude runner)
     ...moduleProviders,
     { provide: APP_GUARD, useClass: AuthGuard },

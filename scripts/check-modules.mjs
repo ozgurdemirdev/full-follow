@@ -2,7 +2,7 @@
 // For every installed module, and for "all off", it switches the module off (FF_MODULES_OFF), regenerates the module lists and then:
 //   1. typechecks and builds the backend (tsc -b of core, the installed modules, app, server and MCP: the proof that removal compiles),
 //   2. runs the tests of every remaining package (any non zero exit fails the case),
-//   3. starts the server on a free port (3021..3029) against a seeded copy of the demo database, requests the core endpoints and
+//   3. starts the server on a free port (3021..3029) against a seeded copy of the demo database, requests the core endpoints (the API document /api/openapi.json must have the tag of every installed module and of none that is off) and
 //      the `smoke` paths of every installed module (a 5xx, a 404 or no answer fails), checks /api/modules lists exactly the installed keys,
 //      fetches the web page and its main bundle; the web is built for every case too (vite build only: the generated web list changes per case),
 //      and the build must contain the `fullfollow.webMarkers` strings (a route path, a storage key) of exactly the installed modules that declare any,
@@ -22,7 +22,7 @@ import { discoverModules, root } from "./lib/modules.mjs";
 const logRoot = process.env.FF_CHECK_LOGS || join(tmpdir(), "ff-check-modules");
 const PORTS = [3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029];
 const STEP_TIMEOUT = 15 * 60 * 1000;
-const CORE_PATHS = ["/api/health", "/api/today", "/api/meta", "/api/modules", "/api/settings", "/api/comments", "/api/trash"];
+const CORE_PATHS = ["/api/health", "/api/today", "/api/meta", "/api/modules", "/api/settings", "/api/comments", "/api/trash", "/api/openapi.json"];
 // the generic tools every MCP host has; the module tools come from the installed modules
 const CORE_TOOLS = ["today", "find", "get", "save", "delete", "open"];
 
@@ -94,7 +94,7 @@ async function get(url) {
 }
 
 /** Server: start, wait for /api/health, request every path, check /api/modules and the web page and its bundle, stop */
-async function checkServer(caseDir, env, installed) {
+async function checkServer(caseDir, env, installed, all) {
   const port = await pickPort();
   const base = `http://127.0.0.1:${port}`;
   const fd = openSync(join(caseDir, "server.log"), "w");
@@ -116,6 +116,14 @@ async function checkServer(caseDir, env, installed) {
         const keys = JSON.parse(r.text).map((m) => m.key).sort().join(",");
         const want = installed.map((m) => m.key).sort().join(",");
         if (keys !== want) throw new CheckError(`/api/modules lists [${keys}], expected [${want}]`);
+      }
+      if (p === "/api/openapi.json") {
+        // the API document has a tag per installed module that has a server part, and none for a module that is off
+        const tags = JSON.parse(r.text).tags.map((t) => t.name);
+        const on = new Set(installed.map((m) => m.key));
+        for (const m of all.filter((x) => x.server)) {
+          if (on.has(m.key) !== tags.includes(m.key)) throw new CheckError(`/api/openapi.json ${on.has(m.key) ? "lacks" : "still has"} the tag ${m.key}`);
+        }
       }
     }
     const page = await get(`${base}/`);
@@ -199,7 +207,7 @@ async function runCase(name, off, ctx) {
   const installed = dumpModules(env);
   checkBundle(ctx.modules, installed);
   step(dir, "test", node, [script("test.mjs")], env);
-  await checkServer(dir, env, installed);
+  await checkServer(dir, env, installed, ctx.modules);
   await checkMcp(dir, env, installed, ctx.allTools);
 }
 

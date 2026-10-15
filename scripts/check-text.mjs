@@ -1,5 +1,6 @@
 // Fails when a text a person reads, or a tunable value, is written inline instead of living in one named place.
 // Texts belong in a `messages` file made with defineMessages (packages/core/src/i18n.ts); values in a constants file.
+// The API documentation files (`openapi*.ts`) are developer text in English and are left out.
 //   node scripts/check-text.mjs                     every package
 //   node scripts/check-text.mjs packages/modules/people packages/web   only these folders
 // Flags: JSX text; string literals with Turkish letters; text-like props (label, title, placeholder, ...); the message of
@@ -13,7 +14,7 @@ const require = createRequire(join(root, "packages", "web", "package.json"));
 const ts = require("typescript");
 
 const SKIP_DIRS = new Set(["node_modules", "dist", "migrations", "test", "__tests__", "public"]);
-const ALLOWED_FILE = /(^|[\\/])(messages(\.[a-z]+)?|i18n|constants|tokens)\.tsx?$|\.test\.tsx?$|\.generated\.|\.d\.ts$|vite\.config|vitest\.config|drizzle\.config/;
+const ALLOWED_FILE = /(^|[\\/])(messages(\.[a-z]+)?|i18n|constants|tokens|openapi(\.[a-z]+)?)\.tsx?$|\.test\.tsx?$|\.generated\.|\.d\.ts$|vite\.config|vitest\.config|drizzle\.config/;
 const TURKISH = /[çğıöşüÇĞİÖŞÜ₺]/;
 const LETTER = /\p{L}/u;
 const TEXT_PROPS = new Set(["label", "title", "placeholder", "hint", "noun", "dest", "ok", "empty", "message", "tooltip", "sub", "aria-label", "alt", "confirm", "caption"]);

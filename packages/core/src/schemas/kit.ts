@@ -11,11 +11,11 @@ export const tl = z.coerce.number().int().min(0);
 export const date = z.preprocess(
   (v) => (v === "" ? null : resolveRelativeDate(v)),
   z.string().refine(isIsoDate, "tarih YYYY-MM-DD olmalı").nullable(),
-);
+).describe("YYYY-MM-DD; also bugün, yarın or +3g (days from today); empty clears it");
 export const dateTime = z.preprocess(
   (v) => resolveRelativeDate(v),
   z.string().refine(isIsoDateTime, "tarih ISO olmalı"),
-);
+).describe("ISO date time (2026-10-14T09:30:00) or a short form like bugün");
 
 /** create şemasını güncellemeye çevirir: alanlar opsiyonel */
 export const patch = <T extends z.ZodRawShape>(shape: T) => z.strictObject(shape).partial();

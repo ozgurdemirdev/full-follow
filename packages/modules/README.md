@@ -49,10 +49,35 @@ packages/modules/<key>/
   - `smoke`: GET paths without parameters that must answer 200 while the module is installed; `npm run check:modules` requests them. Fill it for every new module.
 - A read of another module's table (counts, joins, a foreign key check) is written as such with a comment saying so; it is the intended way when the read must keep working without that module. Everything that writes, or enforces a rule of, another module goes through `ctx.mod`.
 
+## API docs
+
+`GET /api/docs` (Swagger UI, served offline from `swagger-ui-dist`) and `GET /api/openapi.json` (OpenAPI 3.1) describe every route, grouped by tag (one tag per installed module, plus `core`, `auth`, `docs`). Both sit behind the same session as the rest of `/api`. The route list comes from NestJS (the controllers the app registered), so a removed module's routes and tag disappear with it; the request shapes come from your own Zod schemas through `z.toJSONSchema`, so they cannot drift from what the service accepts.
+
+A module documents its routes in `src/server/openapi.ts`, a map from `"METHOD /api/path/:id"` to a `RouteDoc`, and exports it from `src/server/index.ts` next to `controllers` (`export { docs } from "./openapi"`). The controllers stay untouched. `calendar` is the reference.
+
+```ts
+import { z } from "zod";
+import { docKit } from "@fullfollow/core";
+import { taskCreate, taskQuick, taskUpdate } from "../service/schemas";
+
+const { crud, defineDocs, flag, object, saveResult } = docKit;
+
+export const docs = defineDocs({
+  // list, read one, create, patch and delete of a record type in one call
+  ...crud("/api/tasks", { noun: "task", filters: { done: flag("Only done tasks") }, create: taskCreate, update: taskUpdate }),
+  "POST /api/tasks/quick": { summary: "Create a task from one line of text", description: "...", body: taskQuick, response: saveResult },
+  "GET /api/plan": { summary: "Get the plan of a day", query: z.object({ date: z.string().optional() }), response: object },
+});
+```
+
+`RouteDoc` fields: `summary` (required, one short English sentence), `description`, `query` (a Zod object, one property per parameter), `body` (JSON), `multipart` (an upload), `response`, `status` (when it is not 201 for POST and 200 otherwise), `contentType` (a download or an event stream), `params` (descriptions of path parameters; a name ending in `id` is an integer), `public` (no session needed). Shared shapes live in `docKit`: `listQuery`, `listOf`, `saveResult`, `row`, `object`, `flag`, `directoryFilters`. Rows are documented as free objects with an `id`; give a route its own Zod object when you want the row fields shown.
+
+`npm test` (the server package) fails when a registered route has no summary, when an entry names a route that no longer exists, or when a controller is not part of any documented source: a new route cannot ship undocumented. `npm run check:modules` also requests `/api/openapi.json` and checks that an off module's tag is gone.
+
 ## Wiring
 
 `scripts/gen-modules.mjs` scans this folder and writes `packages/app/src/modules.generated.ts`, `packages/server/src/modules.generated.ts` and, for the web part (below), `packages/web/src/modules.generated.ts` and `packages/web/src/styles/modules.generated.css`.
-`scripts/build.mjs` builds core, every module, app, server and MCP in that order; `scripts/test.mjs` runs core, app and every module's tests.
+`scripts/build.mjs` builds core, every module, app, server and MCP in that order; `scripts/test.mjs` runs the tests of core, app, server and every module.
 Both run from `npm run build` / `npm test` / `npm start`. `npm run check:modules` is the removal check: for each module and for all off, it regenerates the lists, compiles every package, runs the remaining tests, starts the server and the MCP host against a seeded copy of the demo database and requests the core and `smoke` endpoints (the web is typechecked once, all on, and built again for every case with the generated web list of that case; the build must hold the `fullfollow.webMarkers` of exactly the installed modules); run it at the end of a phase and before a merge (take the build lock once around it if others build). `GET /api/modules` lists the installed modules.
 The server gives a module's controller two apps through string tokens: `APP_TOKEN` (actor `ozgur`) and `CLAUDE_APP_TOKEN` (the same app as `claude`, for what Claude writes when the panel asks for it: the follow-up drafts).
 

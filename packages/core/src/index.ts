@@ -46,6 +46,9 @@ export { normalizeType, resolveId } from "./services/records";
 export { companyKeys, contactKey, domainKey, personKeys } from "./keys";
 export * as schema from "./db/schema";
 export * as zodKit from "./schemas/kit";
+export * as coreSchemas from "./schemas";
+export * as docKit from "./openapi";
+export type { DocKey, HttpMethod, RouteDoc, RouteDocs } from "./openapi";
 export type { Q } from "./db/client";
 export { APP_TOKEN, CLAUDE_APP_TOKEN, intId, listOpts, withList } from "./http";
 
