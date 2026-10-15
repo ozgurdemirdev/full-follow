@@ -1,5 +1,7 @@
 /** Kısa düz metin çıktılar: boş alan yazılmaz, tek satır = tek kayıt */
-import { label, type McpDef, type McpEntityDoc, type McpFormat } from "@fullfollow/core";
+import { label, LOCALE, type McpDef, type McpEntityDoc, type McpFormat } from "@fullfollow/core";
+import { CUT_CHARS, NOTE_CUT_CHARS } from "./constants";
+import { m } from "./messages";
 
 const thisYear = () => new Date().getFullYear();
 
@@ -8,25 +10,25 @@ export function d(iso?: string | null): string {
   const [y, m, day] = iso.slice(0, 10).split("-");
   return Number(y) === thisYear() ? `${day}.${m}` : `${day}.${m}.${y.slice(2)}`;
 }
-export const tl = (n?: number | null) => (n === null || n === undefined ? "" : `${n.toLocaleString("tr-TR")}₺`);
-export function cut(s: string | null | undefined, n = 60): string {
+export const tl = (n?: number | null) => (n === null || n === undefined ? "" : `${n.toLocaleString(LOCALE)}${m.currency}`);
+export function cut(s: string | null | undefined, n = CUT_CHARS): string {
   const t = (s ?? "").replace(/\s+/g, " ").trim();
   return t.length > n ? t.slice(0, n - 1) + "…" : t;
 }
-export const who = (a?: string) => (a === "claude" ? "Claude" : a === "ozgur" ? "Özgür" : a === "musteri" ? "Müşteri" : a ?? "");
+export const who = (a?: string) => (a === "claude" ? m.who.claude : a === "ozgur" ? m.who.ozgur : a === "musteri" ? m.who.customer : a ?? "");
 export const join = (...p: (string | number | null | undefined | false)[]) => p.filter((x) => x !== null && x !== undefined && x !== "" && x !== false).join(" · ");
 
 type Row = Record<string, any>;
 
 const LINE: Record<string, (r: Row) => string> = {
-  sector: (r) => join(`#${r.id} ${r.path}`, `${r.people_count ?? 0} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
-  file: (r) => join(`#${r.id} ${r.name}`, `${Math.max(1, Math.round(r.size / 1024))} KB`, d(r.created_at)),
+  sector: (r) => join(`#${r.id} ${r.path}`, m.line.people(r.people_count ?? 0), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
+  file: (r) => join(`#${r.id} ${r.name}`, m.line.kilobytes(Math.max(1, Math.round(r.size / 1024))), d(r.created_at)),
   link: (r) => join(`#${r.id} ${r.label}`, r.url, r.from && `(${r.from})`),
-  note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, 80)),
-  tag: (r) => join(`#${r.id} ${r.name}`, `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
-  trash: (r) => join(`${r.type} #${r.id} ${r.label}`, `${r.what} · silindi ${d(r.deleted_at)}`),
-  source: (r) => join(`#${r.id} ${r.name}`, r.kind, `${r.opp_count ?? 0} fırsat`, !!r.people_count && `${r.people_count} kişi`, !!r.company_count && `${r.company_count} firma`, r.deleted_at && "SİLİNDİ"),
-  comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, 60)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, 60)}"`, r.count > 1 && `${r.count} yorum`, r.last_by === "ozgur" && !r.resolved_at && "CEVAPSIZ", r.resolved_at && "kapalı"),
+  note: (r) => join(`#${r.id} ${d(r.created_at)} ${who(r.created_by)}`, r.person_name, cut(r.body, NOTE_CUT_CHARS)),
+  tag: (r) => join(`#${r.id} ${r.name}`, m.line.people(r.people_count), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
+  trash: (r) => join(`${r.type} #${r.id} ${r.label}`, m.line.trashWhat(r.what, d(r.deleted_at))),
+  source: (r) => join(`#${r.id} ${r.name}`, r.kind, m.line.opportunities(r.opp_count ?? 0), !!r.people_count && m.line.people(r.people_count), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
+  comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, CUT_CHARS)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, CUT_CHARS)}"`, r.count > 1 && m.line.commentCount(r.count), r.last_by === "ozgur" && !r.resolved_at && m.line.unanswered, r.resolved_at && m.line.closed),
   setting: (r) => `${r.key}=${r.value}`,
 };
 
@@ -55,12 +57,12 @@ export function line(type: string, r: Row): string {
 export const kindName = (type: string): string => KIND_NAME[type] ?? entityDocs[type]?.kind ?? type;
 
 /** What a module's formatters get to format like the core types do */
-const socials = (r: Row) => (r.instagram || r.linkedin ? [join(r.instagram && `instagram: ${r.instagram}`, r.linkedin && `linkedin: ${r.linkedin}`)] : []);
+const socials = (r: Row) => (r.instagram || r.linkedin ? [join(r.instagram && m.line.instagram(r.instagram), r.linkedin && m.line.linkedin(r.linkedin))] : []);
 export const mcpFormat: McpFormat = { d, tl, cut, who, join, label, line, socials, section: (title, type, res) => sec(title, type, res), marketingParts: () => marketingParts, ok };
 
 export function list(type: string, res: { rows: Row[]; total: number }, offset = 0): string {
-  if (!res.rows.length) return "kayıt yok";
-  const head = res.total > res.rows.length + offset ? `${offset + 1}-${offset + res.rows.length}/${res.total} (offset ile devam)\n` : "";
+  if (!res.rows.length) return m.list.empty;
+  const head = res.total > res.rows.length + offset ? m.list.more(offset + 1, offset + res.rows.length, res.total) : "";
   return head + res.rows.map((r) => line(type, r)).join("\n");
 }
 
@@ -73,7 +75,7 @@ export function block(res: { type: string; id: number; row: Row; related: Record
   const { type, id, row, related } = res;
   const out: string[] = [];
   if (type === "comment") {
-    out.push(join(`#${id} yorum konusu`, row.target_label, row.resolved_at && "kapalı"));
+    out.push(join(m.block.commentThread(id), row.target_label, row.resolved_at && m.line.closed));
     for (const c of row.comments) out.push(`#${c.id} ${who(c.created_by)} ${d(c.created_at)}: ${c.body}`);
     return out.join("\n");
   }
@@ -84,11 +86,11 @@ export function block(res: { type: string; id: number; row: Row; related: Record
     .map(([k, v]) => `${k}: ${typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? d(v) : v}`);
   if (extra.length) out.push(extra.join(" · "));
   out.push(...(entityDocs[type]?.details?.(row, mcpFormat) ?? []));
-  if (row.notes) out.push(`not: ${row.notes}`);
-  if (row.body) out.push(`metin: ${row.body}`);
-  if (res.comments_open) out.push(`açık yorum konusu: ${res.comments_open}`);
+  if (row.notes) out.push(m.block.note(row.notes));
+  if (row.body) out.push(m.block.body(row.body));
+  if (res.comments_open) out.push(m.block.openThreads(res.comments_open));
   for (const [name, rows] of Object.entries(related)) {
-    if (!rows.length) { out.push(`${name}: yok`); continue; }
+    if (!rows.length) { out.push(m.block.noRows(name)); continue; }
     if (relationLines[name]) {
       out.push(relationLines[name](rows, mcpFormat));
       continue;
@@ -106,7 +108,7 @@ const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =
 export function todayText(t: any): string {
   // core's sections are numbered 100, 200, ...; a module's section has its own number and lands between them
   const core: { at: number; text: string }[] = [
-    { at: 100, text: sec("Cevapsız yorum", "comment", t.comments) },
+    { at: 100, text: sec(m.today.comments, "comment", t.comments) },
   ];
   const parts = [...core, ...todaySections.filter((s) => !s.head).map((s) => ({ at: s.at, text: s.render(t, mcpFormat) }))]
     .sort((a, b) => a.at - b.at)
@@ -114,26 +116,23 @@ export function todayText(t: any): string {
     .filter(Boolean);
   // lines a module puts before the sections (the week numbers, the daily quota)
   const head = todaySections.filter((s) => s.head).sort((a, b) => a.at - b.at).map((s) => s.render(t, mcpFormat));
-  return [`BUGÜN ${t.date}`, ...head, ...(parts.length ? parts : ["bugün için iş yok"])].filter(Boolean).join("\n");
+  return [m.today.head(t.date), ...head, ...(parts.length ? parts : [m.today.nothing])].filter(Boolean).join("\n");
 }
 
-export const KIND_NAME: Record<string, string> = {
-  source: "kaynak",
-  comment: "yorum", setting: "ayar", sector: "sektör", note: "not", link: "link", tag: "etiket", trash: "çöp kutusu",
-};
+export const KIND_NAME: Record<string, string> = m.kind;
 
 /** Toplu kayıt özeti: eklenen sayısı, mükerrer diye atlananlar (hangi kayıtla çakıştı), hatalılar */
 export function bulkText(kind: string, r: { created: { id: number; label: string; effects: string[] }[]; skipped: { index: number; label: string; existing: { type: string; id: number; label: string; field: string; in_trash: boolean } }[]; failed: { index: number; label: string; error: string }[] }): string {
-  const out = [`ok · ${r.created.length} ${kind} eklendi${r.created.length ? ` (#${r.created[0].id}…#${r.created[r.created.length - 1].id})` : ""}`];
+  const out = [m.bulk.added(r.created.length, kind, r.created.length ? ` (#${r.created[0].id}…#${r.created[r.created.length - 1].id})` : "")];
   const eff = r.created.flatMap((c) => c.effects);
-  if (eff.length) out.push(`etki: ${eff.join(" · ")}`);
+  if (eff.length) out.push(m.bulk.effects(eff.join(" · ")));
   if (r.skipped.length) {
-    out.push(`atlandı (mükerrer) ${r.skipped.length}:`, ...r.skipped.map((s) => `  [${s.index}] ${s.label} → ${kindName(s.existing.type)} #${s.existing.id} ${s.existing.label} (${s.existing.field}${s.existing.in_trash ? ", çöp kutusunda" : ""})`));
+    out.push(m.bulk.skipped(r.skipped.length), ...r.skipped.map((s) => m.bulk.skippedLine(s.index, s.label, kindName(s.existing.type), s.existing.id, s.existing.label, s.existing.field, s.existing.in_trash)));
   }
-  if (r.failed.length) out.push(`hata ${r.failed.length}:`, ...r.failed.map((f) => `  [${f.index}] ${f.label}: ${f.error}`));
+  if (r.failed.length) out.push(m.bulk.failed(r.failed.length), ...r.failed.map((f) => `  [${f.index}] ${f.label}: ${f.error}`));
   return out.join("\n");
 }
 
 export function ok(kind: string, id: number | undefined, effects: string[] = [], extra?: string): string {
-  return ["ok", `${kind}${id ? ` #${id}` : ""}${extra ? ` ${extra}` : ""}`, ...effects].join(" · ");
+  return [m.ok, `${kind}${id ? ` #${id}` : ""}${extra ? ` ${extra}` : ""}`, ...effects].join(" · ");
 }
