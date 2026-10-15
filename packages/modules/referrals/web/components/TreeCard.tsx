@@ -2,6 +2,8 @@ import type { RefLayout, RefPlaced } from "../types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { nodeTop, nodeValue } from "../referrals";
 import { Avatar } from "@kit/components/ui";
+import { EDGE_STROKE, NODE_STAGGER_MAX } from "../constants";
+import { m } from "../messages";
 
 /** Depth where the nodes would get too narrow: the tree then keeps a minimum column width and scrolls inside its box */
 const SCROLL_FROM_LEVELS = 4;
@@ -10,7 +12,7 @@ function TreeNode({ p, i, width }: { p: RefPlaced; i: number; width: number }) {
   const v = nodeValue(p);
   return (
     <RecordLink type="person" id={p.node.person.id} className="ref-node" data-root={p.level === 0 ? "" : undefined}
-      style={{ left: `${p.x}%`, top: nodeTop(p), width: `${width}%`, ["--i" as string]: Math.min(i, 24) }}>
+      style={{ left: `${p.x}%`, top: nodeTop(p), width: `${width}%`, ["--i" as string]: Math.min(i, NODE_STAGGER_MAX) }}>
       <Avatar name={p.node.person.name} id={p.node.person.id} size="sm" />
       <span className="ref-who">
         <b>{p.node.person.name}</b>
@@ -28,15 +30,15 @@ export function TreeCard({ title, tree }: { title: string; tree: RefLayout }) {
       <div className="ref-tree-head">
         <h2>{title}</h2>
         <span className="ref-legend">
-          <span><i data-tone="won" />kazanıldı</span>
-          <span><i data-tone="open" />açık</span>
-          <span><i data-tone="none" />iş yok</span>
+          <span><i data-tone="won" />{m.tree.won}</span>
+          <span><i data-tone="open" />{m.tree.open}</span>
+          <span><i data-tone="none" />{m.tree.none}</span>
         </span>
       </div>
       <div className="ref-tree-scroll">
         <div className="ref-tree" style={{ height: tree.height, minWidth: tree.depth >= SCROLL_FROM_LEVELS ? `calc(${tree.depth} * var(--spacing-referrals-col-min))` : undefined }}>
           <svg width="100%" height="100%" viewBox={`0 0 100 ${tree.height}`} preserveAspectRatio="none" aria-hidden="true">
-            {tree.edges.map((e) => <path key={e.key} className="ref-edge" data-tone={e.tone} d={e.d} style={{ ["--len" as string]: e.len }} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />)}
+            {tree.edges.map((e) => <path key={e.key} className="ref-edge" data-tone={e.tone} d={e.d} style={{ ["--len" as string]: e.len }} strokeWidth={EDGE_STROKE} vectorEffect="non-scaling-stroke" />)}
           </svg>
           {tree.nodes.map((p, i) => <TreeNode key={p.node.person.id} p={p} i={i} width={tree.width} />)}
         </div>

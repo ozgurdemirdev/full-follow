@@ -1,10 +1,11 @@
 import type { RefKpi } from "../types";
 import { order } from "@kit/components/ui";
+import { m } from "../messages";
 
 /** Four numbers on top: won from referrals, still open, close rate against the other sources, people introduced */
 export function Kpis({ items }: { items: RefKpi[] }) {
   return (
-    <section className="ref-kpi rise" style={order(1)} aria-label="Özet">
+    <section className="ref-kpi rise" style={order(1)} aria-label={m.kpis.summary}>
       {items.map((k) => (
         <div key={k.label} className="ref-kpi-item">
           <span className="ref-kpi-label">{k.label}</span>

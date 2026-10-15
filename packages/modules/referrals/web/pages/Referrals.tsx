@@ -8,6 +8,8 @@ import { Leaders } from "../components/Leaders";
 import { Suggestions } from "../components/Suggestions";
 import { TreeCard } from "../components/TreeCard";
 import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 import { REFERRALS_REPORT } from "../paths";
 import { buildTree, layoutTree, ownValues, referralKpis } from "../referrals";
 
@@ -33,7 +35,7 @@ export default function Referrals() {
   const error = report.error ?? people.error ?? opps.error;
 
   return (
-    <Page title="Referanslar" sub="Kim kimi tanıttı, tanıştırdıklarından ve onların ağından ne iş çıktı" className="flex flex-col gap-10">
+    <Page title={kit.nouns.referrals} sub={m.page.sub} className="flex flex-col gap-10">
       {error && !ready ? <ErrorBox error={error} retry={() => { report.reload(); people.reload(); opps.reload(); }} /> : null}
       {!ready ? (
         !error && <PageSkeleton />
@@ -41,11 +43,11 @@ export default function Referrals() {
         <>
           <Kpis items={kpis} />
           {leaders.length === 0 || !selected || !tree ? (
-            <Empty>Henüz kimse kimseyi tanıtmadı. Kişi eklerken “Tanıtan” alanını doldurunca burada görünür.</Empty>
+            <Empty>{m.page.empty}</Empty>
           ) : (
             <div className="ref-grid rise" style={order(2)}>
               <Leaders rows={leaders} selected={selected.person_id} onPick={setPicked} />
-              <TreeCard title={`${selected.name} ağı`} tree={tree} />
+              <TreeCard title={m.page.treeTitle(selected.name)} tree={tree} />
             </div>
           )}
           {report.data ? <Suggestions thanks={report.data.thanks} asks={report.data.asks} /> : null}

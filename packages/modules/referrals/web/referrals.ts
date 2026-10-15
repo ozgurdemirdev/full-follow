@@ -5,7 +5,9 @@ import type { Opportunity, Person, ReferralValue } from "@kit/api/types";
 import type { RefEdge, RefKpi, RefLayout, RefNode, RefNet, RefOwn, RefPlaced, RefSuggestion, RefTone } from "./types";
 import { layout as layoutTokens, space } from "@kit/styles/tokens.json";
 import { lira, pct, todayIso } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
 import { OPEN_STAGES } from "@kit/lib/labels";
+import { m } from "./messages";
 
 // ------------------------------------------------------------ tree geometry (percent of the tree width, px for the rows)
 const px = (v: string) => parseInt(v, 10);
@@ -56,10 +58,10 @@ export function referralKpis(people: readonly Person[], opps: readonly Opportuni
   }
   const rate = (s: { won: number; lost: number }) => (s.won + s.lost ? s.won / (s.won + s.lost) : null);
   return [
-    { label: "Referanstan kazanılan", value: lira(side.ref.wonValue), sub: "tüm ağ", accent: true },
-    { label: "Açıkta", value: lira(side.ref.openValue), sub: "referansla gelen fırsatlar" },
-    { label: "Kapanma oranı", value: pct(rate(side.ref)), sub: `diğer kaynaklar ${pct(rate(side.other))}` },
-    { label: "Tanıtılan kişi", value: String(referred.size), sub: `${leaders.length} kişiden` },
+    { label: m.kpis.wonTitle, value: lira(side.ref.wonValue), sub: m.kpis.wonSub, accent: true },
+    { label: m.kpis.openTitle, value: lira(side.ref.openValue), sub: m.kpis.openSub },
+    { label: m.kpis.rateTitle, value: pct(rate(side.ref)), sub: m.kpis.rateSub(pct(rate(side.other))) },
+    { label: m.kpis.peopleTitle, value: String(referred.size), sub: m.kpis.peopleSub(leaders.length) },
   ];
 }
 
@@ -86,7 +88,7 @@ export function buildTree(rootId: number, people: readonly Person[], own: Readon
     children.forEach((k) => seen.add(k.id));
     const sub = children.map(make);
     const weight = (n: RefNode) => n.own.won + n.own.open + n.net.won + n.net.open;
-    sub.sort((a, b) => weight(b) - weight(a) || a.person.name.localeCompare(b.person.name, "tr"));
+    sub.sort((a, b) => weight(b) - weight(a) || a.person.name.localeCompare(b.person.name, LOCALE));
     return { person: { id: p.id, name: p.name, company_name: p.company_name }, own: own.get(p.id) ?? ZERO, kids: sub, net: sub.reduce(addNet, { won: 0, open: 0, people: 0, wonCount: 0 }) };
   };
   return make(root);
@@ -130,16 +132,12 @@ export const nodeTop = (p: RefPlaced) => p.y + NODE_TOP;
 export function nodeValue(p: RefPlaced): { text: string; tone: RefTone } {
   if (p.level === 0) return { text: lira(p.node.net.won), tone: "won" };
   const t = toneOf(p.node);
-  return { text: t === "won" ? lira(p.node.own.won) : t === "open" ? lira(p.node.own.open) : "iş yok", tone: t };
+  return { text: t === "won" ? lira(p.node.own.won) : t === "open" ? lira(p.node.own.open) : m.tree.none, tone: t };
 }
 
 // ------------------------------------------------------------ suggestion requests
 export type RequestKind = "thanks" | "ask";
-const REQUEST_OK: Record<RequestKind, string> = {
-  thanks: "Claude teşekkür taslağını yazıyor, Taslaklar’a düşecek",
-  ask: "Claude referans ricasını yazıyor, Taslaklar’a düşecek",
-};
 
 /** Ask Claude for the draft (a task for Claude with the title the API sent; the draft lands in Taslaklar) */
 export const requestDraft = (kind: RequestKind, s: Pick<RefSuggestion, "person" | "request_title">) =>
-  run("post", "/tasks", { title: s.request_title, assignee: "claude", due_date: todayIso(), person_id: s.person.id }, { ok: REQUEST_OK[kind] });
+  run("post", "/tasks", { title: s.request_title, assignee: "claude", due_date: todayIso(), person_id: s.person.id }, { ok: m.requestOk[kind] });

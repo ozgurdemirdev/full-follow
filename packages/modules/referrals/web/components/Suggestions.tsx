@@ -3,9 +3,10 @@ import type { RefSuggestion } from "../types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { requestDraft, type RequestKind } from "../referrals";
 import { Avatar, order } from "@kit/components/ui";
+import { m } from "../messages";
 
-const LABEL: Record<RequestKind, string> = { thanks: "Claude teşekkür yazsın", ask: "Claude rica yazsın" };
-const DONE: Record<RefSuggestion["state"], string> = { idle: "", asked: "Taslak istendi", drafted: "Taslak hazır" };
+const LABEL: Record<RequestKind, string> = { thanks: m.suggestions.thanksButton, ask: m.suggestions.askButton };
+const DONE: Record<RefSuggestion["state"], string> = { idle: "", asked: m.suggestions.asked, drafted: m.suggestions.drafted };
 
 function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
   const [busy, setBusy] = useState(false);
@@ -49,8 +50,8 @@ function List({ kind, title, empty, rows }: { kind: RequestKind; title: string; 
 export function Suggestions({ thanks, asks }: { thanks: RefSuggestion[]; asks: RefSuggestion[] }) {
   return (
     <div className="ref-asks rise" style={order(3)}>
-      <List kind="thanks" title="Teşekkür zamanı" empty="Son günlerde referansla kazanılan iş yok." rows={thanks} />
-      <List kind="ask" title="Kimden referans istenir" empty="Şu an referans istenecek kimse yok." rows={asks} />
+      <List kind="thanks" title={m.suggestions.thanksTitle} empty={m.suggestions.thanksEmpty} rows={thanks} />
+      <List kind="ask" title={m.suggestions.asksTitle} empty={m.suggestions.asksEmpty} rows={asks} />
     </div>
   );
 }

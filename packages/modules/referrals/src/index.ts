@@ -1,6 +1,7 @@
 import { defineModule } from "@fullfollow/core";
 import { referralsApi } from "./api";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 
 /**
  * Referrals: the referral report, what the people a person introduced (and the people they introduced) brought in opportunities, wins and money.
@@ -8,7 +9,7 @@ import { mcp } from "./mcp";
  */
 export default defineModule({
   key: "referrals",
-  label: "Referanslar",
+  label: m.label,
   smoke: ["/api/report/referrals"],
   uses: ["people", "pipeline", "projects", "calendar", "drafts"],
   api: referralsApi,
