@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { m } from "../messages";
 import { LOST_NO_REASON, LOST_PRESETS } from "../pipeline";
 
 const FOCUSABLE = "button:not([tabindex='-1']), input";
@@ -31,22 +32,22 @@ function Dialog({ name, onCancel, onSave }: { name?: string; onCancel: () => voi
 
   return (
     <>
-      <button type="button" className="pipe-scrim" aria-label="Vazgeç" tabIndex={-1} onClick={onCancel} />
-      <section ref={panel} className="pipe-dlg" role="dialog" aria-modal="true" aria-label="Neden kaybedildi?">
+      <button type="button" className="pipe-scrim" aria-label={m.shared.cancel} tabIndex={-1} onClick={onCancel} />
+      <section ref={panel} className="pipe-dlg" role="dialog" aria-modal="true" aria-label={m.lost.title}>
         <div className="flex flex-col gap-1">
-          <h2 className="pipe-dlg-title">Neden kaybedildi?</h2>
-          <span className="text-base-sm text-text-secondary">{name ? `${name} · ` : ""}Claude bir sonraki teklifte buna göre yazar</span>
+          <h2 className="pipe-dlg-title">{m.lost.title}</h2>
+          <span className="text-base-sm text-text-secondary">{m.lost.sub(name)}</span>
         </div>
         <div className="pipe-chips">
           {LOST_PRESETS.map((r) => (
             <button key={r} type="button" className="pipe-chip" aria-pressed={reason === r} onClick={() => setReason(r)}>{r}</button>
           ))}
         </div>
-        <input type="text" className="pipe-input" value={reason} aria-label="Neden" placeholder="Örn. bütçe uymadı, başkasıyla anlaştı"
+        <input type="text" className="pipe-input" value={reason} aria-label={m.lost.reasonLabel} placeholder={m.lost.placeholder}
           onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onSave(reason.trim() || LOST_NO_REASON)} />
         <div className="pipe-dlg-foot">
-          <button type="button" className="pipe-dlg-btn" onClick={onCancel}>Vazgeç</button>
-          <button type="button" className="pipe-dlg-btn is-primary" onClick={() => onSave(reason.trim() || LOST_NO_REASON)}>Kaydet</button>
+          <button type="button" className="pipe-dlg-btn" onClick={onCancel}>{m.shared.cancel}</button>
+          <button type="button" className="pipe-dlg-btn is-primary" onClick={() => onSave(reason.trim() || LOST_NO_REASON)}>{m.shared.save}</button>
         </div>
       </section>
     </>

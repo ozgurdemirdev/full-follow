@@ -9,35 +9,36 @@ import { FORM_ICON } from "@kit/components/forms/icons";
 import { norm } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE } from "@kit/lib/labels";
 import { CompanyOpportunities, PersonOpenDeal, PersonOpportunities } from "./components/PersonDeals";
+import { m } from "./messages";
 import { opportunityPath, OPPORTUNITY_PATH, PIPELINE_PATH } from "./paths";
 
 export default defineWebModule({
   key: "pipeline",
-  label: "Satış hunisi",
+  label: m.label,
   routes: [
     { page: "pipeline", path: PIPELINE_PATH, params: "/:id?", load: () => import("./pages/Pipeline") },
     { page: "opportunity", path: OPPORTUNITY_PATH, params: "/:id", load: () => import("./pages/Opportunity") },
   ],
   nav: [{
-    group: "Satış ve projeler", order: 10, label: "Satış hunisi", icon: "funnel", path: PIPELINE_PATH,
+    group: m.shared.salesAndProjects, order: 10, label: m.label, icon: "funnel", path: PIPELINE_PATH,
     useBadge: () => useBoard().rows.filter((o) => OPEN_STAGES.includes(o.stage)).length,
   }],
   dashboard: [
-    { id: "funnel", column: 2, order: 110, load: () => import("./cards/FunnelCard").then((m) => ({ default: m.FunnelCard })) },
+    { id: "funnel", column: 2, order: 110, load: () => import("./cards/FunnelCard").then((mod) => ({ default: mod.FunnelCard })) },
   ],
   quickAdd: [
     {
-      kind: "opportunity", name: "Fırsat", key: "S", dest: "Satış hunisi", icon: BOARD_ICON.funnel, tone: "payment", group: "Satış", order: 10,
-      form: { noun: "Fırsat", dest: "Satış hunisine eklenir", icon: BOARD_ICON.funnel, base: "/opportunities", editId: (p) => p.edit, page: byRecord("opportunity") },
-      load: () => import("./forms/OpportunityForm").then((m) => ({ default: m.OpportunityForm })),
+      kind: "opportunity", name: m.noun, key: "S", dest: m.label, icon: BOARD_ICON.funnel, tone: "payment", group: m.shared.sales, order: 10,
+      form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.funnel, base: "/opportunities", editId: (p) => p.edit, page: byRecord("opportunity") },
+      load: () => import("./forms/OpportunityForm").then((mod) => ({ default: mod.OpportunityForm })),
     },
     {
-      kind: "offer", name: "Teklif", key: "E", dest: "Fırsata bağlanır", icon: FORM_ICON.offer, tone: "payment", group: "Satış", order: 20,
+      kind: "offer", name: m.offerNoun, key: "E", dest: m.offerDest, icon: FORM_ICON.offer, tone: "payment", group: m.shared.sales, order: 20,
       form: {
-        noun: "Teklif", dest: "Fırsata bağlanır, aşama Teklif olur", icon: FORM_ICON.offer, base: "/offers", ownRead: true, editId: (p) => p.edit,
+        noun: m.offerNoun, dest: m.offerAddedTo, icon: FORM_ICON.offer, base: "/offers", ownRead: true, editId: (p) => p.edit,
         page: (_id, pre) => (pre?.opportunity_id ? (linkTo("opportunity", pre.opportunity_id) ?? PIPELINE_PATH) : PIPELINE_PATH),
       },
-      load: () => import("./forms/OfferForm").then((m) => ({ default: m.OfferForm })),
+      load: () => import("./forms/OfferForm").then((mod) => ({ default: mod.OfferForm })),
     },
   ],
   links: { opportunity: opportunityPath },
@@ -45,7 +46,7 @@ export default defineWebModule({
     id: "opportunities", order: 20, dataKey: K.opps,
     match: (o: Opportunity, q) => (
       norm(o.title).includes(q) || norm(o.person_name).includes(q)
-        ? { key: `o${o.id}`, label: o.title, sub: `Fırsat · ${STAGE[o.stage]} · ${o.person_name}`, href: opportunityPath(o.id) }
+        ? { key: `o${o.id}`, label: o.title, sub: m.searchSub(STAGE[o.stage], o.person_name), href: opportunityPath(o.id) }
         : null
     ),
   }],

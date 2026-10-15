@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MILESTONES, OFFER_ITEMS_MAX, OFFER_PLAN_PARTS_MAX, OFFER_PLAN_TOTAL_PCT, OPP_ROLES, OPP_STAGES, zodKit } from "@fullfollow/core";
+import { m } from "../messages";
 
 const { id, text, optText, tl, date, patch } = zodKit;
 
@@ -32,15 +33,15 @@ export const oppUpdate = patch({
 export const teamAdd = z.strictObject({ person_id: id, role: z.enum(OPP_ROLES).default("diger"), note: optText });
 export const teamUpdate = patch({ role: z.enum(OPP_ROLES), note: optText });
 
-const offerAmount = z.coerce.number().int().positive("teklif tutarı 0'dan büyük olmalı");
+const offerAmount = z.coerce.number().int().positive(m.error.offerAmount);
 /** `amount` is the unit price; the line amount (qty x unit price) is computed on read */
 const offerItem = z.strictObject({ label: text, amount: tl, qty: z.coerce.number().int().min(1).default(1) });
 /** The payment plan of an offer: milestones, each at most once, whole percents adding up to 100 */
 const offerPlan = z.array(z.strictObject({ key: z.enum(MILESTONES), label: text, pct: z.coerce.number().int().min(1).max(OFFER_PLAN_TOTAL_PCT) }))
   .min(1).max(OFFER_PLAN_PARTS_MAX)
-  .refine((parts) => new Set(parts.map((p) => p.key)).size === parts.length, "ödeme planında bir aşama bir kez geçer")
-  .refine((parts) => parts.reduce((s, p) => s + p.pct, 0) === OFFER_PLAN_TOTAL_PCT, `ödeme planının yüzdeleri ${OFFER_PLAN_TOTAL_PCT} etmeli`);
-const offerDate = date.refine((v) => v !== null, "teklif tarihi gerekli");
+  .refine((parts) => new Set(parts.map((p) => p.key)).size === parts.length, m.error.planOnce)
+  .refine((parts) => parts.reduce((s, p) => s + p.pct, 0) === OFFER_PLAN_TOTAL_PCT, m.error.planTotal(OFFER_PLAN_TOTAL_PCT));
+const offerDate = date.refine((v) => v !== null, m.error.offerDate);
 export const offerCreate = z.strictObject({
   opportunity_id: id,
   offered_at: offerDate.optional(),

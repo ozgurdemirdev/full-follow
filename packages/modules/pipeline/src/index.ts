@@ -2,6 +2,7 @@ import { defineModule, filesOf, OPEN_OPP_STAGES, OPP_STAGES, requireRow, type Re
 import { pipelineApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { applyStage } from "./service/opportunities";
 
 /**
@@ -11,7 +12,7 @@ import { applyStage } from "./service/opportunities";
  */
 export default defineModule({
   key: "pipeline",
-  label: "Satış hunisi",
+  label: m.label,
   smoke: ["/api/opportunities", "/api/report/sources"],
   uses: ["people", "companies", "network", "projects"],
   api: pipelineApi,
@@ -28,7 +29,7 @@ export default defineModule({
         : o.stage === "bulundu" && input.direction === "giden" ? "temas" : o.stage === "temas" && input.direction === "gelen" ? "cevap" : null;
       if (!next) return;
       applyStage(ctx.db, ctx, o, next, { auto: true });
-      return [`fırsat #${o.id} → ${next}`];
+      return [m.effect.touchStage(o.id, next)];
     },
     // the team rows of a person that goes to the trash go with it; an offer's link to a deleted file is emptied
     "record.trashed": (_ctx, { type, id, bin }: RecordTrashed) => {
@@ -44,7 +45,7 @@ export default defineModule({
     },
     // an event that names only the opportunity also carries its person
     recordLinks: { opportunity_id: (ctx, id) => ctx.mod("pipeline")!.opportunities.ref(id) },
-    trashTypes: [{ type: "opportunity", label: "fırsat" }, { type: "offer", label: "teklif" }, { type: "opportunity_person", label: "ekip üyesi" }],
+    trashTypes: [{ type: "opportunity", label: m.noun }, { type: "offer", label: m.offerNoun }, { type: "opportunity_person", label: m.teamNoun }],
     // the opportunities whose follow-up is due (the people's part of `follow_ups` comes from the people module)
     today: (ctx, { limit }) => ({ follow_ups: { opportunities: ctx.mod("pipeline")!.opportunities.list({ limit, filter: { due: true } }) } }),
     // opportunities count as the "fırsat" column of the sources list
@@ -61,7 +62,7 @@ export default defineModule({
     chatCards: {
       opportunity: (ctx, id) => {
         const r = ctx.mod("pipeline")!.opportunities.get(id);
-        if (!r) throw new Error("opportunity not found");
+        if (!r) throw new Error(m.notFound);
         return { title: r.title, stage: r.stage, value: r.estimated_value, person: r.person_name ?? null };
       },
     },

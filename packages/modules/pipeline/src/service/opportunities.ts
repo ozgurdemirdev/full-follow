@@ -3,6 +3,7 @@ import {
   addTagBySlug, announceTrashed, Bin, checkSource, eventLink as link, FFError, keptRow, label, OPEN_OPP_STAGES, parse, placeInGroup, requireRow, resolveRef, row, schema, stamp,
   writeEvent as emit, type Ctx, type OpportunityWon, type OppStage, type Q,
 } from "@fullfollow/core";
+import { m } from "../messages";
 import { readItems, readPlan } from "./offers";
 import { oppCreate, oppStageEnum, oppUpdate, stageMove } from "./schemas";
 import { dropMember, upsertMember } from "./team";
@@ -35,7 +36,7 @@ export function applyStage(q: Q, ctx: Ctx, cur: Opp, stage: OppStage, o: { reaso
   if (changed) {
     emit(q, ctx, {
       type: "opp.stage", ...link(ctx, { opportunity_id: cur.id }),
-      summary: `Fırsat ${label(cur.stage)} → ${label(stage)}${o.auto ? " (temastan)" : ""}`,
+      summary: m.event.stage(label(cur.stage), label(stage), !!o.auto),
       data: { from: cur.stage, to: stage, reason: o.reason ?? undefined, auto: o.auto || undefined },
     });
   }
@@ -61,13 +62,13 @@ export function opportunitiesService(ctx: Ctx) {
       checkSource(ctx, d.source_id);
       const pos = (row(ctx, "SELECT COALESCE(MAX(position), -1) + 1 p FROM opportunities WHERE stage = ?", d.stage)?.p ?? 0) as number;
       const r = tx.insert(opportunities).values({ ...d, position: pos, stage_since: ctx.clock.now(), ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "opp.created", ...link(ctx, { opportunity_id: r.id }), summary: `Fırsat açıldı: ${r.title}` });
+      emit(tx, ctx, { type: "opp.created", ...link(ctx, { opportunity_id: r.id }), summary: m.event.created(r.title) });
       return { row: r, effects: [] as string[] };
     });
   }
 
   function update(id: number, input: unknown) {
-    if (input && typeof input === "object" && ("stage" in input || "position" in input)) throw new FFError("rule", "Aşama için move kullan");
+    if (input && typeof input === "object" && ("stage" in input || "position" in input)) throw new FFError("rule", m.error.useMove);
     const { add_people, remove_people, ...d } = parse(oppUpdate, input);
     return ctx.db.transaction((tx) => {
       const cur = requireRow<Opp>(ctx, "opportunities", id);
@@ -75,13 +76,13 @@ export function opportunitiesService(ctx: Ctx) {
       if (d.source_id) checkSource(ctx, d.source_id, cur.source_id);
       if (Object.keys(d).length) {
         tx.update(opportunities).set({ ...d, updated_at: ctx.clock.now() }).where(eq(opportunities.id, id)).run();
-        emit(tx, ctx, { type: "opp.updated", ...link(ctx, { opportunity_id: id }), summary: `Fırsat güncellendi (${Object.keys(d).join(", ")})` });
+        emit(tx, ctx, { type: "opp.updated", ...link(ctx, { opportunity_id: id }), summary: m.event.updated(Object.keys(d).join(", ")) });
       }
       // team changes (the main contact may have just changed, so read the row again)
       const now = requireRow<Opp>(ctx, "opportunities", id);
       const effects = [
         ...(remove_people ?? []).map((p) => dropMember(tx, ctx, now, resolveRef(ctx, "person", p))),
-        ...(add_people ?? []).map((m) => upsertMember(tx, ctx, now, resolveRef(ctx, "person", m.person), m.role, m.note)),
+        ...(add_people ?? []).map((member) => upsertMember(tx, ctx, now, resolveRef(ctx, "person", member.person), member.role, member.note)),
       ];
       return { row: now, effects };
     });
@@ -97,12 +98,12 @@ export function opportunitiesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       const cur = requireRow<Opp>(ctx, "opportunities", id);
       const reason = s.reason ?? cur.lost_reason;
-      if (stage === "kaybedildi" && !reason) throw new FFError("rule", "Kaybedildi için neden zorunlu");
+      if (stage === "kaybedildi" && !reason) throw new FFError("rule", m.error.lostReason);
       const changed = applyStage(tx, ctx, cur, stage, { reason, position: s.position });
       const effects: string[] = [];
       if (stage === "kazanildi" && changed) {
         effects.push(...ctx.emit("opportunity.won", wonPayload(ctx, cur)));
-        if (addTagBySlug(tx, ctx, "person", cur.person_id, "musteri")) effects.push("müşteri etiketi eklendi");
+        if (addTagBySlug(tx, ctx, "person", cur.person_id, "musteri")) effects.push(m.effect.customerTag);
       }
       return { row: requireRow<Opp>(ctx, "opportunities", id), effects };
     });
@@ -110,7 +111,7 @@ export function opportunitiesService(ctx: Ctx) {
 
   function remove(id: number) {
     const cur = requireRow<Opp>(ctx, "opportunities", id);
-    if (ctx.mod("projects")?.projects.forOpportunity(id)) throw new FFError("rule", `${cur.title} silinemez: projesi var`);
+    if (ctx.mod("projects")?.projects.forOpportunity(id)) throw new FFError("rule", m.error.cannotDelete(cur.title));
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       // touches, tasks and drafts that point at it are the owning modules' to clean
@@ -123,7 +124,7 @@ export function opportunitiesService(ctx: Ctx) {
       bin.take("links", "target_type = 'opportunity' AND target_id = ?", id);
       bin.take("opportunities", "id = ?", id);
       bin.commit(tx, "opportunity", id, cur.title);
-      emit(tx, ctx, { type: "opp.deleted", person_id: cur.person_id, summary: `Fırsat silindi: ${cur.title}` });
+      emit(tx, ctx, { type: "opp.deleted", person_id: cur.person_id, summary: m.event.deleted(cur.title) });
       return { effects: [] as string[], trash: { type: "opportunity", id } };
     });
   }

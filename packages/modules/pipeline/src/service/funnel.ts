@@ -1,7 +1,8 @@
 import {
-  addDays, FFError, OFFER_STAGES, RATE_MIN_SAMPLE, REPLIED_AFTER, rows, SOURCE_FUNNEL_DEFAULT_PERIOD, SOURCE_FUNNEL_PERIODS, SOURCE_FUNNEL_STEPS, SOURCE_WEAK_SHARE,
+  addDays, FFError, LOCALE, OFFER_STAGES, RATE_MIN_SAMPLE, REPLIED_AFTER, rows, SOURCE_FUNNEL_DEFAULT_PERIOD, SOURCE_FUNNEL_PERIODS, SOURCE_FUNNEL_STEPS, SOURCE_WEAK_SHARE,
   type Ctx, type ContactStatus, type SourceFunnel,
 } from "@fullfollow/core";
+import { m } from "../messages";
 
 export type FunnelPeriod = (typeof SOURCE_FUNNEL_PERIODS)[number];
 export type FunnelStep = (typeof SOURCE_FUNNEL_STEPS)[number];
@@ -12,7 +13,7 @@ const MET: ContactStatus = "gorusuldu";
 export function parseFunnelPeriod(v: unknown): FunnelPeriod {
   if (v === undefined || v === null || v === "") return SOURCE_FUNNEL_DEFAULT_PERIOD;
   const p = SOURCE_FUNNEL_PERIODS.find((x) => String(x) === String(v));
-  if (p === undefined) throw new FFError("validation", `dönem şunlardan biri olabilir: ${SOURCE_FUNNEL_PERIODS.join(", ")}`);
+  if (p === undefined) throw new FFError("validation", m.error.period(SOURCE_FUNNEL_PERIODS.join(", ")));
   return p;
 }
 
@@ -77,7 +78,7 @@ export function sourceFunnel(ctx: Ctx, period: unknown = SOURCE_FUNNEL_DEFAULT_P
       reply_rate: written ? replied / written : null,
       early: written < RATE_MIN_SAMPLE, weak: false,
     };
-  }).sort((a, b) => b.steps[0].count - a.steps[0].count || a.source.localeCompare(b.source, "tr"));
+  }).sort((a, b) => b.steps[0].count - a.steps[0].count || a.source.localeCompare(b.source, LOCALE));
 
   const ranked = list.filter((s) => !s.early).sort((a, b) => a.reply_rate! - b.reply_rate!);
   const best = ranked.at(-1)?.reply_rate ?? 0;

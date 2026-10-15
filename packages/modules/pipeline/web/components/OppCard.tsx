@@ -7,6 +7,7 @@ import { openSheet } from "@kit/app/ui";
 import { fmtDay, lira, todayIso } from "@kit/lib/format";
 import { STAGE, type OppStage } from "@kit/lib/labels";
 import { opportunityPath } from "../paths";
+import { m } from "../messages";
 import { ageMeter, isLive, percentOf, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Meter } from "@kit/components/ui";
@@ -47,15 +48,15 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
     setAsked(true);
     try {
       await run("post", "/tasks", {
-        title: `${title} için takip taslağı hazırla`, assignee: "claude", due_date: todayIso(), opportunity_id: o.id,
-      }, { ok: "Claude taslağı yazıyor, Taslaklar’a düşecek" });
+        title: m.card.claudeTask(title), assignee: "claude", due_date: todayIso(), opportunity_id: o.id,
+      }, { ok: m.card.draftQueued });
     } catch {
       setAsked(false);
     }
   };
 
   return (
-    <article data-record={`opportunity-${o.id}`} className={`pipe-card ${overlay ? "is-overlay" : ""}`} data-late={age?.late || undefined} aria-roledescription="sürüklenebilir kart">
+    <article data-record={`opportunity-${o.id}`} className={`pipe-card ${overlay ? "is-overlay" : ""}`} data-late={age?.late || undefined} aria-roledescription={m.card.dragLabel}>
       <div className="pipe-card-top">
         <Link href={opportunityPath(o.id)} draggable={false} className="pipe-card-title">
           <span className="truncate text-base font-medium">{title}</span>
@@ -67,41 +68,41 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
         {age ? (
           <>
             <span className="pipe-card-meta">
-              <Meter value={age.share} size="sm" className="flex-grow" color={age.late ? "bg-warning" : "bg-text-muted"} label="Aşamada geçen süre" />
-              <span className={`whitespace-nowrap text-xs ${age.late ? "text-warning" : "text-text-muted"}`}>{age.days} gün{age.late ? ", bayatladı" : ""}</span>
+              <Meter value={age.share} size="sm" className="flex-grow" color={age.late ? "bg-warning" : "bg-text-muted"} label={m.card.ageLabel} />
+              <span className={`whitespace-nowrap text-xs ${age.late ? "text-warning" : "text-text-muted"}`}>{m.card.days(age.days, age.late)}</span>
             </span>
             {next ? (
               <span className="pipe-next"><BoardIcon name="arrowRight" className="size-icon-sm flex-none" stroke={2.2} />{next}</span>
             ) : null}
           </>
         ) : null}
-        <span className="sr-only">Ayrıntılar</span>
+        <span className="sr-only">{m.card.details}</span>
         {o.stage === "kaybedildi" && o.lost_reason ? <span className="text-sm text-danger-soft">{o.lost_reason}</span> : null}
       </button>
       {o.stage === "kazanildi" && projectHref ? (
         <Link href={projectHref} draggable={false} className="pipe-won">
-          Projeye dönüştü
+          {m.card.projectDone}
           <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={OUT_PATH} /></svg>
         </Link>
       ) : null}
       {open ? (
         <div className="pipe-more">
-          <span className="pipe-kv"><span>Kaynak</span><span>{o.source_name}</span></span>
-          {o.source_url ? <a href={o.source_url} target="_blank" rel="noreferrer" draggable={false} className="truncate text-sm">İlan{o.source_date ? ` · ${fmtDay(o.source_date)}` : ""} ↗</a> : o.source_date ? <span className="pipe-kv"><span>İlan</span><span>{fmtDay(o.source_date)}</span></span> : null}
-          {live ? <span className="pipe-kv"><span>Kazanma ihtimali</span><span>{percentOf(o.stage, rules)}</span></span> : null}
+          <span className="pipe-kv"><span>{m.card.source}</span><span>{o.source_name}</span></span>
+          {o.source_url ? <a href={o.source_url} target="_blank" rel="noreferrer" draggable={false} className="truncate text-sm">{m.card.listingLink(o.source_date ? fmtDay(o.source_date) : null)}</a> : o.source_date ? <span className="pipe-kv"><span>{m.card.listing}</span><span>{fmtDay(o.source_date)}</span></span> : null}
+          {live ? <span className="pipe-kv"><span>{m.card.chance}</span><span>{percentOf(o.stage, rules)}</span></span> : null}
           {hint ? <span className="pipe-hint">{hint}</span> : null}
           {mobile ? (
-            <select className="inp h-control-height-sm w-auto" aria-label="Aşamayı değiştir" value={o.stage} onChange={(e) => onMove?.(o.id, e.target.value as OppStage)}>
+            <select className="inp h-control-height-sm w-auto" aria-label={m.card.changeStage} value={o.stage} onChange={(e) => onMove?.(o.id, e.target.value as OppStage)}>
               {MOVE_TARGETS.map((s) => <option key={s} value={s}>{STAGE[s]}</option>)}
             </select>
           ) : null}
           <span className="pipe-actions">
-            <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void draft()}>{asked ? "Taslak istendi" : "Claude takip yazsın"}</button>
-            {personHref ? <Link href={personHref} className="pipe-btn">Kişi</Link> : null}
+            <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void draft()}>{asked ? m.card.asked : m.card.askDraft}</button>
+            {personHref ? <Link href={personHref} className="pipe-btn">{m.card.person}</Link> : null}
           </span>
           <span className="pipe-actions">
-            <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { edit: o.id })}>Düzenle</button>
-            {o.project_id ? null : <button type="button" className="pipe-btn is-danger" onClick={() => void remove(`/opportunities/${o.id}`, o.title).catch(() => {})}>Sil</button>}
+            <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { edit: o.id })}>{m.shared.edit}</button>
+            {o.project_id ? null : <button type="button" className="pipe-btn is-danger" onClick={() => void remove(`/opportunities/${o.id}`, o.title).catch(() => {})}>{m.shared.delete}</button>}
           </span>
         </div>
       ) : null}

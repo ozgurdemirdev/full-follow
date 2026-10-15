@@ -2,6 +2,7 @@ import {
   addDays, bool, has, keptRow, keptRows, OPEN_OPP_STAGES, OPP_STAGES, page, rows,
   type Ctx, type ListOpts, type OfferRecord, type OpportunityRef, type OpportunityRow,
 } from "@fullfollow/core";
+import { BOARD_CLOSED_DAYS } from "./constants";
 import { readItems, readPlan } from "./offers";
 
 const OPEN =OPEN_OPP_STAGES as readonly string[];
@@ -34,7 +35,7 @@ export function opportunityList(ctx: Ctx, o: ListOpts): { rows: OpportunityRow[]
   if (bool(f.open)) list = list.filter((x) => OPEN.includes(x.stage));
   if (bool(f.due)) list = list.filter((x) => x.next_follow_up_at && x.next_follow_up_at <= today && OPEN.includes(x.stage));
   if (bool(f.board)) {
-    const since = addDays(today, -30);
+    const since = addDays(today, -BOARD_CLOSED_DAYS);
     list = list.filter((x) => OPEN.includes(x.stage) || (x.closed_at && x.closed_at.slice(0, 10) >= since));
   }
   if (f.company_id) list = list.filter((x) => x.company_id === Number(f.company_id));

@@ -3,6 +3,7 @@ import {
   Bin, eventLink as link, FFError, label, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
   type Ctx, type OppRole, type Q, type TeamMemberRow,
 } from "@fullfollow/core";
+import { m } from "../messages";
 import { teamAdd, teamUpdate } from "./schemas";
 
 const { opportunityPeople } = schema;
@@ -19,30 +20,30 @@ const nameOf = (ctx: Ctx, personId: number): string => row(ctx, "SELECT name FRO
 /** Adds a member, or changes the role and note of an existing one. Runs inside the caller's transaction. */
 export function upsertMember(q: Q, ctx: Ctx, opp: Opp, personId: number, role: OppRole, note: string | null): string {
   requireRow(ctx, "people", personId);
-  if (personId === opp.person_id) throw new FFError("rule", `${nameOf(ctx, personId)} zaten ana muhatap, ekip listesine eklenmez`);
+  if (personId === opp.person_id) throw new FFError("rule", m.error.alreadyMain(nameOf(ctx, personId)));
   const cur = row(ctx, "SELECT * FROM opportunity_people WHERE opportunity_id = ? AND person_id = ?", opp.id, personId);
   const name = nameOf(ctx, personId);
   const at = link(ctx, { opportunity_id: opp.id, person_id: personId });
   if (cur) {
     q.update(opportunityPeople).set({ role, note, updated_at: ctx.clock.now() }).where(eq(opportunityPeople.id, cur.id)).run();
-    emit(q, ctx, { type: "opp.person_updated", ...at, summary: `Ekipte güncellendi: ${name} (${label(role)})`, data: { opportunity_person_id: cur.id } });
-    return `${name} ekipte güncellendi`;
+    emit(q, ctx, { type: "opp.person_updated", ...at, summary: m.event.memberUpdated(name, label(role)), data: { opportunity_person_id: cur.id } });
+    return m.effect.memberUpdated(name);
   }
   const r = q.insert(opportunityPeople).values({ opportunity_id: opp.id, person_id: personId, role, note, ...stamp(ctx) }).returning().get();
-  emit(q, ctx, { type: "opp.person_added", ...at, summary: `Ekibe eklendi: ${name} (${label(role)})`, data: { opportunity_person_id: r.id } });
-  return `${name} ekibe eklendi`;
+  emit(q, ctx, { type: "opp.person_added", ...at, summary: m.event.memberAdded(name, label(role)), data: { opportunity_person_id: r.id } });
+  return m.effect.memberAdded(name);
 }
 
 /** Takes a member off the team (into the trash). Runs inside the caller's transaction. */
 export function dropMember(q: Q, ctx: Ctx, opp: Opp, personId: number): string {
   const cur = row(ctx, "SELECT id FROM opportunity_people WHERE opportunity_id = ? AND person_id = ?", opp.id, personId);
   const name = nameOf(ctx, personId);
-  if (!cur) throw new FFError("not_found", `${name} bu fırsatın ekibinde değil`);
+  if (!cur) throw new FFError("not_found", m.error.notInTeam(name));
   const bin = new Bin(ctx);
   bin.take("opportunity_people", "id = ?", cur.id);
-  bin.commit(q, "opportunity_person", cur.id, `Ekip: ${name}`);
-  emit(q, ctx, { type: "opp.person_removed", ...link(ctx, { opportunity_id: opp.id, person_id: personId }), summary: `Ekipten çıkarıldı: ${name}` });
-  return `${name} ekipten çıkarıldı`;
+  bin.commit(q, "opportunity_person", cur.id, m.trash.member(name));
+  emit(q, ctx, { type: "opp.person_removed", ...link(ctx, { opportunity_id: opp.id, person_id: personId }), summary: m.event.memberRemoved(name) });
+  return m.effect.memberRemoved(name);
 }
 
 /** Team REST surface: add (or change) a member, change role or note by membership id, remove */

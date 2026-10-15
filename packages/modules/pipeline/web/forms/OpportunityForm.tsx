@@ -11,6 +11,7 @@ import { addDaysIso, todayIso } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
 import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
+import { m } from "../messages";
 
 const VALUE_STEP = 1000;
 const STAGE_OPTIONS = OPEN_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: `var(--color-stage-${s})` }));
@@ -24,8 +25,8 @@ export function OpportunityForm(p: FormProps) {
 function SourceLinkFields({ url, setUrl, date, setDate }: { url: string; setUrl: (v: string) => void; date: string; setDate: (v: string) => void }) {
   return (
     <>
-      <TextField label="Kaynak linki" half opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder="www.r10.net/..." />
-      <DateField label="İlan tarihi" half opt value={date} onChange={setDate} placeholder="Örn. 12 Ekim" />
+      <TextField label={m.form.sourceLink} half opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder={m.form.sourceLinkPlaceholder} />
+      <DateField label={m.form.listingDate} half opt value={date} onChange={setDate} placeholder={m.form.datePlaceholder} />
     </>
   );
 }
@@ -61,22 +62,22 @@ function OpportunityEdit(p: FormProps & { id: number }) {
     p,
     async () => {
       await saveRecord(p, p.id, {
-        person_id: await ensurePerson(person, { tags: ["aday"] }), title: title.trim(), estimated_value: value, source_id: Number(sourceId),
+        person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }), title: title.trim(), estimated_value: value, source_id: Number(sourceId),
         source_url: withScheme(url), source_date: srcDate || null, next_follow_up_at: date || null,
       });
     },
-    () => errorsOf({ person: !person.text.trim() && "Muhatabı seç", title: !title.trim() && "Başlık gerekli" }),
+    () => errorsOf({ person: !person.text.trim() && m.form.pickContact, title: !title.trim() && m.form.titleRequired }),
   );
   if (!o) return null;
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <Note>Aşama: {STAGE[o.stage]} (aşama fırsat sayfasından değişir)</Note>
-      <ComboField name="person" label="Muhatap (kişi)" req value={person} onChange={setPerson} options={personOptions} placeholder="Kişi ara" newLabel="Yeni kişi" />
-      <TextField name="title" label="Başlık" req value={title} onChange={setTitle} placeholder="Ne yapılacak?" />
-      <ChipsField label="Kaynak" value={sourceId} onChange={(v) => v && setSourceId(v)} options={pickable(sources.rows, [o.source_id]).map((s) => ({ value: String(s.id), label: s.name }))} />
+      <Note>{m.form.stageNote(STAGE[o.stage])}</Note>
+      <ComboField name="person" label={m.form.contact} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.shared.newPerson} />
+      <TextField name="title" label={m.shared.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} />
+      <ChipsField label={m.shared.source} value={sourceId} onChange={(v) => v && setSourceId(v)} options={pickable(sources.rows, [o.source_id]).map((s) => ({ value: String(s.id), label: s.name }))} />
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
-      <NumField label="Tahmini değer" half prefix="₺" step={VALUE_STEP} value={value} onChange={setValue} />
-      <DateField label="Sonraki adım tarihi" half quick value={date} onChange={setDate} placeholder="Örn. 17 Ekim" />
+      <NumField label={m.form.value} half prefix={m.shared.currency} step={VALUE_STEP} value={value} onChange={setValue} />
+      <DateField label={m.form.nextDate} half quick value={date} onChange={setDate} placeholder={m.form.nextDatePlaceholder} />
     </Form>
   );
 }
@@ -116,10 +117,10 @@ function OpportunityCreate(p: FormProps) {
     async () => {
       let source_id = src?.id;
       if (!source_id) {
-        const s = await run<Source>("post", "/sources", { name: newSource.trim() || "Diğer" }, { silent: true });
+        const s = await run<Source>("post", "/sources", { name: newSource.trim() || m.form.other }, { silent: true });
         source_id = s.row!.id;
       }
-      const person_id = await ensurePerson(person, { company, referred_by: isRef ? referrer : undefined, tags: ["aday"], next_follow_up_at: date });
+      const person_id = await ensurePerson(person, { company, referred_by: isRef ? referrer : undefined, tags: [m.form.candidateTag], next_follow_up_at: date });
       const res = await saveRecord<Opportunity>(p, null, {
         title: title.trim() || company.text.trim() || person.text.trim(),
         person_id, source_id, stage,
@@ -131,26 +132,26 @@ function OpportunityCreate(p: FormProps) {
       if (step.trim()) await run("post", "/tasks", { title: step.trim(), assignee: "ozgur", due_date: date || undefined, opportunity_id: oid }, { silent: true });
       if (note.trim()) await run("post", "/comments", { target_type: "opportunity", target_id: oid, body: note.trim() }, { silent: true });
     },
-    () => errorsOf({ person: !person.text.trim() && "Kişiyi seç ya da yeni bir ad yaz" }),
+    () => errorsOf({ person: !person.text.trim() && m.form.pickPerson }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField label="Başlık" hint="Boşsa firma ya da kişi adı kullanılır" value={title} onChange={setTitle} placeholder="Örn. kurumsal web sitesi" />
-      <ComboField name="person" label="Kişi" req half value={person} onChange={pickPerson} options={personOptions} placeholder="Ad soyad ara ya da yeni yaz" newLabel="Yeni kişi" />
-      <ComboField label="Firma" half value={company} onChange={setCompany} options={companyOptions} placeholder="Firma adı" newLabel="Yeni firma" />
+      <TextField label={m.shared.title} hint={m.form.titleHint} value={title} onChange={setTitle} placeholder={m.form.createTitlePlaceholder} />
+      <ComboField name="person" label={m.shared.person} req half value={person} onChange={pickPerson} options={personOptions} placeholder={m.form.personNamePlaceholder} newLabel={m.shared.newPerson} />
+      <ComboField label={m.shared.company} half value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
       {live.length ? (
-        <ChipsField label="Kaynak" value={String(src?.id ?? "")} onChange={(v) => v && setSourceId(v)} options={live.map((s) => ({ value: String(s.id), label: s.name }))} />
+        <ChipsField label={m.shared.source} value={String(src?.id ?? "")} onChange={(v) => v && setSourceId(v)} options={live.map((s) => ({ value: String(s.id), label: s.name }))} />
       ) : (
-        <TextField label="Kaynak" value={newSource} onChange={setNewSource} placeholder="Henüz kaynak yok: ör. R10" />
+        <TextField label={m.shared.source} value={newSource} onChange={setNewSource} placeholder={m.form.noSource} />
       )}
-      {isRef ? <ComboField label="Kim tanıttı" value={referrer} onChange={setReferrer} options={personOptions} placeholder="Kişi ara" /> : null}
+      {isRef ? <ComboField label={m.form.referrer} value={referrer} onChange={setReferrer} options={personOptions} placeholder={m.form.personPlaceholder} /> : null}
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
-      <ChipsField label="Aşama" value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
-      <NumField label="Tahmini değer" half prefix="₺" step={VALUE_STEP} value={value} onChange={setValue} />
-      <DateField label="Sonraki adım tarihi" half quick value={date} onChange={setDate} placeholder="Örn. 17 Ekim" />
-      <TextField label="Sonraki adım" value={step} onChange={setStep} placeholder="Ne yapılacak?" />
-      <AreaField label="İlk yorum" opt value={note} onChange={setNote} placeholder="Claude’un bilmesi gereken bir şey varsa yaz" rows={3} />
+      <ChipsField label={m.shared.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
+      <NumField label={m.form.value} half prefix={m.shared.currency} step={VALUE_STEP} value={value} onChange={setValue} />
+      <DateField label={m.form.nextDate} half quick value={date} onChange={setDate} placeholder={m.form.nextDatePlaceholder} />
+      <TextField label={m.form.nextStep} value={step} onChange={setStep} placeholder={m.form.titlePlaceholder} />
+      <AreaField label={m.form.firstComment} opt value={note} onChange={setNote} placeholder={m.form.firstCommentPlaceholder} rows={3} />
     </Form>
   );
 }

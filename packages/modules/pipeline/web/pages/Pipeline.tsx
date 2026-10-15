@@ -14,6 +14,7 @@ import { lira, norm } from "@kit/lib/format";
 import { useIsDesktop } from "@kit/lib/media";
 import { type OppStage } from "@kit/lib/labels";
 import { BOARD_STAGES } from "../labels";
+import { m } from "../messages";
 import { hintsByOpportunity, nextSteps, pipelineStats, StageRulesProvider, stageRates, stageRulesOf } from "../pipeline";
 
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
@@ -44,26 +45,26 @@ export default function Pipeline() {
   const hints = useMemo(() => hintsByOpportunity(threads.rows), [threads.rows]);
   const nexts = useMemo(() => nextSteps(board.rows, tasks.rows), [board.rows, tasks.rows]);
   const stages = hideLost ? BOARD_STAGES : ALL_STAGES;
-  const sub = board.data ? `${stats.open} açık fırsat · ${lira(stats.openValue)}${desk ? " · kartları sürükleyerek aşama değiştir" : ""}` : "";
+  const sub = board.data ? m.page.sub(stats.open, lira(stats.openValue), desk) : "";
 
   return (
     <Page
-      title="Satış hunisi"
+      title={m.label}
       sub={sub}
       className="flex flex-col gap-10"
       right={
         <div className="pipe-tools">
           <label className="ppl-search pipe-search">
             <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
-            <span className="sr-only">Fırsat ara</span>
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Fırsat ara" />
+            <span className="sr-only">{m.shared.search}</span>
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.shared.searchPlaceholder} />
           </label>
           <button type="button" className="pipe-toggle" aria-pressed={hideLost} onClick={() => setHideLost((v) => !v)}>
-            {hideLost ? "Kaybedilenleri göster" : "Kaybedilenleri gizle"}
+            {hideLost ? m.page.showLost : m.page.hideLost}
           </button>
           <button type="button" className="dash-new" onClick={() => openSheet("opportunity")}>
             <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
-            Fırsat ekle
+            {m.page.add}
           </button>
         </div>
       }
@@ -77,8 +78,8 @@ export default function Pipeline() {
           <StageFunnel rows={board.rows} rates={rates} onPick={scrollToStage} />
           <div className="flex flex-col gap-7">
             <div className="pipe-sources">
-              <span className="text-base-sm text-text-secondary">Kaynak</span>
-              <Filters label="Kaynak" value={src} onChange={setSrc} items={[{ value: 0, label: "Tümü" }, ...pickable(sources.rows).map((s) => ({ value: s.id, label: s.name }))]} />
+              <span className="text-base-sm text-text-secondary">{m.shared.source}</span>
+              <Filters label={m.shared.source} value={src} onChange={setSrc} items={[{ value: 0, label: m.shared.all }, ...pickable(sources.rows).map((s) => ({ value: s.id, label: s.name }))]} />
             </div>
             <Board visible={visible} all={board.rows} byId={board.byId} stages={stages} desk={desk} exp={exp} hints={hints} nexts={nexts} onToggle={onToggle} />
           </div>

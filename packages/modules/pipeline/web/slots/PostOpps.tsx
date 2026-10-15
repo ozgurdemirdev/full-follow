@@ -6,6 +6,7 @@ import { RecordLink } from "@kit/app/modules/RecordLink";
 import { Chip } from "@kit/components/ui";
 import { lira } from "@kit/lib/format";
 import { STAGE, STAGE_TONE } from "@kit/lib/labels";
+import { m } from "../messages";
 
 /** Open and closed opportunities of the given people, most valuable first */
 function oppsOf(opps: Opportunity[], people: Person[]): Opportunity[] {
@@ -19,14 +20,14 @@ export default function PostOpps({ post: p, people }: { post: Post; people: Pers
   const list = useMemo(() => oppsOf(opps.rows, people), [opps.rows, people]);
   return (
     <div className="ppl-panel">
-      <Section title={`Fırsatlar · ${p.opp_count}`} right={p.won ? <Chip tone="success">{p.won} kazanıldı · {lira(p.won_value)}</Chip> : undefined}>
+      <Section title={m.postOpps.title(p.opp_count)} right={p.won ? <Chip tone="success">{m.postOpps.won(p.won, lira(p.won_value))}</Chip> : undefined}>
         {list.length ? list.map((o) => (
           <RecordLink key={o.id} type="opportunity" id={o.id} className="posts-link-row">
             <span className="min-w-0 flex-grow truncate text-base">{o.title}</span>
             {o.estimated_value ? <span className="font-mono text-base-sm text-text-secondary">{lira(o.estimated_value)}</span> : null}
             <Chip tone={STAGE_TONE[o.stage]}>{STAGE[o.stage]}</Chip>
           </RecordLink>
-        )) : <span className="text-base-sm text-text-muted">{p.opp_count ? "Yükleniyor" : "Henüz fırsat yok"}</span>}
+        )) : <span className="text-base-sm text-text-muted">{p.opp_count ? m.postOpps.loading : m.postOpps.none}</span>}
       </Section>
     </div>
   );

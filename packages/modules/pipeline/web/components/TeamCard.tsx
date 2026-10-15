@@ -7,6 +7,7 @@ import { emptyRef, type Ref } from "@kit/forms/helpers";
 import { OPP_ROLE, OPP_ROLES } from "../labels";
 import { Combo } from "@kit/components/Combo";
 import { Avatar, Card, Chip } from "@kit/components/ui";
+import { m } from "../messages";
 
 /** The people on an opportunity: the main contact first, then the team with a role each */
 export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] }) {
@@ -28,11 +29,11 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
     }
   };
   return (
-    <Card title="Ekip" className="opp-side rise">
+    <Card title={m.team.title} className="opp-side rise">
       <div className="flex items-center gap-4">
         <Avatar name={opp.person_name} />
         <RecordLink type="person" id={opp.person_id} className="min-w-0 flex-grow truncate text-base">{opp.person_name}</RecordLink>
-        <Chip tone="success">Ana muhatap</Chip>
+        <Chip tone="success">{m.team.main}</Chip>
       </div>
       {team.map((t) => (
         <div key={t.id} className="flex flex-col gap-2">
@@ -42,24 +43,24 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
               <RecordLink type="person" id={t.person_id} className="truncate text-base">{t.person_name}</RecordLink>
               {t.company_name ? <span className="truncate text-sm text-text-secondary">{t.company_name}</span> : null}
             </div>
-            <select className="inp h-control-height-sm w-auto" aria-label={`${t.person_name} rolü`} value={t.role}
+            <select className="inp h-control-height-sm w-auto" aria-label={m.team.roleLabel(t.person_name)} value={t.role}
               onChange={(e) => void run("patch", `/opportunity-people/${t.id}`, { role: e.target.value }).catch(() => {})}>
               {OPP_ROLES.map((r) => <option key={r} value={r}>{OPP_ROLE[r]}</option>)}
             </select>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => void remove(`/opportunity-people/${t.id}`, t.person_name).catch(() => {})}>Çıkar</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => void remove(`/opportunity-people/${t.id}`, t.person_name).catch(() => {})}>{m.team.remove}</button>
           </div>
           {t.note ? <p className="m-0 text-base-sm text-text-secondary">{t.note}</p> : null}
         </div>
       ))}
       <div className="flex flex-col gap-3">
-        <Combo id="team-person" value={person} onChange={setPerson} options={options} placeholder="Kişi ara ve ekle" allowNew={false} />
+        <Combo id="team-person" value={person} onChange={setPerson} options={options} placeholder={m.team.searchPlaceholder} allowNew={false} />
         <div className="flex flex-wrap gap-3">
-          <select className="inp w-auto" aria-label="Rol" value={role} onChange={(e) => setRole(e.target.value)}>
+          <select className="inp w-auto" aria-label={m.team.role} value={role} onChange={(e) => setRole(e.target.value)}>
             {OPP_ROLES.map((r) => <option key={r} value={r}>{OPP_ROLE[r]}</option>)}
           </select>
-          <input className="inp min-w-0 flex-1" placeholder="Not (isteğe bağlı)" aria-label="Not" value={note} onChange={(e) => setNote(e.target.value)}
+          <input className="inp min-w-0 flex-1" placeholder={m.team.notePlaceholder} aria-label={m.shared.note} value={note} onChange={(e) => setNote(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void add())} />
-          <button type="button" className="btn btn-sec" disabled={!person.id} onClick={() => void add()}>Ekle</button>
+          <button type="button" className="btn btn-sec" disabled={!person.id} onClick={() => void add()}>{m.team.add}</button>
         </div>
       </div>
     </Card>

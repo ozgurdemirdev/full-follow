@@ -13,6 +13,7 @@ import { openSheet } from "@kit/app/ui";
 import { lira } from "@kit/lib/format";
 import { STAGE, type OppStage } from "@kit/lib/labels";
 import { BOARD_STAGES, STAGE_BG } from "../labels";
+import { m } from "../messages";
 import { isLive, percentOf, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { LostReason } from "./LostReason";
@@ -59,11 +60,11 @@ function Shell({ stage, count, sum, hot, dragging, setRef, children }: {
         <h2 className="m-0 flex-grow text-base font-medium">{STAGE[stage]}</h2>
         <span className="font-mono text-sm text-text-secondary">{count}</span>
       </div>
-      <span className="pipe-col-sum">{count ? `${lira(sum)}${isLive({ stage }) ? ` · ihtimal ${percentOf(stage, rules)}` : ""}` : "Boş"}</span>
+      <span className="pipe-col-sum">{count ? m.board.sum(lira(sum), isLive({ stage }) ? percentOf(stage, rules) : null) : m.board.empty}</span>
       {children}
-      {count ? null : <span className="pipe-col-empty">{dragging ? "Buraya bırak" : "Kart yok"}</span>}
+      {count ? null : <span className="pipe-col-empty">{dragging ? m.board.dropHere : m.board.noCard}</span>}
       {stage !== "kazanildi" && stage !== "kaybedildi" ? (
-        <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { stage })}>+ Fırsat ekle</button>
+        <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { stage })}>{m.board.add}</button>
       ) : null}
     </section>
   );
@@ -194,7 +195,7 @@ export function Board({ visible, all, byId, stages, desk, exp, hints, nexts, onT
           ALL_STAGES.indexOf(a.stage) - ALL_STAGES.indexOf(b.stage) || a.position - b.position),
       });
     try {
-      await run("post", `/opportunities/${id}/move`, { stage: to, position, reason }, { ok: cur.stage !== to ? `${cur.title} → ${STAGE[to]}` : undefined });
+      await run("post", `/opportunities/${id}/move`, { stage: to, position, reason }, { ok: cur.stage !== to ? m.board.moved(cur.title, STAGE[to]) : undefined });
     } catch {
       mutate<List<Opportunity>>(K.board, () => before);
     }
@@ -237,7 +238,7 @@ export function Board({ visible, all, byId, stages, desk, exp, hints, nexts, onT
   if (!desk) {
     return (
       <div className="pipe-boardwrap pipe-mobile">
-        <div className="pipe-board" role="region" aria-label="Fırsat panosu">
+        <div className="pipe-board" role="region" aria-label={m.board.region}>
           {stages.map((s) => (
             <ListColumn key={s} stage={s} ids={grouped[s]} byId={byId} ctx={ctx}
               onMove={(id, to) => (to === "kaybedildi" ? (setDragCols(grouped), setLostAsk({ id, index: grouped[to].length })) : void move(id, to, grouped[to].length))} />
@@ -251,7 +252,7 @@ export function Board({ visible, all, byId, stages, desk, exp, hints, nexts, onT
     <DndContext sensors={sensors} collisionDetection={closestCorners} autoScroll={AUTO_SCROLL} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={onCancel}>
       <div className="pipe-boardwrap">
         {activeId != null ? <Edges /> : null}
-        <div className="pipe-board" data-dragging={activeId != null || undefined} role="region" aria-label="Fırsat panosu">
+        <div className="pipe-board" data-dragging={activeId != null || undefined} role="region" aria-label={m.board.region}>
           {stages.map((s) => (
             <DragColumn key={s} stage={s} ids={cols[s]} byId={byId} hot={activeId != null && overStage === s} dragging={activeId != null} ctx={ctx} />
           ))}

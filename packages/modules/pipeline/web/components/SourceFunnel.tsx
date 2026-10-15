@@ -4,6 +4,7 @@ import { pct } from "@kit/lib/format";
 import { FUNNEL_PERIODS, FUNNEL_STEP } from "../labels";
 import { SectionHead } from "@kit/components/SectionHead";
 import { Card, Chip, Empty, ErrorBox, Filters, order } from "@kit/components/ui";
+import { m } from "../messages";
 
 // What `GET /api/report/sources` answers (the report page shows this section through its `report.sections` slot)
 /** Lead source funnel: found, written, replied, meeting, offer, won; rate = against the previous step */
@@ -34,9 +35,9 @@ function SourceRow({ s }: { s: SourceFunnelRow }) {
     <div className="row flex flex-col gap-4 px-10 py-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Chip tone="source">{s.source}</Chip>
-        {s.weak ? <Chip tone="warning">zayıf</Chip> : null}
-        {s.early ? <Chip>erken</Chip> : null}
-        <span className="ml-auto text-sm text-text-secondary">cevap oranı {pct(s.reply_rate)}</span>
+        {s.weak ? <Chip tone="warning">{m.sourceFunnel.weak}</Chip> : null}
+        {s.early ? <Chip>{m.sourceFunnel.early}</Chip> : null}
+        <span className="ml-auto text-sm text-text-secondary">{m.sourceFunnel.replyRate(pct(s.reply_rate))}</span>
       </div>
       <div className="grid grid-cols-3 gap-x-4 gap-y-5 desk:grid-cols-6 desk:gap-3">
         {s.steps.map((x) => (
@@ -60,16 +61,13 @@ export default function SourceFunnel() {
   const q = useQuery<FunnelData>(`/report/sources${period ? `?period=${period}` : ""}`);
   const data = q.data;
   return (
-    <Card label="Kaynak hunisi" className="rep-card rep-flush rise" style={order(5)}>
-      <SectionHead title="Kaynak hunisi">
-        <Filters items={FUNNEL_PERIODS} value={period ?? String(data?.period ?? "")} onChange={setPeriod} label="Dönem" />
+    <Card label={m.sourceFunnel.title} className="rep-card rep-flush rise" style={order(5)}>
+      <SectionHead title={m.sourceFunnel.title}>
+        <Filters items={FUNNEL_PERIODS} value={period ?? String(data?.period ?? "")} onChange={setPeriod} label={m.sourceFunnel.period} />
       </SectionHead>
       {q.error && !data ? <ErrorBox error={q.error} retry={q.reload} /> : null}
-      {data?.sources.length ? data.sources.map((s) => <SourceRow key={s.source_id} s={s} />) : data ? <Empty>Bu dönemde kaynağı olan kişi ya da firma yok.</Empty> : null}
-      <p className="rep-foot">
-        Her adım, o adıma ulaşan kişi ve firma sayısıdır; yüzde bir önceki adıma göredir. Cevap oranı = cevap / yazıldı. Yazılan mesajı az olan kaynak “erken” sayılır;
-        yeterli örneği olanların en düşük üçte biri “zayıf” işaretlenir.
-      </p>
+      {data?.sources.length ? data.sources.map((s) => <SourceRow key={s.source_id} s={s} />) : data ? <Empty>{m.sourceFunnel.empty}</Empty> : null}
+      <p className="rep-foot">{m.sourceFunnel.foot}</p>
     </Card>
   );
 }

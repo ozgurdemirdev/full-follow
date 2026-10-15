@@ -12,6 +12,7 @@ import { opportunityPath, PIPELINE_PATH } from "../paths";
 import { Card, Meter } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
+import { m } from "../messages";
 
 /** Source pills in the funnel card */
 const FUNNEL_SOURCES = 3;
@@ -49,17 +50,17 @@ export function FunnelCard() {
   const value = open.reduce((s, o) => s + (o.estimated_value ?? 0), 0);
   const won = report.data?.sources.reduce((s, r) => s + r.won, 0) ?? 0;
   const lost = report.data?.sources.reduce((s, r) => s + r.lost, 0) ?? 0;
-  const tail = `açık fırsat${won + lost ? ` · kazanma oranı ${pct(won / (won + lost))}` : ""}`;
+  const tail = m.funnelCard.open(won + lost ? pct(won / (won + lost)) : null);
   const rows: ExRow[] = open.slice(0, OVERLAY_ROWS).map((o) => ({
     key: o.id, lead: initials(o.person_name), title: o.person_name, sub: o.title, right: o.estimated_value ? lira(o.estimated_value) : "", tag: STAGE[o.stage], dot: STAGE_BG[o.stage], href: opportunityPath(o.id),
   }));
 
   return (
     <>
-      <Card label="Satış hunisi" className="dash-gap-8 rise">
+      <Card label={m.funnelCard.title} className="dash-gap-8 rise">
         <div className="flex flex-wrap items-center justify-between gap-5">
           <div className="flex flex-col gap-2">
-            <h2 className="ff-card-title">Satış hunisi</h2>
+            <h2 className="ff-card-title">{m.funnelCard.title}</h2>
             <div className="flex flex-wrap items-baseline gap-3">
               <span className="text-3xl leading-none tracking-kpi">{lira(value)}</span>
               <span className="text-base-sm text-text-secondary">{tail}</span>
@@ -67,8 +68,8 @@ export function FunnelCard() {
           </div>
           <div className="flex flex-wrap gap-2">
             {sources.map(([name, n]) => <span key={name} className="dash-chip is-pill">{name} {n}</span>)}
-            <button type="button" className="ff-more" aria-label="Satış hunisi, büyüt" onClick={(e) => ex.show("funnel", e.currentTarget.closest("section")!.getBoundingClientRect())}>
-              {total} fırsat
+            <button type="button" className="ff-more" aria-label={m.funnelCard.expand} onClick={(e) => ex.show("funnel", e.currentTarget.closest("section")!.getBoundingClientRect())}>
+              {m.funnelCard.count(total)}
               <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
             </button>
           </div>
@@ -87,7 +88,7 @@ export function FunnelCard() {
         </div>
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}
-        spec={{ title: "Satış hunisi", sub: `${lira(value)} ${tail}`, page: "Satış hunisi", href: PIPELINE_PATH, foot: open.length > OVERLAY_ROWS ? `ve ${open.length - OVERLAY_ROWS} fırsat daha` : `${open.length} açık fırsat`, rows }} />
+        spec={{ title: m.funnelCard.title, sub: `${lira(value)} ${tail}`, page: m.funnelCard.pageName, href: PIPELINE_PATH, foot: open.length > OVERLAY_ROWS ? m.funnelCard.more(open.length - OVERLAY_ROWS) : m.funnelCard.openCount(open.length), rows }} />
     </>
   );
 }

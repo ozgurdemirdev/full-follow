@@ -12,6 +12,7 @@ import { errorsOf, useSubmit, type FormProps } from "@kit/forms/shared";
 import { todayIso } from "@kit/lib/format";
 import { PROJECT_STAGE, STAGE } from "@kit/lib/labels";
 import { useSettings } from "@kit/lib/settings";
+import { m } from "../messages";
 
 const AMOUNT_STEP = 1000;
 const PLAN_FULL = 100;
@@ -80,26 +81,26 @@ export function OfferForm(p: FormProps) {
         plan: planRows.length ? planRows.filter((r) => r.pct > 0).map((r): OfferPlanPart => ({ key: r.key as OfferPlanPart["key"], label: r.label, pct: r.pct })) : undefined,
       };
       const open = linkTo("opportunity", Number(opp.id)) ?? undefined;
-      if (editId) await run("patch", `/offers/${editId}`, body, { ok: "Teklif güncellendi", open });
-      else await run("post", "/offers", { ...body, opportunity_id: opp.id }, { ok: "Teklif eklendi", open });
+      if (editId) await run("patch", `/offers/${editId}`, body, { ok: m.offerForm.updated, open });
+      else await run("post", "/offers", { ...body, opportunity_id: opp.id }, { ok: m.offerForm.added, open });
     },
     () => errorsOf({
-      opp: !opp.id && "Fırsatı seç",
-      amount: !(value > 0) && "Tutar ya da en az bir kalem gerekli",
-      plan: planRows.length > 0 && planSum(planRows) !== PLAN_FULL && `Yüzdelerin toplamı ${PLAN_FULL} olmalı`,
+      opp: !opp.id && m.offerForm.pickOpp,
+      amount: !(value > 0) && m.offerForm.amountRequired,
+      plan: planRows.length > 0 && planSum(planRows) !== PLAN_FULL && m.offerForm.planTotal(PLAN_FULL),
     }),
   );
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <ComboField name="opp" label="Fırsat" req value={opp} onChange={setOpp} options={oppOptions} placeholder="Fırsat ara" />
-      <ItemsField name="amount" label="Kalemler" opt items={items} onChange={setItems} />
-      {total === 0 ? <NumField label="Tutar" hint="KDV hariç. Kalem eklersen toplam otomatik olur" half prefix="₺" step={AMOUNT_STEP} value={amount} onChange={setAmount} /> : null}
-      {planRows.length ? <PlanField name="plan" label="Ödeme planı" req hint="Kazanılınca projenin ödemeleri bu orana göre açılır" rows={planRows} total={value > 0 ? value : 0} onChange={setPlan} /> : null}
-      <DateField label="Teklif tarihi" half value={date} onChange={setDate} placeholder="Örn. 12 Ekim" />
-      <AreaField label="Not" opt value={note} onChange={setNote} placeholder="Örn. 3 sayfa, bakım dahil değil" rows={3} />
+      <ComboField name="opp" label={m.offerForm.opp} req value={opp} onChange={setOpp} options={oppOptions} placeholder={m.offerForm.oppPlaceholder} />
+      <ItemsField name="amount" label={m.offerForm.items} opt items={items} onChange={setItems} />
+      {total === 0 ? <NumField label={m.offerForm.amount} hint={m.offerForm.amountHint} half prefix={m.shared.currency} step={AMOUNT_STEP} value={amount} onChange={setAmount} /> : null}
+      {planRows.length ? <PlanField name="plan" label={m.offerForm.plan} req hint={m.offerForm.planHint} rows={planRows} total={value > 0 ? value : 0} onChange={setPlan} /> : null}
+      <DateField label={m.offerForm.date} half value={date} onChange={setDate} placeholder={m.form.datePlaceholder} />
+      <AreaField label={m.shared.note} opt value={note} onChange={setNote} placeholder={m.offerForm.notePlaceholder} rows={3} />
       {files.length ? (
-        <ChipsField label="Teklif dosyası" opt clearable value={fileId} onChange={setFileId} options={files.map((f) => ({ value: String(f.id), label: f.name }))} />
+        <ChipsField label={m.offerForm.file} opt clearable value={fileId} onChange={setFileId} options={files.map((f) => ({ value: String(f.id), label: f.name }))} />
       ) : null}
     </Form>
   );

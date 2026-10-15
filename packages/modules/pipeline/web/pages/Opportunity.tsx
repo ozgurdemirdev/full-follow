@@ -18,6 +18,7 @@ import { Card, Chip, ErrorBox, Filters, PageSkeleton, Who } from "@kit/component
 import { fmtDay, lira, tl } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
 import { STAGE_BG } from "../labels";
+import { m } from "../messages";
 import { PIPELINE_PATH } from "../paths";
 
 type Related = { people?: OppPerson[]; offers?: Offer[]; files?: FileRow[] };
@@ -37,15 +38,15 @@ function OpportunityPage({ id }: { id: number }) {
   const [busy, setBusy] = useState(false);
 
   const o = detail.data?.row;
-  if (detail.error && !detail.data) return <Page title="Fırsat"><ErrorBox error={detail.error} retry={detail.reload} /></Page>;
-  if (!o) return <Page title="Fırsat"><PageSkeleton /></Page>;
+  if (detail.error && !detail.data) return <Page title={m.opportunity.title}><ErrorBox error={detail.error} retry={detail.reload} /></Page>;
+  if (!o) return <Page title={m.opportunity.title}><PageSkeleton /></Page>;
 
   const files = detail.data?.related.files ?? [];
   const projectHref = o.project_id ? linkTo("project", o.project_id) : null;
   const move = async (stage: OppStage, reason?: string) => {
     setBusy(true);
     try {
-      await run("post", `/opportunities/${id}/move`, { stage, reason }, { ok: `Aşama: ${STAGE[stage]}` });
+      await run("post", `/opportunities/${id}/move`, { stage, reason }, { ok: m.opportunity.stageSet(STAGE[stage]) });
     } catch {
       /* bildirim run() içinde */
     } finally {
@@ -64,28 +65,28 @@ function OpportunityPage({ id }: { id: number }) {
       right={<EditDelete label={o.title} onEdit={() => openSheet("opportunity", { edit: id })} onDelete={o.project_id ? undefined : del} />}
       className="flex flex-col gap-7"
     >
-      <Card label="Fırsat özeti" className="opp-summary rise">
+      <Card label={m.opportunity.summary} className="opp-summary rise">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex flex-col">
             <span className="text-cal-num leading-none tracking-kpi">{o.estimated_value ? lira(o.estimated_value) : tl(null)}</span>
-            <span className="text-sm text-text-secondary">Tahmini değer, KDV hariç</span>
+            <span className="text-sm text-text-secondary">{m.opportunity.estimated}</span>
           </div>
           <Chip tone="source">{o.source_name}</Chip>
           <Who actor={o.created_by} />
           {o.source_url || o.source_date ? (
             <span className="flex min-w-0 flex-wrap gap-2 text-base-sm">
-              <span className="text-text-muted">İlan{o.source_date ? ` · ${fmtDay(o.source_date)}` : ""}</span>
+              <span className="text-text-muted">{m.opportunity.listing(o.source_date ? fmtDay(o.source_date) : null)}</span>
               {o.source_url ? <a href={o.source_url} target="_blank" rel="noreferrer" className="min-w-0 truncate">{o.source_url} ↗</a> : null}
             </span>
           ) : null}
         </div>
-        <Filters label="Aşama" value={o.stage} onChange={(s) => !busy && (s === "kaybedildi" ? setLostAsk(true) : void move(s))}
+        <Filters label={m.shared.stage} value={o.stage} onChange={(s) => !busy && (s === "kaybedildi" ? setLostAsk(true) : void move(s))}
           items={BAR_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: STAGE_BG[s] }))} />
-        {o.lost_reason ? <p className="m-0 text-base-sm text-danger-soft">Neden: {o.lost_reason}</p> : null}
+        {o.lost_reason ? <p className="m-0 text-base-sm text-danger-soft">{m.opportunity.reason}{o.lost_reason}</p> : null}
         <div className="flex flex-wrap gap-3">
-          {projectHref ? <Link href={projectHref} className="dash-btn is-primary">Projeye git</Link> : null}
-          <button type="button" className="dash-btn" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>Temas ekle</button>
-          <Slot name="opportunity.actions" props={{ type: "opportunity", id, className: "dash-btn is-ghost", label: "Zaman çizelgesi" }} />
+          {projectHref ? <Link href={projectHref} className="dash-btn is-primary">{m.opportunity.toProject}</Link> : null}
+          <button type="button" className="dash-btn" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>{m.opportunity.addTouch}</button>
+          <Slot name="opportunity.actions" props={{ type: "opportunity", id, className: "dash-btn is-ghost", label: m.shared.timeline }} />
         </div>
       </Card>
 

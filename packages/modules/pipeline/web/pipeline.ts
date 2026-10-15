@@ -4,6 +4,7 @@ import { createContext, useContext } from "react";
 import type { Opportunity, PipelineMeta, Task, Thread } from "@kit/api/types";
 import { daysFrom, followNote, lira, todayIso } from "@kit/lib/format";
 import { OPEN_STAGES, type OppStage } from "@kit/lib/labels";
+import { m } from "./messages";
 
 /** Win probability (0 to 1) and stale limit (days) per open stage */
 export type StageRules = ReadonlyMap<string, { prob: number; staleDays: number }>;
@@ -24,9 +25,9 @@ const NO_DUE = "9999-12-31";
 
 export const isLive = (o: Pick<Opportunity, "stage">) => OPEN_STAGES.includes(o.stage);
 /** Value written short in the funnel: ₺45B */
-export const shortLira = (n: number) => (n >= SHORT_FROM ? `₺${Math.round(n / SHORT_FROM)}B` : lira(n));
+export const shortLira = (n: number) => (n >= SHORT_FROM ? m.shortLira(Math.round(n / SHORT_FROM)) : lira(n));
 export const probOf = (stage: OppStage, rules: StageRules) => rules.get(stage)?.prob ?? 0;
-export const percentOf = (stage: OppStage, rules: StageRules) => `%${Math.round(probOf(stage, rules) * PERCENT)}`;
+export const percentOf = (stage: OppStage, rules: StageRules) => m.percent(Math.round(probOf(stage, rules) * PERCENT));
 
 /** Days an open opportunity has sat in its stage, from `stage_since` */
 export function ageDays(o: Opportunity, today = todayIso()): number {
@@ -116,6 +117,6 @@ export function nextSteps(rows: Opportunity[], tasks: Task[]): Map<number, strin
 }
 
 /** Quick reasons of the lost dialog; the first four are what the board offers */
-export const LOST_PRESETS = ["Bütçe uymadı", "Başkasıyla anlaştı", "Cevap vermedi", "Zamanlama değil"];
+export const LOST_PRESETS = [m.lost.presetBudget, m.lost.presetOther, m.lost.presetSilent, m.lost.presetTiming];
 /** Saved when the dialog is confirmed without a reason (the core requires some text) */
-export const LOST_NO_REASON = "Neden yazılmadı";
+export const LOST_NO_REASON = m.lost.noReason;

@@ -3,6 +3,7 @@ import {
   Bin, eventLink as link, FFError, money, parse, requireRow, row, rows, schema, stamp, writeEvent as emit,
   type Ctx, type OfferItem, type OfferPlanPart, type Q,
 } from "@fullfollow/core";
+import { m } from "../messages";
 import { offerCreate, offerUpdate } from "./schemas";
 
 const { offers, opportunities } = schema;
@@ -37,7 +38,7 @@ export function offersService(ctx: Ctx) {
   function checkFile(fileId: number | null | undefined, opportunityId: number) {
     if (!fileId) return;
     const f = requireRow(ctx, "files", fileId);
-    if (f.target_type !== "opportunity" || f.target_id !== opportunityId) throw new FFError("validation", "teklif dosyası bu fırsata ait olmalı");
+    if (f.target_type !== "opportunity" || f.target_id !== opportunityId) throw new FFError("validation", m.error.offerFile);
   }
 
   function create(input: unknown) {
@@ -49,7 +50,7 @@ export function offersService(ctx: Ctx) {
       const r = tx.insert(offers).values({
         ...d, items: JSON.stringify(d.items), plan: d.plan ? JSON.stringify(d.plan) : null, offered_at: d.offered_at ?? ctx.clock.today(), file_id: d.file_id ?? null, version, ...stamp(ctx),
       }).returning().get();
-      emit(tx, ctx, { type: "offer.created", ...link(ctx, { opportunity_id: d.opportunity_id }), summary: `Teklif v${version} eklendi: ${money(r.amount)}`, data: { offer_id: r.id } });
+      emit(tx, ctx, { type: "offer.created", ...link(ctx, { opportunity_id: d.opportunity_id }), summary: m.event.offerCreated(version, money(r.amount)), data: { offer_id: r.id } });
       return { row: present(r), effects: [] as string[] };
     });
   }
@@ -64,21 +65,21 @@ export function offersService(ctx: Ctx) {
       const changed = { ...f, ...(items ? { items } : {}), ...(plan !== undefined ? { plan } : {}) };
       if (Object.keys(changed).length) {
         tx.update(offers).set({ ...stored, updated_at: ctx.clock.now() }).where(eq(offers.id, id)).run();
-        emit(tx, ctx, { type: "offer.updated", ...at, summary: `Teklif v${cur.version} güncellendi (${Object.keys(changed).join(", ")})`, data: { offer_id: id } });
+        emit(tx, ctx, { type: "offer.updated", ...at, summary: m.event.offerUpdated(cur.version, Object.keys(changed).join(", ")), data: { offer_id: id } });
       }
       const effects: string[] = [];
       if (accepted === true && !cur.accepted_at) {
         const now = requireRow<Offer>(ctx, "offers", id);
         accept(tx, ctx, now);
-        emit(tx, ctx, { type: "offer.accepted", ...at, summary: `Teklif v${cur.version} kabul edildi: ${money(now.amount)}`, data: { offer_id: id } });
-        effects.push("fırsat değeri teklif tutarına çekildi");
+        emit(tx, ctx, { type: "offer.accepted", ...at, summary: m.event.offerAccepted(cur.version, money(now.amount)), data: { offer_id: id } });
+        effects.push(m.effect.valueFromOffer);
       } else if (accepted === false && cur.accepted_at) {
         tx.update(offers).set({ accepted_at: null }).where(eq(offers.id, id)).run();
-        emit(tx, ctx, { type: "offer.unaccepted", ...at, summary: `Teklif v${cur.version} kabulü geri alındı`, data: { offer_id: id } });
+        emit(tx, ctx, { type: "offer.unaccepted", ...at, summary: m.event.offerUnaccepted(cur.version), data: { offer_id: id } });
       } else if (cur.accepted_at && f.amount !== undefined && f.amount !== cur.amount) {
         // the accepted amount is the opportunity's estimate
         tx.update(opportunities).set({ estimated_value: f.amount, updated_at: ctx.clock.now() }).where(eq(opportunities.id, cur.opportunity_id)).run();
-        effects.push("fırsat değeri güncellendi");
+        effects.push(m.effect.valueUpdated);
       }
       return { row: present(requireRow<Offer>(ctx, "offers", id)), effects };
     });
@@ -91,8 +92,8 @@ export function offersService(ctx: Ctx) {
       tx.update(offers).set({ accepted_at: null }).where(eq(offers.id, id)).run();
       const bin = new Bin(ctx);
       bin.take("offers", "id = ?", id);
-      bin.commit(tx, "offer", id, `Teklif v${cur.version}: ${money(cur.amount)}`);
-      emit(tx, ctx, { type: "offer.deleted", ...link(ctx, { opportunity_id: cur.opportunity_id }), summary: `Teklif v${cur.version} silindi` });
+      bin.commit(tx, "offer", id, m.trash.offer(cur.version, money(cur.amount)));
+      emit(tx, ctx, { type: "offer.deleted", ...link(ctx, { opportunity_id: cur.opportunity_id }), summary: m.event.offerDeleted(cur.version) });
       return { effects: [] as string[], trash: { type: "offer", id } };
     });
   }

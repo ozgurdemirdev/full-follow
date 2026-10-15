@@ -6,6 +6,7 @@ import { STAGE_BG } from "../labels";
 import { shortLira } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Card } from "@kit/components/ui";
+import { m } from "../messages";
 
 /** The last open stage has no rate: nothing comes after it in this funnel */
 const LAST_STAGE = OPEN_STAGES[OPEN_STAGES.length - 1];
@@ -27,16 +28,16 @@ export function StageFunnel({ rows, rates, onPick }: { rows: Opportunity[]; rate
   const worst = lowest && rates[lowest]! < 1 ? lowest : null;
 
   return (
-    <Card label="Huni" className="pipe-panel is-funnel rise">
+    <Card label={m.stageFunnel.label} className="pipe-panel is-funnel rise">
       <div className="pipe-head">
-        <h2 className="ff-card-title flex-grow">Nerede kaybediyorsun</h2>
-        <span className="text-sm text-text-muted">Son 90 gün · aşamaya tıkla, panoda o sütuna gider</span>
+        <h2 className="ff-card-title flex-grow">{m.stageFunnel.title}</h2>
+        <span className="text-sm text-text-muted">{m.stageFunnel.hint}</span>
       </div>
       <div className="pipe-funnel">
         {stages.map((s) => {
           const rate = s.stage === LAST_STAGE ? undefined : rates[s.stage];
           return (
-            <button key={s.stage} type="button" className="pipe-stage" aria-label={`${STAGE[s.stage]}, ${s.n} fırsat`} onClick={() => onPick(s.stage)}>
+            <button key={s.stage} type="button" className="pipe-stage" aria-label={m.stageFunnel.stage(STAGE[s.stage], s.n)} onClick={() => onPick(s.stage)}>
               <span className="pipe-stage-top">
                 <span className={`pipe-bar ${STAGE_BG[s.stage]}`} style={{ height: `max(var(--spacing-pipeline-bar-min), calc(var(--spacing-pipeline-funnel-h) * ${s.n / max}))` }}>{s.n}</span>
                 <span className="pipe-rate">
@@ -59,7 +60,7 @@ export function StageFunnel({ rows, rates, onPick }: { rows: Opportunity[]; rate
       {worst ? (
         <div className="pipe-callout">
           <span className="pipe-callout-dot" />
-          <span>En çok {STAGE[worst]} aşamasında kaybediyorsun: sonraki aşamaya geçiş oranı {pct(rates[worst])}.</span>
+          <span>{m.stageFunnel.callout(STAGE[worst], pct(rates[worst]))}</span>
         </div>
       ) : null}
     </Card>
