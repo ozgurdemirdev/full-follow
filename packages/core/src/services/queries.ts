@@ -1,7 +1,7 @@
-import { ALL_ROWS, LIST_PAGE_SIZE, RELATED_ROWS_DEFAULT, RELATED_ROWS_MAX, type RecordType } from "../constants";
+import { LIST_PAGE_SIZE, RELATED_ROWS_DEFAULT, RELATED_ROWS_MAX, type RecordType } from "../constants";
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
 import { m } from "../messages";
-import { bool, has, tagsList } from "./directory";
+import { bool, has, idsOf, inIds, tagsList } from "./directory";
 import { listThreads, threadOf } from "./comments";
 import { lastActorOf } from "./lastActor";
 import { networkSettings, settingsService } from "./settings";
@@ -30,10 +30,11 @@ function queriesService(ctx: Ctx) {
 
   function sources(o: ListOpts): Rows {
     const f = o.filter ?? {};
+    const ids = idsOf(f);
     const counts = Object.entries(Object.assign({}, ...ctx.contrib("sourceCounts").map((f) => f(ctx)))) as [string, Map<number, number>][];
     const list = rows(ctx, `SELECT s.*,
         (SELECT COUNT(*) FROM people x WHERE x.source_id = s.id) AS people_count, (SELECT COUNT(*) FROM companies x WHERE x.source_id = s.id) AS company_count
-      FROM sources s ORDER BY s.name COLLATE NOCASE`)
+      FROM sources s ${ids ? `WHERE ${inIds("s.id")}` : ""} ORDER BY s.name COLLATE NOCASE`, ...(ids ? [JSON.stringify(ids)] : []))
       .map((s) => ({ ...s, ...Object.fromEntries(counts.map(([column, byId]) => [column, byId.get(s.id) ?? 0])) }))
       .filter((s) => (bool(f.all) || !s.deleted_at) && has(o.q, s.name, s.kind));
     return page(list, o.limit, o.offset);
@@ -51,12 +52,13 @@ function queriesService(ctx: Ctx) {
   }
 
   function sectors(o: ListOpts): Rows {
+    const ids = idsOf(o.filter ?? {});
     const list = rows(ctx, `
       SELECT s.*, p.name AS parent_name,
         (SELECT COUNT(DISTINCT x.person_id) FROM person_sectors x WHERE x.sector_id = s.id OR x.sector_id IN (SELECT id FROM sectors c WHERE c.parent_id = s.id)) AS people_count,
         (SELECT COUNT(DISTINCT x.company_id) FROM company_sectors x WHERE x.sector_id = s.id OR x.sector_id IN (SELECT id FROM sectors c WHERE c.parent_id = s.id)) AS company_count
-      FROM sectors s LEFT JOIN sectors p ON p.id = s.parent_id
-      ORDER BY COALESCE(p.name, s.name) COLLATE NOCASE, s.parent_id IS NOT NULL, s.name COLLATE NOCASE`)
+      FROM sectors s LEFT JOIN sectors p ON p.id = s.parent_id ${ids ? `WHERE ${inIds("s.id")}` : ""}
+      ORDER BY COALESCE(p.name, s.name) COLLATE NOCASE, s.parent_id IS NOT NULL, s.name COLLATE NOCASE`, ...(ids ? [JSON.stringify(ids)] : []))
       .map((x) => ({ ...x, path: x.parent_name ? `${x.parent_name} > ${x.name}` : x.name }))
       .filter((x) => (bool((o.filter ?? {}).all) || !x.deleted_at) && has(o.q, x.path));
     return page(list, o.limit, o.offset);
@@ -64,9 +66,11 @@ function queriesService(ctx: Ctx) {
 
   function notes(o: ListOpts): Rows {
     const f = o.filter ?? {};
-    let list = rows(ctx, "SELECT n.*, p.name AS person_name FROM notes n JOIN people p ON p.id = n.person_id ORDER BY n.id DESC");
-    if (f.person_id) list = list.filter((n) => n.person_id === Number(f.person_id));
-    list = list.filter((n) => has(o.q, n.body, n.person_name));
+    const ids = idsOf(f);
+    const where = [...(ids ? [inIds("n.id")] : []), ...(f.person_id ? ["n.person_id = ?"] : [])];
+    const list = rows(ctx, `SELECT n.*, p.name AS person_name FROM notes n JOIN people p ON p.id = n.person_id ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY n.id DESC`,
+      ...(ids ? [JSON.stringify(ids)] : []), ...(f.person_id ? [Number(f.person_id)] : []))
+      .filter((n) => has(o.q, n.body, n.person_name));
     return page(list, o.limit, o.offset);
   }
 
@@ -113,11 +117,11 @@ function queriesService(ctx: Ctx) {
     let rowData: any;
     if (!isCoreType(type)) rowData = entityHandler(ctx, type, "get")(ctx, id);
     else switch (type) {
-      case "source": rowData = own(find("source", { filter: { all: true }, limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
-      case "sector": rowData = own(find("sector", { filter: { all: true }, limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
-      case "tag": rowData = own(find("tag", { filter: { all: true }, limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
+      case "source": rowData = own(find("source", { filter: { all: true, ids: [id] }, limit: 1 }).rows[0]); break;
+      case "sector": rowData = own(find("sector", { filter: { all: true, ids: [id] }, limit: 1 }).rows[0]); break;
+      case "tag": rowData = own(find("tag", { filter: { all: true, ids: [id] }, limit: 1 }).rows[0]); break;
       case "trash": throw new FFError("validation", m.records.trashUseFind);
-      case "note": rowData = own(find("note", { limit: ALL_ROWS }).rows.find((p) => p.id === id)); break;
+      case "note": rowData = own(find("note", { filter: { ids: [id] }, limit: 1 }).rows[0]); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "comment": {
         const c = requireRow(ctx, "comments", id);

@@ -1,5 +1,5 @@
 import {
-  addDays, CHANNELS, CONNECTION_TAGS, COMPANY_TOUCHES, dayOf, daysBetween, labelFields, LOCALE, networkSettings, RHYTHM_WEEKS, rows, sectorsOf, tagsOf, weekStart,
+  addDays, CHANNELS, CONNECTION_TAGS, COMPANY_TOUCHES, dayOf, daysBetween, inIds, labelFields, LOCALE, networkSettings, RHYTHM_WEEKS, rows, sectorsOf, tagsOf, weekStart,
   type ChannelSummary, type Ctx, type NetworkLists, type PersonNet, type WeekStats,
 } from "@fullfollow/core";
 import { NETWORK_LIST_LIMIT, SILENT_OFFER_DAYS, WEEK_DAYS } from "./constants";
@@ -8,19 +8,24 @@ import { NETWORK_LIST_LIMIT, SILENT_OFFER_DAYS, WEEK_DAYS } from "./constants";
  * Tüm kişilerin temas durumu tek sorguda (kişi sayısı küçük; listeler bunu kullanır).
  * Cevap bekleyen: kişiden ya da firmasından (firma adına veya bir çalışanından) gelen son temastan sonra expects_reply'li giden temas.
  * Soğuyan: bağlantı (gelen teması ya da bağlantı etiketi var) + son temas eşikten eski + cevap beklemiyor + takip tarihi yok.
+ * `ids` computes it only for those people (a single record read does not scan every touch).
  */
-export function networkStats(ctx: Ctx): Map<number, PersonNet> {
+export function networkStats(ctx: Ctx, ids?: number[]): Map<number, PersonNet> {
   const today = ctx.clock.today();
   const cfg = networkSettings(ctx);
   const tags = CONNECTION_TAGS.map((t) => `'${t}'`).join(",");
+  // the scope narrows the touch aggregates themselves (the people's own touches, the incoming touches of their companies), not only the final rows
+  const ofPeople = ids ? `AND ${inIds("person_id")}` : "";
+  const ofCompanies = (col: string) => (ids ? `AND ${col} IN (SELECT company_id FROM people WHERE ${inIds("id")})` : "");
+  const json = ids ? [JSON.stringify(ids)] : [];
   const list = rows(ctx, `
     WITH agg AS (
       SELECT person_id, MAX(happened_at) AS last_at, MAX(CASE WHEN direction = 'gelen' THEN happened_at END) AS last_in
-      FROM touches WHERE person_id IS NOT NULL GROUP BY person_id
+      FROM touches WHERE person_id IS NOT NULL ${ofPeople} GROUP BY person_id
     ), cin AS (
       SELECT cid, MAX(at) AS at FROM (
-        SELECT company_id AS cid, happened_at AS at FROM touches WHERE direction = 'gelen' AND company_id IS NOT NULL
-        UNION ALL SELECT p.company_id, t.happened_at FROM touches t JOIN people p ON p.id = t.person_id WHERE t.direction = 'gelen' AND p.company_id IS NOT NULL
+        SELECT company_id AS cid, happened_at AS at FROM touches WHERE direction = 'gelen' AND company_id IS NOT NULL ${ofCompanies("company_id")}
+        UNION ALL SELECT p.company_id, t.happened_at FROM touches t JOIN people p ON p.id = t.person_id WHERE t.direction = 'gelen' AND p.company_id IS NOT NULL ${ofCompanies("p.company_id")}
       ) GROUP BY cid
     ), pend AS (
       SELECT t.person_id, COUNT(*) AS attempts, MAX(t.happened_at) AS last_out
@@ -33,7 +38,8 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
       (SELECT summary FROM touches x WHERE x.person_id = p.id ORDER BY x.happened_at DESC, x.id DESC LIMIT 1) AS last_summary,
       (SELECT channel FROM touches x WHERE x.person_id = p.id AND x.direction = 'giden' AND x.expects_reply = 1 AND x.happened_at = d.last_out ORDER BY x.id DESC LIMIT 1) AS await_channel,
       EXISTS (SELECT 1 FROM person_tags g JOIN tags tg ON tg.id = g.tag_id WHERE g.person_id = p.id AND tg.slug IN (${tags})) AS tagged
-    FROM people p LEFT JOIN agg a ON a.person_id = p.id LEFT JOIN pend d ON d.person_id = p.id`);
+    FROM people p LEFT JOIN agg a ON a.person_id = p.id LEFT JOIN pend d ON d.person_id = p.id ${ids ? `WHERE ${inIds("p.id")}` : ""}`,
+  ...json, ...json, ...json, ...json);
 
   const out = new Map<number, PersonNet>();
   for (const r of list) {
@@ -60,11 +66,12 @@ export function networkStats(ctx: Ctx): Map<number, PersonNet> {
  * Weekly contact rhythm: per person, touch counts of the last RHYTHM_WEEKS ISO weeks (Monday weeks), oldest first,
  * the current week last. One grouped query for everyone; people without touches are not in the map.
  */
-export function weeklyRhythm(ctx: Ctx): Map<number, number[]> {
+export function weeklyRhythm(ctx: Ctx, ids?: number[]): Map<number, number[]> {
   const first = addDays(weekStart(ctx.clock.today()), -WEEK_DAYS * (RHYTHM_WEEKS - 1));
   // one day wider than the window: the day is cut by local time below
   const list = rows<{ person_id: number; happened_at: string; n: number }>(ctx,
-    "SELECT person_id, happened_at, COUNT(*) AS n FROM touches WHERE person_id IS NOT NULL AND happened_at >= ? GROUP BY person_id, happened_at", addDays(first, -1));
+    `SELECT person_id, happened_at, COUNT(*) AS n FROM touches WHERE person_id IS NOT NULL AND happened_at >= ? ${ids ? `AND ${inIds("person_id")}` : ""} GROUP BY person_id, happened_at`,
+    addDays(first, -1), ...(ids ? [JSON.stringify(ids)] : []));
   const out = new Map<number, number[]>();
   for (const t of list) {
     const week = Math.floor(daysBetween(first, dayOf(t.happened_at)) / WEEK_DAYS);

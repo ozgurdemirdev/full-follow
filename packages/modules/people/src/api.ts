@@ -1,6 +1,5 @@
 import type { Ctx, PeopleApi } from "@fullfollow/core";
 import { peopleServices } from "./service";
-import { ALL_ROWS } from "./service/constants";
 import { personCard } from "./service/card";
 import { peopleList } from "./service/list";
 import { bumpPersonStatus } from "./service/status";
@@ -15,7 +14,7 @@ export function peopleApi(ctx: Ctx): PeopleApi {
     update: people.update as PeopleApi["update"],
     remove: people.remove,
     list: (opts) => peopleList(ctx, opts),
-    get: (id) => peopleList(ctx, { limit: ALL_ROWS }).rows.find((p) => p.id === id),
+    get: (id) => peopleList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0],
     card: (id) => personCard(ctx, id),
     bumpStatus: (id, next) => bumpPersonStatus(ctx, id, next),
     referralTree: () => referralTree(ctx),

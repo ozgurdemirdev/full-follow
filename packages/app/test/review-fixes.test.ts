@@ -32,4 +32,72 @@ suite("the fixes of the service review", () => {
     expect(names).toHaveBeenCalledTimes(1);
     expect(companies.names([a.id, b.id, 9999])).toEqual(new Map([[a.id, "Acme"], [b.id, "Beta"]]));
   });
+
+  it("a single person or company read asks the network for that record only, and the list filters narrow in SQL", () => {
+    const co = app.companies.create({ name: "Acme" }).row;
+    const ada = app.people.create({ name: "Ada", company_id: co.id }).row;
+    const bob = app.people.create({ name: "Bob" }).row;
+    app.touches.create({ person_id: ada.id, channel: "email", direction: "giden", kind: "mesaj", summary: "merhaba" });
+    app.touches.create({ person_id: bob.id, channel: "email", direction: "giden", kind: "mesaj", summary: "selam" });
+    const network = app.mod("network")!;
+    const stats = vi.spyOn(network, "stats");
+    const rhythm = vi.spyOn(network, "rhythm");
+    const people = app.mod("people")!;
+    expect(people.get(ada.id)).toMatchObject({ name: "Ada", company_name: "Acme", awaiting: expect.any(Object) });
+    expect(people.get(9999)).toBeUndefined();
+    expect(people.card(ada.id).row.id).toBe(ada.id);
+    expect(app.get("person", ada.id).row.id).toBe(ada.id);
+    expect(people.list({ filter: { company_id: co.id } }).rows.map((p) => p.name)).toEqual(["Ada"]);
+    for (const call of [...stats.mock.calls, ...rhythm.mock.calls]) expect(call[0]).toBeDefined();
+    expect(stats).toHaveBeenCalled();
+    expect(people.list({}).total).toBe(2);
+    expect(stats.mock.calls.at(-1)![0]).toBeUndefined();
+    expect(app.mod("companies")!.get(co.id)).toMatchObject({ name: "Acme", people_count: 1 });
+    expect(app.mod("companies")!.get(9999)).toBeUndefined();
+    // the network numbers of one person equal those of the whole list
+    expect(network.stats([ada.id]).get(ada.id)).toEqual(network.stats().get(ada.id));
+    expect(network.stats([ada.id]).size).toBe(1);
+    expect(network.rhythm([bob.id]).get(bob.id)).toEqual(network.rhythm().get(bob.id));
+    expect([...network.rhythm([bob.id]).keys()]).toEqual([bob.id]);
+  });
+
+  it("the touch list cuts its filters and its page in SQL and still counts the whole filtered set", () => {
+    const ada = app.people.create({ name: "Ada" }).row;
+    const bob = app.people.create({ name: "Bob" }).row;
+    for (let i = 0; i < 5; i++) app.touches.create({ person_id: ada.id, channel: i % 2 ? "email" : "telefon", direction: "giden", kind: "mesaj", summary: `ada ${i}`, happened_at: `2026-10-0${i + 1}T09:00:00Z` });
+    app.touches.create({ person_id: bob.id, channel: "email", direction: "gelen", kind: "mesaj", summary: "bob" });
+    app.touches.create({ contact: "x@y.com", channel: "email", direction: "gelen", kind: "mesaj", summary: "loose" });
+    const t = app.mod("network")!.touches;
+    const adas = t.list({ filter: { person_id: ada.id }, limit: 2, offset: 1 });
+    expect(adas.total).toBe(5);
+    expect(adas.rows.map((r) => r.summary)).toEqual(["ada 3", "ada 2"]);
+    expect(t.list({ filter: { person_id: ada.id, channel: "email" } }).total).toBe(2);
+    expect(t.list({ filter: { loose: true } }).rows.map((r) => r.summary)).toEqual(["loose"]);
+    expect(t.list({ q: "ADA", limit: 3 })).toMatchObject({ total: 5 });
+    expect(t.list({ limit: 100 }).total).toBe(7);
+    expect(t.get(1)).toMatchObject({ summary: "ada 0", person_name: "Ada" });
+  });
+
+  it("opportunity, offer and core record reads by id filter in SQL and return the same rows", () => {
+    const src = (app.get("source", "R10") as any).row;
+    const ada = app.people.create({ name: "Ada" }).row;
+    const o = app.opportunities.create({ title: "A", person_id: ada.id, source_id: src.id, estimated_value: 1000 }).row;
+    app.opportunities.create({ title: "B", person_id: ada.id, source_id: src.id });
+    const pipeline = app.mod("pipeline")!;
+    expect(pipeline.opportunities.list({ filter: { person_id: ada.id, stage: "bulundu" } }).total).toBe(2);
+    expect(pipeline.opportunities.list({ filter: { company_id: 9999 } }).total).toBe(0);
+    expect(pipeline.opportunities.list({ filter: { open: true, source_id: src.id }, limit: 1 })).toMatchObject({ total: 2 });
+    app.offers.create({ opportunity_id: o.id, amount: 1000, plan: [{ key: "pesinat", label: "Peşinat", pct: 100 }] });
+    expect(pipeline.offers.list({ filter: { opportunity_id: o.id } }).total).toBe(1);
+    expect(pipeline.offers.list({ filter: { opportunity_id: o.id + 1 } }).total).toBe(0);
+    const note = sql("INSERT INTO notes(person_id, body, created_by, created_at, updated_at) VALUES (?, 'n1', 'ozgur', ?, ?) RETURNING id", ada.id, now, now)[0];
+    expect(app.get("note", note.id).row).toMatchObject({ body: "n1", person_name: "Ada" });
+    expect(app.find("note", { filter: { person_id: ada.id } }).total).toBe(1);
+    expect(app.get("source", src.id).row.id).toBe(src.id);
+    const sector = app.save("sector", { name: "Sağlık" }).row;
+    expect(app.get("sector", sector.id).row.id).toBe(sector.id);
+    const tag = app.save("tag", { name: "Sıcak lead" }).row;
+    expect(app.get("tag", tag.id).row.id).toBe(tag.id);
+    expect(() => app.get("note", 9999)).toThrow(/bulunamadı/);
+  });
 });

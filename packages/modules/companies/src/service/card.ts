@@ -9,7 +9,7 @@ import { companiesList } from "./list";
  * The opportunities come from the pipeline module, the waiting drafts from the drafts module (empty without them).
  */
 export function companyCard(ctx: Ctx, id: number): CompanyCard {
-  const company = companiesList(ctx, { limit: ALL_ROWS }).rows.find((c) => c.id === id);
+  const company = companiesList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0];
   if (!company) throw new FFError("not_found", m.notFound(id));
   const people = ctx.mod("people")?.list({ filter: { company_id: id }, limit: CARD_PEOPLE_LIMIT }).rows ?? [];
   const network = ctx.mod("network");

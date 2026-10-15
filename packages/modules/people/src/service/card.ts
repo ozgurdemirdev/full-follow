@@ -1,6 +1,6 @@
 import { FFError, listThreads, queriesFor, type Ctx, type PersonCard } from "@fullfollow/core";
 import { m } from "../messages";
-import { ALL_ROWS, CARD_DRAFTS_LIMIT, CARD_NOTES_LIMIT, CARD_OPPORTUNITIES_LIMIT, CARD_PROJECTS_LIMIT, CARD_REFERRALS_LIMIT, CARD_TOUCHES_LIMIT } from "./constants";
+import { CARD_DRAFTS_LIMIT, CARD_NOTES_LIMIT, CARD_OPPORTUNITIES_LIMIT, CARD_PROJECTS_LIMIT, CARD_REFERRALS_LIMIT, CARD_TOUCHES_LIMIT } from "./constants";
 import { peopleList } from "./list";
 
 /**
@@ -14,7 +14,7 @@ import { peopleList } from "./list";
 export function personCard(ctx: Ctx, id: number): PersonCard {
   const q = queriesFor(ctx);
   const network = ctx.mod("network");
-  const person = peopleList(ctx, { limit: ALL_ROWS }).rows.find((p) => p.id === id);
+  const person = peopleList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0];
   if (!person) throw new FFError("not_found", m.notFound(id));
   // the referral numbers come from the referrals module (none without it)
   const refs = ctx.mod("referrals")?.report() ?? [];

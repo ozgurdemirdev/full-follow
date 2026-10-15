@@ -46,6 +46,9 @@ export function dayOf(iso: string): string {
   return iso.length <= 10 ? iso : localDate(new Date(iso));
 }
 
+/** SQL for the local day (YYYY-MM-DD) of a timestamp column, the SQL form of `dayOf`: every daily bucket of a timestamp uses it, because "today" is the local date */
+export const localDay = (column: string) => `date(${column}, 'localtime')`;
+
 /** ISO weekday: 1 = Monday ... 7 = Sunday */
 export const isoWeekday = (date: string) => ((new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
 

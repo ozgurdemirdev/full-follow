@@ -1,11 +1,10 @@
 import {
-  addDays, bool, has, keptRow, keptRows, OPEN_OPP_STAGES, OPP_STAGES, page, rows,
+  addDays, bool, has, keptRow, keptRows, localDay, OPEN_OPP_STAGES, OPP_STAGES, page, rows,
   type Ctx, type ListOpts, type OfferRecord, type OpportunityRef, type OpportunityRow,
 } from "@fullfollow/core";
 import { BOARD_CLOSED_DAYS } from "./constants";
 import { readItems, readPlan } from "./offers";
 
-const OPEN =OPEN_OPP_STAGES as readonly string[];
 /** The open stages as an SQL list (a constant of the code, so the statements that use it stay literal) */
 export const OPEN_SQL = OPEN_OPP_STAGES.map((s) => `'${s}'`).join(",");
 
@@ -28,17 +27,17 @@ function withProjects(ctx: Ctx, list: Listed[]): OpportunityRow[] {
 export function opportunityList(ctx: Ctx, o: ListOpts): { rows: OpportunityRow[]; total: number } {
   const f = o.filter ?? {};
   const today = ctx.clock.today();
-  let list = rows<Listed>(ctx, SELECT);
-  if (f.stage) list = list.filter((x) => x.stage === f.stage);
-  if (f.person_id) list = list.filter((x) => x.person_id === Number(f.person_id));
-  if (f.source_id) list = list.filter((x) => x.source_id === Number(f.source_id));
-  if (bool(f.open)) list = list.filter((x) => OPEN.includes(x.stage));
-  if (bool(f.due)) list = list.filter((x) => x.next_follow_up_at && x.next_follow_up_at <= today && OPEN.includes(x.stage));
-  if (bool(f.board)) {
-    const since = addDays(today, -BOARD_CLOSED_DAYS);
-    list = list.filter((x) => OPEN.includes(x.stage) || (x.closed_at && x.closed_at.slice(0, 10) >= since));
+  // the filters are cut in SQL; only the text search and the order are left for the rows that remain
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (f.stage) { where.push("x.stage = ?"); args.push(f.stage); }
+  for (const [key, column] of [["person_id", "x.person_id"], ["source_id", "x.source_id"], ["company_id", "p.company_id"]] as const) {
+    if (f[key]) { where.push(`${column} = ?`); args.push(Number(f[key])); }
   }
-  if (f.company_id) list = list.filter((x) => x.company_id === Number(f.company_id));
+  if (bool(f.open)) where.push(`x.stage IN (${OPEN_SQL})`);
+  if (bool(f.due)) { where.push(`x.next_follow_up_at IS NOT NULL AND x.next_follow_up_at <= ? AND x.stage IN (${OPEN_SQL})`); args.push(today); }
+  if (bool(f.board)) { where.push(`(x.stage IN (${OPEN_SQL}) OR (x.closed_at IS NOT NULL AND ${localDay("x.closed_at")} >= ?))`); args.push(addDays(today, -BOARD_CLOSED_DAYS)); }
+  let list = rows<Listed>(ctx, `${SELECT}${where.length ? ` WHERE ${where.join(" AND ")}` : ""}`, ...args);
   list = list.filter((x) => has(o.q, x.title, x.person_name, x.company_name, x.source_name, x.source_url));
   list.sort((a, b) => OPP_STAGES.indexOf(a.stage) - OPP_STAGES.indexOf(b.stage) || a.position - b.position || a.id - b.id);
   const sliced = page(list, o.limit, o.offset);
@@ -69,8 +68,9 @@ const parseItems = (r: Omit<OfferListRow, "items" | "plan"> & { items: string; p
 /** Offer versions, newest first inside an opportunity; filter: {opportunity_id} */
 export function offerList(ctx: Ctx, o: ListOpts): { rows: OfferListRow[]; total: number } {
   const f = o.filter ?? {};
-  let list = rows(ctx, `${OFFER_SELECT} ORDER BY x.opportunity_id, x.version DESC`).map(parseItems);
-  if (f.opportunity_id) list = list.filter((r) => r.opportunity_id === Number(f.opportunity_id));
+  let list = (f.opportunity_id
+    ? rows(ctx, `${OFFER_SELECT} WHERE x.opportunity_id = ? ORDER BY x.opportunity_id, x.version DESC`, Number(f.opportunity_id))
+    : rows(ctx, `${OFFER_SELECT} ORDER BY x.opportunity_id, x.version DESC`)).map(parseItems);
   list = list.filter((r) => has(o.q, r.opportunity_title, r.note));
   return page(list, o.limit, o.offset);
 }

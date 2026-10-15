@@ -3,7 +3,6 @@ import { companiesApi } from "./api";
 import { entities } from "./entities";
 import { m } from "./messages";
 import { mcp } from "./mcp";
-import { ALL_ROWS } from "./service/constants";
 import { companiesList } from "./service/list";
 
 /**
@@ -28,7 +27,7 @@ export default defineModule({
     },
     chatCards: {
       company: (ctx, id) => {
-        const r = companiesList(ctx, { limit: ALL_ROWS }).rows.find((c) => c.id === id);
+        const r = companiesList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0];
         if (!r) throw new Error("company not found");
         return { title: r.name, status: r.contact_status };
       },
