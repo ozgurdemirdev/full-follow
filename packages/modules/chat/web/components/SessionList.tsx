@@ -33,13 +33,19 @@ interface Props {
 
 export function SessionList({ sessions, currentId, runningId, hasMore, loadMore, onPick, onNew }: Props) {
   const end = useRef<HTMLDivElement>(null);
+  // the observer is rebuilt when a page has landed (a sentinel still in view asks for the next one) and never because the callback is new:
+  // a rebuilt observer reports a visible sentinel at once, which asked for the same page again
+  const more = useRef(loadMore);
+  useEffect(() => {
+    more.current = loadMore;
+  });
   useEffect(() => {
     const s = end.current;
     if (!s || !hasMore) return;
-    const io = new IntersectionObserver(([e]) => e.isIntersecting && loadMore());
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && more.current());
     io.observe(s);
     return () => io.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, sessions.length]);
 
   let last = "";
   return (

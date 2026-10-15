@@ -82,7 +82,8 @@ export interface ChatLive {
   /** the last reply that ended: `n` counts them, `error` is true when it failed (stopped replies do not count) */
   outcome: { n: number; error: boolean } | null;
 }
-let liveState: ChatLive = { open: false, running: false, ready: false, status: null, since: null, phase: null, tool: null, outcome: null };
+export const IDLE_CHAT_LIVE: ChatLive = { open: false, running: false, ready: false, status: null, since: null, phase: null, tool: null, outcome: null };
+let liveState: ChatLive = IDLE_CHAT_LIVE;
 const liveSubs = new Set<() => void>();
 export const chatLive = {
   get: () => liveState,
@@ -104,3 +105,17 @@ export const setChatOpener = (present: boolean) => {
   openerSubs.forEach((fn) => fn());
 };
 export const useChatOpener = () => useSyncExternalStore((fn) => (openerSubs.add(fn), () => void openerSubs.delete(fn)), () => openerPresent);
+
+/** Whether a chat window is mounted right now (the chat module is installed and visible): the mascot only answers a click while there is one to open */
+let chatHere = false;
+const hereSubs = new Set<() => void>();
+export const chatPresence = {
+  get: () => chatHere,
+  subscribe: (fn: () => void) => (hereSubs.add(fn), () => void hereSubs.delete(fn)),
+  set: (here: boolean) => {
+    if (here === chatHere) return;
+    chatHere = here;
+    hereSubs.forEach((fn) => fn());
+  },
+};
+export const useChatPresent = () => useSyncExternalStore(chatPresence.subscribe, chatPresence.get);

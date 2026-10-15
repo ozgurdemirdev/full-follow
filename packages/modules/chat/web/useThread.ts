@@ -47,9 +47,13 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
   const pending = useRef(new Map<number, string>());
   const frame = useRef(0);
   const sid = useRef(sessionId);
+  /** the messages as of the last render, for loadOlder (which must keep one identity while replies stream in) */
+  const shown = useRef(messages);
+  const olderBusy = useRef(false);
   useEffect(() => {
     events.current = ev;
     sid.current = sessionId;
+    shown.current = messages;
   });
 
   const remember = (list: ChatMessage[]) => list.forEach((m) => m.role === "assistant" && lens.current.set(m.id, m.body.length));
@@ -149,14 +153,19 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
 
   const loadOlder = useCallback(async () => {
     const id = sid.current;
-    const first = messages.find((m) => m.id > 0);
-    if (!id || !first) return;
-    const r = await chatApi.messages(id, first.id);
-    if (sid.current !== id) return;
-    remember(r.items);
-    setMessages((prev) => [...r.items, ...prev]);
-    setHasMore(r.has_more);
-  }, [messages]);
+    const first = shown.current.find((m) => m.id > 0);
+    if (!id || !first || olderBusy.current) return;
+    olderBusy.current = true;
+    try {
+      const r = await chatApi.messages(id, first.id);
+      if (sid.current !== id) return;
+      remember(r.items);
+      setMessages((prev) => [...r.items, ...prev]);
+      setHasMore(r.has_more);
+    } finally {
+      olderBusy.current = false;
+    }
+  }, []);
 
   /** Optimistic bubble first; a failed send keeps the same client_id so retrying is idempotent */
   const send = useCallback(async (id: number, body: string, clientId: string, files: ChatAttachment[] = [], mode: "text" | "voice" = "text"): Promise<ApiError | null> => {

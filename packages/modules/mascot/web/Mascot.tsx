@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useElapsed } from "@kit/lib/useElapsed";
-import { useChatLive } from "@kit/lib/chatStore";
+import { useChatLive, useChatPresent } from "@kit/lib/chatStore";
 import { isDesk } from "@kit/lib/media";
 import { m } from "./messages";
 import { ACT_ERROR_MS, ACT_MIN_MS, ACT_PROPS_MIN_SIZE, CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_GAP, PERCH_HEIGHT, PERCH_X, PERCH_Y, SIZE } from "./config";
@@ -91,7 +91,7 @@ function MascotBody({ onActivate }: Props) {
   const probe = useRef<HTMLDivElement>(null);
   const scene = useRef<MascotScene | null>(null);
   const S = useRef<MotionState | null>(null);
-  const latest = useRef({ prefs, onActivate });
+  const latest = useRef({ prefs, onActivate, here: false });
   const size = useRef({ w: 0, h: 0 });
   const env = useRef<Env | null>(null);
   const pointer = useRef<Pointer>({ px: -1, py: -1, lastMove: -99 });
@@ -103,6 +103,8 @@ function MascotBody({ onActivate }: Props) {
   const faded = useRef(false);
   const resetsSeen = useRef(live.resets);
   const chat = useChatLive();
+  // no chat window (module hidden or removed): a click opens nothing, so it also shows nothing
+  const here = useChatPresent();
   const chatRef = useRef(chat);
   const seconds = useElapsed(!chat.open && chat.running ? chat.since : null);
   useEffect(() => {
@@ -118,7 +120,7 @@ function MascotBody({ onActivate }: Props) {
   }, [chat.outcome]);
 
   useEffect(() => {
-    latest.current = { prefs, onActivate };
+    latest.current = { prefs, onActivate, here };
   });
 
   // Measure what the simulation needs: size, home spot (the old chat button), bounds right of the sidebar
@@ -363,7 +365,7 @@ function MascotBody({ onActivate }: Props) {
       s.vel = { x: vx * k, y: vy * k };
       s.mode = "toss";
       s.sqV += 2;
-    } else if (!cancel) {
+    } else if (!cancel && latest.current.here) {
       s.sqV += 4;
       latest.current.onActivate();
     }
@@ -388,7 +390,8 @@ function MascotBody({ onActivate }: Props) {
       <button
         type="button"
         className="mascot-hit"
-        aria-label={m.open}
+        aria-label={here ? m.open : m.title}
+        tabIndex={here ? undefined : -1}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={() => release(false)}
@@ -410,6 +413,7 @@ function MascotBody({ onActivate }: Props) {
         onKeyDown={(e) => {
           if (e.key !== "Enter" && e.key !== " ") return;
           e.preventDefault();
+          if (!latest.current.here) return;
           if (S.current) S.current.sqV += 4;
           latest.current.onActivate();
         }}

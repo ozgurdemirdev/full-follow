@@ -66,6 +66,11 @@ export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRet
     return () => ro.disconnect();
   }, []);
 
+  // rebuilt when messages are added, not when loadOlder is new (see SessionList)
+  const older = useRef(loadOlder);
+  useEffect(() => {
+    older.current = loadOlder;
+  });
   useEffect(() => {
     const t = el.current;
     const s = top.current;
@@ -74,13 +79,13 @@ export function Thread({ sessionId, messages, hasMore, loading, loadOlder, onRet
       ([e]) => {
         if (!e.isIntersecting || loadingOlder.current) return;
         loadingOlder.current = true;
-        void loadOlder().finally(() => (loadingOlder.current = false));
+        void older.current().finally(() => (loadingOlder.current = false));
       },
       { root: t },
     );
     io.observe(s);
     return () => io.disconnect();
-  }, [hasMore, loadOlder]);
+  }, [hasMore, messages.length]);
 
   const onScroll = () => {
     const t = el.current;

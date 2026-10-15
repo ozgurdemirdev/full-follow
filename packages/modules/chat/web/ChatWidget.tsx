@@ -4,7 +4,7 @@ import { ChatButton } from "./components/ChatButton";
 import { ChatPanel } from "./components/ChatPanel";
 import { statusText, useElapsed } from "./components/StatusLine";
 import { toast } from "@kit/components/toast";
-import { chatBus, chatLive, chatPrefs, useChatOpener, type ChatLive } from "@kit/lib/chatStore";
+import { chatBus, chatLive, chatPresence, chatPrefs, IDLE_CHAT_LIVE, useChatOpener, type ChatLive } from "@kit/lib/chatStore";
 import { T } from "./messages";
 import { CHAT_UI } from "./constants";
 import { isDesk } from "@kit/lib/media";
@@ -35,7 +35,17 @@ export default function ChatWidget() {
   const input = useRef<HTMLTextAreaElement>(null);
   const queued = useRef<{ sid: number; text: string; clientId: string; files: ChatAttachment[]; mode: "text" | "voice" } | null>(null);
   const listLoaded = useRef(false);
+  /** a page of the session list is on its way: the sentinel must not ask for the same page again */
+  const pageBusy = useRef(false);
 
+  // while the window is mounted the mascot may open it; when it goes away (module hidden or removed) the mascot's state resets with it
+  useEffect(() => {
+    chatPresence.set(true);
+    return () => {
+      chatPresence.set(false);
+      chatLive.set(IDLE_CHAT_LIVE);
+    };
+  }, []);
   // the record chips under the replies read fresh rows whenever the window opens or another session is shown
   useEffect(() => {
     recordCache.clear();
@@ -76,12 +86,17 @@ export default function ChatWidget() {
   }, []);
 
   const loadSessions = useCallback((from: string | null) => {
+    if (pageBusy.current) return;
+    pageBusy.current = true;
     void chatApi.sessions(from).then((r) => {
       setSessions((l) => (from ? [...l, ...r.items.filter((s) => !l.some((x) => x.id === s.id))] : r.items.reduce((acc, s) => upsert(acc, s), l)));
       setCursor(r.next_cursor);
       listLoaded.current = true;
+    }).finally(() => {
+      pageBusy.current = false;
     });
   }, []);
+  const loadMoreSessions = useCallback(() => loadSessions(cursor), [loadSessions, cursor]);
 
   // first open: load the list; with no remembered session, continue the most recent one
   useEffect(() => {
@@ -226,7 +241,7 @@ export default function ChatWidget() {
         draftEffort={draft.effort ?? defaults?.effort ?? ""}
         sessions={sessions}
         sessionsHasMore={cursor !== null}
-        loadMoreSessions={() => loadSessions(cursor)}
+        loadMoreSessions={loadMoreSessions}
         messages={thread.messages}
         hasMore={thread.hasMore}
         loading={thread.loading}
