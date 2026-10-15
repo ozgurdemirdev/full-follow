@@ -1,4 +1,4 @@
-import { LIST_PAGE_SIZE, RELATED_ROWS_DEFAULT, RELATED_ROWS_MAX, type RecordType } from "../constants";
+import { LIST_PAGE_SIZE, ONE_ROW, RELATED_ROWS_DEFAULT, RELATED_ROWS_MAX, type RecordType } from "../constants";
 import { FFError, norm, page, row, rows, type Ctx, type ListOpts } from "../context";
 import { m } from "../messages";
 import { bool, has, idsOf, inIds, tagsList } from "./directory";
@@ -117,11 +117,11 @@ function queriesService(ctx: Ctx) {
     let rowData: any;
     if (!isCoreType(type)) rowData = entityHandler(ctx, type, "get")(ctx, id);
     else switch (type) {
-      case "source": rowData = own(find("source", { filter: { all: true, ids: [id] }, limit: 1 }).rows[0]); break;
-      case "sector": rowData = own(find("sector", { filter: { all: true, ids: [id] }, limit: 1 }).rows[0]); break;
-      case "tag": rowData = own(find("tag", { filter: { all: true, ids: [id] }, limit: 1 }).rows[0]); break;
+      case "source": rowData = own(find("source", { filter: { all: true, ids: [id] }, limit: ONE_ROW }).rows[0]); break;
+      case "sector": rowData = own(find("sector", { filter: { all: true, ids: [id] }, limit: ONE_ROW }).rows[0]); break;
+      case "tag": rowData = own(find("tag", { filter: { all: true, ids: [id] }, limit: ONE_ROW }).rows[0]); break;
       case "trash": throw new FFError("validation", m.records.trashUseFind);
-      case "note": rowData = own(find("note", { filter: { ids: [id] }, limit: 1 }).rows[0]); break;
+      case "note": rowData = own(find("note", { filter: { ids: [id] }, limit: ONE_ROW }).rows[0]); break;
       case "link": rowData = own(row(ctx, "SELECT * FROM links WHERE id = ?", id)); break;
       case "comment": {
         const c = requireRow(ctx, "comments", id);

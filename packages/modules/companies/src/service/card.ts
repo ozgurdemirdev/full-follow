@@ -1,4 +1,4 @@
-import { FFError, listThreads, row, type CompanyCard, type Ctx } from "@fullfollow/core";
+import { FFError, listThreads, ONE_ROW, row, type CompanyCard, type Ctx } from "@fullfollow/core";
 import { m } from "../messages";
 import { ALL_ROWS, CARD_DRAFTS_LIMIT, CARD_PEOPLE_LIMIT, CARD_TOUCHES_LIMIT } from "./constants";
 import { companiesList } from "./list";
@@ -9,7 +9,7 @@ import { companiesList } from "./list";
  * The opportunities come from the pipeline module, the waiting drafts from the drafts module (empty without them).
  */
 export function companyCard(ctx: Ctx, id: number): CompanyCard {
-  const company = companiesList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0];
+  const company = companiesList(ctx, { filter: { ids: [id] }, limit: ONE_ROW }).rows[0];
   if (!company) throw new FFError("not_found", m.notFound(id));
   const people = ctx.mod("people")?.list({ filter: { company_id: id }, limit: CARD_PEOPLE_LIMIT }).rows ?? [];
   const network = ctx.mod("network");

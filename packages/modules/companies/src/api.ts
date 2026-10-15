@@ -1,4 +1,4 @@
-import type { CompaniesApi, Ctx } from "@fullfollow/core";
+import { ONE_ROW, type CompaniesApi, type Ctx } from "@fullfollow/core";
 import { companiesServices } from "./service";
 import { companyCard } from "./service/card";
 import { companiesList, companyNames } from "./service/list";
@@ -13,7 +13,7 @@ export function companiesApi(ctx: Ctx): CompaniesApi {
     update: companies.update as CompaniesApi["update"],
     remove: companies.remove,
     list: (opts) => companiesList(ctx, opts),
-    get: (id) => companiesList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0],
+    get: (id) => companiesList(ctx, { filter: { ids: [id] }, limit: ONE_ROW }).rows[0],
     names: (ids) => companyNames(ctx, ids),
     card: (id) => companyCard(ctx, id),
     bumpStatus: (id, next) => bumpCompanyStatus(ctx, id, next),

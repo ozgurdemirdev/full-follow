@@ -1,4 +1,4 @@
-import { defineModule, row } from "@fullfollow/core";
+import { defineModule, ONE_ROW, row } from "@fullfollow/core";
 import { companiesApi } from "./api";
 import { entities } from "./entities";
 import { m } from "./messages";
@@ -27,7 +27,7 @@ export default defineModule({
     },
     chatCards: {
       company: (ctx, id) => {
-        const r = companiesList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0];
+        const r = companiesList(ctx, { filter: { ids: [id] }, limit: ONE_ROW }).rows[0];
         if (!r) throw new Error("company not found");
         return { title: r.name, status: r.contact_status };
       },

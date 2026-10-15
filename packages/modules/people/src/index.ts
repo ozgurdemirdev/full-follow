@@ -1,4 +1,4 @@
-import { defineModule, row, type RecordTrashed } from "@fullfollow/core";
+import { defineModule, ONE_ROW, row, type RecordTrashed } from "@fullfollow/core";
 import { peopleApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
@@ -38,7 +38,7 @@ export default defineModule({
     },
     chatCards: {
       person: (ctx, id) => {
-        const r = peopleList(ctx, { filter: { ids: [id] }, limit: 1 }).rows[0];
+        const r = peopleList(ctx, { filter: { ids: [id] }, limit: ONE_ROW }).rows[0];
         if (!r) throw new Error("person not found");
         const open = ctx.mod("drafts")?.list({ filter: { person_id: id }, limit: CHAT_CARD_DRAFTS_LIMIT }).rows.find((d) => d.status === "bekliyor" || d.status === "onaylandi");
         return { title: r.name, role: r.role, company: r.company_name, status: r.contact_status, next_follow_up_at: r.next_follow_up_at, draft_id: open?.id ?? null };
