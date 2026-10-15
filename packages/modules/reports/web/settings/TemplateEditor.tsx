@@ -6,6 +6,7 @@ import { MILESTONE } from "@kit/lib/labels";
 import { putSettings, useSettings } from "@kit/lib/settings";
 import { PERCENT, TEMPLATE_TOTAL_PERCENT } from "../constants";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 type Rows = PriceFloor["payment_template"];
 
@@ -42,11 +43,11 @@ function Editor({ saved }: { saved: Rows }) {
       {rows.map((r, i) => (
         <div key={r.milestone} className="set-template-row">
           <span className="set-template-name">{MILESTONE[r.milestone] ?? r.milestone}</span>
-          <label className="set-template-unit">{m.shared.percent}
+          <label className="set-template-unit">{m.common.percent}
             <NumberField className="set-input set-input-num" min={1} max={PERCENT} value={r.percent} ariaLabel={m.settings.percentLabel(MILESTONE[r.milestone])} onChange={(v) => set(i, { percent: v ?? 0 })} />
           </label>
           <label className="set-template-unit">
-            <NumberField className="set-input set-input-num" min={0} value={r.days} ariaLabel={m.settings.daysLabel(MILESTONE[r.milestone])} onChange={(v) => set(i, { days: v ?? 0 })} />{m.shared.days}
+            <NumberField className="set-input set-input-num" min={0} value={r.days} ariaLabel={m.settings.daysLabel(MILESTONE[r.milestone])} onChange={(v) => set(i, { days: v ?? 0 })} />{m.common.days}
           </label>
           <button type="button" className="set-icon-btn" aria-label={m.settings.removeRow} disabled={rows.length < 2} onClick={() => setRows((p) => p.filter((_, k) => k !== i))}>×</button>
         </div>
@@ -59,8 +60,8 @@ function Editor({ saved }: { saved: Rows }) {
           </select>
         ) : null}
         <span className="set-template-sum" data-ok={sum === TEMPLATE_TOTAL_PERCENT ? "" : undefined}>{m.settings.total(sum)}</span>
-        {dirty ? <button type="button" className="set-btn" onClick={() => setRows(saved.map((r) => ({ ...r })))}>{m.shared.undo}</button> : null}
-        <button type="button" className="set-btn" data-primary="" disabled={busy || !dirty || sum !== TEMPLATE_TOTAL_PERCENT} onClick={save}>{m.shared.save}</button>
+        {dirty ? <button type="button" className="set-btn" onClick={() => setRows(saved.map((r) => ({ ...r })))}>{kit.undo}</button> : null}
+        <button type="button" className="set-btn" data-primary="" disabled={busy || !dirty || sum !== TEMPLATE_TOTAL_PERCENT} onClick={save}>{kit.save}</button>
       </div>
     </div>
   );

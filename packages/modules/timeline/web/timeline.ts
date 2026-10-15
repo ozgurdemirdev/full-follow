@@ -7,6 +7,7 @@ import { lira, toDate } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import type { Actor } from "@kit/lib/labels";
 import { m } from "./messages";
+import { m as kit } from "@kit/messages";
 
 /** Events requested for a focused record: enough to hold its whole stage history (its oldest one dates "ilk kayıt") */
 export const STAGE_EVENTS_LIMIT = 500;
@@ -35,7 +36,7 @@ export const TL_TYPES: { key: TlType; label: string; icon: string }[] = [
 export const TL_TYPE = Object.fromEntries(TL_TYPES.map((t) => [t.key, t])) as Record<TlType, (typeof TL_TYPES)[number]>;
 
 export const ACTOR_PILLS: { value: "all" | Actor; label: string }[] = [
-  { value: "all", label: m.shared.all },
+  { value: "all", label: kit.all },
   { value: "ozgur", label: m.actor.ozgur },
   { value: "claude", label: m.actor.claude },
 ];

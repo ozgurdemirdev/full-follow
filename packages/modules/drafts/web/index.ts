@@ -9,13 +9,14 @@ import { DraftsWaiting } from "./DraftsWaiting";
 import { m } from "./messages";
 import { DRAFTS_PATH } from "./paths";
 import { draftClaudeRows, followupRows, quotaRows } from "./settings";
+import { m as kit } from "@kit/messages";
 
 export default defineWebModule({
   key: "drafts",
   label: m.label,
   routes: [{ page: "drafts", path: DRAFTS_PATH, params: "/:id?", load: () => import("./pages/Drafts") }],
   nav: [{
-    group: m.shared.network, order: 60, label: m.label, icon: "pen", path: DRAFTS_PATH,
+    group: kit.navGroups.network, order: 60, label: m.label, icon: "pen", path: DRAFTS_PATH,
     useBadge: () => useQuery<Today>(K.today).data?.drafts?.total,
   }],
   dashboard: [
@@ -32,7 +33,7 @@ export default defineWebModule({
     { id: "claude-drafts", category: "claude", order: 20, rows: draftClaudeRows },
   ],
   quickAdd: [{
-    kind: "draft", name: m.noun, key: "Y", dest: m.dest, icon: BOARD_ICON.pen, tone: "claude", group: m.shared.contactAndComms, order: 40,
+    kind: "draft", name: m.noun, key: "Y", dest: m.dest, icon: BOARD_ICON.pen, tone: "claude", group: kit.quickGroups.people, order: 40,
     form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.pen, base: "/drafts", page: byRecord("draft") },
     load: () => import("./forms/DraftForm").then((mod) => ({ default: mod.DraftForm })),
   }],

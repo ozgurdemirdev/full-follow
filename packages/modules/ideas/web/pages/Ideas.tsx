@@ -16,6 +16,7 @@ import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
 import { groupByStage } from "../ideas";
 import { m } from "../messages";
 import { IDEAS_PATH } from "../paths";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Gelir fikirleri: four stage lanes, the chosen idea with its interest numbers, and who it was told to */
 export default function Ideas() {
@@ -42,7 +43,7 @@ export default function Ideas() {
       sub={m.page.sub}
       right={
         <button type="button" className="dash-new" onClick={() => openSheet("idea")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
+          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
           {m.page.add}
         </button>
       }

@@ -5,6 +5,7 @@ import { linkTo } from "@kit/app/modules/links";
 import { m } from "../messages";
 import { recKind, recTone } from "../timeline";
 import { PathIcon } from "./PathIcon";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** "Kişi geçmişi" card above the feed while one record is focused: opens the record or goes back to everything */
 export function FocusCard({ rec, summary, onClear }: { rec: TlRec; summary: string; onClear: () => void }) {
@@ -16,7 +17,7 @@ export function FocusCard({ rec, summary, onClear }: { rec: TlRec; summary: stri
   }, [rec.kind, rec.id]);
   return (
     <section ref={root} aria-label={rec.name} className="tlx-focus" data-rec={recTone(rec.kind)}>
-      <span className="tlx-focus-icon"><PathIcon d={kind.icon} className="size-icon-xl" stroke={1.7} /></span>
+      <span className="tlx-focus-icon"><PathIcon d={kind.icon} className="size-icon-xl" stroke={STROKE.icon} /></span>
       <div className="tlx-focus-text">
         <span className="tlx-focus-kind">{m.focus.history(kind.label)}</span>
         <span className="tlx-focus-name">{rec.name}</span>

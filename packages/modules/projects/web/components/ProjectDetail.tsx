@@ -12,6 +12,7 @@ import { FilesCard } from "@kit/components/FilesCard";
 import { LinksCard } from "@kit/components/LinksCard";
 import { m } from "../messages";
 import { ProjectAdmin } from "./ProjectAdmin";
+import { m as kit } from "@kit/messages";
 
 /** Expanded project: tasks with owner, payments (Alındı), Claude's note with the reminder request, then links, files and admin */
 export function ProjectDetail({ v }: { v: ProjectView }) {
@@ -22,7 +23,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
       <Slot name="project.detail.tasks" props={{ tasks: v.tasks }} />
 
       <div className="prj-sec">
-        <span className="prj-sec-label">{m.shared.payments}</span>
+        <span className="prj-sec-label">{kit.nouns.payments}</span>
         {v.pays.length === 0 ? <span className="prj-row text-text-muted">{m.detail.noPayments}</span> : null}
         {v.pays.map(({ payment: x, state, canMark }) => (
           <div key={x.id} className="prj-row" data-money={state}>

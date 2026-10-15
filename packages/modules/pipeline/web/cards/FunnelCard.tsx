@@ -13,6 +13,7 @@ import { Card, Meter } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Source pills in the funnel card */
 const FUNNEL_SOURCES = 3;
@@ -70,7 +71,7 @@ export function FunnelCard() {
             {sources.map(([name, n]) => <span key={name} className="dash-chip is-pill">{name} {n}</span>)}
             <button type="button" className="ff-more" aria-label={m.funnelCard.expand} onClick={(e) => ex.show("funnel", e.currentTarget.closest("section")!.getBoundingClientRect())}>
               {m.funnelCard.count(total)}
-              <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
+              <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={STROKE.medium} /></span>
             </button>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { ago } from "@kit/lib/format";
 import { PLATFORM } from "@kit/lib/labels";
 import { channelName } from "@kit/lib/network";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 /** What the board leaves out but the page had: notes, the touches that told this idea, the posts about it (blocks of the board's inner style) */
 export function IdeaExtras({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
@@ -14,7 +15,7 @@ export function IdeaExtras({ idea, related }: { idea: Idea; related?: IdeaRelate
     <>
       {idea.notes ? (
         <div className="ideas-block">
-          <h3>{m.shared.notes}</h3>
+          <h3>{kit.nouns.notes}</h3>
           <p>{idea.notes}</p>
         </div>
       ) : null}

@@ -14,6 +14,8 @@ import { StaleCard } from "../components/StaleCard";
 import { Empty, ErrorBox, Filters, order, PageSkeleton } from "@kit/components/ui";
 import { m } from "../messages";
 import { byValue, peopleByPost, perPost, platformStats, staleDays } from "../posts";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a post is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -36,7 +38,7 @@ export default function Posts() {
   const per = useMemo(() => perPost(posts.rows, stats), [posts.rows, stats]);
   const byPost = useMemo(() => peopleByPost(people.rows), [people.rows]);
   const shown = useMemo(() => sorted.filter((p) => !platform || p.platform === platform), [sorted, platform]);
-  const tabs = useMemo(() => [{ value: "", label: m.shared.all }, ...stats.map((s) => ({ value: s.key, label: s.name }))], [stats]);
+  const tabs = useMemo(() => [{ value: "", label: kit.all }, ...stats.map((s) => ({ value: s.key, label: s.name }))], [stats]);
 
   const open = useCallback((id: number, el: HTMLElement) => {
     setFrom(el.getBoundingClientRect());
@@ -50,7 +52,7 @@ export default function Posts() {
       className="flex flex-col gap-10"
       right={
         <button type="button" className="dash-new" onClick={() => openSheet("post")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
+          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
           {m.page.add}
         </button>
       }
@@ -65,7 +67,7 @@ export default function Posts() {
           {due.length ? <StaleCard rows={due} style={order(1)} /> : null}
           <PlatformStrip stats={stats} per={per} style={order(2)} />
           <div className="posts-bar rise" style={order(3)}>
-            <Filters label={m.shared.platform} value={platform} onChange={setPlatform} items={tabs} />
+            <Filters label={m.common.platform} value={platform} onChange={setPlatform} items={tabs} />
             <span className="flex-grow" />
             <span className="posts-bar-note">{m.page.mostWork}</span>
           </div>

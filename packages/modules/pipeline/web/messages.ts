@@ -2,11 +2,7 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: {
-      close: "Kapat", edit: "Düzenle", delete: "Sil", save: "Kaydet", cancel: "Vazgeç", all: "Tümü", stage: "Aşama", source: "Kaynak", note: "Not", person: "Kişi",
-      company: "Firma", newPerson: "Yeni kişi", currency: "₺", salesAndProjects: "Satış ve projeler", sales: "Satış", title: "Başlık", search: "Fırsat ara",
-      searchPlaceholder: "Fırsat ara", addTouch: "Temas ekle", timeline: "Zaman çizelgesi",
-    },
+    common: { all: "Tümü", newPerson: "Yeni kişi", search: "Fırsat ara", searchPlaceholder: "Fırsat ara", timeline: "Zaman çizelgesi" },
     label: "Satış hunisi",
     noun: "Fırsat",
     offerNoun: "Teklif",

@@ -2,7 +2,6 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: { all: "Hepsi", salesAndProjects: "Satış ve projeler" },
     label: "Zaman çizelgesi",
     sub: "Sen ve Claude ne yaptınız, kayıt kayıt",
     actor: { ozgur: "Sen", claude: "Claude" },

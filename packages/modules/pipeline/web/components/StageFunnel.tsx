@@ -7,6 +7,7 @@ import { shortLira } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Card } from "@kit/components/ui";
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** The last open stage has no rate: nothing comes after it in this funnel */
 const LAST_STAGE = OPEN_STAGES[OPEN_STAGES.length - 1];
@@ -44,7 +45,7 @@ export function StageFunnel({ rows, rates, onPick }: { rows: Opportunity[]; rate
                   {rate !== undefined ? (
                     <>
                       <span className={`pipe-rate-chip ${worst === s.stage ? "is-worst" : ""}`}>{pct(rate)}</span>
-                      <BoardIcon name="arrowRight" className="size-icon-xs" stroke={2} />
+                      <BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.regular} />
                     </>
                   ) : null}
                 </span>

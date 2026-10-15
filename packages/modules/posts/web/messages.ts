@@ -2,7 +2,7 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: { all: "Hepsi", close: "Kapat", edit: "Düzenle", delete: "Sil", marketing: "Pazarlama", platform: "Platform", text: "Metin", note: "Not" },
+    common: { platform: "Platform" },
     label: "Paylaşımlar",
     noun: "Paylaşım",
     addedTo: "Paylaşımlar’a eklenir",

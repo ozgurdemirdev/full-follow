@@ -8,6 +8,8 @@ import { channelName } from "@kit/lib/network";
 import { BoardIcon, type BoardIconName } from "@kit/components/boardIcons";
 import { m } from "../messages";
 import { matchesFilter, STREAM_FILTERS, type StreamFilter, type StreamItem, type StreamKind } from "./streamItems";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const ICON: Record<StreamKind, BoardIconName> = { in: "dirIn", out: "dirOut", note: "note", claude: "claude" };
 const KIND_LABEL = { arama: m.streamKinds.arama, gorusme: m.streamKinds.gorusme } as const;
@@ -20,8 +22,8 @@ export const resolve = (thread: number) => run("post", `/comments/${thread}/reso
 export function Tools({ label, onEdit, onDelete }: { label: string; onEdit?: () => void; onDelete: () => void }) {
   return (
     <span className="ppl-tools-row">
-      {onEdit ? <button type="button" className="ppl-tool" aria-label={m.stream.editTouch(label)} onClick={onEdit}>{m.shared.edit}</button> : null}
-      <button type="button" className="ppl-tool is-danger" aria-label={m.stream.deleteTouch(label)} onClick={onDelete}>{m.shared.delete}</button>
+      {onEdit ? <button type="button" className="ppl-tool" aria-label={m.stream.editTouch(label)} onClick={onEdit}>{kit.edit}</button> : null}
+      <button type="button" className="ppl-tool is-danger" aria-label={m.stream.deleteTouch(label)} onClick={onDelete}>{kit.delete}</button>
     </span>
   );
 }
@@ -36,7 +38,7 @@ function NoteEdit({ id, value, onChange, onDone }: { id: number; value: string; 
     <div className="flex gap-3">
       <input className="inp min-w-0 flex-1" aria-label={m.stream.editNote} value={value} autoFocus onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => (e.key === "Enter" ? (e.preventDefault(), void save()) : e.key === "Escape" ? onDone() : undefined)} />
-      <button type="button" className="btn btn-sec" onClick={() => void save()}>{m.shared.save}</button>
+      <button type="button" className="btn btn-sec" onClick={() => void save()}>{kit.save}</button>
     </div>
   );
 }
@@ -62,12 +64,12 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
 
   return (
     <div className="ppl-item" data-k={item.kind}>
-      <span className="ppl-kind"><BoardIcon name={ICON[item.kind]} className="size-icon-xs" stroke={2} /></span>
+      <span className="ppl-kind"><BoardIcon name={ICON[item.kind]} className="size-icon-xs" stroke={STROKE.regular} /></span>
       <div className="flex min-w-0 flex-grow flex-col gap-2">
         <span className="flex flex-wrap items-center gap-3 text-sm text-text-muted">
           <span className="ppl-kc">{who}</span>
           <span>{ago(item.at)}</span>
-          {th?.resolved_at ? <span>· {m.shared.resolved}</span> : null}
+          {th?.resolved_at ? <span>· {m.common.resolved}</span> : null}
           {t ? <Tools label={m.stream.touch} onEdit={() => openSheet("touch", { edit: t.id })} onDelete={() => void remove(`/touches/${t.id}`, m.stream.touch).catch(() => {})} /> : null}
           {n ? <Tools label={m.stream.note} onEdit={n.created_by === "ozgur" ? () => setDraft(n.body) : undefined} onDelete={() => void remove(`/notes/${n.id}`, m.stream.note).catch(() => {})} /> : null}
         </span>
@@ -81,14 +83,14 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
         ) : null}
         {answer ? (
           <span className="flex flex-wrap gap-2">
-            <button type="button" className="ppl-small is-accent" onClick={onAnswer}>{m.shared.reply}</button>
-            {p.next_follow_up_at ? <button type="button" className="ppl-small" onClick={() => void closeFollowUp(p)}>{m.shared.resolved}</button> : null}
+            <button type="button" className="ppl-small is-accent" onClick={onAnswer}>{kit.reply}</button>
+            {p.next_follow_up_at ? <button type="button" className="ppl-small" onClick={() => void closeFollowUp(p)}>{m.common.resolved}</button> : null}
           </span>
         ) : null}
         {openThread ? (
           <span className="flex flex-wrap gap-2">
-            {th!.last_by === "claude" ? <button type="button" className="ppl-small is-accent" onClick={() => onReply(th!.id)}>{m.shared.reply}</button> : null}
-            <button type="button" className="ppl-small" onClick={() => void resolve(th!.id)}>{m.shared.resolved}</button>
+            {th!.last_by === "claude" ? <button type="button" className="ppl-small is-accent" onClick={() => onReply(th!.id)}>{kit.reply}</button> : null}
+            <button type="button" className="ppl-small" onClick={() => void resolve(th!.id)}>{m.common.resolved}</button>
           </span>
         ) : null}
       </div>
@@ -121,8 +123,8 @@ export function Stream({ items, person, status, filter, onFilter, chan, onAnswer
       </div>
       <div className="ppl-stream flex flex-col">
         {list.map((i) => <Entry key={i.key} item={i} p={person} lead={i.key === leadKey} status={status} onAnswer={onAnswer} onReply={onReply} />)}
-        {shown.length === 0 ? <p className="m-0 border-t border-border-subtle py-6 text-base-sm text-text-muted">{m.shared.noRecords}</p> : null}
-        {shown.length > list.length ? <button type="button" className="btn btn-ghost self-start px-0 text-base-sm" onClick={() => setAll(true)}>{m.shared.moreRecords(shown.length - list.length)}</button> : null}
+        {shown.length === 0 ? <p className="m-0 border-t border-border-subtle py-6 text-base-sm text-text-muted">{m.common.noRecords}</p> : null}
+        {shown.length > list.length ? <button type="button" className="btn btn-ghost self-start px-0 text-base-sm" onClick={() => setAll(true)}>{m.common.moreRecords(shown.length - list.length)}</button> : null}
       </div>
     </>
   );

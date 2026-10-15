@@ -8,12 +8,13 @@ import { PLATFORM_DOT } from "../labels";
 import { m } from "../messages";
 import { refreshNote } from "../marketing";
 import { POSTS_PATH } from "../paths";
+import { m as kit } from "@kit/messages";
 
 /** Posts whose refresh date has come */
 export function PostsDueCard({ today }: { today: Today }) {
   const refresh = (p: Post) => run("post", `/posts/${p.id}/refresh`, undefined, { ok: m.refreshedMarked }).catch(() => {});
   return (
-    <Card title={m.card.title} className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={POSTS_PATH}>{m.shared.all}</MoreLink>}>
+    <Card title={m.card.title} className="dash-gap-4 dash-head-pad rise" actions={<MoreLink href={POSTS_PATH}>{kit.all}</MoreLink>}>
       {today.posts_due!.rows.slice(0, SHOWN.posts).map((p) => (
         <div key={p.id} className="flex items-center gap-5 border-t border-border-subtle py-4">
           <span className={`dash-dot ${PLATFORM_DOT[p.platform] ?? "bg-entity-neutral"}`} />

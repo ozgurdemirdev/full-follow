@@ -11,6 +11,8 @@ import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { toast } from "@kit/components/toast";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Menu of the header: what the board leaves out (edit, a draft for someone else through the form, delete) */
 function HeaderMenu({ t, onClose }: { t: Template; onClose: () => void }) {
@@ -18,13 +20,13 @@ function HeaderMenu({ t, onClose }: { t: Template; onClose: () => void }) {
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
-      <button type="button" className="ppl-round" aria-label={m.shared.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={2.4} />
+      <button type="button" className="ppl-round" aria-label={kit.recordActions.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("template", { template_id: t.id }))}>{m.shared.edit}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("template", { template_id: t.id }))}>{kit.edit}</button>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { template_id: t.id, channel: t.channel ?? undefined }))}>{m.overlay.draftForOther}</button>
-        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/templates/${t.id}`, m.overlay.deleteNoun(t.name)).then(onClose).catch(() => {}))}>{m.shared.delete}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/templates/${t.id}`, m.overlay.deleteNoun(t.name)).then(onClose).catch(() => {}))}>{kit.delete}</button>
       </div>
     </div>
   );
@@ -62,10 +64,10 @@ function Body({ t, people }: { t: Template; people: Person[] }) {
           {parts.map((s, i) => <span key={i} className={s.kind === "plain" ? undefined : s.kind === "filled" ? "tpl-filled" : "tpl-open-ph"}>{s.text}</span>)}
         </p>
         <div className="tpl-acts">
-          <button type="button" className="tpl-copy" onClick={copy}>{m.shared.copy}</button>
+          <button type="button" className="tpl-copy" onClick={copy}>{m.common.copy}</button>
           <button type="button" className="tpl-use" onClick={useIt}>
             {m.overlay.useAsDraft}
-            <span><BoardIcon name="arrowRight" className="size-icon-xs" stroke={2.4} /></span>
+            <span><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.bold} /></span>
           </button>
         </div>
       </div>
@@ -98,8 +100,8 @@ export function TemplateOverlay({ t, from, people, onClose }: { t: Template | un
           </div>
           <div className="flex gap-3">
             <HeaderMenu t={t} onClose={onClose} />
-            <button type="button" className="ppl-round" data-close aria-label={m.shared.close} onClick={onClose}>
-              <BoardIcon name="close" className="size-icon-md" stroke={2} />
+            <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
+              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           </div>
         </>

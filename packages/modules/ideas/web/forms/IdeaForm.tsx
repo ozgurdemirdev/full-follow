@@ -12,6 +12,7 @@ import { errorsOf, saveRecord, useSubmit, type FormProps } from "@kit/forms/shar
 import { IDEA_STAGE } from "@kit/lib/labels";
 import { IDEA_STAGES, PRIORITIES, PRIORITY } from "../labels";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const PROJECT_NONE = "none";
 
@@ -73,11 +74,11 @@ export function IdeaForm(p: FormProps) {
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField name="title" label={m.shared.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} autoFocus />
+      <TextField name="title" label={kit.fields.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} autoFocus />
       <ChipsField label={m.form.where} value={projectId || PROJECT_NONE} onChange={(v) => v && setProjectId(v === PROJECT_NONE ? "" : v)} options={where} />
       <AreaField label={projectId ? m.form.description : m.form.problem} opt value={problem} onChange={setProblem} placeholder={projectId ? m.form.descriptionPlaceholder : m.form.problemPlaceholder} rows={3} />
       {projectId ? (
-        <SegField label={m.shared.priority} options={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
+        <SegField label={kit.fields.priority} options={PRIORITIES.map((x) => ({ value: x, label: PRIORITY[x] }))} value={priority} onChange={setPriority} />
       ) : (
         <>
           <TextField label={m.form.moneyNote} opt value={money} onChange={setMoney} placeholder={m.form.moneyNotePlaceholder} />
@@ -86,7 +87,7 @@ export function IdeaForm(p: FormProps) {
           <ComboField label={m.form.parent} opt value={parent} onChange={setParent} options={parentOptions} placeholder={m.form.parentPlaceholder} />
         </>
       )}
-      <AreaField label={m.shared.notes} opt value={notes} onChange={setNotes} rows={3} />
+      <AreaField label={kit.nouns.notes} opt value={notes} onChange={setNotes} rows={3} />
     </Form>
   );
 }

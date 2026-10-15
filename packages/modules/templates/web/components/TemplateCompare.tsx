@@ -11,6 +11,7 @@ import { Icon } from "@kit/components/icons";
 import { MotionScope } from "@kit/components/MotionScope";
 import { SectionHead } from "@kit/components/SectionHead";
 import { Card, Chip, Empty, order } from "@kit/components/ui";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Reply rate with a thin bar; early rows use the muted bar */
 function RateBar({ rate, early, leader }: { rate: number | null; early: boolean; leader?: boolean }) {
@@ -51,7 +52,7 @@ function TemplateRow({ t }: { t: TemplateRank }) {
     <div className="row">
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
         className="flex w-full flex-wrap items-center gap-x-5 gap-y-3 border-0 bg-transparent px-10 py-5 text-left text-base text-text-primary">
-        <Icon name="chevron" className={`size-icon-sm flex-none transition-transform dur-fade ${open ? "rotate-90" : ""}`} stroke={1.8} />
+        <Icon name="chevron" className={`size-icon-sm flex-none transition-transform dur-fade ${open ? "rotate-90" : ""}`} stroke={STROKE.thin} />
         <span className="min-w-0 flex-grow basis-0 truncate">{t.name}</span>
         {t.leader ? <Chip tone="success">{m.leader}</Chip> : null}
         {t.early ? <Chip>{m.early}</Chip> : null}

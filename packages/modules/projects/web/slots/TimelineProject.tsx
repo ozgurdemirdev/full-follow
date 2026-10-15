@@ -10,6 +10,7 @@ import { LOCALE } from "@kit/lib/i18n";
 import { MILESTONE, PROJECT_STAGE, PROJECT_STEPS, type ProjectStage, type Tone } from "@kit/lib/labels";
 import { MIN_PAYMENT } from "../constants";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 function PaymentRow({ p }: { p: Payment }) {
   const [amount, setAmount] = useState<number | null>(null);
@@ -37,8 +38,8 @@ function PaymentRow({ p }: { p: Payment }) {
       </div>
       {open ? (
         <div className="flex gap-3">
-          <NumberField className="inp inp-num h-control-height-md" min={MIN_PAYMENT} max={remaining} placeholder={remaining.toLocaleString(LOCALE)} value={amount} onChange={setAmount} onKeyDown={(e) => e.key === "Enter" && pay()} ariaLabel={m.shared.amount} autoFocus />
-          <button type="button" className="btn btn-pri" onClick={pay}>{m.shared.save}</button>
+          <NumberField className="inp inp-num h-control-height-md" min={MIN_PAYMENT} max={remaining} placeholder={remaining.toLocaleString(LOCALE)} value={amount} onChange={setAmount} onKeyDown={(e) => e.key === "Enter" && pay()} ariaLabel={kit.fields.amount} autoFocus />
+          <button type="button" className="btn btn-pri" onClick={pay}>{kit.save}</button>
         </div>
       ) : null}
     </div>
@@ -87,7 +88,7 @@ export default function TimelineProject({ type, detail }: { type: string; detail
         </div>
       </section>
       <section className="card rise flex flex-col gap-3 p-8">
-        <h2 className="m-0 text-base font-semibold">{m.shared.payments}</h2>
+        <h2 className="m-0 text-base font-semibold">{kit.nouns.payments}</h2>
         {payments.length === 0 ? <p className="m-0 text-base-sm text-text-secondary">{m.aside.noPayments}</p> : null}
         {payments.map((x) => <PaymentRow key={x.id} p={x} />)}
       </section>

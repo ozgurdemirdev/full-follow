@@ -1,5 +1,5 @@
 import { AutoNumber, ControlSkeleton, DAY_SUFFIX, WithNetworkCfg } from "@kit/components/settings/Fields";
-import { putSettings, useNetworkCfg, type SettingRow } from "@kit/lib/settings";
+import { putSettings, useNetworkCfg, type SettingRow, words } from "@kit/lib/settings";
 import { m } from "./messages";
 
 const TARGET_STEP = 5;
@@ -18,14 +18,14 @@ export const followWaitRows = (): SettingRow[] => [
     id: "reply_wait_days",
     name: m.settings.replyWait,
     hint: m.settings.replyWaitHint,
-    keywords: m.settings.replyWaitKeywords.split(","),
+    keywords: words(m.settings.replyWaitKeywords),
     control: <DaysField field="reply_wait_days" label={m.settings.replyWait} />,
   },
   {
     id: "cooling_days",
     name: m.settings.cooling,
     hint: m.settings.coolingHint,
-    keywords: m.settings.coolingKeywords.split(","),
+    keywords: words(m.settings.coolingKeywords),
     control: <DaysField field="cooling_days" label={m.settings.cooling} />,
   },
 ];
@@ -42,6 +42,6 @@ export const weeklyTargetRows = (): SettingRow[] => [{
   id: "weekly-target",
   name: m.settings.target,
   hint: m.settings.targetHint,
-  keywords: m.settings.targetKeywords.split(","),
+  keywords: words(m.settings.targetKeywords),
   control: <WeeklyTarget />,
 }];

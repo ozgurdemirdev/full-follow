@@ -4,7 +4,7 @@ import { toast } from "@kit/components/toast";
 import { QUOTA_CHANNELS } from "./labels";
 import { m } from "./messages";
 import { channelName } from "@kit/lib/network";
-import { putSettings, useSettings, type SettingRow } from "@kit/lib/settings";
+import { putSettings, useSettings, type SettingRow, words } from "@kit/lib/settings";
 
 const LIMIT_STEP = 5;
 
@@ -79,7 +79,7 @@ export const followupRows = (): SettingRow[] => [{
   id: "followup_days",
   name: m.settings.followupName,
   hint: m.settings.followupHint,
-  keywords: m.settings.followupKeywords.split(","),
+  keywords: words(m.settings.followupKeywords),
   control: <FollowupDays />,
 }];
 
@@ -89,14 +89,14 @@ export const quotaRows = (): SettingRow[] => [
     id: `limit-${c}`,
     name: m.settings.limitName(channelName(c)),
     hint: i === 0 ? m.settings.limitFirstHint : m.settings.limitHint,
-    keywords: m.settings.limitKeywords.split(","),
+    keywords: words(m.settings.limitKeywords),
     control: <ChannelLimit channel={c} />,
   })),
   {
     id: "email_warmup_until",
     name: m.settings.warmupName,
     hint: m.settings.warmupHint,
-    keywords: m.settings.warmupKeywords.split(","),
+    keywords: words(m.settings.warmupKeywords),
     control: <Warmup />,
   },
 ];
@@ -107,10 +107,10 @@ export const draftClaudeRows = (ctx: { hasRules: boolean }): SettingRow[] => [
     id: "auto-send",
     name: m.settings.autoSendName,
     hint: m.settings.autoSendHint,
-    keywords: m.settings.autoSendKeywords.split(","),
+    keywords: words(m.settings.autoSendKeywords),
     control: <Switch label={m.settings.autoSendName} on={false} locked onLockedClick={() => toast(m.settings.lockedToast)} />,
   },
   ...(ctx.hasRules
-    ? [{ id: "draft-rules", name: m.settings.rulesName, hint: m.settings.rulesHint, keywords: m.settings.rulesKeywords.split(","), wide: true, control: <RuleChips /> }]
+    ? [{ id: "draft-rules", name: m.settings.rulesName, hint: m.settings.rulesHint, keywords: words(m.settings.rulesKeywords), wide: true, control: <RuleChips /> }]
     : []),
 ];

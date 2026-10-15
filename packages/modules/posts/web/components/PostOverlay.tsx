@@ -13,6 +13,8 @@ import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { Chip, Who } from "@kit/components/ui";
 import { PlatformPill, useRefresh } from "./PlatformPill";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return <div className="posts-fact"><span>{label}</span><span>{children}</span></div>;
@@ -39,7 +41,7 @@ function Texts({ p }: { p: Post }) {
   if (!p.body && !p.notes) return null;
   return (
     <div className="ppl-panel">
-      {p.body ? <Section title={m.shared.text}><p className="m-0 whitespace-pre-wrap text-base-sm text-text-primary">{p.body}</p></Section> : null}
+      {p.body ? <Section title={kit.fields.text}><p className="m-0 whitespace-pre-wrap text-base-sm text-text-primary">{p.body}</p></Section> : null}
       {p.notes ? <Section title={m.overlay.notes}><p className="m-0 whitespace-pre-wrap text-base-sm text-text-secondary">{p.notes}</p></Section> : null}
     </div>
   );
@@ -72,13 +74,13 @@ export function PostOverlay({ id, from, p, people, onClose }: { id: number | nul
           </div>
           <div className="posts-ov-actions">
             <button type="button" className="posts-act" data-tone="warn" disabled={busy} onClick={refresh}>
-              <BoardIcon name="check" className="size-icon-chip" stroke={2.2} />
+              <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.medium} />
               {m.refreshedButton}
             </button>
-            <button type="button" className="posts-act" data-tone="plain" onClick={() => openSheet("post", { post_id: p.id })}>{m.shared.edit}</button>
-            <button type="button" className="posts-act" data-tone="plain" data-danger onClick={del}>{m.shared.delete}</button>
-            <button type="button" className="ppl-round" data-close aria-label={m.shared.close} onClick={onClose}>
-              <BoardIcon name="close" className="size-icon-md" stroke={2} />
+            <button type="button" className="posts-act" data-tone="plain" onClick={() => openSheet("post", { post_id: p.id })}>{kit.edit}</button>
+            <button type="button" className="posts-act" data-tone="plain" data-danger onClick={del}>{kit.delete}</button>
+            <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
+              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           </div>
         </>

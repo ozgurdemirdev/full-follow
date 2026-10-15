@@ -9,9 +9,11 @@ import { MicButton } from "@kit/components/MicButton";
 import { STREAM_SHOWN } from "@kit/lib/people";
 import { m } from "../messages";
 import { resolve, stopWaiting, Tools } from "./Stream";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const HINT = m.companyHints;
-const SAVED = { touch: m.shared.saved, claude: m.shared.claudeForwarded };
+const SAVED = { touch: m.common.saved, claude: m.common.claudeForwarded };
 
 /** The field of the board: a touch to the company; "Claude’a" mode (or a reply to a thread) writes a comment for Claude instead */
 export function CompanyComposer({ company, card, claude, replyTo, onClaude }: {
@@ -53,13 +55,13 @@ export function CompanyComposer({ company, card, claude, replyTo, onClaude }: {
       {claude ? (
         <div className="co-claude-mode">
           {m.company.claudeMode}
-          <button type="button" className="ppl-small" onClick={() => onClaude(false)}>{m.shared.cancel}</button>
+          <button type="button" className="ppl-small" onClick={() => onClaude(false)}>{kit.cancel}</button>
         </div>
       ) : null}
       <form className="ff-field" onSubmit={(e) => void submit(e)}>
         <input ref={input} type="text" value={text} aria-label={m.company.addTouch} placeholder={hint} onChange={(e) => setText(e.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
-        <button type="submit" className="ff-field-go" aria-label={m.shared.save} disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} /></button>
+        <button type="submit" className="ff-field-go" aria-label={kit.save} disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={STROKE.bold} /></button>
       </form>
     </>
   );
@@ -74,7 +76,7 @@ function Entry({ item, pair, lead, onReply }: { item: StreamItem; pair: string; 
       <div className="flex min-w-0 flex-grow flex-col gap-2">
         <span className="co-who">
           <span>{item.who} · {ago(item.at)}</span>
-          {th?.resolved_at ? <span>· {m.shared.resolved}</span> : null}
+          {th?.resolved_at ? <span>· {m.common.resolved}</span> : null}
           {t ? <Tools label={m.stream.touch} onEdit={() => openSheet("touch", { edit: t.id })} onDelete={() => void remove(`/touches/${t.id}`, m.stream.touch).catch(() => {})} /> : null}
         </span>
         <span className="co-text">{item.text}</span>
@@ -83,8 +85,8 @@ function Entry({ item, pair, lead, onReply }: { item: StreamItem; pair: string; 
         ) : null}
         {openThread ? (
           <span className="flex flex-wrap gap-2">
-            {th!.last_by === "claude" ? <button type="button" className="ppl-small is-accent" onClick={() => onReply(th!.id)}>{m.shared.reply}</button> : null}
-            <button type="button" className="ppl-small" onClick={() => void resolve(th!.id)}>{m.shared.resolved}</button>
+            {th!.last_by === "claude" ? <button type="button" className="ppl-small is-accent" onClick={() => onReply(th!.id)}>{kit.reply}</button> : null}
+            <button type="button" className="ppl-small" onClick={() => void resolve(th!.id)}>{m.common.resolved}</button>
           </span>
         ) : null}
       </div>
@@ -100,8 +102,8 @@ export function CompanyStream({ items, pair, onReply }: { items: StreamItem[]; p
   return (
     <div className="ppl-stream flex flex-col">
       {list.map((i) => <Entry key={i.key} item={i} pair={pair} lead={i.key === leadKey} onReply={onReply} />)}
-      {items.length === 0 ? <p className="m-0 border-t border-border-subtle py-6 text-base-sm text-text-muted">{m.shared.noRecords}</p> : null}
-      {items.length > list.length ? <button type="button" className="btn btn-ghost self-start px-0 text-base-sm" onClick={() => setAll(true)}>{m.shared.moreRecords(items.length - list.length)}</button> : null}
+      {items.length === 0 ? <p className="m-0 border-t border-border-subtle py-6 text-base-sm text-text-muted">{m.common.noRecords}</p> : null}
+      {items.length > list.length ? <button type="button" className="btn btn-ghost self-start px-0 text-base-sm" onClick={() => setAll(true)}>{m.common.moreRecords(items.length - list.length)}</button> : null}
     </div>
   );
 }

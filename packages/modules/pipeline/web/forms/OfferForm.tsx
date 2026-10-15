@@ -13,6 +13,7 @@ import { todayIso } from "@kit/lib/format";
 import { PROJECT_STAGE, STAGE } from "@kit/lib/labels";
 import { useSettings } from "@kit/lib/settings";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const AMOUNT_STEP = 1000;
 const PLAN_FULL = 100;
@@ -95,10 +96,10 @@ export function OfferForm(p: FormProps) {
     <Form id={p.formId} onSubmit={submit}>
       <ComboField name="opp" label={m.offerForm.opp} req value={opp} onChange={setOpp} options={oppOptions} placeholder={m.offerForm.oppPlaceholder} />
       <ItemsField name="amount" label={m.offerForm.items} opt items={items} onChange={setItems} />
-      {total === 0 ? <NumField label={m.offerForm.amount} hint={m.offerForm.amountHint} half prefix={m.shared.currency} step={AMOUNT_STEP} value={amount} onChange={setAmount} /> : null}
+      {total === 0 ? <NumField label={m.offerForm.amount} hint={m.offerForm.amountHint} half prefix={kit.lira} step={AMOUNT_STEP} value={amount} onChange={setAmount} /> : null}
       {planRows.length ? <PlanField name="plan" label={m.offerForm.plan} req hint={m.offerForm.planHint} rows={planRows} total={value > 0 ? value : 0} onChange={setPlan} /> : null}
       <DateField label={m.offerForm.date} half value={date} onChange={setDate} placeholder={m.form.datePlaceholder} />
-      <AreaField label={m.shared.note} opt value={note} onChange={setNote} placeholder={m.offerForm.notePlaceholder} rows={3} />
+      <AreaField label={kit.nouns.note} opt value={note} onChange={setNote} placeholder={m.offerForm.notePlaceholder} rows={3} />
       {files.length ? (
         <ChipsField label={m.offerForm.file} opt clearable value={fileId} onChange={setFileId} options={files.map((f) => ({ value: String(f.id), label: f.name }))} />
       ) : null}

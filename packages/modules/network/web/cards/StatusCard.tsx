@@ -6,12 +6,13 @@ import { CONTACT_STATUS } from "@kit/lib/labels";
 import { STATUS_DOT } from "../labels";
 import { Card } from "@kit/components/ui";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const PERCENT = 100;
 /** `page` is the route id of the list the group links to (no link when no module has that page) */
 const GROUPS = [
-  { key: "companies", label: m.shared.companies, page: "companies" },
-  { key: "people", label: m.shared.people, page: "people" },
+  { key: "companies", label: kit.nouns.companies, page: "companies" },
+  { key: "people", label: kit.nouns.people, page: "people" },
 ] as const;
 
 /** "Temas durumu": firms and people per contact status, a stacked bar and a legend each (link to the list) */

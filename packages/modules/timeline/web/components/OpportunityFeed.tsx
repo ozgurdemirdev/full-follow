@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Filters } from "@kit/components/ui";
 import { m } from "../messages";
 import { FeedComposer, FeedItems, useFeed, type FeedGroup } from "./Feed";
+import { m as kit } from "@kit/messages";
 
 /** Feed filter chips of the opportunity page (events outside these groups only show under "Hepsi") */
 const FEED_GROUPS: FeedGroup[] = [m.feedGroups.touches, m.feedGroups.comments, m.feedGroups.stage];
@@ -18,7 +19,7 @@ export default function OpportunityFeed({ id, label }: { id: number; label: stri
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-md font-semibold">{m.feed.title}</span>
         <span className="flex-grow" />
-        <Filters label={m.filters.eventType} value={filter} onChange={setFilter} items={[{ value: ALL_GROUPS, label: m.shared.all }, ...FEED_GROUPS.map((g) => ({ value: g, label: g }))]} />
+        <Filters label={m.filters.eventType} value={filter} onChange={setFilter} items={[{ value: ALL_GROUPS, label: kit.all }, ...FEED_GROUPS.map((g) => ({ value: g, label: g }))]} />
       </div>
       <div className="flex flex-col">
         <FeedItems items={shown} commentById={commentById} loaded={!!events.data} />

@@ -23,6 +23,7 @@ import type { Actor } from "@kit/lib/labels";
 import { canFocus, focusSummary, groupDays, isAsideKind, STAGE_EVENTS_LIMIT, TL_SEARCH_DEBOUNCE_MS, TL_TYPES, weekView } from "../timeline";
 import { useDebounced } from "@kit/lib/useDebounced";
 import { useTimelineFeed } from "../useTimelineFeed";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Timeline: everything Özgür and Claude did, newest first. /zaman/:type/:id focuses one record. */
 export default function Timeline() {
@@ -78,7 +79,7 @@ export default function Timeline() {
 
   const search = (
     <label className="tlx-search">
-      <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
+      <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
       <span className="sr-only">{m.search.label}</span>
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.search.placeholder} />
     </label>

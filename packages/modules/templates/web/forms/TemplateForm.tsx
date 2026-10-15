@@ -11,6 +11,7 @@ import { CHANNEL_OPTIONS, errorsOf, saveRecord, useSubmit, type FormProps } from
 import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { TEMPLATE_KINDS } from "../labels";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const ALL_TOKENS = ["{ad}", "{ad_soyad}", "{firma}", "{sektor}"];
 
@@ -51,9 +52,9 @@ export function TemplateForm(p: FormProps) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
-      <SegField label={m.shared.kind} options={KIND_OPTIONS} value={kind} onChange={setKind} />
-      <ChipsField label={m.shared.channel} hint={m.form.channelHint} clearable value={channel} onChange={setChannel} options={CHANNEL_OPTIONS} />
-      <ComboField label={m.shared.sector} opt hint={m.form.sectorHint} value={sector} onChange={setSector} options={sectorOptions} placeholder={m.form.sectorPlaceholder} />
+      <SegField label={kit.fields.kind} options={KIND_OPTIONS} value={kind} onChange={setKind} />
+      <ChipsField label={kit.fields.channel} hint={m.form.channelHint} clearable value={channel} onChange={setChannel} options={CHANNEL_OPTIONS} />
+      <ComboField label={kit.nouns.sector} opt hint={m.form.sectorHint} value={sector} onChange={setSector} options={sectorOptions} placeholder={m.form.sectorPlaceholder} />
       <AreaField name="body" label={m.form.body} req value={body} onChange={setBody} placeholder={m.form.bodyPlaceholder} rows={5} tokens={ALL_TOKENS} hint={m.form.bodyHint} />
       {body.includes("{") ? (
         <Field label={m.form.preview}><p className="form-preview">{preview}</p></Field>

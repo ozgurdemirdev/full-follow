@@ -5,6 +5,7 @@ import { fmtDay, tl } from "@kit/lib/format";
 import { fileHref } from "@kit/components/FilesCard";
 import { Card, Chip, Empty } from "@kit/components/ui";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 /** Offer versions of an opportunity: newest first, one can be accepted (its amount becomes the opportunity value) */
 export function OffersCard({ opportunityId, offers, files }: { opportunityId: number; offers: Offer[]; files: FileRow[] }) {
@@ -37,8 +38,8 @@ export function OffersCard({ opportunityId, offers, files }: { opportunityId: nu
               {o.accepted_at
                 ? <button type="button" className="btn btn-sec btn-sm" onClick={() => accept(o, false)}>{m.offers.undoAccept}</button>
                 : <button type="button" className="btn btn-pri btn-sm" onClick={() => accept(o, true)}>{m.offers.accept}</button>}
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("offer", { opportunity_id: opportunityId, edit: o.id })}>{m.shared.edit}</button>
-              <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => void remove(`/offers/${o.id}`, m.offers.deleteNoun(o.version)).catch(() => {})}>{m.shared.delete}</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSheet("offer", { opportunity_id: opportunityId, edit: o.id })}>{kit.edit}</button>
+              <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => void remove(`/offers/${o.id}`, m.offers.deleteNoun(o.version)).catch(() => {})}>{kit.delete}</button>
             </div>
           </div>
         );

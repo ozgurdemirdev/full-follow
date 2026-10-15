@@ -10,6 +10,8 @@ import { Avatar } from "@kit/components/ui";
 import { m } from "../messages";
 import { RejectPanel } from "./RejectPanel";
 import { useDraftEdit } from "./useDraftEdit";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** The top card flies out right on approve and left on reject; reduced motion keeps only the fade */
 const VARIANTS = {
@@ -57,7 +59,7 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
         <span className="drf-who-text">
           <span className="drf-to">{companyOf(d) ? `${d.to_name} · ${companyOf(d)}` : d.to_name}</span>
           <span className="drf-channel">
-            <BoardIcon name={channelIcon(d.channel)} className="size-drafts-channel-icon" stroke={1.8} />
+            <BoardIcon name={channelIcon(d.channel)} className="size-drafts-channel-icon" stroke={STROKE.thin} />
             {CHANNEL[d.channel] ?? d.channel}{handle ? ` · ${handle}` : ""}
           </span>
         </span>
@@ -65,10 +67,10 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
       </div>
       {editing && d.channel === SUBJECT_CHANNEL ? (
         <label className="drf-subject is-edit">
-          <span>{m.shared.subject}</span>
+          <span>{m.common.subject}</span>
           <input className="drf-subject-edit" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} aria-label={m.review.emailSubject} />
         </label>
-      ) : subject.trim() ? <div className="drf-subject"><span>{m.shared.subject}</span><span>{subject}</span></div> : null}
+      ) : subject.trim() ? <div className="drf-subject"><span>{m.common.subject}</span><span>{subject}</span></div> : null}
       {editing ? (
         <textarea className="drf-edit" value={text} onChange={(e) => setText(e.target.value)} aria-label={m.card.editLabel} rows={8} autoFocus />
       ) : (
@@ -80,12 +82,12 @@ export function DraftCard({ d, person, onResult }: { d: Draft; person?: Person; 
       ) : (
         <div className="drf-actions">
           <button type="button" className="drf-act is-reject" disabled={busy} onClick={() => { setRejecting(true); setEditing(false); }}>{m.review.reject}</button>
-          <button type="button" className="drf-act" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? m.review.done : m.shared.edit}</button>
+          <button type="button" className="drf-act" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? m.review.done : kit.edit}</button>
           <span className="flex-grow" />
-          <button type="button" className="drf-act is-copy" onClick={() => void copy()}>{copied ? m.shared.copied : m.shared.copy}</button>
+          <button type="button" className="drf-act is-copy" onClick={() => void copy()}>{copied ? m.common.copied : m.common.copy}</button>
           <button type="button" className="drf-act is-approve" disabled={busy} onClick={() => void approve()}>
             {m.card.approve}
-            <span className="drf-act-circle"><BoardIcon name="check" className="size-icon-xs" stroke={2.4} /></span>
+            <span className="drf-act-circle"><BoardIcon name="check" className="size-icon-xs" stroke={STROKE.bold} /></span>
           </button>
         </div>
       )}

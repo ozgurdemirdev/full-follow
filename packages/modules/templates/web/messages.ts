@@ -2,7 +2,7 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: { close: "Kapat", edit: "Düzenle", delete: "Sil", copy: "Kopyala", all: "Hepsi", moreActions: "Diğer işlemler", kind: "Tür", channel: "Kanal", sector: "Sektör", marketing: "Pazarlama" },
+    common: { copy: "Kopyala" },
     label: "Şablonlar",
     noun: "Şablon",
     addedTo: "Şablonlar’a eklenir",

@@ -10,6 +10,7 @@ import { m } from "../messages";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Combo } from "@kit/components/Combo";
 import { Avatar } from "@kit/components/ui";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 function PersonRow({ x }: { x: Interest }) {
   const cycle = () => run("patch", `/ideas/people/${x.id}`, { interest: NEXT_INTEREST[x.interest] }, { silent: true }).catch(() => {});
@@ -26,7 +27,7 @@ function PersonRow({ x }: { x: Interest }) {
         {INTEREST[x.interest]}
       </button>
       <button type="button" className="ideas-unlink" aria-label={m.people.unlinkLabel(x.person_name)} onClick={unlink}>
-        <BoardIcon name="close" className="size-icon-sm" stroke={2} />
+        <BoardIcon name="close" className="size-icon-sm" stroke={STROKE.regular} />
       </button>
     </div>
   );
@@ -54,7 +55,7 @@ function AddPerson({ ideaId }: { ideaId: number }) {
       <span className="sr-only">{m.people.link}</span>
       <Combo value={person} onChange={setPerson} options={options} placeholder={m.people.placeholder} allowNew={false} />
       <button type="button" className="ideas-add-go" aria-label={m.people.linkButton} disabled={busy || !person.id} onClick={() => void add()}>
-        <BoardIcon name="plus" className="size-icon-chip" stroke={2.4} />
+        <BoardIcon name="plus" className="size-icon-chip" stroke={STROKE.bold} />
       </button>
     </label>
   );

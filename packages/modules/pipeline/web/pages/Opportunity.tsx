@@ -20,6 +20,7 @@ import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
 import { STAGE_BG } from "../labels";
 import { m } from "../messages";
 import { PIPELINE_PATH } from "../paths";
+import { m as kit } from "@kit/messages";
 
 type Related = { people?: OppPerson[]; offers?: Offer[]; files?: FileRow[] };
 /** Stage bar: the open stages, then the two ways an opportunity ends */
@@ -80,13 +81,13 @@ function OpportunityPage({ id }: { id: number }) {
             </span>
           ) : null}
         </div>
-        <Filters label={m.shared.stage} value={o.stage} onChange={(s) => !busy && (s === "kaybedildi" ? setLostAsk(true) : void move(s))}
+        <Filters label={kit.fields.stage} value={o.stage} onChange={(s) => !busy && (s === "kaybedildi" ? setLostAsk(true) : void move(s))}
           items={BAR_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: STAGE_BG[s] }))} />
         {o.lost_reason ? <p className="m-0 text-base-sm text-danger-soft">{m.opportunity.reason}{o.lost_reason}</p> : null}
         <div className="flex flex-wrap gap-3">
           {projectHref ? <Link href={projectHref} className="dash-btn is-primary">{m.opportunity.toProject}</Link> : null}
           <button type="button" className="dash-btn" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: id })}>{m.opportunity.addTouch}</button>
-          <Slot name="opportunity.actions" props={{ type: "opportunity", id, className: "dash-btn is-ghost", label: m.shared.timeline }} />
+          <Slot name="opportunity.actions" props={{ type: "opportunity", id, className: "dash-btn is-ghost", label: m.common.timeline }} />
         </div>
       </Card>
 

@@ -16,6 +16,8 @@ import { type OppStage } from "@kit/lib/labels";
 import { BOARD_STAGES } from "../labels";
 import { m } from "../messages";
 import { hintsByOpportunity, nextSteps, pipelineStats, StageRulesProvider, stageRates, stageRulesOf } from "../pipeline";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
 
@@ -55,15 +57,15 @@ export default function Pipeline() {
       right={
         <div className="pipe-tools">
           <label className="ppl-search pipe-search">
-            <BoardIcon name="search" className="size-icon-md" stroke={1.8} />
-            <span className="sr-only">{m.shared.search}</span>
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.shared.searchPlaceholder} />
+            <BoardIcon name="search" className="size-icon-md" stroke={STROKE.thin} />
+            <span className="sr-only">{m.common.search}</span>
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.common.searchPlaceholder} />
           </label>
           <button type="button" className="pipe-toggle" aria-pressed={hideLost} onClick={() => setHideLost((v) => !v)}>
             {hideLost ? m.page.showLost : m.page.hideLost}
           </button>
           <button type="button" className="dash-new" onClick={() => openSheet("opportunity")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
+            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
             {m.page.add}
           </button>
         </div>
@@ -78,8 +80,8 @@ export default function Pipeline() {
           <StageFunnel rows={board.rows} rates={rates} onPick={scrollToStage} />
           <div className="flex flex-col gap-7">
             <div className="pipe-sources">
-              <span className="text-base-sm text-text-secondary">{m.shared.source}</span>
-              <Filters label={m.shared.source} value={src} onChange={setSrc} items={[{ value: 0, label: m.shared.all }, ...pickable(sources.rows).map((s) => ({ value: s.id, label: s.name }))]} />
+              <span className="text-base-sm text-text-secondary">{kit.nouns.source}</span>
+              <Filters label={kit.nouns.source} value={src} onChange={setSrc} items={[{ value: 0, label: m.common.all }, ...pickable(sources.rows).map((s) => ({ value: s.id, label: s.name }))]} />
             </div>
             <Board visible={visible} all={board.rows} byId={board.byId} stages={stages} desk={desk} exp={exp} hints={hints} nexts={nexts} onToggle={onToggle} />
           </div>

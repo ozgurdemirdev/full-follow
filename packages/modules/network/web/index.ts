@@ -10,6 +10,7 @@ import { LooseTouches } from "./components/LooseTouches";
 import { PersonStream } from "./components/PersonStream";
 import { m } from "./messages";
 import { followWaitRows, weeklyTargetRows } from "./settings";
+import { m as kit } from "@kit/messages";
 
 export default defineWebModule({
   key: "network",
@@ -25,7 +26,7 @@ export default defineWebModule({
     { id: "weekly-target", category: "isletme", order: 20, rows: weeklyTargetRows },
   ],
   quickAdd: [{
-    kind: "touch", name: m.noun, key: "T", dest: m.dest, icon: BOARD_ICON.comment, tone: "info", group: m.shared.contactAndComms, order: 30,
+    kind: "touch", name: m.noun, key: "T", dest: m.dest, icon: BOARD_ICON.comment, tone: "info", group: kit.quickGroups.people, order: 30,
     form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.comment, base: "/touches", editId: (p) => p.edit, page: () => pageTo("timeline") ?? PATHS.today },
     load: () => import("./forms/TouchForm").then((mod) => ({ default: mod.TouchForm })),
   }],

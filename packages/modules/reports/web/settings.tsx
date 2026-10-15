@@ -2,20 +2,21 @@ import { Link } from "wouter";
 import type { SettingsCtx } from "@kit/app/modules/types";
 import { AutoNumber, ControlSkeleton } from "@kit/components/settings/Fields";
 import { lira } from "@kit/lib/format";
-import { putSettings, useSettings, type SettingRow } from "@kit/lib/settings";
+import { putSettings, useSettings, type SettingRow, words } from "@kit/lib/settings";
 import { MONEY_STEP, TAX_MAX } from "./constants";
 import { m } from "./messages";
 import { REPORT_PATH } from "./paths";
 import { TemplateEditor } from "./settings/TemplateEditor";
+import { m as kit } from "@kit/messages";
 
 type MoneyKey = "bagkur_monthly" | "accounting_monthly" | "other_fixed_monthly" | "target_net_monthly" | "tax_rate_percent";
 
 const MONEY: { field: MoneyKey; name: string; hint: string; keywords?: string[] }[] = [
-  { field: "bagkur_monthly", name: m.settings.bagkur, hint: m.settings.monthly, keywords: m.settingsKeywords.bagkur.split(",") },
-  { field: "accounting_monthly", name: m.settings.accounting, hint: m.settings.monthly, keywords: m.settingsKeywords.accounting.split(",") },
-  { field: "other_fixed_monthly", name: m.settings.otherFixed, hint: m.settings.monthlyOther, keywords: m.settingsKeywords.otherFixed.split(",") },
-  { field: "target_net_monthly", name: m.settings.targetNet, hint: m.settings.monthly, keywords: m.settingsKeywords.targetNet.split(",") },
-  { field: "tax_rate_percent", name: m.settings.taxRate, hint: m.settings.taxHint, keywords: m.settingsKeywords.taxRate.split(",") },
+  { field: "bagkur_monthly", name: m.settings.bagkur, hint: m.settings.monthly, keywords: words(m.settingsKeywords.bagkur) },
+  { field: "accounting_monthly", name: m.settings.accounting, hint: m.settings.monthly, keywords: words(m.settingsKeywords.accounting) },
+  { field: "other_fixed_monthly", name: m.settings.otherFixed, hint: m.settings.monthlyOther, keywords: words(m.settingsKeywords.otherFixed) },
+  { field: "target_net_monthly", name: m.settings.targetNet, hint: m.settings.monthly, keywords: words(m.settingsKeywords.targetNet) },
+  { field: "tax_rate_percent", name: m.settings.taxRate, hint: m.settings.taxHint, keywords: words(m.settingsKeywords.taxRate) },
 ];
 
 /** One stepper of the price floor; every one reads the same settings entry */
@@ -32,7 +33,7 @@ function FloorField({ field }: { field: MoneyKey }) {
       min={0}
       max={tax ? TAX_MAX : undefined}
       step={tax ? 1 : MONEY_STEP}
-      prefix={tax ? m.shared.percent : m.shared.currency}
+      prefix={tax ? m.common.percent : kit.lira}
     />
   );
 }
@@ -44,7 +45,7 @@ export const floorRows = ({ floor }: SettingsCtx): SettingRow[] => [
     id: "floor",
     name: m.settings.floorName,
     hint: m.settings.floorHint(floor === undefined ? undefined : lira(floor)),
-    keywords: m.settingsKeywords.floor.split(","),
+    keywords: words(m.settingsKeywords.floor),
     control: <Link href={REPORT_PATH} className="set-btn">{m.settings.seeInReport}</Link>,
   },
 ];
@@ -54,7 +55,7 @@ export const paymentTemplateRows = (): SettingRow[] => [{
   id: "payment-template",
   name: m.settings.templateName,
   hint: m.settings.templateHint,
-  keywords: m.settingsKeywords.paymentTemplate.split(","),
+  keywords: words(m.settingsKeywords.paymentTemplate),
   wide: true,
   control: <TemplateEditor />,
 }];

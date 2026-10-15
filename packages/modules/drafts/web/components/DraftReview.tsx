@@ -6,6 +6,7 @@ import { BoardIcon } from "@kit/components/boardIcons";
 import { m } from "../messages";
 import { DraftCard } from "./DraftCard";
 import { DraftSide } from "./DraftSide";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 export interface Handled {
   id: number;
@@ -51,7 +52,7 @@ export function DraftReview({ pending, handled, onHandled, personOf, rules }: {
               <DraftCard key={cur.id} d={cur} person={personOf(cur.person_id)} onResult={(result) => { setDir(result); onHandled({ id: cur.id, result }); }} />
             ) : (
               <div key="done" className="drf-done">
-                <span className="drf-done-mark"><BoardIcon name="check" className="size-icon-2xl" stroke={2.4} /></span>
+                <span className="drf-done-mark"><BoardIcon name="check" className="size-icon-2xl" stroke={STROKE.bold} /></span>
                 <span className="drf-done-title">{m.review.empty}</span>
                 <span className="text-base text-text-secondary">{m.review.emptyHint}</span>
               </div>

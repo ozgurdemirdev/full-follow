@@ -10,6 +10,7 @@ import { STAGE } from "@kit/lib/labels";
 import { ensureCompany, ensurePerson, localToIso, nowLocal, toLocal, useRefText, type Ref } from "@kit/forms/helpers";
 import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 type Target = "person" | "company" | "contact";
 const TARGETS = [{ value: "person" as const, label: m.formTargets.person }, { value: "company" as const, label: m.formTargets.company }, { value: "contact" as const, label: m.formTargets.contact }];
@@ -75,9 +76,9 @@ function TouchCreate(p: FormProps) {
     <Form id={p.formId} onSubmit={submit}>
       <SegField label={m.form.to} options={TARGETS} value={target} onChange={setTarget} />
       {target === "person" ? (
-        <ComboField name="who" label={m.shared.person} req value={person} onChange={(v) => (setPerson(v), setOppId(""))} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
+        <ComboField name="who" label={kit.nouns.person} req value={person} onChange={(v) => (setPerson(v), setOppId(""))} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.form.newPerson} />
       ) : target === "company" ? (
-        <ComboField name="who" label={m.shared.company} req value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
+        <ComboField name="who" label={kit.nouns.company} req value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
       ) : (
         <TextField name="who" label={m.form.contact} req value={contact} onChange={setContact} placeholder={m.form.contactPlaceholder}
           hint={m.form.contactHint} />
@@ -92,10 +93,10 @@ function TouchCreate(p: FormProps) {
           options={personOpps.map((o) => ({ value: String(o.id), label: `${o.title} · ${STAGE[o.stage]}` }))}
         />
       ) : null}
-      <ChipsField label={m.shared.channel} value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
+      <ChipsField label={kit.fields.channel} value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
       <SegField label={m.form.direction} half options={DIRECTIONS} value={direction} onChange={setDirection} />
-      <DateField label={m.shared.date} half quick withTime value={at} onChange={setAt} />
-      <SegField label={m.shared.kind} options={KINDS} value={kind} onChange={(k) => (setKind(k), setWait(k === "mesaj"))} />
+      <DateField label={kit.fields.date} half quick withTime value={at} onChange={setAt} />
+      <SegField label={kit.fields.kind} options={KINDS} value={kind} onChange={(k) => (setKind(k), setWait(k === "mesaj"))} />
       <AreaField name="summary" label={m.form.what} req value={summary} onChange={setSummary} placeholder={m.form.whatPlaceholder} rows={4} />
       {direction === "giden" ? <ToggleField label={m.form.waiting} hint={WAIT_HINT} value={wait} onChange={setWait} /> : null}
       {ideas.rows.length && target === "person" ? (
@@ -138,9 +139,9 @@ function TouchEdit(p: FormProps & { id: number }) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <Note>{t.direction === "gelen" ? m.form.incoming : m.form.outgoing} · {t.to_name}</Note>
-      <ChipsField label={m.shared.channel} value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
-      <SegField label={m.shared.kind} options={KINDS} value={kind} onChange={setKind} />
-      <DateField label={m.shared.date} quick withTime value={at} onChange={setAt} />
+      <ChipsField label={kit.fields.channel} value={channel} onChange={(v) => v && setChannel(v)} options={CHANNEL_OPTIONS} />
+      <SegField label={kit.fields.kind} options={KINDS} value={kind} onChange={setKind} />
+      <DateField label={kit.fields.date} quick withTime value={at} onChange={setAt} />
       <AreaField name="summary" label={m.form.what} req value={summary} onChange={setSummary} rows={4} />
       <TextField label={m.form.result} opt value={outcome} onChange={setOutcome} placeholder={m.form.resultPlaceholder} />
       {t.direction === "giden" ? <ToggleField label={m.form.waiting} hint={WAIT_HINT} value={wait} onChange={setWait} /> : null}

@@ -5,6 +5,7 @@ import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { m } from "./messages";
 import { TEMPLATES_PATH } from "./paths";
+import { m as kit } from "@kit/messages";
 
 /** Where the template comparison sits among the sections of the report page (the funnel of the pipeline module comes before it) */
 const REPORT_SECTION_ORDER = 20;
@@ -13,9 +14,9 @@ export default defineWebModule({
   key: "templates",
   label: m.label,
   routes: [{ page: "templates", path: TEMPLATES_PATH, params: "/:id?", load: () => import("./pages/Templates") }],
-  nav: [{ group: m.shared.marketing, order: 30, label: m.label, icon: "template", path: TEMPLATES_PATH }],
+  nav: [{ group: kit.navGroups.marketing, order: 30, label: m.label, icon: "template", path: TEMPLATES_PATH }],
   quickAdd: [{
-    kind: "template", name: m.noun, key: "B", dest: m.label, icon: BOARD_ICON.template, tone: "comment", group: m.shared.marketing, order: 30,
+    kind: "template", name: m.noun, key: "B", dest: m.label, icon: BOARD_ICON.template, tone: "comment", group: kit.navGroups.marketing, order: 30,
     form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.template, base: "/templates", editId: (p) => p.template_id, page: byRecord("template") },
     load: () => import("./forms/TemplateForm").then((mod) => ({ default: mod.TemplateForm })),
   }],

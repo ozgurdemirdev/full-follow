@@ -11,6 +11,7 @@ import { OPEN_STAGES, STAGE } from "@kit/lib/labels";
 import { CompanyOpportunities, PersonOpenDeal, PersonOpportunities } from "./components/PersonDeals";
 import { m } from "./messages";
 import { opportunityPath, OPPORTUNITY_PATH, PIPELINE_PATH } from "./paths";
+import { m as kit } from "@kit/messages";
 
 export default defineWebModule({
   key: "pipeline",
@@ -20,7 +21,7 @@ export default defineWebModule({
     { page: "opportunity", path: OPPORTUNITY_PATH, params: "/:id", load: () => import("./pages/Opportunity") },
   ],
   nav: [{
-    group: m.shared.salesAndProjects, order: 10, label: m.label, icon: "funnel", path: PIPELINE_PATH,
+    group: kit.navGroups.salesProjects, order: 10, label: m.label, icon: "funnel", path: PIPELINE_PATH,
     useBadge: () => useBoard().rows.filter((o) => OPEN_STAGES.includes(o.stage)).length,
   }],
   dashboard: [
@@ -28,12 +29,12 @@ export default defineWebModule({
   ],
   quickAdd: [
     {
-      kind: "opportunity", name: m.noun, key: "S", dest: m.label, icon: BOARD_ICON.funnel, tone: "payment", group: m.shared.sales, order: 10,
+      kind: "opportunity", name: m.noun, key: "S", dest: m.label, icon: BOARD_ICON.funnel, tone: "payment", group: kit.quickGroups.sales, order: 10,
       form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.funnel, base: "/opportunities", editId: (p) => p.edit, page: byRecord("opportunity") },
       load: () => import("./forms/OpportunityForm").then((mod) => ({ default: mod.OpportunityForm })),
     },
     {
-      kind: "offer", name: m.offerNoun, key: "E", dest: m.offerDest, icon: FORM_ICON.offer, tone: "payment", group: m.shared.sales, order: 20,
+      kind: "offer", name: m.offerNoun, key: "E", dest: m.offerDest, icon: FORM_ICON.offer, tone: "payment", group: kit.quickGroups.sales, order: 20,
       form: {
         noun: m.offerNoun, dest: m.offerAddedTo, icon: FORM_ICON.offer, base: "/offers", ownRead: true, editId: (p) => p.edit,
         page: (_id, pre) => (pre?.opportunity_id ? (linkTo("opportunity", pre.opportunity_id) ?? PIPELINE_PATH) : PIPELINE_PATH),

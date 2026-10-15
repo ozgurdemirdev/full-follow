@@ -2,7 +2,7 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: { cancel: "Vazgeç", save: "Kaydet", edit: "Düzenle", copy: "Kopyala", copied: "Kopyalandı", subject: "Konu", channel: "Kanal", text: "Metin", network: "Network", contactAndComms: "Kişiler ve iletişim" },
+    common: { copy: "Kopyala", copied: "Kopyalandı", subject: "Konu" },
     label: "Taslaklar",
     noun: "Taslak",
     dest: "Onay için Taslaklar",

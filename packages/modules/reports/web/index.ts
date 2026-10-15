@@ -3,6 +3,7 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { m } from "./messages";
 import { REPORT_PATH, REVIEW_PATH } from "./paths";
 import { floorRows, paymentTemplateRows } from "./settings";
+import { m as kit } from "@kit/messages";
 
 export default defineWebModule({
   key: "reports",
@@ -12,8 +13,8 @@ export default defineWebModule({
     { page: "review", path: REVIEW_PATH, load: () => import("./pages/Review") },
   ],
   nav: [
-    { group: m.shared.salesAndProjects, order: 50, label: m.nav.report, icon: "chart", path: REPORT_PATH },
-    { group: m.shared.salesAndProjects, order: 60, label: m.nav.review, icon: "review", path: REVIEW_PATH },
+    { group: kit.navGroups.salesProjects, order: 50, label: m.nav.report, icon: "chart", path: REPORT_PATH },
+    { group: kit.navGroups.salesProjects, order: 60, label: m.nav.review, icon: "review", path: REVIEW_PATH },
   ],
   dashboard: [
     { id: "review", order: 10, show: (t) => !!t.review?.ready, load: () => import("./cards/ReviewCard").then((mod) => ({ default: mod.ReviewCard })) },

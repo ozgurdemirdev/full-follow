@@ -5,6 +5,8 @@ import { defaultChannel } from "@kit/lib/people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { MicButton } from "@kit/components/MicButton";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 export type Mode = "touch" | "note" | "claude";
 const MODES: { key: Mode; label: string; hint: string }[] = [
@@ -13,7 +15,7 @@ const MODES: { key: Mode; label: string; hint: string }[] = [
   { key: "claude", label: m.composerModes.claude, hint: m.composerHints.claude },
 ];
 const DIRECTIONS = [{ key: "giden", label: m.composerDirections.giden }, { key: "gelen", label: m.composerDirections.gelen }] as const;
-const SAVED: Record<Mode, string> = { touch: m.composerSaved.touch, note: m.composerSaved.note, claude: m.shared.claudeForwarded };
+const SAVED: Record<Mode, string> = { touch: m.composerSaved.touch, note: m.composerSaved.note, claude: m.common.claudeForwarded };
 
 /** Add to the stream: a touch (with its direction), a note, or a comment for Claude (a reply when a thread is picked) */
 export function Composer({ person, mode, onMode, replyTo, onSent }: {
@@ -65,7 +67,7 @@ export function Composer({ person, mode, onMode, replyTo, onSent }: {
       <form className="ff-field" onSubmit={(e) => void submit(e)}>
         <input type="text" value={text} aria-label={hint} placeholder={hint} onChange={(e) => setText(e.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
-        <button type="submit" className="ff-field-go" aria-label={m.shared.save} disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={2.4} /></button>
+        <button type="submit" className="ff-field-go" aria-label={kit.save} disabled={busy}><BoardIcon name="arrowRight" className="size-icon-chip" stroke={STROKE.bold} /></button>
       </form>
     </div>
   );

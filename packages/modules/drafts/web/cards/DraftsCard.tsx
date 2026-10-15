@@ -11,6 +11,8 @@ import { useDraftEdit } from "../components/useDraftEdit";
 import { Card } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** One draft waiting for approval: approve and send, or edit the text in place */
 function DraftItem({ d }: { d: Draft }) {
@@ -33,10 +35,10 @@ function DraftItem({ d }: { d: Draft }) {
       {d.reason ? <p className="m-0 text-sm text-text-secondary"><span className="text-claude-soft">{m.card.why}</span>{d.reason}</p> : null}
       <div className="mt-auto flex flex-wrap gap-3">
         <button type="button" className="dash-btn is-primary" disabled={busy} onClick={() => void send()}>
-          <BoardIcon name="check" className="size-icon-chip" stroke={2} />
+          <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.regular} />
           {m.card.approve}
         </button>
-        <button type="button" className="dash-btn" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? m.shared.save : m.shared.edit}</button>
+        <button type="button" className="dash-btn" disabled={busy} onClick={editing ? () => void save() : () => setEditing(true)}>{editing ? kit.save : kit.edit}</button>
       </div>
     </article>
   );

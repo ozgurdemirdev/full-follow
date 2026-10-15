@@ -9,13 +9,14 @@ import { m } from "./messages";
 import { PersonPost } from "./PersonPost";
 import { POSTS_PATH } from "./paths";
 import { postRefreshRows } from "./settings";
+import { m as kit } from "@kit/messages";
 
 export default defineWebModule({
   key: "posts",
   label: m.label,
   routes: [{ page: "posts", path: POSTS_PATH, params: "/:id?", load: () => import("./pages/Posts") }],
   nav: [{
-    group: m.shared.marketing, order: 10, label: m.label, icon: "megaphone", path: POSTS_PATH,
+    group: kit.navGroups.marketing, order: 10, label: m.label, icon: "megaphone", path: POSTS_PATH,
     useBadge: () => useQuery<Today>(K.today).data?.posts_due?.total,
   }],
   dashboard: [
@@ -23,7 +24,7 @@ export default defineWebModule({
   ],
   settings: [{ id: "post-refresh", category: "takip", order: 30, rows: postRefreshRows }],
   quickAdd: [{
-    kind: "post", name: m.noun, key: "L", dest: m.label, icon: BOARD_ICON.megaphone, tone: "comment", group: m.shared.marketing, order: 10,
+    kind: "post", name: m.noun, key: "L", dest: m.label, icon: BOARD_ICON.megaphone, tone: "comment", group: kit.navGroups.marketing, order: 10,
     form: { noun: m.noun, dest: m.addedTo, icon: BOARD_ICON.megaphone, base: "/posts", editId: (p) => p.post_id, page: byRecord("post") },
     load: () => import("./forms/PostForm").then((mod) => ({ default: mod.PostForm })),
   }],

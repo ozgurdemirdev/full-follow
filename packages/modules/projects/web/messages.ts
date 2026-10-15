@@ -2,7 +2,6 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: { currency: "₺", close: "Kapat", save: "Kaydet", cancel: "Vazgeç", stage: "Aşama", amount: "Tutar", payments: "Ödemeler", salesAndProjects: "Satış ve projeler", sales: "Satış", all: "Hepsi" },
     label: "Projeler",
     navLabel: "Müşteri projeleri",
     noun: "Proje",

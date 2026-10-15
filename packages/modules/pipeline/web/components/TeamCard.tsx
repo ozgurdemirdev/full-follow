@@ -8,6 +8,7 @@ import { OPP_ROLE, OPP_ROLES } from "../labels";
 import { Combo } from "@kit/components/Combo";
 import { Avatar, Card, Chip } from "@kit/components/ui";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 /** The people on an opportunity: the main contact first, then the team with a role each */
 export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] }) {
@@ -58,7 +59,7 @@ export function TeamCard({ opp, team }: { opp: Opportunity; team: OppPerson[] })
           <select className="inp w-auto" aria-label={m.team.role} value={role} onChange={(e) => setRole(e.target.value)}>
             {OPP_ROLES.map((r) => <option key={r} value={r}>{OPP_ROLE[r]}</option>)}
           </select>
-          <input className="inp min-w-0 flex-1" placeholder={m.team.notePlaceholder} aria-label={m.shared.note} value={note} onChange={(e) => setNote(e.target.value)}
+          <input className="inp min-w-0 flex-1" placeholder={m.team.notePlaceholder} aria-label={kit.nouns.note} value={note} onChange={(e) => setNote(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void add())} />
           <button type="button" className="btn btn-sec" disabled={!person.id} onClick={() => void add()}>{m.team.add}</button>
         </div>

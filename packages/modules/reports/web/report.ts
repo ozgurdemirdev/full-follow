@@ -6,6 +6,7 @@ import { MILESTONE } from "@kit/lib/labels";
 import { PAYMENT_SOON_DAYS, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
 import { PERCENT, THOUSAND } from "./constants";
 import { m } from "./messages";
+import { m as kit } from "@kit/messages";
 
 /** Months in the bar chart (the current month is the last bar) */
 export const REPORT_MONTHS = 6;
@@ -17,11 +18,11 @@ export const SAVE_DELAY_MS = 700;
 export const TAX_MAX_PERCENT = 60;
 
 export const COST_FIELDS = [
-  { key: "bagkur_monthly", label: m.costs.bagkur, prefix: m.shared.currency, dot: "bg-info" },
-  { key: "accounting_monthly", label: m.costs.accounting, prefix: m.shared.currency, dot: "bg-entity-source" },
-  { key: "other_fixed_monthly", label: m.costs.otherFixed, prefix: m.shared.currency, dot: "bg-entity-comment" },
-  { key: "target_net_monthly", label: m.costs.targetNet, prefix: m.shared.currency, dot: "bg-accent" },
-  { key: "tax_rate_percent", label: m.costs.taxRate, prefix: m.shared.percent, dot: "bg-warning" },
+  { key: "bagkur_monthly", label: m.costs.bagkur, prefix: kit.lira, dot: "bg-info" },
+  { key: "accounting_monthly", label: m.costs.accounting, prefix: kit.lira, dot: "bg-entity-source" },
+  { key: "other_fixed_monthly", label: m.costs.otherFixed, prefix: kit.lira, dot: "bg-entity-comment" },
+  { key: "target_net_monthly", label: m.costs.targetNet, prefix: kit.lira, dot: "bg-accent" },
+  { key: "tax_rate_percent", label: m.costs.taxRate, prefix: m.common.percent, dot: "bg-warning" },
 ] as const;
 export type CostKey = (typeof COST_FIELDS)[number]["key"];
 export type Costs = Pick<PriceFloor, CostKey>;

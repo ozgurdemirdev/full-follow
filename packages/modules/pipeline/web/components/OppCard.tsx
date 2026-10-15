@@ -11,6 +11,8 @@ import { m } from "../messages";
 import { ageMeter, isLive, percentOf, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Meter } from "@kit/components/ui";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Stages a card can be moved to by the picker of the phone list */
 const MOVE_TARGETS: OppStage[] = ["bulundu", "temas", "cevap", "gorusme", "teklif", "kazanildi", "kaybedildi"];
@@ -72,7 +74,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
               <span className={`whitespace-nowrap text-xs ${age.late ? "text-warning" : "text-text-muted"}`}>{m.card.days(age.days, age.late)}</span>
             </span>
             {next ? (
-              <span className="pipe-next"><BoardIcon name="arrowRight" className="size-icon-sm flex-none" stroke={2.2} />{next}</span>
+              <span className="pipe-next"><BoardIcon name="arrowRight" className="size-icon-sm flex-none" stroke={STROKE.medium} />{next}</span>
             ) : null}
           </>
         ) : null}
@@ -82,7 +84,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
       {o.stage === "kazanildi" && projectHref ? (
         <Link href={projectHref} draggable={false} className="pipe-won">
           {m.card.projectDone}
-          <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={OUT_PATH} /></svg>
+          <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={STROKE.bold} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={OUT_PATH} /></svg>
         </Link>
       ) : null}
       {open ? (
@@ -101,8 +103,8 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
             {personHref ? <Link href={personHref} className="pipe-btn">{m.card.person}</Link> : null}
           </span>
           <span className="pipe-actions">
-            <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { edit: o.id })}>{m.shared.edit}</button>
-            {o.project_id ? null : <button type="button" className="pipe-btn is-danger" onClick={() => void remove(`/opportunities/${o.id}`, o.title).catch(() => {})}>{m.shared.delete}</button>}
+            <button type="button" className="pipe-btn is-quiet" onClick={() => openSheet("opportunity", { edit: o.id })}>{kit.edit}</button>
+            {o.project_id ? null : <button type="button" className="pipe-btn is-danger" onClick={() => void remove(`/opportunities/${o.id}`, o.title).catch(() => {})}>{kit.delete}</button>}
           </span>
         </div>
       ) : null}

@@ -5,7 +5,7 @@ const SUFFIX: Record<number, string> = { 0: "ı", 1: "i", 2: "si", 3: "ü", 4: "
 
 export const m = defineMessages({
   tr: {
-    shared: { currency: "₺", percent: "%", save: "Kaydet", saved: "Kaydedildi", undo: "Geri al", days: "gün", salesAndProjects: "Satış ve projeler" },
+    common: { percent: "%", saved: "Kaydedildi", days: "gün" },
     label: "Raporlar",
     nav: { report: "Rapor", review: "Haftalık inceleme" },
     costs: { bagkur: "Bağkur", accounting: "Muhasebe", otherFixed: "Diğer sabit giderler", targetNet: "Hedeflenen net gelir", taxRate: "Vergi oranı" },

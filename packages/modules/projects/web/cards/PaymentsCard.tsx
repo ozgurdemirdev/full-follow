@@ -15,6 +15,7 @@ import { NumberField } from "@kit/components/NumberField";
 import { Card } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
+import { m as kit } from "@kit/messages";
 
 const dueText = (p: Payment, today: string) => {
   const late = lateDays(p, today);
@@ -43,9 +44,9 @@ function PayForm({ list, onDone }: { list: Payment[]; onDone: () => void }) {
       </select>
       <div className="flex gap-3">
         <NumberField className="inp inp-num" min={MIN_PAYMENT} max={picked ? remaining(picked) : undefined} placeholder={picked ? fmtNum(remaining(picked)) : ""} value={amount} onChange={setAmount}
-          onKeyDown={(e) => e.key === "Enter" && void save()} ariaLabel={m.shared.amount} autoFocus />
-        <button type="button" className="dash-btn is-primary" onClick={() => void save()}>{m.shared.save}</button>
-        <button type="button" className="dash-btn" onClick={onDone}>{m.shared.cancel}</button>
+          onKeyDown={(e) => e.key === "Enter" && void save()} ariaLabel={kit.fields.amount} autoFocus />
+        <button type="button" className="dash-btn is-primary" onClick={() => void save()}>{kit.save}</button>
+        <button type="button" className="dash-btn" onClick={onDone}>{kit.cancel}</button>
       </div>
     </div>
   );
@@ -76,7 +77,7 @@ export function PaymentsCard() {
       <Card title={m.card.title} count={m.card.count(all.length)} onExpand={(r) => ex.show("payments", r)} className="dash-gap-7 rise">
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-baseline gap-2">
-            <span className="text-currency font-light text-text-muted">{m.shared.currency}</span>
+            <span className="text-currency font-light text-text-muted">{kit.lira}</span>
             <span className="text-display leading-none tracking-kpi">{fmtNum(sum())}</span>
             <span className="text-base text-text-secondary">{m.card.waiting}</span>
           </div>

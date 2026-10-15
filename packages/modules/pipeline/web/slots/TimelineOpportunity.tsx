@@ -11,6 +11,7 @@ import { fmtDay, tl } from "@kit/lib/format";
 import { useRecordHref } from "@kit/lib/useRecordHref";
 import { OPEN_STAGES, STAGE, STAGE_TONE, type OppStage } from "@kit/lib/labels";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 /** The opportunity's summary beside the timeline of a focused opportunity: stage moves, the contact, the project (the `timeline.aside` slot) */
 export default function TimelineOpportunity({ type, detail }: { type: string; detail: Detail<any> }) {
@@ -66,7 +67,7 @@ export default function TimelineOpportunity({ type, detail }: { type: string; de
       </div>
       {o.project_id ? <Link href={recordHref("project", o.project_id)} className="btn btn-sec">{m.aside.toProject}</Link> : null}
       <div className="flex flex-wrap gap-3">
-        <button type="button" className="btn btn-pri" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: o.id })}>{m.shared.addTouch}</button>
+        <button type="button" className="btn btn-pri" onClick={() => openSheet("touch", { person_id: o.person_id, opportunity_id: o.id })}>{kit.recordActions.addTouch}</button>
         <button type="button" className="btn btn-sec" onClick={() => openSheet("comment", { target: { type: "opportunity", id: o.id, label: o.title } })}>{m.aside.comment}</button>
       </div>
     </section>

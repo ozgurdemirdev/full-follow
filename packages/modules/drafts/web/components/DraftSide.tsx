@@ -6,6 +6,7 @@ import type { CompanyCard, Draft, Person, PersonCard } from "@kit/api/types";
 import { useLinkTo } from "@kit/app/modules/registry";
 import { byRecent, firstName, shortAge, SIDE_TOUCHES, touchLine } from "../drafts";
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Arrow of the record link, as on the board */
 const LINK_ARROW = "M7 17 17 7M9 7h8v8";
@@ -74,7 +75,7 @@ export function DraftSide({ d, person, rules }: { d: Draft; person?: Person; rul
           {link ? (
             <Link href={link.href} className="drf-link">
               {link.name}
-              <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={LINK_ARROW} /></svg>
+              <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={STROKE.medium} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={LINK_ARROW} /></svg>
             </Link>
           ) : null}
         </section>

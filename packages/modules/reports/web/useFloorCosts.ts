@@ -20,7 +20,7 @@ export function useFloorCosts(server: Costs | undefined) {
     const body = unsent.current;
     unsent.current = {};
     if (!Object.keys(body).length) return;
-    run("put", "/settings", body, { ok: m.shared.saved }).catch(() => setDraft((d) => omit(d, Object.keys(body) as CostKey[])));
+    run("put", "/settings", body, { ok: m.common.saved }).catch(() => setDraft((d) => omit(d, Object.keys(body) as CostKey[])));
   }, []);
 
   const set = useCallback((key: CostKey, value: number | null) => {

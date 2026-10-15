@@ -7,6 +7,7 @@ import { ageText, peopleLine, TILE_AVATARS } from "../posts";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Avatar } from "@kit/components/ui";
 import { PlatformPill } from "./PlatformPill";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 function Stat({ n, label, tone }: { n: number; label: string; tone?: string }) {
   return (
@@ -17,7 +18,7 @@ function Stat({ n, label, tone }: { n: number; label: string; tone?: string }) {
   );
 }
 
-const Arrow = () => <span className="posts-flow-arrow"><BoardIcon name="chevronRight" className="size-icon-sm" stroke={2.2} /></span>;
+const Arrow = () => <span className="posts-flow-arrow"><BoardIcon name="chevronRight" className="size-icon-sm" stroke={STROKE.medium} /></span>;
 
 /** One post: platform, age, title, excerpt, people to opportunities to won, avatars and the value; a click opens the post */
 export const PostTile = memo(function PostTile({ p, people, onOpen }: { p: Post; people: Person[]; onOpen: (id: number, el: HTMLElement) => void }) {

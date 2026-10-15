@@ -13,12 +13,14 @@ import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { TEMPLATE_KINDS } from "../labels";
 import { m } from "../messages";
 import { byRate, useTemplates } from "../templates";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a template is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
 const fallbackRect = () => new DOMRect((innerWidth - FALLBACK_BOX.width) / 2, (innerHeight - FALLBACK_BOX.height) / 2, FALLBACK_BOX.width, FALLBACK_BOX.height);
 
-const KIND_ITEMS = [{ value: "", label: m.shared.all }, ...TEMPLATE_KINDS.map((k) => ({ value: k, label: TEMPLATE_KIND[k] }))];
+const KIND_ITEMS = [{ value: "", label: kit.all }, ...TEMPLATE_KINDS.map((k) => ({ value: k, label: TEMPLATE_KIND[k] }))];
 
 /** Message templates: tiles by reply rate, the template overlay (the address /sablonlar/:id opens it) */
 export default function Templates() {
@@ -43,7 +45,7 @@ export default function Templates() {
       sub={m.page.sub}
       right={
         <button type="button" className="dash-new" onClick={() => openSheet("template")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={2.2} />
+          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
           {m.page.add}
         </button>
       }
@@ -54,7 +56,7 @@ export default function Templates() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-4 rise" style={order(1)}>
-            <Filters label={m.shared.kind} value={kind} onChange={setKind} items={KIND_ITEMS} />
+            <Filters label={kit.fields.kind} value={kind} onChange={setKind} items={KIND_ITEMS} />
             <span className="flex-grow" />
             <span className="text-base-sm text-text-muted">{m.page.sortedByRate}</span>
           </div>

@@ -18,6 +18,7 @@ import { isLive, percentOf, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { LostReason } from "./LostReason";
 import { OppCard } from "./OppCard";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 type Cols = Record<OppStage, number[]>;
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
@@ -123,8 +124,8 @@ const ListColumn = memo(function ListColumn({ stage, ids, byId, ctx, onMove }: {
 function Edges() {
   return (
     <>
-      <div className="pipe-edge is-left" aria-hidden="true"><span className="pipe-edge-btn"><BoardIcon name="chevronLeft" className="size-icon-md" stroke={2.2} /></span></div>
-      <div className="pipe-edge is-right" aria-hidden="true"><span className="pipe-edge-btn"><BoardIcon name="chevronRight" className="size-icon-md" stroke={2.2} /></span></div>
+      <div className="pipe-edge is-left" aria-hidden="true"><span className="pipe-edge-btn"><BoardIcon name="chevronLeft" className="size-icon-md" stroke={STROKE.medium} /></span></div>
+      <div className="pipe-edge is-right" aria-hidden="true"><span className="pipe-edge-btn"><BoardIcon name="chevronRight" className="size-icon-md" stroke={STROKE.medium} /></span></div>
     </>
   );
 }

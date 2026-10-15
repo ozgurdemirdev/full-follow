@@ -2,10 +2,8 @@ import { defineMessages } from "@kit/lib/i18n";
 
 export const m = defineMessages({
   tr: {
-    shared: {
-      edit: "Düzenle", delete: "Sil", save: "Kaydet", cancel: "Vazgeç", all: "Hepsi", channel: "Kanal", kind: "Tür", date: "Tarih", person: "Kişi", company: "Firma",
-      people: "Kişiler", companies: "Firmalar", contactAndComms: "Kişiler ve iletişim", touches: "Temaslar", notes: "Notlar", noRecords: "Burada henüz kayıt yok.",
-      moreRecords: (n: number) => `${n} kayıt daha`, resolved: "Konu kapandı", reply: "Cevapla", claude: "Claude", saved: "Temas kaydedildi",
+    common: {
+      noRecords: "Burada henüz kayıt yok.", moreRecords: (n: number) => `${n} kayıt daha`, resolved: "Konu kapandı", saved: "Temas kaydedildi",
       claudeForwarded: "Claude’a iletildi, cevabı burada görünecek", taskForClaude: "Claude’a görev verildi, taslak onayına düşecek",
     },
     label: "Temaslar",

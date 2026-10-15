@@ -5,12 +5,13 @@ import { defineWebModule } from "@kit/app/modules/define";
 import { m } from "./messages";
 import { TIMELINE_PATH } from "./paths";
 import { RecordTimelineLink } from "./RecordTimelineLink";
+import { m as kit } from "@kit/messages";
 
 export default defineWebModule({
   key: "timeline",
   label: m.label,
   routes: [{ page: "timeline", path: TIMELINE_PATH, params: "/:type?/:id?", load: () => import("./pages/Timeline") }],
-  nav: [{ group: m.shared.salesAndProjects, order: 40, label: m.label, icon: "clock", path: TIMELINE_PATH }],
+  nav: [{ group: kit.navGroups.salesProjects, order: 40, label: m.label, icon: "clock", path: TIMELINE_PATH }],
   slots: {
     "opportunity.feed": lazy(() => import("./components/OpportunityFeed")),
     "person.overlay.menu": RecordTimelineLink,

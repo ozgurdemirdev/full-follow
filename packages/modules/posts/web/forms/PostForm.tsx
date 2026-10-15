@@ -15,6 +15,7 @@ import { POST_FORMAT, POST_FORMATS } from "../labels";
 import { REFRESH_MAX_DAYS, REFRESH_MIN_DAYS } from "../constants";
 import { m } from "../messages";
 import { useSettings } from "@kit/lib/settings";
+import { m as kit } from "@kit/messages";
 
 /** Link as the record keeps it: with a scheme */
 const withScheme = (v: string) => (!v.trim() || /^https?:\/\//i.test(v.trim()) ? v.trim() : `https://${v.trim()}`);
@@ -76,10 +77,10 @@ export function PostForm(p: FormProps) {
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <ChipsField label={m.shared.platform} value={platform} onChange={(v) => v && setPlatform(v)} options={PLATFORM_OPTIONS} />
+      <ChipsField label={m.common.platform} value={platform} onChange={(v) => v && setPlatform(v)} options={PLATFORM_OPTIONS} />
       <SegField label={m.form.format} options={FORMAT_OPTIONS} value={format} onChange={setFormat} />
       <TextField name="title" label={m.form.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} autoFocus />
-      <AreaField label={m.shared.text} opt value={body} onChange={setBody} rows={4} />
+      <AreaField label={kit.fields.text} opt value={body} onChange={setBody} rows={4} />
       <TextField label={m.form.link} opt type="url" prefix="https://" value={url} onChange={setUrl} placeholder={m.form.linkPlaceholder} />
       <DateField label={m.overlay.postedAt} half value={postedAt} onChange={setPostedAt} placeholder={m.form.postedPlaceholder} />
       <NumField
@@ -88,7 +89,7 @@ export function PostForm(p: FormProps) {
         hint={m.form.intervalHint(refreshDays)}
       />
       {ideas.rows.length ? <ComboField label={m.form.idea} opt value={idea} onChange={setIdea} options={ideaOptions} placeholder={m.form.ideaPlaceholder} /> : null}
-      <TextField label={m.shared.note} opt value={notes} onChange={setNotes} />
+      <TextField label={kit.nouns.note} opt value={notes} onChange={setNotes} />
     </Form>
   );
 }

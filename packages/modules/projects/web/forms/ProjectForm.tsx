@@ -8,6 +8,7 @@ import { PROJECT_STEPS, PROJECT_STAGE, type ProjectStage } from "@kit/lib/labels
 import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
 import { errorsOf, saveRecord, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const PRICE_STEP = 1000;
 const FEE_STEP = 100;
@@ -37,9 +38,9 @@ export function ProjectForm(p: FormProps) {
     <Form id={p.formId} onSubmit={submit}>
       <TextField name="name" label={m.form.name} req value={name} onChange={setName} placeholder={m.form.namePlaceholder} autoFocus />
       <ComboField name="person" label={m.form.customer} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.customerPlaceholder} newLabel={m.form.newPerson} />
-      <NumField label={m.form.total} half prefix={m.shared.currency} step={PRICE_STEP} value={price} onChange={setPrice} />
-      <NumField label={m.form.maintenanceFee} half opt prefix={m.shared.currency} suffix={m.form.perMonth} step={FEE_STEP} value={fee} onChange={setFee} />
-      <ChipsField label={m.shared.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
+      <NumField label={m.form.total} half prefix={kit.lira} step={PRICE_STEP} value={price} onChange={setPrice} />
+      <NumField label={m.form.maintenanceFee} half opt prefix={kit.lira} suffix={m.form.perMonth} step={FEE_STEP} value={fee} onChange={setFee} />
+      <ChipsField label={kit.fields.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
       <DateField label={m.form.start} half value={started} onChange={setStarted} placeholder={m.form.startPlaceholder} />
     </Form>
   );

@@ -74,7 +74,7 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
     };
   });
   const ask = () =>
-    run("post", "/tasks", { title: m.cooling.taskTitle(shown.map((p) => p.name).join(", ")), assignee: "claude", due_date: todayIso() }, { ok: m.shared.taskForClaude }).catch(() => {});
+    run("post", "/tasks", { title: m.cooling.taskTitle(shown.map((p) => p.name).join(", ")), assignee: "claude", due_date: todayIso() }, { ok: m.common.taskForClaude }).catch(() => {});
 
   return (
     <>

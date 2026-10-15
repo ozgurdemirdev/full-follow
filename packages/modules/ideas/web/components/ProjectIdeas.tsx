@@ -17,6 +17,8 @@ import { m } from "../messages";
 import { useIsDesktop } from "@kit/lib/media";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Icon } from "@kit/components/icons";
+import { m as kit } from "@kit/messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Chip colours of the idea stage (board values, reused chip tokens) */
 const IDEA_STAGE_CLS: Record<string, string> = {
@@ -169,7 +171,7 @@ export function ProjectIdeas({ projectId, ideas, detailKey }: { projectId: numbe
           <span>{m.project.done}</span>
           {done.map((i) => (
             <button key={i.id} type="button" aria-label={m.project.undo(i.title)} onClick={() => setDone(i.id, false)}>
-              <span className="opr-done-tick"><BoardIcon name="check" className="size-own-done-tick" stroke={3} /></span>
+              <span className="opr-done-tick"><BoardIcon name="check" className="size-own-done-tick" stroke={STROKE.black} /></span>
               {i.title}
             </button>
           ))}
@@ -199,11 +201,11 @@ function QuickAdd({ projectId }: { projectId: number }) {
     <div className="opr-add">
       <input placeholder={m.project.addPlaceholder} aria-label={m.project.addLabel} value={title} onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), void add())} />
-      <select aria-label={m.shared.priority} value={priority} onChange={(e) => setPriority(e.target.value)}>
+      <select aria-label={kit.fields.priority} value={priority} onChange={(e) => setPriority(e.target.value)}>
         {PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY[p]}</option>)}
       </select>
       <button type="button" className="opr-add-btn" aria-label={m.project.addLabel} disabled={busy || !title.trim()} onClick={() => void add()}>
-        <BoardIcon name="plus" className="size-icon-chip" stroke={2.2} />
+        <BoardIcon name="plus" className="size-icon-chip" stroke={STROKE.medium} />
       </button>
     </div>
   );

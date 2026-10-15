@@ -12,6 +12,7 @@ import { CHANNEL_OPTIONS, errorsOf, saveRecord, useCompanyOptions, usePersonOpti
 import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { TEMPLATES_LIMIT } from "../constants";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const TOKENS = ["{ad}", "{firma}"];
 const SUGGESTED = 8;
@@ -108,14 +109,14 @@ export function DraftForm(p: FormProps) {
           )}
         </>
       )}
-      <ChipsField label={m.shared.channel} value={ch} onChange={(v) => (v && setChannel(v), setTemplateId(null))} options={CHANNEL_OPTIONS} />
+      <ChipsField label={kit.fields.channel} value={ch} onChange={(v) => (v && setChannel(v), setTemplateId(null))} options={CHANNEL_OPTIONS} />
       {suggestions.length ? (
         <SuggField label={m.form.templateSuggestion} hint={m.form.templateHint} options={suggestions} value={templateId} onPick={(s) => void pick(list.find((t) => t.id === s.key) ?? { id: Number(s.key), body: "" })} />
       ) : (
         <Field label={m.form.template}><span className="form-hint">{m.form.noTemplate}</span></Field>
       )}
-      {ch === EMAIL_CHANNEL ? <TextField label={m.shared.subject} value={subjectLine} onChange={setSubjectLine} placeholder={m.form.subjectPlaceholder} /> : null}
-      <AreaField name="body" label={m.shared.text} req value={body} onChange={setBody} placeholder={m.form.bodyPlaceholder} rows={6} tokens={TOKENS} />
+      {ch === EMAIL_CHANNEL ? <TextField label={m.common.subject} value={subjectLine} onChange={setSubjectLine} placeholder={m.form.subjectPlaceholder} /> : null}
+      <AreaField name="body" label={kit.fields.text} req value={body} onChange={setBody} placeholder={m.form.bodyPlaceholder} rows={6} tokens={TOKENS} />
       <TextField label={m.form.whyNow} opt value={reason} onChange={setReason} placeholder={m.form.whyPlaceholder} />
     </Form>
   );

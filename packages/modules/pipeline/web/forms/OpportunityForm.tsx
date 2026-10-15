@@ -12,6 +12,7 @@ import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
 import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
 import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
+import { m as kit } from "@kit/messages";
 
 const VALUE_STEP = 1000;
 const STAGE_OPTIONS = OPEN_STAGES.map((s) => ({ value: s, label: STAGE[s], dot: `var(--color-stage-${s})` }));
@@ -72,11 +73,11 @@ function OpportunityEdit(p: FormProps & { id: number }) {
   return (
     <Form id={p.formId} onSubmit={submit}>
       <Note>{m.form.stageNote(STAGE[o.stage])}</Note>
-      <ComboField name="person" label={m.form.contact} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.shared.newPerson} />
-      <TextField name="title" label={m.shared.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} />
-      <ChipsField label={m.shared.source} value={sourceId} onChange={(v) => v && setSourceId(v)} options={pickable(sources.rows, [o.source_id]).map((s) => ({ value: String(s.id), label: s.name }))} />
+      <ComboField name="person" label={m.form.contact} req value={person} onChange={setPerson} options={personOptions} placeholder={m.form.personPlaceholder} newLabel={m.common.newPerson} />
+      <TextField name="title" label={kit.fields.title} req value={title} onChange={setTitle} placeholder={m.form.titlePlaceholder} />
+      <ChipsField label={kit.nouns.source} value={sourceId} onChange={(v) => v && setSourceId(v)} options={pickable(sources.rows, [o.source_id]).map((s) => ({ value: String(s.id), label: s.name }))} />
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
-      <NumField label={m.form.value} half prefix={m.shared.currency} step={VALUE_STEP} value={value} onChange={setValue} />
+      <NumField label={m.form.value} half prefix={kit.lira} step={VALUE_STEP} value={value} onChange={setValue} />
       <DateField label={m.form.nextDate} half quick value={date} onChange={setDate} placeholder={m.form.nextDatePlaceholder} />
     </Form>
   );
@@ -137,18 +138,18 @@ function OpportunityCreate(p: FormProps) {
 
   return (
     <Form id={p.formId} onSubmit={submit}>
-      <TextField label={m.shared.title} hint={m.form.titleHint} value={title} onChange={setTitle} placeholder={m.form.createTitlePlaceholder} />
-      <ComboField name="person" label={m.shared.person} req half value={person} onChange={pickPerson} options={personOptions} placeholder={m.form.personNamePlaceholder} newLabel={m.shared.newPerson} />
-      <ComboField label={m.shared.company} half value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
+      <TextField label={kit.fields.title} hint={m.form.titleHint} value={title} onChange={setTitle} placeholder={m.form.createTitlePlaceholder} />
+      <ComboField name="person" label={kit.nouns.person} req half value={person} onChange={pickPerson} options={personOptions} placeholder={m.form.personNamePlaceholder} newLabel={m.common.newPerson} />
+      <ComboField label={kit.nouns.company} half value={company} onChange={setCompany} options={companyOptions} placeholder={m.form.companyPlaceholder} newLabel={m.form.newCompany} />
       {live.length ? (
-        <ChipsField label={m.shared.source} value={String(src?.id ?? "")} onChange={(v) => v && setSourceId(v)} options={live.map((s) => ({ value: String(s.id), label: s.name }))} />
+        <ChipsField label={kit.nouns.source} value={String(src?.id ?? "")} onChange={(v) => v && setSourceId(v)} options={live.map((s) => ({ value: String(s.id), label: s.name }))} />
       ) : (
-        <TextField label={m.shared.source} value={newSource} onChange={setNewSource} placeholder={m.form.noSource} />
+        <TextField label={kit.nouns.source} value={newSource} onChange={setNewSource} placeholder={m.form.noSource} />
       )}
       {isRef ? <ComboField label={m.form.referrer} value={referrer} onChange={setReferrer} options={personOptions} placeholder={m.form.personPlaceholder} /> : null}
       <SourceLinkFields url={url} setUrl={setUrl} date={srcDate} setDate={setSrcDate} />
-      <ChipsField label={m.shared.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
-      <NumField label={m.form.value} half prefix={m.shared.currency} step={VALUE_STEP} value={value} onChange={setValue} />
+      <ChipsField label={kit.fields.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
+      <NumField label={m.form.value} half prefix={kit.lira} step={VALUE_STEP} value={value} onChange={setValue} />
       <DateField label={m.form.nextDate} half quick value={date} onChange={setDate} placeholder={m.form.nextDatePlaceholder} />
       <TextField label={m.form.nextStep} value={step} onChange={setStep} placeholder={m.form.titlePlaceholder} />
       <AreaField label={m.form.firstComment} opt value={note} onChange={setNote} placeholder={m.form.firstCommentPlaceholder} rows={3} />
