@@ -71,8 +71,12 @@ export interface CompanyTotals {
   openCompanies: number;
   /** people marked as a decision maker, in all companies */
   deciders: number;
-  /** names of the companies with a decision maker nobody has touched yet */
+  /** how many companies have a decision maker nobody has touched yet */
+  unreached_count: number;
+  /** the names of the first few of them, in company name order */
   unreached: string[];
+  /** what the most valuable company is worth (paid, due and open money): the scale of the money bars */
+  top_worth: number;
 }
 
 /** Everything the company page shows, in one object (the touch parts are empty without the network module) */

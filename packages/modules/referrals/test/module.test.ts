@@ -7,7 +7,7 @@ const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:0
 /** Stand-ins for the people, pipeline and projects modules: this package imports nothing but core, so it is tested against their contracts */
 const fakes = (tree: ReferralNode[], opps: [number, Partial<PersonPipelineStats>][] = [], work: [number, Partial<PersonProjectStats>][] = []) => [
   defineModule({ key: "people", label: "P", api: () => ({ referralTree: () => tree }) }),
-  defineModule({ key: "pipeline", label: "O", api: () => ({ personStats: () => new Map(opps.map(([id, s]) => [id, { opps: 0, won: 0, won_value: 0, open_value: 0, ...s }])) }) }),
+  defineModule({ key: "pipeline", label: "O", api: () => ({ personStats: () => new Map(opps.map(([id, s]) => [id, { opps: 0, won: 0, lost: 0, won_value: 0, open_value: 0, ...s }])) }) }),
   defineModule({ key: "projects", label: "J", api: () => ({ personStats: () => new Map(work.map(([id, s]) => [id, { projects: 0, collected: 0, ...s }])) }) }),
 ];
 const node = (id: number, name: string, referred_by_id: number | null = null): ReferralNode => ({ id, name, referred_by_id, company_name: null });
@@ -27,6 +27,26 @@ describe("referrals as a module", () => {
     expect(app.referrals.of(2)).toEqual(report[1]);
     // nobody was introduced by 3 or 4
     expect(app.referrals.of(4)).toBeNull();
+  });
+
+  it("the screen's numbers and tree come from the server: introduced people against the rest, and the branches by weight", () => {
+    const tree = [node(1, "Tanıtan"), node(2, "B", 1), node(3, "C", 2), node(4, "D", 1), node(5, "E")];
+    const app = appFor(openDb(":memory:"), "ozgur", clock, fakes(
+      tree,
+      [[2, { opps: 2, won: 1, lost: 1, won_value: 40000 }], [3, { opps: 1, open_value: 5000 }], [4, { opps: 1, lost: 1 }], [5, { opps: 1, won: 1, won_value: 9000 }]],
+    ));
+    expect(app.referrals.kpis()).toEqual({
+      referred: 3,
+      referred_side: { won: 1, lost: 2, won_value: 40000, open_value: 5000 },
+      other_side: { won: 1, lost: 0, won_value: 9000, open_value: 0 },
+    });
+    const root = app.referrals.tree(1)!;
+    expect(root.person.name).toBe("Tanıtan");
+    // B (with C below) brought more than D, so it comes first
+    expect(root.kids.map((k) => k.person.id)).toEqual([2, 4]);
+    expect(root.net).toEqual({ won: 40000, open: 5000, people: 3, wonCount: 1 });
+    expect(root.kids[0]).toMatchObject({ own: { won: 40000, open: 0 }, net: { open: 5000, people: 1, wonCount: 0 } });
+    expect(app.referrals.tree(99)).toBeNull();
   });
 
   it("a loop in the tree ends, and without the people, pipeline and projects modules the report is empty", () => {

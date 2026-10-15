@@ -180,8 +180,8 @@ describe("pipeline as a module", () => {
     // a later step implies the earlier ones: both people got to the offer, one won
     expect(funnel.steps.map((x) => x.count)).toEqual([2, 2, 2, 2, 2, 1]);
     expect(() => app.pipeline.funnel("bad")).toThrow(/dönem/);
-    expect(app.pipeline.personStats().get(ada)).toEqual({ opps: 1, won: 1, won_value: 100, open_value: 0 });
-    expect(app.pipeline.personStats().get(bob)).toEqual({ opps: 1, won: 0, won_value: 0, open_value: 200 });
+    expect(app.pipeline.personStats().get(ada)).toEqual({ opps: 1, won: 1, lost: 0, won_value: 100, open_value: 0 });
+    expect(app.pipeline.personStats().get(bob)).toEqual({ opps: 1, won: 0, lost: 0, won_value: 0, open_value: 200 });
     expect(app.pipeline.countsBySource().get(r10)).toBe(2);
     expect(app.pipeline.openOfferTimes()).toEqual(["2026-10-14T10:00:00Z"]);
     expect(app.pipeline.offersMade("2026-10-14", "2026-10-14")).toBe(0);

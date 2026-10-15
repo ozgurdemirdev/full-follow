@@ -2,7 +2,7 @@ import {
   ALL_ROWS, dayOf, daysBetween, inIds, keptRows, listThreads, LOCALE, page,
   type CompaniesOverview, type CompanyOverviewRow, type CompanyRow, type CompanySegment, type CompanyTotals, type Ctx, type ListOpts,
 } from "@fullfollow/core";
-import { TILE_PEOPLE } from "./constants";
+import { TILE_PEOPLE, UNREACHED_NAMED } from "./constants";
 import { companiesList } from "./list";
 
 type SortKey = "value" | "recent" | "name";
@@ -65,7 +65,11 @@ export function companiesOverview(ctx: Ctx, o: ListOpts): CompaniesOverview {
 export function companyTotals(ctx: Ctx): CompanyTotals {
   const paid = ctx.mod("projects")?.moneyByCompany();
   const open = ctx.mod("pipeline")?.openByCompany();
-  const t: CompanyTotals = { won: 0, due: 0, dueCompanies: 0, open: 0, openCompanies: 0, deciders: 0, unreached: [] };
+  const t: CompanyTotals = { won: 0, due: 0, dueCompanies: 0, open: 0, openCompanies: 0, deciders: 0, unreached_count: 0, unreached: [], top_worth: 0 };
+  const worthOf = new Map<number, number>();
+  for (const [id, m] of paid ?? []) worthOf.set(id, m.paid + m.due);
+  for (const [id, m] of open ?? []) worthOf.set(id, (worthOf.get(id) ?? 0) + m.value);
+  t.top_worth = Math.max(0, ...worthOf.values());
   for (const m of paid?.values() ?? []) {
     t.won += m.paid;
     t.due += m.due;
@@ -83,6 +87,8 @@ export function companyTotals(ctx: Ctx): CompanyTotals {
   t.deciders = deciders.length;
   const untouched = new Set<number>();
   for (const d of deciders) if (!net?.get(d.id)?.last_touch_at) untouched.add(d.company_id);
-  t.unreached = [...new Map(deciders.filter((d) => untouched.has(d.company_id)).map((d) => [d.company_id, d.company])).values()];
+  const unreached = [...new Map(deciders.filter((d) => untouched.has(d.company_id)).map((d) => [d.company_id, d.company])).values()];
+  t.unreached_count = unreached.length;
+  t.unreached = unreached.slice(0, UNREACHED_NAMED);
   return t;
 }

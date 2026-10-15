@@ -141,6 +141,7 @@ export interface SourceConversion {
 export interface PersonPipelineStats {
   opps: number;
   won: number;
+  lost: number;
   won_value: number;
   open_value: number;
 }
@@ -221,7 +222,7 @@ export interface PipelineApi {
   openByCompany(): Map<number, { count: number; value: number }>;
   /** the stage rules and the stage to stage rates of the last 90 days, from the stage change events (one grouped query) */
   meta(): PipelineMeta;
-  /** per person: opportunities, won ones and their value */
+  /** per person: opportunities, won and lost ones, the won value and the value still open */
   personStats(): Map<number, PersonPipelineStats>;
   /** follow-up dates of open opportunities in the range */
   followUpsDue(from: string, to: string): OpportunityFollowUp[];

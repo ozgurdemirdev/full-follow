@@ -1,5 +1,5 @@
-import { Controller, Get, Inject } from "@nestjs/common";
-import { APP_TOKEN, type Core } from "@fullfollow/core";
+import { Controller, Get, Inject, Param } from "@nestjs/common";
+import { APP_TOKEN, intId, type Core } from "@fullfollow/core";
 
 @Controller("api/report/referrals")
 export class ReferralsController {
@@ -9,6 +9,12 @@ export class ReferralsController {
   @Get()
   referrals() {
     const referrals = this.app.mod("referrals")!;
-    return { leaders: referrals.report(), ...referrals.suggestions() };
+    return { leaders: referrals.report(), kpis: referrals.kpis(), ...referrals.suggestions() };
+  }
+
+  /** The referral tree below one person (the picture of the screen); null when nobody is known by that id */
+  @Get("tree/:id")
+  tree(@Param("id") id: string) {
+    return this.app.mod("referrals")!.tree(intId(id));
   }
 }

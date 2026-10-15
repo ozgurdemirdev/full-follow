@@ -16,10 +16,10 @@ export function openByCompany(ctx: Ctx): Map<number, { count: number; value: num
     WHERE p.company_id IS NOT NULL AND x.stage IN (${OPEN_SQL}) GROUP BY p.company_id`).map((r) => [r.company_id, { count: r.count, value: r.value }]));
 }
 
-/** Per person: opportunities, won ones, the won value and the value still open */
+/** Per person: opportunities, won and lost ones, the won value and the value still open */
 export function personStats(ctx: Ctx): Map<number, PersonPipelineStats> {
   return new Map(keptRows<PersonPipelineStats & { person_id: number }>(ctx, `
-    SELECT person_id, COUNT(*) AS opps, SUM(stage = 'kazanildi') AS won,
+    SELECT person_id, COUNT(*) AS opps, SUM(stage = 'kazanildi') AS won, SUM(stage = 'kaybedildi') AS lost,
       COALESCE(SUM(CASE WHEN stage = 'kazanildi' THEN COALESCE(estimated_value, 0) END), 0) AS won_value,
       COALESCE(SUM(CASE WHEN stage IN (${OPEN_SQL}) THEN COALESCE(estimated_value, 0) END), 0) AS open_value
     FROM opportunities GROUP BY person_id`).map(({ person_id, ...stats }): [number, PersonPipelineStats] => [person_id, stats]));

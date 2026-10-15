@@ -85,7 +85,7 @@ suite("the people and companies screens page through overview, not through a cap
     expect(companies().overview({ filter: { ids: String(b.id) }, limit: 50 }).total).toBe(1);
 
     const totals = companies().totals();
-    expect(totals).toMatchObject({ won: 1000, due: 8000, dueCompanies: 1, open: 5000, openCompanies: 1, deciders: 1, unreached: ["Beta"] });
+    expect(totals).toMatchObject({ won: 1000, due: 8000, dueCompanies: 1, open: 5000, openCompanies: 1, deciders: 1, unreached_count: 1, unreached: ["Beta"], top_worth: 9000 });
   });
 
   it("projects can be listed for several people at once", () => {
