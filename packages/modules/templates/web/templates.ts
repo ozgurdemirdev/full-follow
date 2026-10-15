@@ -1,10 +1,12 @@
 // Templates screen: rate tones, placeholder segments and the live render of a template for one person
 import { useEffect, useState } from "react";
-import { api, qs } from "../api/client";
-import type { Person, RenderedTemplate, Template } from "../api/types";
-import { todayIso } from "./format";
-import { channelName } from "./network";
-import { compareTouch } from "./people";
+import { api, qs } from "@kit/api/client";
+import { useIndex } from "@kit/api/keys";
+import type { Person, Template } from "@kit/api/types";
+import type { RenderedTemplate } from "./types";
+import { todayIso } from "@kit/lib/format";
+import { channelName } from "@kit/lib/network";
+import { compareTouch } from "@kit/lib/people";
 
 /** Reply rate from which a template reads good (accent) */
 export const RATE_GOOD = 0.4;
@@ -12,6 +14,8 @@ export const RATE_GOOD = 0.4;
 export const RATE_FAIR = 0.25;
 /** Quiet time after the last recipient pick before the render request goes out */
 const RENDER_DEBOUNCE_MS = 120;
+/** Page size of the templates list (every template is shown, there are few) */
+const TEMPLATE_LIMIT = 1000;
 /** The "Kime" row shows this many people */
 export const RECIPIENTS = 3;
 
@@ -93,3 +97,9 @@ export function useRendered(templateId: number, personId: number | null): string
   }, [templateId, personId, key]);
   return personId && done?.key === key ? done.body : null;
 }
+
+/** All templates (one request, shared by the screens that list them) */
+export const useTemplates = () => useIndex<Template>(`/templates?limit=${TEMPLATE_LIMIT}`);
+
+/** The marketing report (served by the reports module): its template groups feed the comparison on the report page */
+export const MARKETING_KEY = "/report/marketing";

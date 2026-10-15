@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
-import { remove, run } from "../../api/actions";
-import type { Person, Template } from "../../api/types";
-import { openSheet } from "../../app/ui";
-import { pct } from "../../lib/format";
-import { TEMPLATE_KIND } from "../../lib/labels";
-import { defaultChannel } from "../../lib/people";
-import { filledSegments, meta, openSegments, rateTone, recipients, TONE_TEXT, useRendered } from "../../lib/templates";
-import { usePopover } from "../../lib/usePopover";
-import { BoardIcon } from "../boardIcons";
-import { ExpandOverlay } from "../ExpandOverlay";
-import { toast } from "../toast";
+import { remove, run } from "@kit/api/actions";
+import type { Person, Template } from "@kit/api/types";
+import { openSheet } from "@kit/app/ui";
+import { pct } from "@kit/lib/format";
+import { TEMPLATE_KIND } from "@kit/lib/labels";
+import { defaultChannel } from "@kit/lib/people";
+import { filledSegments, meta, openSegments, rateTone, recipients, TONE_TEXT, useRendered } from "../templates";
+import { usePopover } from "@kit/lib/usePopover";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { ExpandOverlay } from "@kit/components/ExpandOverlay";
+import { toast } from "@kit/components/toast";
 
 /** Menu of the header: what the board leaves out (edit, a draft for someone else through the form, delete) */
 function HeaderMenu({ t, onClose }: { t: Template; onClose: () => void }) {

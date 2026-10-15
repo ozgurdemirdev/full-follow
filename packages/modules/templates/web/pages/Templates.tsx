@@ -1,16 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { usePeople, useTemplates } from "../api/keys";
-import { Page } from "../app/Page";
-import { PATHS } from "../app/routes";
-import { openSheet } from "../app/ui";
-import { BoardIcon } from "../components/boardIcons";
-import { TileColumns } from "../components/layout";
-import { TemplateOverlay } from "../components/templates/TemplateOverlay";
-import { TemplateTile } from "../components/templates/TemplateTile";
-import { Card, Empty, ErrorBox, Filters, order, PageSkeleton } from "../components/ui";
-import { TEMPLATE_KIND, TEMPLATE_KINDS } from "../lib/labels";
-import { byRate } from "../lib/templates";
+import { usePeople } from "@kit/api/keys";
+import { Page } from "@kit/app/Page";
+import { TEMPLATES_PATH } from "../paths";
+import { openSheet } from "@kit/app/ui";
+import { BoardIcon } from "@kit/components/boardIcons";
+import { TileColumns } from "@kit/components/layout";
+import { TemplateOverlay } from "../components/TemplateOverlay";
+import { TemplateTile } from "../components/TemplateTile";
+import { Card, Empty, ErrorBox, Filters, order, PageSkeleton } from "@kit/components/ui";
+import { TEMPLATE_KIND, TEMPLATE_KINDS } from "@kit/lib/labels";
+import { byRate, useTemplates } from "../templates";
 
 /** Size of the box the overlay grows from when a template is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -31,7 +31,7 @@ export default function Templates() {
   const shown = useMemo(() => templates.rows.filter((t) => !kind || t.kind === kind).sort(byRate), [templates.rows, kind]);
   const open = useCallback((id: number, rect: DOMRect) => {
     setFrom(rect);
-    navigate(`${PATHS.templates}/${id}`, { replace: true });
+    navigate(`${TEMPLATES_PATH}/${id}`, { replace: true });
   }, [navigate]);
   const current = openId ? templates.byId.get(openId) : undefined;
 
@@ -64,7 +64,7 @@ export default function Templates() {
             </div>
           )}
           <TemplateOverlay t={current} from={openId ? (from ?? fallbackRect()) : from} people={people.rows}
-            onClose={() => navigate(PATHS.templates, { replace: true })} />
+            onClose={() => navigate(TEMPLATES_PATH, { replace: true })} />
         </>
       )}
     </Page>

@@ -1,9 +1,9 @@
 import { memo, useMemo } from "react";
-import type { Template } from "../../api/types";
-import { pct } from "../../lib/format";
-import { TEMPLATE_KIND } from "../../lib/labels";
-import { flagOf, meta, openSegments, rateTone, TONE_BAR, TONE_TEXT } from "../../lib/templates";
-import { Meter } from "../ui";
+import type { Template } from "@kit/api/types";
+import { pct } from "@kit/lib/format";
+import { TEMPLATE_KIND } from "@kit/lib/labels";
+import { flagOf, meta, openSegments, rateTone, TONE_BAR, TONE_TEXT } from "../templates";
+import { Meter } from "@kit/components/ui";
 
 /** One template of the list: kind, channel and sector, the text with its placeholders marked, the reply rate as a meter */
 export const TemplateTile = memo(function TemplateTile({ t, onOpen }: { t: Template; onOpen: (id: number, from: DOMRect) => void }) {

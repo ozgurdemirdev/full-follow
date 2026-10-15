@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Full Follow templates module: message templates with placeholders, their reply statistics and the A/B comparison",
-  "fullfollow": { "module": "templates", "endpoints": ["/templates"] },
+  "fullfollow": { "module": "templates", "endpoints": ["/templates"], "webMarkers": ["/sablonlar"] },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": { "*": { "server": ["dist/server/index.d.ts"] } },

@@ -1,15 +1,15 @@
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useState } from "react";
-import type { TemplateGroup, TemplateRank, TemplateSectorStat } from "../api/types";
-import { pct } from "../lib/format";
-import { TEMPLATE_KIND } from "../lib/labels";
-import { dur, ease } from "../lib/motion";
-import { channelName } from "../lib/network";
-import { Icon } from "./icons";
-import { MotionScope } from "./MotionScope";
-import { SectionHead } from "./report/SectionHead";
-import { Card, Chip, Empty, order } from "./ui";
+import type { TemplateGroup, TemplateRank, TemplateSectorStat } from "../types";
+import { pct } from "@kit/lib/format";
+import { TEMPLATE_KIND } from "@kit/lib/labels";
+import { dur, ease } from "@kit/lib/motion";
+import { channelName } from "@kit/lib/network";
+import { Icon } from "@kit/components/icons";
+import { MotionScope } from "@kit/components/MotionScope";
+import { SectionHead } from "@kit/components/SectionHead";
+import { Card, Chip, Empty, order } from "@kit/components/ui";
 
 /** Reply rate with a thin bar; early rows use the muted bar */
 function RateBar({ rate, early, leader }: { rate: number | null; early: boolean; leader?: boolean }) {
