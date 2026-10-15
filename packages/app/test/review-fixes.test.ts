@@ -238,4 +238,21 @@ suite("the fixes of the service review", () => {
     try { app.restore("project", first); } catch (e) { expect(e).toBeInstanceOf(FFError); expect((e as FFError).code).toBe("rule"); }
     expect(sql("SELECT COUNT(*) AS n FROM projects WHERE opportunity_id = ?", o.id)[0].n).toBe(1);
   });
+
+  it("an automatic contact status advance stamps updated_at and leaves an event in the transaction of its touch", () => {
+    now = "2026-10-15T08:00:00Z";
+    const co = app.companies.create({ name: "Acme" }).row;
+    const ada = app.people.create({ name: "Ada", company_id: co.id }).row;
+    now = "2026-10-15T09:30:00Z";
+    app.touches.create({ person_id: ada.id, channel: "email", direction: "giden", kind: "mesaj", summary: "merhaba" });
+    expect(sql("SELECT contact_status, updated_at FROM people WHERE id = ?", ada.id)[0]).toEqual({ contact_status: "yazildi", updated_at: now });
+    expect(sql("SELECT contact_status, updated_at FROM companies WHERE id = ?", co.id)[0]).toEqual({ contact_status: "yazildi", updated_at: now });
+    const events = sql("SELECT type, person_id, summary, data, created_at FROM events WHERE type LIKE '%.status' ORDER BY id");
+    expect(events.map((e) => [e.type, e.person_id])).toEqual([["person.status", ada.id], ["company.status", null]]);
+    expect(events[0]).toMatchObject({ summary: expect.stringContaining("Ada"), created_at: now });
+    expect(JSON.parse(events[0].data)).toMatchObject({ to: "yazildi" });
+    // no advance, no event: a second outgoing message changes nothing
+    app.touches.create({ person_id: ada.id, channel: "email", direction: "giden", kind: "mesaj", summary: "tekrar" });
+    expect(sql("SELECT COUNT(*) AS n FROM events WHERE type LIKE '%.status'")[0].n).toBe(2);
+  });
 });
