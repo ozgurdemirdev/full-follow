@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { addDays, dayOf, FFError, openDb, type Clock, type DbHandle } from "@fullfollow/core";
-import { appFor, suite, type TestApp } from "./helpers";
+import { appFor, installed, suite, type TestApp } from "./helpers";
 
 let today = "2026-10-15";
 let now = "2026-10-15T10:00:00Z";
@@ -173,7 +173,7 @@ suite("the fixes of the service review", () => {
     expect(due().people).toEqual(["Bob", "Cem"]);
   });
 
-  it("the week strip and the reports count the money received the same way: by payment date, with corrections", () => {
+  it.skipIf(!installed("timeline"))("the week strip and the reports count the money received the same way: by payment date, with corrections", () => {
     const src = (app.get("source", "R10") as any).row;
     const ada = app.people.create({ name: "Ada" }).row;
     const o = app.opportunities.create({ title: "O", person_id: ada.id, source_id: src.id, estimated_value: 10000 }).row;
