@@ -1,7 +1,7 @@
-import { lira } from "../../lib/format";
-import { COST_FIELDS, stackOf, TAX_MAX_PERCENT, type CostKey, type Costs } from "../../lib/report";
-import { NumberField } from "../NumberField";
-import { Card, order } from "../ui";
+import { lira } from "@kit/lib/format";
+import { COST_FIELDS, stackOf, TAX_MAX_PERCENT, type CostKey, type Costs } from "../report";
+import { NumberField } from "@kit/components/NumberField";
+import { Card, order } from "@kit/components/ui";
 
 /** The floor and its parts: the five inputs are edited in place (saved after a pause), the stacked bar and the floor follow at once */
 export function FloorCard({ costs, floor, hint, onChange }: { costs: Costs; floor: number; hint: string | null; onChange: (key: CostKey, value: number | null) => void }) {

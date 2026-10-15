@@ -1,25 +1,23 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "../api/store";
-import type { List, MarketingReport, MonthReport, Payment, Report as ReportData } from "../api/types";
-import { PATHS } from "../app/routes";
-import { Page } from "../app/Page";
-import { FloorCard } from "../components/report/FloorCard";
-import { Hero } from "../components/report/Hero";
-import { MonthsCard } from "../components/report/MonthsCard";
-import { SourcesCard } from "../components/report/SourcesCard";
-import { SourceFunnel } from "../components/SourceFunnel";
-import { TemplateCompare } from "../components/TemplateCompare";
-import { ErrorBox, PageSkeleton } from "../components/ui";
-import { Icon } from "../components/icons";
-import { todayIso } from "../lib/format";
-import { expectedOf, floorHint, heroOf, incomingOf, monthsAbove, REPORT_MONTHS, scaleTop } from "../lib/report";
-import { useFloorCosts } from "../lib/useFloorCosts";
+import { useQuery } from "@kit/api/store";
+import type { List, MonthReport, Payment, Report as ReportData } from "@kit/api/types";
+import { Slot } from "@kit/app/modules/Slot";
+import { Page } from "@kit/app/Page";
+import { FloorCard } from "../components/FloorCard";
+import { Hero } from "../components/Hero";
+import { MonthsCard } from "../components/MonthsCard";
+import { SourcesCard } from "../components/SourcesCard";
+import { ErrorBox, PageSkeleton } from "@kit/components/ui";
+import { Icon } from "@kit/components/icons";
+import { todayIso } from "@kit/lib/format";
+import { REVIEW_PATH } from "../paths";
+import { expectedOf, floorHint, heroOf, incomingOf, monthsAbove, REPORT_MONTHS, scaleTop } from "../report";
+import { useFloorCosts } from "../useFloorCosts";
 
 export default function Report() {
   const months = useQuery<MonthReport[]>(`/report/months?count=${REPORT_MONTHS}`);
   const report = useQuery<ReportData>("/report");
-  const marketing = useQuery<MarketingReport>("/report/marketing");
   const payments = useQuery<List<Payment>>("/payments?unpaid=true&limit=1000");
   const [sel, setSel] = useState<number | null>(null);
 
@@ -48,7 +46,7 @@ export default function Report() {
     <Page
       title="Rapor"
       sub="Bu ay ayakta kalmak için ne kadar lazım, ne kadarı geldi"
-      right={<Link href={PATHS.review} className="rep-link">Haftalık inceleme<Icon name="arrow" className="size-icon-md" /></Link>}
+      right={<Link href={REVIEW_PATH} className="rep-link">Haftalık inceleme<Icon name="arrow" className="size-icon-md" /></Link>}
     >
       <Hero hero={hero} insight={m.insight} />
       <div className="rep-grid">
@@ -56,8 +54,7 @@ export default function Report() {
         <FloorCard costs={costs} floor={floor} hint={floorHint(floor, report.data?.sources ?? [])} onChange={set} />
       </div>
       <SourcesCard sources={report.data?.sources ?? []} />
-      <SourceFunnel />
-      {marketing.data ? <TemplateCompare groups={marketing.data.template_groups} /> : null}
+      <Slot name="report.sections" />
     </Page>
   );
 }

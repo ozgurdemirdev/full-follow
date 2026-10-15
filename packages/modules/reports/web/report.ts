@@ -1,8 +1,8 @@
 // Report screen: floor maths, chart scale, expected payments
-import type { MonthReport, Payment, PriceFloor, SourceReport } from "../api/types";
-import { daysFrom, fmtDay, fmtMonth, lira, toDate } from "./format";
-import { MILESTONE } from "./labels";
-import { PAYMENT_SOON_DAYS, paymentGroup, remaining, type PaymentGroup } from "./dashboard";
+import type { MonthReport, Payment, PriceFloor, SourceReport } from "@kit/api/types";
+import { daysFrom, fmtDay, fmtMonth, lira, toDate } from "@kit/lib/format";
+import { MILESTONE } from "@kit/lib/labels";
+import { PAYMENT_SOON_DAYS, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
 
 /** Months in the bar chart (the current month is the last bar) */
 export const REPORT_MONTHS = 6;

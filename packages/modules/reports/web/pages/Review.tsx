@@ -1,14 +1,14 @@
 import { useState, type ReactNode } from "react";
-import { run } from "../api/actions";
-import { useQuery } from "../api/store";
-import type { ReviewSuggestion, ReviewWeek, WeeklyReview } from "../api/types";
-import { Page } from "../app/Page";
-import { Icon } from "../components/icons";
-import { SectionHead } from "../components/report/SectionHead";
-import { Card, Empty, ErrorBox, Meter, order, PageSkeleton } from "../components/ui";
-import { fmtDay, pct } from "../lib/format";
-import { TEMPLATE_KIND } from "../lib/labels";
-import { channelName } from "../lib/network";
+import { run } from "@kit/api/actions";
+import { useQuery } from "@kit/api/store";
+import type { ReviewSuggestion, ReviewWeek, WeeklyReview } from "../types";
+import { Page } from "@kit/app/Page";
+import { Icon } from "@kit/components/icons";
+import { SectionHead } from "@kit/components/SectionHead";
+import { Card, Empty, ErrorBox, Meter, order, PageSkeleton } from "@kit/components/ui";
+import { fmtDay, pct } from "@kit/lib/format";
+import { TEMPLATE_KIND } from "@kit/lib/labels";
+import { channelName } from "@kit/lib/network";
 
 /** One number of the week with last week's value under it */
 function Stat({ title, value, prev, children }: { title: string; value: ReactNode; prev: ReactNode; children?: ReactNode }) {

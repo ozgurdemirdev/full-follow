@@ -1,7 +1,7 @@
-import type { SourceReport } from "../../api/types";
-import { lira, pct } from "../../lib/format";
-import { Card, order } from "../ui";
-import { SectionHead } from "./SectionHead";
+import type { SourceReport } from "@kit/api/types";
+import { lira, pct } from "@kit/lib/format";
+import { Card, order } from "@kit/components/ui";
+import { SectionHead } from "@kit/components/SectionHead";
 
 const rateTone = (r: SourceReport, best: SourceReport | undefined) => (r === best ? "success" : r.conversion == null ? "muted" : "info");
 const BAR = { success: "bg-success", info: "bg-info", muted: "bg-entity-neutral" } as const;

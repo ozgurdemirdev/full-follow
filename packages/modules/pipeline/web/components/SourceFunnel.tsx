@@ -1,10 +1,31 @@
 import { useState } from "react";
-import { useQuery } from "../api/store";
-import type { SourceFunnel as FunnelData, SourceFunnelRow } from "../api/types";
-import { pct } from "../lib/format";
-import { FUNNEL_PERIODS, FUNNEL_STEP } from "../lib/labels";
-import { SectionHead } from "./report/SectionHead";
-import { Card, Chip, Empty, ErrorBox, Filters, order } from "./ui";
+import { useQuery } from "@kit/api/store";
+import { pct } from "@kit/lib/format";
+import { FUNNEL_PERIODS, FUNNEL_STEP } from "@kit/lib/labels";
+import { SectionHead } from "@kit/components/SectionHead";
+import { Card, Chip, Empty, ErrorBox, Filters, order } from "@kit/components/ui";
+
+// What `GET /api/report/sources` answers (the report page shows this section through its `report.sections` slot)
+/** Lead source funnel: found, written, replied, meeting, offer, won; rate = against the previous step */
+export interface FunnelStep {
+  key: string;
+  count: number;
+  rate: number | null;
+}
+export interface SourceFunnelRow {
+  source_id: number;
+  source: string;
+  steps: FunnelStep[];
+  reply_rate: number | null;
+  /** too few written messages for the reply rate to mean much */
+  early: boolean;
+  weak: boolean;
+}
+export interface FunnelData {
+  period: number | "all";
+  since: string | null;
+  sources: SourceFunnelRow[];
+}
 
 /** One source: name with its flags, then the six steps (two rows of three on a phone), each with a bar against the found count and the rate vs the previous step */
 function SourceRow({ s }: { s: SourceFunnelRow }) {
@@ -34,7 +55,7 @@ function SourceRow({ s }: { s: SourceFunnelRow }) {
 }
 
 /** Report section: where the people and companies of each lead source got to, by record creation date */
-export function SourceFunnel() {
+export default function SourceFunnel() {
   const [period, setPeriod] = useState<string | null>(null);
   const q = useQuery<FunnelData>(`/report/sources${period ? `?period=${period}` : ""}`);
   const data = q.data;

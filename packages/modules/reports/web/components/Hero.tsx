@@ -1,6 +1,6 @@
-import { lira } from "../../lib/format";
-import type { Hero as HeroData } from "../../lib/report";
-import { order } from "../ui";
+import { lira } from "@kit/lib/format";
+import type { Hero as HeroData } from "../report";
+import { order } from "@kit/components/ui";
 
 /** This month's (or the picked month's) collections against the floor: gap or surplus, hatched meter with the expected rest and the floor marker, insight sentence */
 export function Hero({ hero: h, insight }: { hero: HeroData; insight: string | null }) {
