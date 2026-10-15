@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { pipeline } from "node:stream";
 import { Body, Controller, Delete, Get, Inject, Param, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
@@ -28,7 +29,8 @@ export class FilesController {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, max-age=86400");
     res.setHeader("Content-Disposition", `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(row.name)}`);
-    fs.createReadStream(full).pipe(res);
+    // pipeline destroys the file stream when the response closes early, so an aborted download never holds the file handle
+    pipeline(fs.createReadStream(full), res, () => {});
   }
 
   @Delete(":id")
