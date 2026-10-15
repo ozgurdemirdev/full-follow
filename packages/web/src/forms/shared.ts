@@ -1,11 +1,12 @@
 // What every form of the sheet shares: its props, the submit guard with validation, saving a record, option lists
-import { useMemo, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { report, run } from "../api/actions";
 import { useCompanies, useOpps, usePeople, useProjects } from "../api/keys";
 import type { Mutation } from "../api/types";
 import { closeSheet, type SheetState } from "../app/ui";
 import type { Option } from "../components/Combo";
 import { CHANNEL, CHANNELS } from "../lib/labels";
+import { createSingleFlight } from "../lib/singleFlight";
 import { forms } from "../messages.forms";
 import { formMeta } from "./meta";
 
@@ -29,20 +30,24 @@ export function errorsOf(rules: Record<string, string | false | null | undefined
  * once at a time and closes the sheet on success. A failed write shows its error (a duplicate becomes the sheet's banner).
  */
 export function useSubmit(p: FormProps, fn: () => Promise<unknown>, validate?: () => Record<string, string>) {
-  return async (e: FormEvent) => {
+  // a second press (or Enter) while the save is on its way is dropped, so nothing is created twice
+  const [once] = useState(createSingleFlight);
+  return (e: FormEvent) => {
     e.preventDefault();
-    const errors = validate?.() ?? {};
-    p.setErrors(errors);
-    if (Object.keys(errors).length) return;
-    p.setBusy(true);
-    try {
-      await fn();
-      closeSheet();
-    } catch (err) {
-      report(err);
-    } finally {
-      p.setBusy(false);
-    }
+    return once(async () => {
+      const errors = validate?.() ?? {};
+      p.setErrors(errors);
+      if (Object.keys(errors).length) return;
+      p.setBusy(true);
+      try {
+        await fn();
+        closeSheet();
+      } catch (err) {
+        report(err);
+      } finally {
+        p.setBusy(false);
+      }
+    });
   };
 }
 
