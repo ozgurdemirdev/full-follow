@@ -149,6 +149,7 @@ export const m = defineMessages({
       missing: (what: string, id: number) => `çöp kutusunda ${what} #${id} yok`,
       restored: (what: string, label: string) => `Geri yüklendi (${what}): ${label}`,
       restoreBlocked: (label: string) => `${label} geri yüklenemedi: bağlı olduğu kayıt da silinmiş, önce onu geri yükle`,
+      restoreDuplicate: (label: string, holder: string) => `${label} geri yüklenemedi: aynı kayıt zaten var (${holder})`,
       restoredEffect: (label: string) => `${label} geri yüklendi`,
       categoryDeleted: (what: string, name: string) => `${cap(what)} silindi: ${name}`,
     },

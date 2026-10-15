@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { addDays, dayOf, openDb, type Clock, type DbHandle } from "@fullfollow/core";
+import { addDays, dayOf, FFError, openDb, type Clock, type DbHandle } from "@fullfollow/core";
 import { appFor, suite, type TestApp } from "./helpers";
 
 let today = "2026-10-15";
@@ -221,5 +221,21 @@ suite("the fixes of the service review", () => {
     app.settings.setMany({ bagkur_monthly: 123, tax_rate_percent: 20 });
     expect(app.settings.all()).toMatchObject({ bagkur_monthly: 123, tax_rate_percent: 20 });
     expect(sql("SELECT COUNT(*) AS n FROM events WHERE type = 'settings.updated'")[0].n).toBe(2);
+  });
+
+  it("restoring a project whose opportunity was won again names the project that holds the slot instead of a raw SQL error", () => {
+    const src = (app.get("source", "R10") as any).row;
+    const ada = app.people.create({ name: "Ada" }).row;
+    const o = app.opportunities.create({ title: "O", person_id: ada.id, source_id: src.id, estimated_value: 1000 }).row;
+    app.opportunities.move(o.id, { stage: "kazanildi" });
+    const first = sql("SELECT id FROM projects WHERE opportunity_id = ?", o.id)[0].id;
+    app.projects.remove(first);
+    app.opportunities.move(o.id, { stage: "teklif" });
+    app.opportunities.move(o.id, { stage: "kazanildi" });
+    const second = sql("SELECT id FROM projects WHERE opportunity_id = ?", o.id)[0].id;
+    expect(second).not.toBe(first);
+    expect(() => app.restore("project", first)).toThrow(`aynı kayıt zaten var (proje #${second})`);
+    try { app.restore("project", first); } catch (e) { expect(e).toBeInstanceOf(FFError); expect((e as FFError).code).toBe("rule"); }
+    expect(sql("SELECT COUNT(*) AS n FROM projects WHERE opportunity_id = ?", o.id)[0].n).toBe(1);
   });
 });
