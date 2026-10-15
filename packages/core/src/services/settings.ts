@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
-import { emit, FFError, parse, row, type Ctx } from "../context";
+import { assertOzgur, emit, FFError, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
 import { isIsoDate, resolveRelativeDate } from "../dates";
@@ -148,6 +148,8 @@ export function settingsService(ctx: Ctx) {
     if (!(SETTING_KEYS as readonly string[]).includes(key)) {
       throw new FFError("validation", m.settings.unknown(key, SETTING_KEYS.join(", ")));
     }
+    // the pinned notes are part of the panel Claude's system prompt: text Claude (or a page it read) wrote there would persist across chats
+    if (key === "chat_pinned_notes") assertOzgur(ctx, m.settings.pinnedNotesAction);
     let stored: string;
     if (key === "payment_template") {
       const t = parse(templateSchema, typeof value === "string" ? JSON.parse(value) : value);
