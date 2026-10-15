@@ -26,10 +26,10 @@ export const people = defineMessages({
     draftTask: (name: string) => `${name} için mesaj taslağı hazırla`,
     draftAsked: "Claude taslağı yazıyor, Taslaklar’a düşecek",
     noTouch: "Temas yok",
-    lastToday: "bugün",
-    lastYesterday: "dün",
+    lastToday: m.ago.today,
+    lastYesterday: m.ago.yesterday,
     lastDaysAgo: (days: number) => `${days} gün önce`,
-    channels: { linkedin: "LinkedIn", email: "E-posta", telefon: "Telefon", instagram: "Instagram" },
+    channels: { linkedin: m.brands.linkedin, email: m.channelNames.email, telefon: m.channelNames.phone, instagram: m.brands.instagram },
   },
 });
 
@@ -61,7 +61,7 @@ export const comments = defineMessages({
       claude: "Claude’da",
       closed: "Kapandı",
     },
-    ownProject: "Kendi projem",
+    ownProject: m.ownProject,
   },
 });
 

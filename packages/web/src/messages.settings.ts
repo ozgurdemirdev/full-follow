@@ -26,7 +26,7 @@ export const settings = defineMessages({
       connectionHint: "Bilgisayarındaki MCP sunucusu (npm run mcp). Claude’un yazdığı her kayıt “Claude” etiketiyle görünür",
       connectionKeywords: "mcp,sunucu,bağlı",
       lastRequest: (when: string) => `Son istek ${when}`,
-      never: "Claude henüz bağlanmadı",
+      never: kit.claudeNever,
     },
     lists: {
       people: (n: number) => `${n} kişi`,
@@ -103,7 +103,7 @@ export const settings = defineMessages({
       drafts: (n: number) => `${n} taslak`,
       and: " ve ",
       comma: ", ",
-      dot: " · ",
+      dot: kit.sep,
       awaiting: (n: number) => `${n} kişiden cevap bekleniyor`,
       waitingOnYou: (what: string) => `${what} seni bekliyor`,
     },

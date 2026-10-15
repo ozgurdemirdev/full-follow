@@ -7,9 +7,9 @@ export const parts = defineMessages({
   tr: {
     filters: {
       group: "Filtreler",
-      status: "Temas durumu",
+      status: kit.contactStatus,
       allStatuses: "Tüm durumlar",
-      tag: "Etiket",
+      tag: kit.nouns.tag,
       allTags: "Tüm etiketler",
       sector: kit.nouns.sector,
       allSectors: "Tüm sektörler",
@@ -39,7 +39,7 @@ export const parts = defineMessages({
       urlAria: "Link adresi",
     },
     mic: { start: "Konuşarak ekle", stop: "Dinlemeyi durdur" },
-    stepper: { decrease: "Azalt", increase: "Artır" },
+    stepper: { decrease: kit.decrease, increase: kit.increase },
     quick: {
       title: "Yeni kayıt",
       shortcutKey: "N",

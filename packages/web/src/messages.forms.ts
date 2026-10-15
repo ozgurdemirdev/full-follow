@@ -12,8 +12,8 @@ export const forms = defineMessages({
     },
     fields: {
       tokens: "Ekle:",
-      decrease: "Azalt",
-      increase: "Artır",
+      decrease: kit.decrease,
+      increase: kit.increase,
       dateBad: "Tarihi anlayamadım",
       datePick: "Takvimden seç",
       timeBad: "Saati anlayamadım",
@@ -40,7 +40,7 @@ export const forms = defineMessages({
       sectors: kit.nouns.sectors,
       sectorPlaceholder: "Sektör yaz, Enter",
       source: kit.nouns.source,
-      status: "Temas durumu",
+      status: kit.contactStatus,
       statusHint: "Temas ekleyince kendiliğinden ilerler",
     },
     quickAdd: {

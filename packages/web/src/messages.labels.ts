@@ -12,7 +12,7 @@ export const labels = defineMessages({
       pesinat: "Peşinat", tasarim_onayi: "Tasarım onayı", test_surumu: "Test sürümü", yayin: "Yayın", teslim: "Teslim", bakim: "Bakım", iptal: "İptal",
     },
     channel: {
-      email: "E-posta", instagram: "Instagram DM", linkedin: "LinkedIn", telefon: "Telefon", yuz_yuze: "Yüz yüze",
+      email: m.channelNames.email, instagram: "Instagram DM", linkedin: m.brands.linkedin, telefon: m.channelNames.phone, yuz_yuze: "Yüz yüze",
       whatsapp: "WhatsApp", r10: "R10 mesajı", diger: m.other,
     },
     contactStatus: {
@@ -23,10 +23,10 @@ export const labels = defineMessages({
       payment: m.nouns.payment, post: m.nouns.post, idea: m.nouns.idea, own_project: "Kendi projesi",
     },
     actor: { ozgur: m.owner, claude: m.claude },
-    platform: { r10: "R10", linkedin: "LinkedIn", instagram: "Instagram", diger: m.other },
-    templateKind: { ilk: "İlk mesaj", takip: "Takip", teklif: "Teklif sonrası", diger: m.other },
+    platform: { r10: "R10", linkedin: m.brands.linkedin, instagram: m.brands.instagram, diger: m.other },
+    templateKind: { ilk: "İlk mesaj", takip: m.follow, teklif: "Teklif sonrası", diger: m.other },
     ideaStage: { fikir: m.nouns.idea, dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" },
-    assignee: { ozgur: "Sen", claude: m.claude, musteri: "Müşteri" },
+    assignee: { ozgur: m.you, claude: m.claude, musteri: m.customer },
     /** Weekday short names (ISO order, Monday first) */
     weekdayShort: { mon: "Pzt", tue: "Sal", wed: "Çar", thu: "Per", fri: "Cum", sat: "Cmt", sun: "Paz" },
   },

@@ -13,7 +13,7 @@ export const comments = defineMessages({
       close: "Konu kapandı",
       reopen: "Konuyu yeniden aç",
     },
-    bubble: { claude: kit.claude, you: "Sen" },
+    bubble: { claude: kit.claude, you: kit.you },
     newThread: {
       opened: "Konu açıldı, Claude MCP’de görüyor",
       title: "Yeni konu",

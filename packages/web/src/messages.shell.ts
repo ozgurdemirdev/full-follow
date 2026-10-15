@@ -27,11 +27,11 @@ export const shell = defineMessages({
       main: "Ana menü",
       expand: "Menüyü genişlet",
       collapse: "Menüyü daralt",
-      settings: "Ayarlar",
+      settings: kit.settings,
       userName: kit.owner,
       claudeLast: (when: string) => `Claude: ${when}`,
       claudeLastTitle: "Claude’un MCP ile yaptığı son işlem",
-      claudeNever: "Claude henüz bağlanmadı",
+      claudeNever: kit.claudeNever,
     },
     search: {
       board: "Kişi, şirket, proje ara",

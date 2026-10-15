@@ -1,17 +1,18 @@
 // Texts of the referrals screen. Words the kit shares (record nouns ...) come from `@kit/messages`.
 import { defineMessages } from "@kit/lib/i18n";
+import { m as kit } from "@kit/messages";
 
 export const m = defineMessages({
   tr: {
     /** Joins the parts of a sub line ("name · company") */
-    sep: " · ",
+    sep: kit.sep,
     page: {
       sub: "Kim kimi tanıttı, tanıştırdıklarından ve onların ağından ne iş çıktı",
       empty: "Henüz kimse kimseyi tanıtmadı. Kişi eklerken “Tanıtan” alanını doldurunca burada görünür.",
       treeTitle: (name: string) => `${name} ağı`,
     },
     kpis: {
-      summary: "Özet",
+      summary: kit.recordActions.summary,
       wonTitle: "Referanstan kazanılan",
       wonSub: "tüm ağ",
       openTitle: "Açıkta",
@@ -41,7 +42,7 @@ export const m = defineMessages({
       asksEmpty: "Şu an referans istenecek kimse yok.",
       thanksButton: "Claude teşekkür yazsın",
       askButton: "Claude rica yazsın",
-      asked: "Taslak istendi",
+      asked: kit.recordActions.draftAsked,
       drafted: "Taslak hazır",
     },
     requestOk: {

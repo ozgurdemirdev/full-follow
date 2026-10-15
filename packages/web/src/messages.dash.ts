@@ -1,5 +1,6 @@
 // Texts of the dashboard pieces the kit owns: the expand overlay of a card and the projects card.
 import { defineMessages } from "./lib/i18n";
+import { m as kit } from "./messages";
 
 export const dash = defineMessages({
   tr: {
@@ -10,12 +11,12 @@ export const dash = defineMessages({
       none: "Burada eşleşen kayıt yok.",
     },
     projects: {
-      tabClient: "Müşteri",
+      tabClient: kit.customer,
       tabOwn: "Kendi",
       tabsLabel: "Proje türü",
       paymentOf: (milestone: string) => `${milestone} ödemesi`,
       noDate: "Tarih yok",
-      ownProject: "Kendi projem",
+      ownProject: kit.ownProject,
       openIdeas: (n: number) => `${n} açık fikir`,
       next: (what: string) => `Sıradaki: ${what}`,
       rowSub: (client: string, next: string) => `${client} · Sıradaki: ${next}`,

@@ -5,7 +5,7 @@ import { m as kit } from "@kit/messages";
 export const m = defineMessages({
   tr: {
     /** Joins the parts of a sub line ("role · company") */
-    sep: " · ",
+    sep: kit.sep,
     formAddedTo: "Kişiler’e eklenir",
     searchPerson: "Kişi ara",
     noTouch: "Henüz temas yok",
@@ -18,33 +18,33 @@ export const m = defineMessages({
     status: { due: "Takibi geldi", wait: "Cevap bekleniyor", cold: "Soğuyor", fresh: "Yeni", ok: "" },
     filters: { due: "Takibi gelen", wait: "Cevap bekleyen", cold: "Soğuyan", fresh: "Yeni" },
     warmth: { hot: "Sıcak", mid: "Ilık", cold: "Soğuyor" },
-    ago: { today: "bugün", yesterday: "dün", days: (days: number) => `${days} gün önce` },
+    ago: { today: kit.ago.today, yesterday: kit.ago.yesterday, days: (days: number) => `${days} gün önce` },
     /** One sentence on why a "Bugün dokun" card is there */
     why: {
       due: (lateText: string | null, ago: string) => `${lateText !== null ? `Takip ${lateText}` : "Takip günü bugün"}. Son temas ${ago}.`,
       wait: (days: number, attempts: number) => `${days === 0 ? kit.today : `${days} gün önce`} yazdın${attempts > 1 ? `, ${attempts}. mesaj` : ""}, henüz ses yok.`,
       silent: (days: number) => `${days} gündür sessiz.`,
     },
-    next: { late: "Gecikti", followUp: "Takip" },
+    next: { late: "Gecikti", followUp: kit.follow },
     /** Field names shared by the overlay, the timeline card and the form */
     fields: {
       role: "Rol",
-      email: "E-posta",
-      phone: "Telefon",
-      instagram: "Instagram",
-      linkedin: "LinkedIn",
+      email: kit.channelNames.email,
+      phone: kit.channelNames.phone,
+      instagram: kit.brands.instagram,
+      linkedin: kit.brands.linkedin,
       influence: "Karar rolü",
-      contactStatus: "Temas durumu",
+      contactStatus: kit.contactStatus,
     },
-    actions: { addTouch: "Temas ekle", writeDraft: "Taslak yaz", askDraft: "Claude’dan taslak iste", draftPending: "Taslak zaten yazılıyor", draftAsked: "Taslak istendi" },
+    actions: { addTouch: kit.recordActions.addTouch, writeDraft: kit.recordActions.writeDraft, askDraft: kit.recordActions.askDraft, draftPending: kit.recordActions.draftPending, draftAsked: kit.recordActions.draftAsked },
     page: {
       sub: (count: number, week: number | null, cold: number) => `${count} kişi${week === null ? "" : ` · bu hafta ${week} temas`} · ${cold} ilişki soğuyor`,
       searchPlaceholder: "İsim, firma ya da etiket",
-      add: "Kişi ekle",
+      add: kit.recordActions.addPerson,
     },
     list: {
       all: "Tüm kişiler",
-      lastTouch: "Son temas",
+      lastTouch: kit.recordActions.lastTouch,
       rhythm: "12 hafta",
       next: "Sıradaki",
       empty: "Bu süzgeçte kimse yok.",
@@ -82,7 +82,7 @@ export const m = defineMessages({
       rolesOf: (name: string) => `${name} karar rolü`,
     },
     overlay: {
-      moreActions: "Diğer işlemler",
+      moreActions: kit.recordActions.moreActions,
       editAccounts: "Düzenle, hesaplar",
     },
     aside: {
@@ -109,8 +109,8 @@ export const m = defineMessages({
       valueWon: (won: number, amount: string) => `${won} kazanıldı · ${amount}`,
       valueOpen: (amount: string) => `açıkta ${amount}`,
       valueCollected: (amount: string) => `tahsil edilen ${amount}`,
-      sales: "Satış ve projeler",
-      marketing: "Pazarlama",
+      sales: kit.navGroups.salesProjects,
+      marketing: kit.navGroups.marketing,
     },
     timeline: {
       introduced: "tanıttı · ",
@@ -125,12 +125,12 @@ export const m = defineMessages({
       empty: "Bu paylaşımdan kimse gelmedi",
     },
     form: {
-      emailInvalid: "Geçerli bir e-posta yaz",
+      emailInvalid: kit.recordActions.emailInvalid,
       nameRequired: "Ad gerekli",
       pastDate: "Geçmiş bir tarih olamaz",
       name: "Ad soyad",
       namePlaceholder: "Örn. Zeynep Öztürk",
-      searchCompany: "Firma ara",
+      searchCompany: kit.recordActions.searchCompany,
       newCompany: "Yeni firma",
       rolePlaceholder: "Örn. Kurucu",
       emailPlaceholder: "ad@firma.com",
