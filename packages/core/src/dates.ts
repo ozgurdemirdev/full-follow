@@ -18,11 +18,22 @@ export function nowIso(): string {
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/;
+const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})(?::(\d{2}))?(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/;
 
-export const isIsoDate = (s: string) => ISO_DATE.test(s);
+/** A day that exists on the calendar: the shape alone lets "2026-13-45" and "2026-02-31" through, so the parts must survive a round trip (UTC, no timezone shift) */
+export function isIsoDate(s: string): boolean {
+  if (!ISO_DATE.test(s)) return false;
+  const [y, mo, d] = s.split("-").map(Number);
+  const t = new Date(0);
+  t.setUTCFullYear(y, mo - 1, d);
+  return t.getUTCFullYear() === y && t.getUTCMonth() === mo - 1 && t.getUTCDate() === d;
+}
 export const isIsoMonth = (s: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(s);
-export const isIsoDateTime = (s: string) => ISO_DATE.test(s) || ISO_DATETIME.test(s);
+export const isIsoDateTime = (s: string) => {
+  if (ISO_DATE.test(s)) return isIsoDate(s);
+  const time = ISO_DATETIME.exec(s);
+  return time !== null && isIsoDate(s.slice(0, 10)) && Number(time[1]) < 24 && Number(time[2]) < 60 && Number(time[3] ?? 0) < 60;
+};
 
 /**
  * Kısa tarih biçimlerini ISO'ya çevirir: "bugün", "yarın", "dün", "+3g", "-2g", "+1h" (hafta).

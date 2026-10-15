@@ -35,7 +35,7 @@ function skippedCounts(ctx: Ctx, from: string, to: string): Map<string, number> 
 /** A date the caller gave ("bugün", "+3g" or YYYY-MM-DD) as a real ISO day; anything else is a validation error, never a loop bound */
 const asDay = (input: unknown, today: string): string => {
   const v = resolveRelativeDate(input, today);
-  if (typeof v !== "string" || !isIsoDate(v) || addDays(v, 0) !== v) throw new FFError("validation", m.errors.badDate);
+  if (typeof v !== "string" || !isIsoDate(v)) throw new FFError("validation", m.errors.badDate);
   return v;
 };
 
