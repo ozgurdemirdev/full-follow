@@ -1,5 +1,6 @@
 import type { CompaniesApi, Ctx } from "@fullfollow/core";
 import { companiesServices } from "./service";
+import { ALL_ROWS } from "./service/constants";
 import { companyCard } from "./service/card";
 import { companiesList } from "./service/list";
 import { bumpCompanyStatus } from "./service/status";
@@ -13,7 +14,7 @@ export function companiesApi(ctx: Ctx): CompaniesApi {
     update: companies.update as CompaniesApi["update"],
     remove: companies.remove,
     list: (opts) => companiesList(ctx, opts),
-    get: (id) => companiesList(ctx, { limit: 100000 }).rows.find((c) => c.id === id),
+    get: (id) => companiesList(ctx, { limit: ALL_ROWS }).rows.find((c) => c.id === id),
     card: (id) => companyCard(ctx, id),
     bumpStatus: (id, next) => bumpCompanyStatus(ctx, id, next),
   };
