@@ -16,7 +16,7 @@ import { copyFileSync, existsSync, mkdirSync, openSync, closeSync, readdirSync, 
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { discoverModules, root } from "./lib/modules.mjs";
 
 const logRoot = process.env.FF_CHECK_LOGS || join(tmpdir(), "ff-check-modules");
@@ -30,7 +30,8 @@ const node = process.execPath;
 const script = (name) => join(root, "scripts", name);
 const requireFrom = (pkg) => createRequire(join(root, "packages", pkg, "package.json"));
 const webDir = join(root, "packages", "web");
-const viteBin = requireFrom("web").resolve("vite/bin/vite.js");
+// the vite the web package uses (a nested install when the root has another one): the bin is not an exported path, so go through package.json
+const viteBin = join(dirname(requireFrom("web").resolve("vite/package.json")), "bin", "vite.js");
 const baseEnv = () => {
   const env = { ...process.env, FF_OPEN: "0", FF_BACKUP: "0" };
   delete env.FF_MODULES_OFF;
