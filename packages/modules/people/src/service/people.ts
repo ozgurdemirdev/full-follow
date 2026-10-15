@@ -3,22 +3,20 @@ import {
   announceTrashed, assertUnique, assignSectors, assignTags, Bin, checkSource, FFError, keyList, parse, personKeys, requireRow, row, schema, stamp, withSectorList,
   writeEvent as emit, type Ctx,
 } from "@fullfollow/core";
+import { m } from "../messages";
+import { REFERRAL_CHAIN_MAX } from "./constants";
 import { personCreate, personUpdate } from "./schemas";
 
 const { people } = schema;
 
-const FIELD_NAMES: Record<string, string> = {
-  name: "ad", company_id: "firma", role: "rol", email: "e-posta", phone: "telefon", handle: "kullanıcı adı", instagram: "Instagram", linkedin: "LinkedIn",
-  referred_by_id: "referans", post_id: "kaynak paylaşım", source_id: "nereden", contact_status: "durum", influence: "karar rolü", next_follow_up_at: "takip tarihi",
-  notes: "not", tags: "etiket", sectors: "sektör",
-};
+const FIELD_NAMES: Record<string, string> = m.fieldNames;
 
 export function peopleService(ctx: Ctx) {
   // the post is checked with a direct table read on purpose: the table always exists, so a post_id stays valid without the posts module
   function checkRefs(f: { company_id?: number | null; referred_by_id?: number | null; post_id?: number | null }) {
     if (f.company_id) requireRow(ctx, "companies", f.company_id);
-    if (f.referred_by_id) requireRow(ctx, "people", f.referred_by_id, "referans kişisi");
-    if (f.post_id) requireRow(ctx, "posts", f.post_id, "paylaşım");
+    if (f.referred_by_id) requireRow(ctx, "people", f.referred_by_id, m.errors.referrer);
+    if (f.post_id) requireRow(ctx, "posts", f.post_id, m.errors.post);
   }
 
   /** The touches and drafts saved with only this address join the new person; the network module does it (nothing to adopt without it) */
@@ -34,7 +32,7 @@ export function peopleService(ctx: Ctx) {
       const r = tx.insert(people).values({ ...f, ...keys, ...stamp(ctx) }).returning().get();
       assignTags(tx, ctx, "person", r.id, { set: tags, add: add_tags, remove: remove_tags });
       assignSectors(tx, ctx, "person", r.id, sectors);
-      emit(tx, ctx, { type: "person.created", person_id: r.id, summary: `Kişi eklendi: ${r.name}` });
+      emit(tx, ctx, { type: "person.created", person_id: r.id, summary: m.events.created(r.name) });
       const effects = adopt({ person_id: r.id }, keyList(keys));
       return { row: requireRow(ctx, "people", r.id), effects };
     });
@@ -48,8 +46,8 @@ export function peopleService(ctx: Ctx) {
       if (f.source_id !== undefined) checkSource(ctx, f.source_id, cur.source_id);
       if (f.referred_by_id) {
         // referans ağacında döngü olmasın: yeni referans, bu kişinin altında olmamalı
-        for (let p: number | null = f.referred_by_id, guard = 0; p && guard < 1000; guard++) {
-          if (p === id) throw new FFError("validation", "referans döngüsü: kişi kendi alt referansına bağlanamaz");
+        for (let p: number | null = f.referred_by_id, guard = 0; p && guard < REFERRAL_CHAIN_MAX; guard++) {
+          if (p === id) throw new FFError("validation", m.errors.referralLoop);
           p = row(ctx, "SELECT referred_by_id r FROM people WHERE id = ?", p)?.r ?? null;
         }
       }
@@ -64,7 +62,7 @@ export function peopleService(ctx: Ctx) {
       if (changed.length) {
         const names = [...new Set(changed)].map((k) => FIELD_NAMES[k] ?? k).join(", ");
         tx.update(people).set({ updated_at: ctx.clock.now() }).where(eq(people.id, id)).run();
-        emit(tx, ctx, { type: "person.updated", person_id: id, summary: `Kişi güncellendi (${names})` });
+        emit(tx, ctx, { type: "person.updated", person_id: id, summary: m.events.updated(names) });
       }
       const effects = Object.keys(changedKeys).length ? adopt({ person_id: id }, keyList(changedKeys)) : [];
       return { row: requireRow(ctx, "people", id), effects };
@@ -78,8 +76,8 @@ export function peopleService(ctx: Ctx) {
    */
   function remove(id: number) {
     const cur = requireRow(ctx, "people", id);
-    if (ctx.mod("pipeline")?.opportunities.countOf(id)) throw new FFError("rule", `${cur.name} silinemez: fırsatları var, önce onları sil`);
-    if (ctx.mod("projects")?.projects.countOf(id)) throw new FFError("rule", `${cur.name} silinemez: projesi var`);
+    if (ctx.mod("pipeline")?.opportunities.countOf(id)) throw new FFError("rule", m.errors.hasOpportunities(cur.name));
+    if (ctx.mod("projects")?.projects.countOf(id)) throw new FFError("rule", m.errors.hasProject(cur.name));
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.unlink("people", "referred_by_id", id);
@@ -92,7 +90,7 @@ export function peopleService(ctx: Ctx) {
       bin.take("person_sectors", "person_id = ?", id);
       bin.take("people", "id = ?", id);
       bin.commit(tx, "person", id, cur.name, keyList(personKeys(cur)));
-      emit(tx, ctx, { type: "person.deleted", summary: `Kişi silindi: ${cur.name}` });
+      emit(tx, ctx, { type: "person.deleted", summary: m.events.deleted(cur.name) });
       return { effects: [] as string[], trash: { type: "person", id } };
     });
   }

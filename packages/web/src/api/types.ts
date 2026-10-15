@@ -1,6 +1,21 @@
 // REST yanıt tipleri (packages/core/src/services/queries.ts ile aynı alanlar)
-import type { Actor, OppStage, PostFormat, ProjectStage, TaskAssignee } from "../lib/labels";
-import type { OwnStage } from "./types-own";
+import type { Actor, PostFormat, ProjectStage, TaskAssignee } from "../lib/labels";
+import type { ContactStatus } from "../../../core/src/constants";
+import type {
+  ActivityBucket, FollowupDue, GoalDay, InterestRow, IdeaStats, OfferItem, OpportunityRow, OwnProjectStats, PersonRow, PipelineMeta,
+  PostPlatform, QuotaState, ReferralValue, TaskKind, CompanyRow,
+} from "../../../core/src/contracts";
+
+// Types that have exactly the shape of a core contract come from it (type only imports: nothing of core reaches the bundle).
+// The rest of this file is the REST shape the web reads, which differs from the contract (narrower unions, extra fields).
+export type { ActivityBucket, ContactStatus, FollowupDue, GoalDay, OfferItem, PipelineMeta, QuotaState, ReferralValue, TaskKind };
+export type Person = PersonRow;
+export type Company = CompanyRow;
+export type Opportunity = OpportunityRow;
+export type Idea = IdeaStats;
+export type OwnProject = OwnProjectStats;
+export type Interest = InterestRow;
+export type Platform = PostPlatform;
 
 export interface List<T> {
   rows: T[];
@@ -18,7 +33,6 @@ export interface Base {
   created_by: Actor;
 }
 
-export type ContactStatus = "yazilmadi" | "yazildi" | "cevap_geldi" | "gorusuldu" | "olumsuz" | "es_gecildi" | "tanidik" | "arkadas";
 /** Kişi ve firmada ortak: etiketler (ad + id), sektörler, nereden buldum, temas durumu */
 export interface Labeled {
   tags: string[];
@@ -28,35 +42,6 @@ export interface Labeled {
   source_id: number | null;
   source_name: string | null;
   contact_status: ContactStatus;
-}
-export interface Person extends Base, Labeled {
-  name: string;
-  company_id: number | null;
-  company_name: string | null;
-  role: string | null;
-  email: string | null;
-  phone: string | null;
-  instagram: string | null;
-  linkedin: string | null;
-  handle: string | null;
-  referred_by_id: number | null;
-  referred_by_name: string | null;
-  referral_count: number;
-  post_id: number | null;
-  post_title: string | null;
-  next_follow_up_at: string | null;
-  notes: string | null;
-  last_touch_at: string | null;
-  last_channel: string | null;
-  last_direction: "giden" | "gelen" | null;
-  last_summary: string | null;
-  days_since: number;
-  awaiting: Awaiting | null;
-  cooling: boolean;
-  /** touches per ISO week, the last 12 weeks, oldest first */
-  rhythm: number[];
-  /** role in a buying decision (null = not set) */
-  influence: "karar_verici" | "etkileyici" | "kullanici" | null;
 }
 /** Cevap bekleme: son gelen temastan sonra cevapsız giden temas */
 export interface Awaiting {
@@ -105,19 +90,6 @@ export interface Note extends Base {
   person_name: string;
   body: string;
 }
-export interface ReferralValue {
-  person_id: number;
-  name: string;
-  company_name: string | null;
-  direct: number;
-  network: number;
-  opps: number;
-  won: number;
-  won_value: number;
-  open_value: number;
-  projects: number;
-  collected: number;
-}
 export interface ChannelSummary {
   channel: string;
   total: number;
@@ -151,7 +123,6 @@ export interface NetworkSettings {
   /** ISO date or empty: cold email is off until then (inclusive) */
   email_warmup_until: string;
 }
-export type QuotaState = "ok" | "near" | "over";
 export interface Quota {
   date: string;
   channels: { channel: string; sent: number; limit: number; state: QuotaState }[];
@@ -164,8 +135,7 @@ export interface NetworkLists {
 }
 
 // ---- Paket 2: pazarlama ----
-export type Platform = "r10" | "linkedin" | "instagram" | "diger";
-export type IdeaStage = "fikir" | "dogrulaniyor" | "demo" | "urun";
+export type IdeaStage ="fikir" | "dogrulaniyor" | "demo" | "urun";
 export type InterestLevel = "anlatildi" | "ilgilendi" | "ilgilenmedi";
 export interface Post extends Base {
   platform: Platform;
@@ -208,105 +178,9 @@ export interface Template extends Base {
   tip: string | null;
   score?: number;
 }
-export interface Idea extends Base {
-  title: string;
-  problem: string | null;
-  stage: IdeaStage;
-  notes: string | null;
-  sectors: { id: number; path: string }[];
-  told: number;
-  interested: number;
-  not_interested: number;
-  interest_rate: number | null;
-  /** people who answered: interested or not */
-  answered: number;
-  /** interested / answered, 0 to 1; null while nobody has answered */
-  interest_share: number | null;
-  rate_tone: "strong" | "mixed" | "weak" | null;
-  /** the sentence under the interest ring, written by the ideas module */
-  verdict: string;
-  /** how the idea earns money, in a sentence */
-  money_note: string | null;
-  touch_count: number;
-  post_count: number;
-  post_people: number;
-  /** sub idea grouping inside general ideas */
-  parent_id: number | null;
-  parent_title: string | null;
-  child_count: number;
-  /** own project this idea belongs to; null = general money idea */
-  own_project_id: number | null;
-  own_project_title: string | null;
-  priority: IdeaPriority;
-  position: number;
-  done_at: string | null;
-}
 export type OwnProjectStatus = "aktif" | "beklemede" | "tamamlandi" | "birakildi";
 export type Sellable = "evet" | "belki" | "hayir";
 export type IdeaPriority = "yuksek" | "orta" | "dusuk";
-export interface OwnProject extends Base {
-  name: string;
-  description: string | null;
-  status: OwnProjectStatus;
-  sellable: Sellable;
-  sellable_note: string | null;
-  notes: string | null;
-  open_ideas: number;
-  done_ideas: number;
-  sectors: { id: number; path: string }[];
-  stage: OwnStage | null;
-  /** distinct people told about any idea of the project, interested in one, answered (interested or not) */
-  told: number;
-  interested: number;
-  answered: number;
-  /** interested / answered, 0 to 1; null while nobody has answered */
-  interest_share: number | null;
-  /** open high priority ideas in order; the first is the next step */
-  top_ideas: { id: number; title: string }[];
-  next_idea: { id: number; title: string } | null;
-}
-export interface Interest extends Base {
-  idea_id: number;
-  person_id: number;
-  person_name: string;
-  company_name: string | null;
-  idea_title: string;
-  idea_stage: IdeaStage;
-  interest: InterestLevel;
-  note: string | null;
-  touch_id: number | null;
-}
-export interface FollowupDue {
-  person_id: number | null;
-  company_id: number | null;
-  contact: string | null;
-  name: string;
-  company_name: string | null;
-  channel: string;
-  step: number;
-  steps: number;
-  days: number;
-  attempts: number;
-  since: string;
-}
-export interface Company extends Base, Labeled {
-  name: string;
-  website: string | null;
-  email: string | null;
-  phone: string | null;
-  instagram: string | null;
-  linkedin: string | null;
-  notes: string | null;
-  people_count: number;
-  last_touch_at: string | null;
-  touch_count: number;
-  open_opps: number;
-  city: string | null;
-  /** client (has a project), partner (partner tag) or lead */
-  segment: "client" | "partner" | "lead";
-  /** TL: paid on its projects, still due on them, value of its open opportunities */
-  money: { won: number; due: number; open: number };
-}
 export interface CompanyCard {
   row: Company;
   people: Person[];
@@ -336,13 +210,6 @@ export interface OppPerson extends Base {
   role: string;
   note: string | null;
 }
-/** One offer line: `amount` is the unit price, `line` is qty x unit price (the server computes it) */
-export interface OfferItem {
-  label: string;
-  amount: number;
-  qty: number;
-  line: number;
-}
 /** One part of an offer's payment plan: a project milestone and its share of the total, whole percent */
 export interface OfferPlanPart {
   key: ProjectStage;
@@ -367,31 +234,6 @@ export interface FileRow extends Base {
   name: string;
   mime: string;
   size: number;
-}
-export interface Opportunity extends Base {
-  title: string;
-  person_id: number;
-  person_name: string;
-  company_id: number | null;
-  company_name: string | null;
-  source_id: number;
-  source_name: string;
-  source_url: string | null;
-  source_date: string | null;
-  stage: OppStage;
-  estimated_value: number | null;
-  lost_reason: string | null;
-  next_follow_up_at: string | null;
-  closed_at: string | null;
-  position: number;
-  project_id: number | null;
-  /** when the opportunity entered its current stage */
-  stage_since: string | null;
-}
-/** What the opportunity list adds: the stage rules and the stage to stage rates of the last 90 days */
-export interface PipelineMeta {
-  stages: { stage: OppStage; probability: number; stale_days: number }[];
-  stage_rates: { stage: OppStage; to_next: number | null }[];
 }
 export interface Project extends Base {
   name: string;
@@ -603,23 +445,6 @@ export interface Detail<T, R = { [k: string]: unknown[] | undefined }> {
 }
 
 // ---- Günlük iş planı ----
-export interface GoalDay {
-  id: number;
-  title: string;
-  target: number;
-  channel: string | null;
-  /** counts new people and companies by itself (instead of a channel) */
-  metric: string | null;
-  manual: number;
-  auto: number;
-  /** new records goals: duplicates skipped by bulk saves that day */
-  duplicates: number;
-  done: number;
-  complete: boolean;
-  note: string | null;
-  goal_note: string | null;
-}
-export type TaskKind = "gorusme" | "takip" | "gorev";
 export interface PlanTask {
   id: number;
   title: string;
@@ -639,18 +464,6 @@ export interface Plan {
   week_ratio: number | null;
 }
 
-/** GET /stats/activity: buckets oldest first; drafts and offers are the ones created in the bucket */
-export interface ActivityBucket {
-  start: string;
-  end: string;
-  sent: number;
-  replies: number;
-  meetings: number;
-  new_people: number;
-  new_companies: number;
-  drafts: number;
-  offers: number;
-}
 export interface Activity {
   period: "day" | "week" | "month";
   buckets: ActivityBucket[];

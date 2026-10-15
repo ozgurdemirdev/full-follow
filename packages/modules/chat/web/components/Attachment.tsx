@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { T } from "../chatText";
+import { T } from "../messages";
+
 import { fmtBytes, isImage } from "../chatFiles";
 import { Icon } from "@kit/components/icons";
 import { Lightbox } from "./Lightbox";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 interface Props {
   name: string;
@@ -26,7 +28,7 @@ export function Attachment({ name, size, mime, url, openUrl, onRemove }: Props) 
   };
   const remove = onRemove && (
     <button type="button" className="rm" aria-label={T.attachRemove(name)} onClick={onRemove}>
-      <Icon name="close" className="size-icon-sm" stroke={2.4} />
+      <Icon name="close" className="size-icon-sm" stroke={STROKE.bold} />
     </button>
   );
   const lightbox = big && url && <Lightbox url={url} name={name} onClose={() => setBig(false)} />;

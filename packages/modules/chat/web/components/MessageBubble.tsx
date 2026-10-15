@@ -3,13 +3,15 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { parseTools, type ChatMessage } from "../api";
 import { fmtDay } from "@kit/lib/format";
-import { KIND_LABEL, T } from "../chatText";
+import { KIND_LABEL, T } from "../messages";
+
 import { chatApi } from "../api";
 import { Attachment } from "./Attachment";
 import { extractSuggest, splitOpenFence } from "../chatReply";
 import { CardsSkeleton, RecordCards } from "./RecordCards";
 import { SuggestRow } from "./SuggestRow";
 import { Icon } from "@kit/components/icons";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const timeFmt = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" });
 
@@ -50,7 +52,7 @@ function Tools({ message }: { message: ChatMessage }) {
   return (
     <>
       <button type="button" className="tools" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <Icon name="chevron" className="size-icon-sm" stroke={1.8} />
+        <Icon name="chevron" className="size-icon-sm" stroke={STROKE.thin} />
         {T.toolsDone(tools.length)}
       </button>
       {open && (
@@ -117,7 +119,7 @@ export const MessageBubble = memo(function MessageBubble({ message: m, onRetrySe
   return (
     <article className={`msg${m.ack ? " short" : ""}`}>
       <div className="cwho-row">
-        <span className="cwho">Claude</span>
+        <span className="cwho">{T.claude}</span>
         <time>{stamp(m.created_at)}</time>
       </div>
       {(text || active) && <Reply body={text} caret={active} messageId={m.id} />}

@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { currentRegistry } from "@kit/app/modules/registry";
 import { PATHS } from "@kit/app/routes";
 import { openSheet } from "@kit/app/ui";
-import { CHAT_UI } from "./chatText";
+import { CHAT_UI } from "./constants";
 
 const ms = (v: string) => parseFloat(v);
 

@@ -6,6 +6,9 @@ import { BoardIcon } from "@kit/components/boardIcons";
 import { toast } from "@kit/components/toast";
 import { Avatar } from "@kit/components/ui";
 
+import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
+
 /** The statuses that become a card: a follow-up that came due, a reply that is awaited, a cooling relation */
 const CARD_STATUSES: PStatus[] = ["due", "wait", "cold"];
 
@@ -22,10 +25,10 @@ export function TouchCards({ people, today, onOpen }: { people: Person[]; today:
   );
 
   return (
-    <section aria-label="Bugün dokun" className="flex flex-col gap-6">
+    <section aria-label={m.touch.title} className="flex flex-col gap-6">
       <div className="ppl-touch-head">
-        <h2 className="m-0 text-section font-light tracking-title">Bugün dokun</h2>
-        <span className="text-base-sm text-text-secondary">Claude sıraladı: zamanı gelen, cevapsız kalan, soğuyan</span>
+        <h2 className="m-0 text-section font-light tracking-title">{m.touch.title}</h2>
+        <span className="text-base-sm text-text-secondary">{m.touch.sub}</span>
       </div>
       <div className="ppl-touch">
         {cards.map((p) => {
@@ -33,7 +36,7 @@ export function TouchCards({ people, today, onOpen }: { people: Person[]; today:
           const asked = drafted.has(p.id);
           return (
             <article key={p.id} className="ppl-tcard" data-s={s}>
-              <button type="button" className="ppl-who" aria-label={`${p.name} kartını aç`} onClick={(e) => onOpen(p.id, e.currentTarget.closest("article") ?? e.currentTarget)}>
+              <button type="button" className="ppl-who" aria-label={m.touch.open(p.name)} onClick={(e) => onOpen(p.id, e.currentTarget.closest("article") ?? e.currentTarget)}>
                 <Avatar name={p.name} id={p.id} size="tile" />
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-md font-medium">{p.name}</span>
@@ -44,16 +47,16 @@ export function TouchCards({ people, today, onOpen }: { people: Person[]; today:
               <p className="m-0 flex-grow text-base leading-snug text-text-soft">{whyText(p, s)}</p>
               <div className="ppl-acts">
                 <button type="button" className={`ppl-draft ${asked ? "is-asked" : ""}`} onClick={() => { if (!asked) askDraft(p).then(() => markDrafted(p.id)).catch(() => {}); }}>
-                  {asked ? "Taslak Taslaklar’da" : `Claude yazsın: ${draftKind(p, s)}`}
+                  {asked ? m.touch.drafted : m.touch.claudeWrites(draftKind(p, s))}
                 </button>
-                <button type="button" className="ppl-done" title="Yaptım" aria-label={`${p.name} için yaptım`} onClick={() => { markGone(p.id); toast(`${p.name.split(" ")[0]} bugün için tamam`); }}>
-                  <BoardIcon name="check" className="size-icon-chip" stroke={2.2} />
+                <button type="button" className="ppl-done" title={m.touch.done} aria-label={m.touch.doneFor(p.name)} onClick={() => { markGone(p.id); toast(m.touch.doneToast(p.name.split(" ")[0])); }}>
+                  <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.medium} />
                 </button>
               </div>
             </article>
           );
         })}
-        {cards.length === 0 ? <p className="ppl-empty">Bugün dokunman gereken herkese dokundun.</p> : null}
+        {cards.length === 0 ? <p className="ppl-empty">{m.touch.empty}</p> : null}
       </div>
     </section>
   );

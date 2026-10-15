@@ -1,5 +1,6 @@
 import path from "node:path";
 import { FILE_NAME_MAX } from "../constants";
+import { m } from "../messages";
 
 const SNIFF_BYTES = 8_192;
 
@@ -42,18 +43,18 @@ export function sniff(buf: Buffer, name: string, types: readonly UploadType[]): 
   else if (startsWith(buf, [0x50, 0x4b, 0x03, 0x04])) t = types.find((x) => x.kind === "office" && x.ext === ext);
   else {
     const text = types.find((x) => x.kind === "text" && x.ext === ext);
-    if (!text) throw refuse("Bu dosya türü desteklenmiyor");
-    if (buf.subarray(0, SNIFF_BYTES).includes(0)) throw refuse("Metin dosyası okunamadı");
+    if (!text) throw refuse(m.files.unsupportedType);
+    if (buf.subarray(0, SNIFF_BYTES).includes(0)) throw refuse(m.files.textUnreadable);
     try {
       new TextDecoder("utf-8", { fatal: true }).decode(buf);
     } catch {
-      throw refuse("Metin dosyası UTF-8 olmalı");
+      throw refuse(m.files.textNotUtf8);
     }
     t = text;
   }
-  if (!t) throw refuse("Bu dosya türü desteklenmiyor");
+  if (!t) throw refuse(m.files.unsupportedType);
   return { mime: t.mime, kind: t.kind, ext: t.mime === "image/jpeg" ? "jpg" : t.ext };
 }
 
 /** multer decodes names as latin1; restore UTF-8 and keep only the base name */
-export const cleanName = (raw: string) => path.basename(Buffer.from(raw, "latin1").toString("utf8")).replace(/[\u0000-\u001f]/g, "").slice(-FILE_NAME_MAX) || "dosya";
+export const cleanName = (raw: string) => path.basename(Buffer.from(raw, "latin1").toString("utf8")).replace(/[\u0000-\u001f]/g, "").slice(-FILE_NAME_MAX) || m.noun.file;

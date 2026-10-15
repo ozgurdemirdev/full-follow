@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { run } from "../api/actions";
 import type { Person } from "../api/types";
 import type { BoardIconName } from "../components/boardIcons";
+import { people as m } from "../messages.lib";
 import { daysFrom, todayIso } from "./format";
 
 /** Last touch up to this many days ago reads "Sıcak" */
@@ -36,24 +37,24 @@ export interface ChannelDef {
 }
 /** The four channels of the board, in its order; a person has a channel when the account is filled in */
 export const CHANNELS: ChannelDef[] = [
-  { key: "linkedin", label: "LinkedIn", icon: "linkedin", handle: (p) => p.linkedin },
-  { key: "email", label: "E-posta", icon: "mail", handle: (p) => p.email },
-  { key: "telefon", label: "Telefon", icon: "phone", handle: (p) => p.phone },
-  { key: "instagram", label: "Instagram", icon: "instagram", handle: (p) => p.instagram },
+  { key: "linkedin", label: m.channels.linkedin, icon: "linkedin", handle: (p) => p.linkedin },
+  { key: "email", label: m.channels.email, icon: "mail", handle: (p) => p.email },
+  { key: "telefon", label: m.channels.telefon, icon: "phone", handle: (p) => p.phone },
+  { key: "instagram", label: m.channels.instagram, icon: "instagram", handle: (p) => p.instagram },
 ];
 export const channelsOf = (p: Person) => CHANNELS.filter((c) => !!c.handle(p));
 /** Channel of a new touch: the last one used, else the first account the person has */
 export const defaultChannel = (p: Person) => p.last_channel ?? channelsOf(p)[0]?.key ?? "diger";
 
 // ------------------------------------------------------------ cards and rows
-const DRAFT_KIND: Partial<Record<PStatus, string>> = { due: "Takip taslağı", wait: "Takip taslağı", cold: "Selam taslağı" };
+const DRAFT_KIND: Partial<Record<PStatus, string>> = { due: m.followDraft, wait: m.followDraft, cold: m.greetDraft };
 
 /** Label after "Claude yazsın:" */
-export const draftKind = (p: Person, s: PStatus) => (s === "due" && p.last_direction === "gelen" ? "Cevap taslağı" : DRAFT_KIND[s] ?? "Taslak");
+export const draftKind = (p: Person, s: PStatus) => (s === "due" && p.last_direction === "gelen" ? m.replyDraft : DRAFT_KIND[s] ?? m.otherDraft);
 
 /** Ask Claude for a message draft (a task for Claude; the draft lands in Taslaklar) */
 export const askDraft = (p: Pick<Person, "id" | "name">) =>
-  run("post", "/tasks", { title: `${p.name} için mesaj taslağı hazırla`, assignee: "claude", due_date: todayIso(), person_id: p.id }, { ok: "Claude taslağı yazıyor, Taslaklar’a düşecek" });
+  run("post", "/tasks", { title: m.draftTask(p.name), assignee: "claude", due_date: todayIso(), person_id: p.id }, { ok: m.draftAsked });
 
 // ------------------------------------------------------------ per day memory (this browser only)
 type Kind = "gone" | "drafted" | "companyDrafted" | "pitched";
@@ -130,7 +131,7 @@ export const COLD_DAYS = LUKEWARM_DAYS;
 /** Days since an ISO time (0 for today and for the future) */
 export const daysSince = (iso: string) => Math.max(0, -daysFrom(iso, todayIso()));
 
-export const lastText = (days: number | null) => (days === null ? "Temas yok" : days <= 1 ? (days === 0 ? "bugün" : "dün") : `${days} gün önce`);
+export const lastText = (days: number | null) => (days === null ? m.noTouch : days <= 1 ? (days === 0 ? m.lastToday : m.lastYesterday) : m.lastDaysAgo(days));
 
 /** Warmth word of the board for the colour of an org card dot: none, hot, mid, cold */
 export const warmthOf = (days: number | null): "none" | "hot" | "mid" | "cold" =>

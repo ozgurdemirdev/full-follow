@@ -9,21 +9,6 @@ export const DELIVERED_STAGES: readonly string[] = ["teslim", "bakim"];
 /** Payment status of a payment past its due date */
 export const LATE_PAYMENT = "gecikmis";
 /** Lists of other modules are read whole */
-export const WHOLE = 100_000;
-
-/** What Claude is asked for: the task a request creates has this title, and the row is "asked" while that task is open */
-export const REQUEST_TITLE = {
-  thanks: (name: string) => `${name} için teşekkür mesajı taslağı hazırla`,
-  ask: (name: string) => `${name} için referans ricası taslağı hazırla`,
-};
-
-/** The sentence under a suggestion */
-export const WHY = {
-  thanks: (name: string, value: string | null) => `Tanıttığı ${name} kazanıldı${value ? ` · ${value}` : ""}`,
-  askReady: (project: string, ago: string) => `${project} ${ago} teslim edildi, ödemesi tamam. Kimseyi tanıtmadı.`,
-  askLate: (owed: string) => `Şimdi değil: ${owed} ödemesi gecikmede`,
-  today: "bugün",
-  daysAgo: (days: number) => `${days} gün önce`,
-};
-
-export const tl = (n: number) => `₺${n.toLocaleString("tr-TR")}`;
+export const ALL_ROWS = 100_000;
+/** Length of an ISO date (YYYY-MM-DD) cut from a timestamp */
+export const ISO_DATE_LENGTH = 10;

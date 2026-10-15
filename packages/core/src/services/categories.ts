@@ -3,6 +3,7 @@
 import { eq } from "drizzle-orm";
 import { emit, FFError, norm, parse, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
+import { m } from "../messages";
 import { company_sectors, company_tags, person_sectors, person_tags, sources, tags } from "../db/schema";
 import { sourceCreate, sourceUpdate, tagCreate, tagUpdate } from "../schemas";
 import { duplicate } from "./dupes";
@@ -17,7 +18,7 @@ const OWNER_COL = { person: "person_id", company: "company_id" } as const;
 const TAG_SQL = { person: "person_tags", company: "company_tags" } as const;
 const SECTOR_SQL = { person: "person_sectors", company: "company_sectors" } as const;
 
-const slugify = (s: string) => norm(s).replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "etiket";
+const slugify = (s: string) => norm(s).replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || m.noun.tag;
 
 /** Aynı adlı (büyük/küçük harf ve Türkçe karakter duyarsız) kategori; silinmiş olanlar da bakılır */
 function sameName(ctx: Ctx, table: "tags" | "sources", name: string, selfId?: number) {
@@ -27,7 +28,7 @@ function sameName(ctx: Ctx, table: "tags" | "sources", name: string, selfId?: nu
 
 function assertFreeName(ctx: Ctx, table: "tags" | "sources", name: string, selfId?: number) {
   const hit = sameName(ctx, table, name, selfId);
-  if (hit) throw duplicate({ type: table === "tags" ? "tag" : "source", id: hit.id, label: hit.name, field: "ad", in_trash: !!hit.deleted_at });
+  if (hit) throw duplicate({ type: table === "tags" ? "tag" : "source", id: hit.id, label: hit.name, field: m.field.name, in_trash: !!hit.deleted_at });
 }
 
 // ---------------------------------------------------------------- etiketler
@@ -39,10 +40,10 @@ export function tagsService(ctx: Ctx) {
   /** Ad ve renk değişir, slug (soğuma kuralının baktığı kısa ad) değişmez */
   function update(id: number, input: unknown) {
     const d = parse(tagUpdate, input);
-    requireRow(ctx, "tags", id, "etiket");
+    requireRow(ctx, "tags", id, m.noun.tag);
     if (d.name) assertFreeName(ctx, "tags", d.name, id);
     if (Object.keys(d).length) ctx.db.update(tags).set({ ...d, updated_at: ctx.clock.now() }).where(eq(tags.id, id)).run();
-    return { row: requireRow(ctx, "tags", id, "etiket"), effects: [] as string[] };
+    return { row: requireRow(ctx, "tags", id, m.noun.tag), effects: [] as string[] };
   }
   return {
     create, update,
@@ -56,7 +57,7 @@ function insertTag(q: Q, ctx: Ctx, name: string, color?: (typeof tags.$inferSele
   let slug = slugify(name);
   for (let i = 2; row(ctx, "SELECT 1 x FROM tags WHERE slug = ?", slug); i++) slug = `${slugify(name)}_${i}`;
   const r = q.insert(tags).values({ name, slug, color: color ?? "aday", ...stamp(ctx) }).returning().get();
-  emit(q, ctx, { type: "tag.created", summary: `Etiket eklendi: ${name}` });
+  emit(q, ctx, { type: "tag.created", summary: m.categories.tagAdded(name) });
   return r;
 }
 
@@ -67,9 +68,9 @@ export function resolveTagIds(q: Q, ctx: Ctx, list: readonly (string | number)[]
   for (const ref of list) {
     const s = String(ref).trim();
     if (!s) continue;
-    const m = /^#?(\d+)$/.exec(s);
-    if (m) {
-      out.push(requireRow(ctx, "tags", Number(m[1]), "etiket").id);
+    const idRef = /^#?(\d+)$/.exec(s);
+    if (idRef) {
+      out.push(requireRow(ctx, "tags", Number(idRef[1]), m.noun.tag).id);
       continue;
     }
     const hits = all.filter((t) => t.slug === s || norm(t.name) === norm(s));
@@ -90,8 +91,8 @@ function assertPickable(ctx: Ctx, table: "tags" | "sectors" | "sources", ids: nu
   if (!fresh.length) return;
   const dead = rows<{ name: string }>(ctx, `SELECT name FROM ${table} WHERE deleted_at IS NOT NULL AND id IN (${fresh.map(() => "?").join(",")})`, ...fresh);
   if (dead.length) {
-    const what = { tags: "etiket", sectors: "sektör", sources: "kaynak" }[table];
-    throw new FFError("rule", `${dead.map((d) => d.name).join(", ")} ${what}i silinmiş; Ayarlar > Çöp kutusundan geri yükleyince seçilebilir`);
+    const what = { tags: m.noun.tag, sectors: m.noun.sector, sources: m.noun.source }[table];
+    throw new FFError("rule", m.categories.deadPicked(dead.map((d) => d.name).join(", "), what));
   }
 }
 
@@ -143,7 +144,7 @@ export function assignSectors(q: Q, ctx: Ctx, owner: Owner, id: number, list: re
 /** Kaynak (nereden buldum) seçimi: silinmiş kaynak sadece zaten taşıyan kayıtta kalabilir */
 export function checkSource(ctx: Ctx, sourceId: number | null | undefined, current: number | null = null) {
   if (!sourceId) return;
-  requireRow(ctx, "sources", sourceId, "kaynak");
+  requireRow(ctx, "sources", sourceId, m.noun.source);
   assertPickable(ctx, "sources", [sourceId], current ? [current] : []);
 }
 
@@ -151,12 +152,12 @@ export function checkSource(ctx: Ctx, sourceId: number | null | undefined, curre
 export function ensureSource(q: Q, ctx: Ctx, ref: string | number | null): number | null {
   if (ref === null || ref === "") return null;
   const s = String(ref).trim();
-  const m = /^#?(\d+)$/.exec(s);
-  if (m) return requireRow(ctx, "sources", Number(m[1]), "kaynak").id;
+  const idRef = /^#?(\d+)$/.exec(s);
+  if (idRef) return requireRow(ctx, "sources", Number(idRef[1]), m.noun.source).id;
   const hit = sameName(ctx, "sources", s);
   if (hit) return hit.id;
   const r = q.insert(sources).values({ name: s, kind: "diger", ...stamp(ctx) }).returning().get();
-  emit(q, ctx, { type: "source.created", summary: `Kaynak eklendi: ${s}` });
+  emit(q, ctx, { type: "source.created", summary: m.categories.sourceAdded(s) });
   return r.id;
 }
 
@@ -193,10 +194,10 @@ export function sourcesService(ctx: Ctx) {
   }
   function update(id: number, input: unknown) {
     const d = parse(sourceUpdate, input);
-    requireRow(ctx, "sources", id, "kaynak");
+    requireRow(ctx, "sources", id, m.noun.source);
     if (d.name) assertFreeName(ctx, "sources", d.name, id);
     if (Object.keys(d).length) ctx.db.update(sources).set({ ...d, updated_at: ctx.clock.now() }).where(eq(sources.id, id)).run();
-    return { row: requireRow(ctx, "sources", id, "kaynak"), effects: [] as string[] };
+    return { row: requireRow(ctx, "sources", id, m.noun.source), effects: [] as string[] };
   }
   return {
     create, update,

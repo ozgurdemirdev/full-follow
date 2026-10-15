@@ -1,4 +1,5 @@
 import { FFError, resolveRef, type Ctx } from "@fullfollow/core";
+import { m } from "../messages";
 
 /**
  * Kişinin firması adla verilip (`company: "ABC Ltd"`) bulunamazsa firma açılır: toplu listede firmalar ayrıca eklenmesin.
@@ -7,7 +8,7 @@ import { FFError, resolveRef, type Ctx } from "@fullfollow/core";
 export function withCompany(ctx: Ctx, data: Record<string, any>): Record<string, any> {
   if (typeof data.company !== "string" || !data.company.trim() || data.company_id !== undefined) return data;
   const companies = ctx.mod("companies");
-  if (!companies) throw new FFError("validation", `firma adı verildi ("${data.company}") ama "companies" modülü kurulu değil; firma adı yerine company_id ver`);
+  if (!companies) throw new FFError("validation", m.errors.companyModuleOff(data.company));
   const { company, ...rest } = data;
   try {
     return { ...rest, company_id: resolveRef(ctx, "company", company) };

@@ -4,6 +4,8 @@ import { run } from "../api/actions";
 import type { Thread } from "../api/types";
 import { openSheet } from "../app/ui";
 import { ago } from "../lib/format";
+import { m as kit } from "../messages";
+import { comments as m } from "../messages.comments";
 import { Who } from "./ui";
 
 /** A label above a value (the facts panels of the person overlay, and the contributions other modules make to them) */
@@ -30,8 +32,8 @@ export function Section({ title, children, right }: { title: string; children: R
 export function EditDelete({ onEdit, onDelete, label = "" }: { onEdit?: () => void; onDelete?: () => void; label?: string }) {
   return (
     <span className="flex flex-none gap-1">
-      {onEdit ? <button type="button" className="btn btn-ghost btn-sm" aria-label={`${label} düzenle`.trim()} onClick={onEdit}>Düzenle</button> : null}
-      {onDelete ? <button type="button" className="btn btn-ghost btn-sm text-danger" aria-label={`${label} sil`.trim()} onClick={onDelete}>Sil</button> : null}
+      {onEdit ? <button type="button" className="btn btn-ghost btn-sm" aria-label={m.box.editLabel(label)} onClick={onEdit}>{kit.edit}</button> : null}
+      {onDelete ? <button type="button" className="btn btn-ghost btn-sm text-danger" aria-label={m.box.deleteLabel(label)} onClick={onDelete}>{kit.delete}</button> : null}
     </span>
   );
 }
@@ -39,10 +41,10 @@ export function EditDelete({ onEdit, onDelete, label = "" }: { onEdit?: () => vo
 /** Kayda bağlı yorum konuları (Claude ile) */
 export function Comments({ target, threads }: { target: { type: string; id: number; label: string }; threads: Thread[] }) {
   return (
-    <Section title="Yorumlar (Claude ile)" right={
-      <button type="button" className="btn btn-ghost px-0 text-base-sm" onClick={() => openSheet("comment", { target })}>Yeni konu</button>
+    <Section title={m.box.title} right={
+      <button type="button" className="btn btn-ghost px-0 text-base-sm" onClick={() => openSheet("comment", { target })}>{m.box.newThread}</button>
     }>
-      {threads.length === 0 ? <span className="text-base-sm text-text-muted">Claude’a bu kayıtla ilgili soru ya da not yazabilirsin.</span> : null}
+      {threads.length === 0 ? <span className="text-base-sm text-text-muted">{m.box.empty}</span> : null}
       {threads.map((t) => <ThreadBox key={t.id} t={t} />)}
     </Section>
   );
@@ -55,7 +57,7 @@ function ThreadBox({ t }: { t: Thread }) {
     if (!reply.trim()) return;
     setBusy(true);
     try {
-      await run("post", "/comments", { reply_to: t.id, body: reply.trim() }, { ok: "Cevap yazıldı" });
+      await run("post", "/comments", { reply_to: t.id, body: reply.trim() }, { ok: m.replied });
       setReply("");
     } catch {
       /* bildirim run() içinde */
@@ -77,11 +79,11 @@ function ThreadBox({ t }: { t: Thread }) {
       ))}
       {!t.resolved_at ? (
         <div className="flex gap-3">
-          <input className="inp min-w-0 flex-1" placeholder="Cevap yaz" aria-label="Cevap yaz" value={reply}
+          <input className="inp min-w-0 flex-1" placeholder={kit.writeReply} aria-label={kit.writeReply} value={reply}
             onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), send())} />
-          <button type="button" className="btn btn-sec" disabled={busy || !reply.trim()} onClick={send}>Cevapla</button>
+          <button type="button" className="btn btn-sec" disabled={busy || !reply.trim()} onClick={send}>{kit.reply}</button>
         </div>
-      ) : <span className="text-sm text-text-muted">Konu kapandı</span>}
+      ) : <span className="text-sm text-text-muted">{m.box.closed}</span>}
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { byRecord } from "@kit/app/modules/links";
 import { BOARD_ICON } from "@kit/components/boardIcons";
 import { FORM_ICON } from "@kit/components/forms/icons";
 import { norm } from "@kit/lib/format";
+import { m as kit } from "@kit/messages";
+import { m } from "./messages";
 import { OrgPeople } from "./components/OrgPeople";
 import { PEOPLE_PATH } from "./paths";
 
@@ -17,26 +19,26 @@ const followUpCount = (t: Today) => (t.follow_ups?.people?.total ?? 0) + (t.foll
 
 export default defineWebModule({
   key: "people",
-  label: "Kişiler",
+  label: kit.nouns.people,
   routes: [{ page: "people", path: PEOPLE_PATH, params: "/:id?", load: () => import("./pages/People") }],
   nav: [{
-    group: "Network", order: 30, label: "Kişiler", icon: "users", path: PEOPLE_PATH,
+    group: kit.navGroups.network, order: 30, label: kit.nouns.people, icon: "users", path: PEOPLE_PATH,
     useBadge: () => useQuery<Today>(K.today).data?.network?.awaiting.total,
   }],
   dashboard: [
-    { id: "follow-ups", order: 60, show: (t) => followUpCount(t) > 0, load: () => import("./cards").then((m) => ({ default: m.FollowUpsDashCard })) },
+    { id: "follow-ups", order: 60, show: (t) => followUpCount(t) > 0, load: () => import("./cards").then((mod) => ({ default: mod.FollowUpsDashCard })) },
   ],
   quickAdd: [{
-    kind: "person", name: "Kişi", key: "K", dest: "Kişiler", icon: BOARD_ICON.users, tone: "info", group: "Kişiler ve iletişim", order: 10,
-    form: { noun: "Kişi", dest: "Kişiler’e eklenir", icon: FORM_ICON.userPlus, base: "/people", editId: (p) => p.person_id, page: byRecord("person") },
-    load: () => import("./forms/PersonForm").then((m) => ({ default: m.PersonForm })),
+    kind: "person", name: kit.nouns.person, key: "K", dest: kit.nouns.people, icon: BOARD_ICON.users, tone: "info", group: kit.quickGroups.people, order: 10,
+    form: { noun: kit.nouns.person, dest: m.formAddedTo, icon: FORM_ICON.userPlus, base: "/people", editId: (p) => p.person_id, page: byRecord("person") },
+    load: () => import("./forms/PersonForm").then((mod) => ({ default: mod.PersonForm })),
   }],
   links: { person: (id) => `${PEOPLE_PATH}/${id}` },
   search: [{
     id: "people", order: 10, dataKey: K.people,
     match: (p: Person, q, ctx) => (
       norm(p.name).includes(q) || norm(p.company_name).includes(q) || norm(p.email).includes(q) || norm(p.handle).includes(q)
-        ? { key: `p${p.id}`, label: p.name, sub: p.company_name ?? "Kişi", href: ctx.recordHref("person", p.id) }
+        ? { key: `p${p.id}`, label: p.name, sub: p.company_name ?? kit.nouns.person, href: ctx.recordHref("person", p.id) }
         : null
     ),
   }],

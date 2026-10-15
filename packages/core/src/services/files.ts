@@ -1,4 +1,6 @@
+import { SUMMARY_PREVIEW_CHARS } from "../constants";
 import { emit, parse, rows, stamp, type Ctx } from "../context";
+import { m } from "../messages";
 import { files } from "../db/schema";
 import { fileCreate } from "../schemas";
 import { assertAttachTarget, requireRow, requireTarget, targetLink, truncate } from "./shared";
@@ -24,12 +26,12 @@ export function filesService(ctx: Ctx) {
     return ctx.db.transaction((tx) => {
       requireTarget(ctx, d.target_type, d.target_id);
       const r = tx.insert(files).values({ ...d, ...stamp(ctx) }).returning().get();
-      emit(tx, ctx, { type: "file.uploaded", ...owner(d), summary: `Dosya eklendi: ${truncate(d.name, 60)}`, data: { file_id: r.id } });
+      emit(tx, ctx, { type: "file.uploaded", ...owner(d), summary: m.files.added(truncate(d.name, SUMMARY_PREVIEW_CHARS)), data: { file_id: r.id } });
       return { row: r, effects: [] as string[] };
     });
   }
 
-  const get = (id: number) => requireRow<FileRow>(ctx, "files", id, "dosya");
+  const get = (id: number) => requireRow<FileRow>(ctx, "files", id, m.noun.file);
 
   function remove(id: number) {
     const cur = get(id);
@@ -38,8 +40,8 @@ export function filesService(ctx: Ctx) {
       // what points at the file (an offer's link to it) is emptied by the module that owns it
       announceTrashed(ctx, bin, "file", id);
       bin.take("files", "id = ?", id);
-      bin.commit(tx, "file", id, `Dosya: ${truncate(cur.name, 60)}`);
-      emit(tx, ctx, { type: "file.deleted", ...owner(cur), summary: `Dosya silindi: ${truncate(cur.name, 60)}` });
+      bin.commit(tx, "file", id, m.files.entry(truncate(cur.name, SUMMARY_PREVIEW_CHARS)));
+      emit(tx, ctx, { type: "file.deleted", ...owner(cur), summary: m.files.deleted(truncate(cur.name, SUMMARY_PREVIEW_CHARS)) });
       return { effects: [] as string[], trash: { type: "file", id } };
     });
   }

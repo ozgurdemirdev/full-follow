@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { FFError, norm, row, rows, type Ctx } from "../context";
 import type { Q } from "../db/client";
 import { ideas, opportunities } from "../db/schema";
-import { MODULE_TYPE_OWNER, type CommentTarget } from "../constants";
+import { AMBIGUOUS_SHOWN, MODULE_TYPE_OWNER, type CommentTarget } from "../constants";
+import { m } from "../messages";
 import type { EntityRef } from "../modules/types";
 
 /** Table of a comment target type, from the installed module that owns it; undefined for an unknown type or one whose module is not installed */
@@ -13,7 +14,7 @@ function requireTargetTable(ctx: Ctx, type: string): string {
   const table = targetTable(ctx, type);
   if (!table) {
     const owner = (MODULE_TYPE_OWNER as Record<string, string>)[type];
-    throw new FFError("validation", owner ? `"${type}" türü için "${owner}" modülü kurulu değil` : `bilinmeyen kayıt türü "${type}"`);
+    throw new FFError("validation", owner ? m.moduleNotInstalled(type, owner) : m.unknownRecordType(type));
   }
   return table;
 }
@@ -25,18 +26,19 @@ export const requireTarget = (ctx: Ctx, type: string, id: number) => requireRow(
 export function assertAttachTarget(ctx: Ctx, type: string, allowed: readonly string[]): void {
   if (allowed.includes(type)) return;
   requireTargetTable(ctx, type);
-  throw new FFError("validation", `target_type: Invalid option: expected one of ${allowed.map((t) => `"${t}"`).join("|")}`);
+  throw new FFError("validation", m.refs.attachTargetInvalid(allowed.map((t) => `"${t}"`).join("|")));
 }
 
 export const TABLE_LABEL: Record<string, string> = {
-  people: "kişi", companies: "firma", opportunities: "fırsat", projects: "proje", tasks: "görev",
-  drafts: "taslak", payments: "ödeme", sources: "kaynak", comments: "yorum", touches: "temas",
-  sectors: "sektör", notes: "not", posts: "paylaşım", templates: "şablon", ideas: "fikir", own_projects: "kendi projesi", idea_people: "fikir ilgisi", tags: "etiket", links: "link", daily_goals: "hedef", files: "dosya", offers: "teklif", opportunity_people: "ekip üyesi",
+  people: m.noun.person, companies: m.noun.company, opportunities: m.noun.opportunity, projects: m.noun.project, tasks: m.noun.task,
+  drafts: m.noun.draft, payments: m.noun.payment, sources: m.noun.source, comments: m.noun.comment, touches: m.noun.touch,
+  sectors: m.noun.sector, notes: m.noun.note, posts: m.noun.post, templates: m.noun.template, ideas: m.noun.idea, own_projects: m.noun.ownProject,
+  idea_people: m.noun.ideaPerson, tags: m.noun.tag, links: m.noun.link, daily_goals: m.noun.goal, files: m.noun.file, offers: m.noun.offer, opportunity_people: m.noun.opportunityPerson,
 };
 
 export function requireRow<T = any>(ctx: Ctx, table: string, id: number, what = TABLE_LABEL[table] ?? table): T {
   const r = row<T>(ctx, `SELECT * FROM ${table} WHERE id = ?`, id);
-  if (!r) throw new FFError("not_found", `${what} #${id} bulunamadı`);
+  if (!r) throw new FFError("not_found", m.notFound(what, id));
   return r;
 }
 
@@ -80,9 +82,9 @@ export const truncate = (s: string | null | undefined, n: number) => {
 // ---- İsimle referans ----
 
 const CORE_REFS = {
-  source: { table: "sources", col: "name", label: "kaynak" },
-  sector: { table: "sectors", col: "name", label: "sektör" },
-  tag: { table: "tags", col: "name", label: "etiket" },
+  source: { table: "sources", col: "name", label: m.noun.source },
+  sector: { table: "sectors", col: "name", label: m.noun.sector },
+  tag: { table: "tags", col: "name", label: m.noun.tag },
 } as const;
 export type RefType = keyof typeof CORE_REFS;
 
@@ -95,23 +97,23 @@ export function resolveRef(ctx: Ctx, type: string, ref: string | number): number
   const t = refOf(ctx, type);
   if (!t) {
     const owner = (MODULE_TYPE_OWNER as Record<string, string>)[type];
-    throw new FFError("validation", owner ? `"${type}" türü için "${owner}" modülü kurulu değil` : `${type} isimle verilemez`);
+    throw new FFError("validation", owner ? m.moduleNotInstalled(type, owner) : m.refs.byNameImpossible(type));
   }
   const s = String(ref).trim();
-  const m = /^#?(\d+)$/.exec(s);
-  if (m) {
-    requireRow(ctx, t.table, Number(m[1]), t.label);
-    return Number(m[1]);
+  const idRef = /^#?(\d+)$/.exec(s);
+  if (idRef) {
+    requireRow(ctx, t.table, Number(idRef[1]), t.label);
+    return Number(idRef[1]);
   }
   const needle = norm(s);
-  if (!needle) throw new FFError("validation", `${t.label} adı boş`);
+  if (!needle) throw new FFError("validation", m.refs.nameEmpty(t.label));
   const all = rows<{ id: number; n: string }>(ctx, `SELECT id, ${t.col} AS n FROM ${t.table}`);
   const exact = all.filter((r) => norm(r.n) === needle);
   const hits = exact.length ? exact : all.filter((r) => norm(r.n).includes(needle));
   if (hits.length === 1) return hits[0].id;
-  if (hits.length === 0) throw new FFError("not_found", `${t.label} "${s}" bulunamadı`);
-  const cand = hits.slice(0, 8).map((h) => ({ id: h.id, label: h.n }));
-  throw new FFError("ambiguous", `"${s}" birden fazla ${t.label} ile eşleşiyor: ${cand.map((c) => `#${c.id} ${c.label}`).join(", ")}`, cand);
+  if (hits.length === 0) throw new FFError("not_found", m.refs.notFound(t.label, s));
+  const cand = hits.slice(0, AMBIGUOUS_SHOWN).map((h) => ({ id: h.id, label: h.n }));
+  throw new FFError("ambiguous", m.refs.ambiguous(s, t.label, cand.map((c) => `#${c.id} ${c.label}`).join(", ")), cand);
 }
 
 const CORE_INPUT_REFS: Record<string, [string, string]> = {

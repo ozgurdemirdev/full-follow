@@ -15,7 +15,11 @@ import { BoardIcon } from "@kit/components/boardIcons";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { toast } from "@kit/components/toast";
 import { avatarPair, ErrorBox } from "@kit/components/ui";
+import { m as kit } from "@kit/messages";
+
+import { m } from "../messages";
 import { Aside } from "./Aside";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Claude mode of the composer: `id` is the company it was switched on for, `replyTo` the thread being answered */
 interface ClaudeMode {
@@ -31,15 +35,15 @@ function HeaderMenu({ v, onClaude, onClose }: { v: CompanyView; onClaude: () => 
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
-      <button type="button" className="ppl-round" aria-label="Diğer işlemler" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={2.4} />
+      <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
-        {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { company_id: c.id }))}>Temas ekle</button> : null}
-        {quickByKind.has("draft") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { company_id: c.id, channel: "email" }))}>Taslak yaz</button> : null}
-        {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(onClaude)}>Claude’a yaz</button> : null}
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("company", { edit: c.id }))}>Düzenle, web ve hesaplar</button>
-        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/companies/${c.id}`, c.name).then(onClose).catch(() => {}))}>Sil</button>
+        {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { company_id: c.id }))}>{m.overlay.addTouch}</button> : null}
+        {quickByKind.has("draft") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { company_id: c.id, channel: "email" }))}>{m.overlay.writeDraft}</button> : null}
+        {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(onClaude)}>{m.overlay.writeToClaude}</button> : null}
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("company", { edit: c.id }))}>{m.overlay.editFields}</button>
+        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/companies/${c.id}`, c.name).then(onClose).catch(() => {}))}>{kit.delete}</button>
       </div>
     </div>
   );
@@ -67,17 +71,17 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
 
   const ask = () => {
     if (!v) return;
-    if (drafted.has(v.c.id)) return toast("Taslak zaten yazılıyor");
+    if (drafted.has(v.c.id)) return toast(m.overlay.draftPending);
     askCompanyDraft(v.c).then(() => markDrafted(v.c.id)).catch(() => {});
   };
   const site = v?.c.website ? siteLabel(v.c.website) : null;
-  const sub = v ? [v.c.sector_path, v.c.city].filter(Boolean).join(" · ") : "";
+  const sub = v ? [v.c.sector_path, v.c.city].filter(Boolean).join(m.sep) : "";
 
   return (
     <ExpandOverlay
       open={!!id && !!v}
       from={from}
-      title={v?.c.name ?? "Firma"}
+      title={v?.c.name ?? kit.nouns.company}
       onClose={onClose}
       bodyClassName="ppl-body co-body"
       header={v ? (
@@ -90,18 +94,18 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
             </div>
             <span className="text-base text-text-secondary">
               {sub}
-              {site ? <>{sub ? " · " : ""}<a href={webUrl(v.c.website!)} target="_blank" rel="noreferrer" className="text-text-soft">{site}</a></> : null}
+              {site ? <>{sub ? m.sep : ""}<a href={webUrl(v.c.website!)} target="_blank" rel="noreferrer" className="text-text-soft">{site}</a></> : null}
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
-            {quickByKind.has("person") ? <button type="button" className="co-btn" onClick={() => openSheet("person", { company_id: v.c.id })}>Kişi ekle</button> : null}
+            {quickByKind.has("person") ? <button type="button" className="co-btn" onClick={() => openSheet("person", { company_id: v.c.id })}>{m.overlay.addPerson}</button> : null}
             <button type="button" className="ppl-ask" onClick={ask}>
               <BoardIcon name="pen" className="size-icon-chip" />
-              {drafted.has(v.c.id) ? "Taslak istendi" : "Claude’dan taslak iste"}
+              {drafted.has(v.c.id) ? m.overlay.draftAsked : m.overlay.askDraft}
             </button>
             <HeaderMenu v={v} onClaude={() => setClaude({ id: v.c.id, replyTo: null })} onClose={onClose} />
-            <button type="button" className="ppl-round" data-close aria-label="Kapat" onClick={onClose}>
-              <BoardIcon name="close" className="size-icon-md" stroke={2} />
+            <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
+              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           </div>
         </>

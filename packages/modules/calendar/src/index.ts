@@ -2,7 +2,9 @@ import { defineModule, row, type RecordTrashed } from "@fullfollow/core";
 import { calendarApi } from "./api";
 import { entities } from "./entities";
 import { mcp } from "./mcp";
+import { m } from "./messages";
 import { calendarServices } from "./service";
+import { ALL_ROWS } from "./service/constants";
 
 export { parseQuickTask, taskKindOf, type QuickTask } from "./service/quickAdd";
 
@@ -12,7 +14,7 @@ export { parseQuickTask, taskKindOf, type QuickTask } from "./service/quickAdd";
  */
 export default defineModule({
   key: "calendar",
-  label: "Takvim",
+  label: m.label,
   smoke: ["/api/tasks", "/api/goals", "/api/plan", "/api/calendar"],
   uses: ["projects", "drafts", "ideas"],
   api: calendarApi,
@@ -34,7 +36,7 @@ export default defineModule({
     timelineKinds: {
       "task.done": { kind: "gorev" },
     },
-    trashTypes: [{ type: "task", label: "görev" }, { type: "goal", label: "hedef" }],
+    trashTypes: [{ type: "task", label: m.task }, { type: "goal", label: m.goal }],
     commentTargets: {
       task: {
         table: "tasks",
@@ -44,12 +46,12 @@ export default defineModule({
     },
     chatCards: {
       task: (ctx, id) => {
-        const r = calendarServices(ctx).tasks.list({ filter: { all: true }, limit: 100000 }).rows.find((t) => t.id === id);
+        const r = calendarServices(ctx).tasks.list({ filter: { all: true }, limit: ALL_ROWS }).rows.find((t) => t.id === id);
         if (!r) throw new Error("task not found");
         return { title: r.title, due_date: r.due_date, done: !!r.done_at };
       },
       goal: (ctx, id) => {
-        const r = calendarServices(ctx).goals.find({ limit: 100000 }).rows.find((g) => g.id === id);
+        const r = calendarServices(ctx).goals.find({ limit: ALL_ROWS }).rows.find((g) => g.id === id);
         if (!r) throw new Error("goal not found");
         const today = ctx.mod("calendar")!.plan().goals.find((g) => g.id === id);
         return { title: r.title, target: r.target, done: today?.done ?? 0 };

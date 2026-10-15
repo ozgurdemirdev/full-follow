@@ -1,5 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { SETTINGS_ROW_LIMIT, type SettingRow } from "../../lib/settings";
+import { parts } from "../../messages.parts";
+
+const m = parts.settings;
 
 /** One settings row of the board: name and hint on the left, the control on the right (or under them when wide) */
 export function SetRowView({ row }: { row: SettingRow }) {
@@ -26,7 +29,7 @@ export function SetSection({ name, sub, empty, rows }: { name: string; sub?: str
       </div>
       {shown.map((r) => <SetRowView key={r.id} row={r} />)}
       {rows.length > shown.length ? (
-        <button type="button" className="set-more" onClick={() => setAll(true)}>{rows.length - shown.length} kayıt daha</button>
+        <button type="button" className="set-more" onClick={() => setAll(true)}>{m.moreRows(rows.length - shown.length)}</button>
       ) : null}
       {rows.length === 0 && empty ? <p className="set-empty">{empty}</p> : null}
     </section>

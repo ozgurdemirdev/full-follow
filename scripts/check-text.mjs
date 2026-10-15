@@ -52,6 +52,8 @@ function check(file) {
     const text = textOf(node);
     if (text != null && !ts.isImportDeclaration(node.parent)) {
       const p = node.parent;
+      // a schema description is English API documentation (it may quote Turkish input words like "bugün")
+      if (ts.isCallExpression(p) && callee(p.expression) === "describe") return ts.forEachChild(node, visit);
       const prop = ts.isPropertyAssignment(p) ? nameOf(p.name) : ts.isJsxAttribute(p) ? nameOf(p.name) : null;
       if (TURKISH.test(text)) report(sf, node, `text ${short(text)}`);
       else if (prop && TEXT_PROPS.has(prop) && LETTER.test(text)) report(sf, node, `${prop} ${short(text)}`);

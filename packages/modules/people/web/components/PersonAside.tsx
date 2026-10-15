@@ -9,6 +9,8 @@ import { agoText, warmth, WARMTH_NAME } from "../people";
 import { profileUrl } from "@kit/lib/network";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Fact } from "@kit/components/contact";
+import { m as kit } from "@kit/messages";
+import { m } from "../messages";
 import { Rhythm } from "./Rhythm";
 
 const HREF: Record<string, (v: string) => string> = {
@@ -24,12 +26,12 @@ function RhythmPanel({ p }: { p: Person }) {
   return (
     <div className="ppl-panel" data-warm={warmth(p.days_since)}>
       <div className="flex items-baseline justify-between">
-        <span className="text-base-sm text-text-secondary">İlişki ritmi</span>
+        <span className="text-base-sm text-text-secondary">{m.aside.rhythm}</span>
         <span className="ppl-warmtext text-sm">{WARMTH_NAME[warmth(p.days_since)]}</span>
       </div>
       <Rhythm weeks={p.rhythm} large />
       <span className="text-sm text-text-secondary">
-        {p.last_touch_at ? `Son temas ${agoText(p.days_since)}` : "Henüz temas yok"} · {p.rhythm.length} haftada {total} temas
+        {m.aside.rhythmLine(p.last_touch_at ? m.aside.lastTouch(agoText(p.days_since)) : m.noTouch, p.rhythm.length, total)}
       </span>
     </div>
   );
@@ -46,8 +48,8 @@ function Channels({ p, card, chan, onChan }: { p: Person; card?: PersonCard; cha
         const sum = card?.channels.find((x) => x.channel === c.key);
         return (
           <div key={c.key} className="ppl-chrow">
-            <button type="button" className="ppl-chic" aria-pressed={chan === c.key} aria-label={`${c.label} temaslarını göster`}
-              title={sum ? `${sum.out_count} giden, ${sum.in_count} gelen · son ${fmtDay(sum.last_at)}` : c.label} onClick={() => onChan(chan === c.key ? null : c.key)}
+            <button type="button" className="ppl-chic" aria-pressed={chan === c.key} aria-label={m.aside.showChannel(c.label)}
+              title={sum ? m.aside.channelSummary(sum.out_count, sum.in_count, fmtDay(sum.last_at)) : c.label} onClick={() => onChan(chan === c.key ? null : c.key)}
               data-on={chan === c.key}>
               <BoardIcon name={c.icon} className="size-icon-xs" />
             </button>
@@ -62,7 +64,7 @@ function Channels({ p, card, chan, onChan }: { p: Person; card?: PersonCard; cha
         <div className="ppl-chrow">
           <span className="ppl-chic"><BoardIcon name="link" className="size-icon-xs" /></span>
           <span className="flex min-w-0 flex-col">
-            <span className="text-sm text-text-muted">Diğer</span>
+            <span className="text-sm text-text-muted">{kit.other}</span>
             <span className="truncate text-base-sm">{p.handle}</span>
           </span>
         </div>
@@ -75,23 +77,23 @@ function Channels({ p, card, chan, onChan }: { p: Person; card?: PersonCard; cha
 function Facts({ p, card }: { p: Person; card?: PersonCard }) {
   const v = card?.referral_value;
   const met = [
-    card?.referrer ? <RecordLink key="r" type="person" id={card.referrer.id} className="text-text-soft">Referans: {card.referrer.name}</RecordLink> : null,
+    card?.referrer ? <RecordLink key="r" type="person" id={card.referrer.id} className="text-text-soft">{m.aside.referrer(card.referrer.name)}</RecordLink> : null,
     p.source_name ? <span key="s">{p.source_name}</span> : null,
-    card?.post ? <RecordLink key="p" type="post" id={card.post.id} className="text-text-soft">Paylaşım: {card.post.title}</RecordLink> : null,
+    card?.post ? <RecordLink key="p" type="post" id={card.post.id} className="text-text-soft">{m.aside.post(card.post.title)}</RecordLink> : null,
   ].filter(Boolean);
   return (
     <div className="ppl-panel">
       <Slot name="person.overlay.facts" props={{ card }} />
-      <Fact label="Nasıl tanıştık">
-        {met.length ? met.map((m, i) => <span key={i}>{i ? " · " : ""}{m}</span>) : "Doğrudan bulundu"}
+      <Fact label={m.aside.metHow}>
+        {met.length ? met.map((part, i) => <span key={i}>{i ? m.sep : ""}{part}</span>) : m.foundDirectly}
       </Fact>
-      <Fact label="Referans değeri">
-        {v?.won ? <span className="text-accent">{lira(v.won_value)} · {v.won} iş getirdi</span>
-          : v ? <span className="text-text-secondary">{v.direct} kişi tanıttı</span>
-          : <span className="text-text-muted">Henüz kimseyi getirmedi</span>}
+      <Fact label={m.aside.referralValue}>
+        {v?.won ? <span className="text-accent">{m.aside.broughtWork(lira(v.won_value), v.won)}</span>
+          : v ? <span className="text-text-secondary">{m.aside.introduced(v.direct)}</span>
+          : <span className="text-text-muted">{m.aside.notYet}</span>}
       </Fact>
-      <Fact label="Temas durumu">{CONTACT_STATUS[p.contact_status] ?? p.contact_status}</Fact>
-      {p.influence ? <Fact label="Karar rolü">{INFLUENCE_LABEL[p.influence]}</Fact> : null}
+      <Fact label={m.fields.contactStatus}>{CONTACT_STATUS[p.contact_status] ?? p.contact_status}</Fact>
+      {p.influence ? <Fact label={m.fields.influence}>{INFLUENCE_LABEL[p.influence]}</Fact> : null}
       {p.tags.length || p.sectors.length ? (
         <div className="flex flex-wrap gap-2">
           {p.tags.map((t) => <span key={t} className="ppl-hash">#{t}</span>)}

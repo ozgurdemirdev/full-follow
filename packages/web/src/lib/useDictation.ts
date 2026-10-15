@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { dictation } from "../messages.lib";
+import { LOCALE } from "./i18n";
 
 // The browser's SpeechRecognition (Chrome, Edge) is not in the TypeScript DOM lib for every target
 interface Recognition {
@@ -16,7 +18,6 @@ interface Recognition {
 }
 type Ctor = new () => Recognition;
 
-const LANG = "tr-TR";
 /** no audio start event for this long counts as stalled */
 const STALL_MS = 6_000;
 /** Opera exposes the API but has no recognition service behind it: it listens and never returns text */
@@ -27,14 +28,7 @@ const ctor = (): Ctor | undefined => {
 };
 
 /** Why dictation failed, by the code useDictation reports (the texts of the toast and of the chat composer) */
-export const MIC_ERROR = {
-  denied: "Mikrofon izni verilmedi",
-  insecure: "Mikrofon yalnızca localhost ya da https adreslerinde açılır",
-  network: "Tarayıcının ses tanıma servisine ulaşılamadı (internet gerekir)",
-  nomic: "Mikrofon bulunamadı",
-  browser: "Opera ses tanımayı desteklemiyor, Chrome ya da Edge'de aç",
-  failed: "Ses tanıma çalışmadı, tekrar dene",
-} as const;
+export const MIC_ERROR = dictation;
 
 export interface Dictation {
   supported: boolean;
@@ -77,7 +71,7 @@ export function useDictation(onFinal: (text: string) => void): Dictation {
     // the browser only opens the microphone on localhost or https
     if (!window.isSecureContext) return setError("insecure");
     const r = new C();
-    r.lang = LANG;
+    r.lang = LOCALE;
     r.continuous = true;
     r.interimResults = true;
     r.onaudiostart = () => {

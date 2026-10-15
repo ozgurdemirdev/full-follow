@@ -3,6 +3,10 @@ import { pickable, useSectors, useSources, useTags } from "../api/keys";
 import type { Labeled, Sector } from "../api/types";
 import { CONTACT_STATUS, CONTACT_STATUSES } from "../lib/labels";
 import { usePopover } from "../lib/usePopover";
+import { m as kit } from "../messages";
+import { parts } from "../messages.parts";
+
+const m = parts.filters;
 
 export interface LabelFilter {
   tag: string;
@@ -32,24 +36,24 @@ export function LabelFilters({ value, onChange, counts }: { value: LabelFilter; 
   const set = (k: keyof LabelFilter) => (e: { target: { value: string } }) => onChange({ ...value, [k]: e.target.value });
   const active = Object.values(value).some(Boolean);
   return (
-    <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Filtreler">
-      <select className="inp w-auto" aria-label="Temas durumu" value={value.status} onChange={set("status")}>
-        <option value="">Tüm durumlar</option>
-        {CONTACT_STATUSES.map((s) => <option key={s} value={s}>{CONTACT_STATUS[s]}{counts?.[s] ? ` (${counts[s]})` : ""}</option>)}
+    <div className="flex flex-wrap items-center gap-3" role="group" aria-label={m.group}>
+      <select className="inp w-auto" aria-label={m.status} value={value.status} onChange={set("status")}>
+        <option value="">{m.allStatuses}</option>
+        {CONTACT_STATUSES.map((s) => <option key={s} value={s}>{CONTACT_STATUS[s]}{counts?.[s] ? m.count(counts[s]) : ""}</option>)}
       </select>
-      <select className="inp w-auto" aria-label="Etiket" value={value.tag} onChange={set("tag")}>
-        <option value="">Tüm etiketler</option>
+      <select className="inp w-auto" aria-label={m.tag} value={value.tag} onChange={set("tag")}>
+        <option value="">{m.allTags}</option>
         {pickable(tags.rows).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
       </select>
-      <select className="inp w-auto" aria-label="Sektör" value={value.sector} onChange={set("sector")}>
-        <option value="">Tüm sektörler</option>
+      <select className="inp w-auto" aria-label={m.sector} value={value.sector} onChange={set("sector")}>
+        <option value="">{m.allSectors}</option>
         {pickable(sectors.rows).map((s) => <option key={s.id} value={s.id}>{s.parent_id ? `· ${s.name}` : s.name}</option>)}
       </select>
-      <select className="inp w-auto" aria-label="Nereden buldum" value={value.source} onChange={set("source")}>
-        <option value="">Tüm kaynaklar</option>
+      <select className="inp w-auto" aria-label={m.source} value={value.source} onChange={set("source")}>
+        <option value="">{m.allSources}</option>
         {pickable(sources.rows).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
       </select>
-      {active ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => onChange(noFilter)}>Temizle</button> : null}
+      {active ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => onChange(noFilter)}>{kit.clear}</button> : null}
     </div>
   );
 }
@@ -61,11 +65,11 @@ export function MoreFilters({ value, onChange }: { value: LabelFilter; onChange:
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-chan ppl-filter" data-on={active > 0} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        Süzgeç{active ? ` · ${active}` : ""}
+        {active ? m.pillCount(active) : m.pill}
       </button>
-      <div role="dialog" aria-label="Süzgeç" aria-hidden={!open} className="ppl-pop" inert={!open}>
+      <div role="dialog" aria-label={m.pill} aria-hidden={!open} className="ppl-pop" inert={!open}>
         <LabelFilters value={value} onChange={onChange} />
-        {active ? <button type="button" className="ppl-pop-item" onClick={() => onChange(noFilter)}>Süzgeci temizle</button> : null}
+        {active ? <button type="button" className="ppl-pop-item" onClick={() => onChange(noFilter)}>{m.clearAll}</button> : null}
       </div>
     </div>
   );

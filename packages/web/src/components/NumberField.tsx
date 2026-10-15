@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type KeyboardEvent } from "react";
+import { LOCALE } from "../lib/i18n";
+import { parts } from "../messages.parts";
 
-const LOCALE = "tr-TR";
 const show = (n: number | null, prefix = "", suffix = "") => (n === null ? "" : `${prefix}${n.toLocaleString(LOCALE)}${suffix}`);
 const digitsOf = (s: string) => s.replace(/\D/g, "");
 const clamp = (n: number, min?: number, max?: number) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
@@ -76,9 +77,9 @@ export function NumberField({
   if (!stepper) return field;
   return (
     <span className="ff-stepper">
-      <button type="button" aria-label="Azalt" disabled={min !== undefined && (value ?? 0) <= min} onClick={() => bump(-1)}>−</button>
+      <button type="button" aria-label={parts.stepper.decrease} disabled={min !== undefined && (value ?? 0) <= min} onClick={() => bump(-1)}>−</button>
       {field}
-      <button type="button" aria-label="Artır" disabled={max !== undefined && (value ?? 0) >= max} onClick={() => bump(1)}>+</button>
+      <button type="button" aria-label={parts.stepper.increase} disabled={max !== undefined && (value ?? 0) >= max} onClick={() => bump(1)}>+</button>
     </span>
   );
 }

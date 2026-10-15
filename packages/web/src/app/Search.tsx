@@ -4,10 +4,16 @@ import { useQuery } from "../api/store";
 import type { List } from "../api/types";
 import { BoardIcon } from "../components/boardIcons";
 import { Icon } from "../components/icons";
+import { BLUR_CLOSE_MS, SEARCH_HITS } from "../lib/constants";
 import { norm } from "../lib/format";
 import { useRecordHref } from "../lib/useRecordHref";
+import { m as kit } from "../messages";
+import { shell } from "../messages.shell";
 import { useRegistry } from "./modules/registry";
 import type { SearchCtx, SearchHit, SearchSource } from "./modules/types";
+import { stroke as STROKE } from "../styles/tokens.json";
+
+const m = shell.search;
 
 const NO_HITS: SearchHit[] = [];
 
@@ -41,7 +47,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
   const report = useCallback((id: string, found: SearchHit[]) => setById((prev) => (prev[id] === found ? prev : { ...prev, [id]: found })), []);
   const folded = dq.trim() ? norm(dq.trim()) : "";
   // the sources report in their own order; the list is the first eight
-  const hits = useMemo(() => sources.flatMap((src) => byId[src.id] ?? NO_HITS).slice(0, 8), [sources, byId]);
+  const hits = useMemo(() => sources.flatMap((src) => byId[src.id] ?? NO_HITS).slice(0, SEARCH_HITS), [sources, byId]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -68,12 +74,12 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
     <div className={board ? "relative flex-none" : "relative hidden flex-none desk:block"}>
       {sources.map((src) => <SourceRunner key={src.id} source={src} armed={armed} q={folded} ctx={ctx} report={report} />)}
       <label className={board ? "dash-search" : "flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
-        {board ? <BoardIcon name="search" className="size-icon-btn" stroke={1.8} /> : <Icon name="search" className="size-icon-md" />}
+        {board ? <BoardIcon name="search" className="size-icon-btn" stroke={STROKE.thin} /> : <Icon name="search" className="size-icon-md" />}
         <input
           ref={input}
           type="search"
-          placeholder={board ? "Kişi, şirket, proje ara" : "Kişi, firma, fırsat ara"}
-          aria-label="Ara"
+          placeholder={board ? m.board : m.topbar}
+          aria-label={kit.search}
           role="combobox"
           aria-expanded={open && hits.length > 0}
           aria-controls="search-results"
@@ -84,7 +90,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
             setOpen(true);
           }}
           onBlur={() => {
-            blurTimer.current = setTimeout(() => setOpen(false), 120);
+            blurTimer.current = setTimeout(() => setOpen(false), BLUR_CLOSE_MS);
           }}
           onChange={(e) => {
             setQ(e.target.value);
@@ -99,7 +105,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
           }}
           className={`min-w-0 flex-grow border-0 bg-transparent text-text-primary outline-0 placeholder:text-text-muted [&::-webkit-search-cancel-button]:hidden ${board ? "text-base" : "text-base-sm"}`}
         />
-        {board ? <kbd className="dash-kbd">⌘K</kbd> : null}
+        {board ? <kbd className="dash-kbd">{m.shortcut}</kbd> : null}
       </label>
       {open && hits.length > 0 ? (
         <ul id="search-results" role="listbox" className="absolute right-0 top-full z-sheet mt-2 flex w-full flex-col rounded-card border border-border-menu bg-surface-menu p-2 shadow-menu">

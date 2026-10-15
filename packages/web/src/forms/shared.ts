@@ -6,7 +6,10 @@ import type { Mutation } from "../api/types";
 import { closeSheet, type SheetState } from "../app/ui";
 import type { Option } from "../components/Combo";
 import { CHANNEL, CHANNELS } from "../lib/labels";
+import { forms } from "../messages.forms";
 import { formMeta } from "./meta";
+
+const m = forms.shared;
 
 export interface FormProps {
   sheet: SheetState;
@@ -49,8 +52,8 @@ export function useSubmit(p: FormProps, fn: () => Promise<unknown>, validate?: (
  */
 export function saveRecord<T>(p: FormProps, editId: number | null | undefined, body: unknown, createBody: unknown = body) {
   const { noun, base, page } = formMeta(p.sheet.kind)!;
-  if (editId) return run<T>("patch", `${base}/${editId}`, body, { ok: `${noun} güncellendi`, open: page(editId, p.sheet.preset) });
-  return run<T>("post", base, createBody, { ok: `${noun} eklendi`, open: (r: Mutation<T>) => page((r.row as { id?: number } | undefined)?.id, p.sheet.preset) });
+  if (editId) return run<T>("patch", `${base}/${editId}`, body, { ok: m.updated(noun), open: page(editId, p.sheet.preset) });
+  return run<T>("post", base, createBody, { ok: m.created(noun), open: (r: Mutation<T>) => page((r.row as { id?: number } | undefined)?.id, p.sheet.preset) });
 }
 
 /** Anything a task or comment can be about: opportunity, project, person, company (one list, typed options) */
@@ -63,10 +66,10 @@ export function useLinkOptions(): LinkOption[] {
   return useMemo(() => {
     const list: LinkOption[] = [];
     let n = 0;
-    for (const o of opps.rows) list.push({ id: ++n, label: o.title, sub: `Fırsat · ${o.person_name}`, type: "opportunity", tid: o.id });
-    for (const x of projects.rows) list.push({ id: ++n, label: x.name, sub: "Proje", type: "project", tid: x.id });
-    for (const x of people.rows) list.push({ id: ++n, label: x.name, sub: x.company_name ?? "Kişi", type: "person", tid: x.id });
-    for (const x of companies.rows) list.push({ id: ++n, label: x.name, sub: "Firma", type: "company", tid: x.id });
+    for (const o of opps.rows) list.push({ id: ++n, label: o.title, sub: m.opportunitySub(o.person_name), type: "opportunity", tid: o.id });
+    for (const x of projects.rows) list.push({ id: ++n, label: x.name, sub: m.project, type: "project", tid: x.id });
+    for (const x of people.rows) list.push({ id: ++n, label: x.name, sub: x.company_name ?? m.person, type: "person", tid: x.id });
+    for (const x of companies.rows) list.push({ id: ++n, label: x.name, sub: m.company, type: "company", tid: x.id });
     return list;
   }, [opps.rows, projects.rows, people.rows, companies.rows]);
 }

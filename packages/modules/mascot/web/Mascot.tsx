@@ -2,11 +2,12 @@ import { useEffect, useRef } from "react";
 import { useElapsed } from "@kit/lib/useElapsed";
 import { useChatLive } from "@kit/lib/chatStore";
 import { isDesk } from "@kit/lib/media";
-import { MASCOT_TEXT } from "./text";
+import { m } from "./messages";
 import { ACT_ERROR_MS, ACT_MIN_MS, ACT_PROPS_MIN_SIZE, CFG, DRAG_THRESHOLD, FADE_CLASS, MASCOT_IDLE_MS, MAX_DT, PERCH_GAP, PERCH_HEIGHT, PERCH_X, PERCH_Y, SIZE } from "./config";
 import { mascotLive, mascotPrefs, useMascotLive, useMascotPrefs, type MascotPrefs } from "./mascotStore";
 import { activityOf, newDebounce, settle } from "./activity";
 import { bounds, cheer, createMotion, freeze, moodStep, pose, setActivity, simulate, type Env, type MotionState, type Pointer, type Rect, type Vec2 } from "./motion";
+import { FAB_MENU_SELECTOR, FAB_SELECTOR, IDLE_FALLBACK_MS } from "./constants";
 import { customMix, CUSTOM_MIX_AMOUNT, presetColors, type BellGlow } from "./palette";
 import type { MascotScene } from "./scene";
 
@@ -16,7 +17,15 @@ interface Props {
 }
 
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-const idle = (fn: () => void) => (typeof requestIdleCallback === "function" ? requestIdleCallback(fn) : setTimeout(fn, 0));
+/** Runs `fn` at the next idle moment; the returned function cancels it */
+const idle = (fn: () => void): (() => void) => {
+  if (typeof requestIdleCallback === "function") {
+    const handle = requestIdleCallback(fn);
+    return () => cancelIdleCallback(handle);
+  }
+  const timer = setTimeout(fn, IDLE_FALLBACK_MS);
+  return () => clearTimeout(timer);
+};
 /** a throw keeps the last pointer speed only if the pointer moved this recently (ms) */
 const STILL_MS = 90;
 const SPEED_KEEP = 0.6;
@@ -28,8 +37,6 @@ const OBSTACLE_MARGIN = 6;
 const REST_SPEED = 8;
 /** half width of the body as a fraction of the mascot width (the same number motion.ts collides with) */
 const BODY_HALF_W = 0.32;
-const FAB_SELECTOR = 'button[aria-label="Hızlı ekle"]';
-const FAB_MENU_SELECTOR = '[role="menu"][aria-label="Hızlı ekle"]:not([aria-hidden="true"])';
 
 /**
  * Beside the chat window at its middle, on its right side, else the left side, else on its top edge. Going to the other side is routed over the top of the window: up along its near side, across
@@ -146,7 +153,7 @@ function MascotBody({ onActivate }: Props) {
   useEffect(() => {
     let cancelled = false;
     mascotLive.setEngine("loading");
-    idle(async () => {
+    const cancelIdle = idle(async () => {
       const el = root.current, cv = canvas.current;
       if (!el || !cv || cancelled) return;
       try {
@@ -169,6 +176,7 @@ function MascotBody({ onActivate }: Props) {
     });
     return () => {
       cancelled = true;
+      cancelIdle();
       scene.current?.dispose();
       scene.current = null;
       mascotLive.setEngine("idle");
@@ -373,14 +381,14 @@ function MascotBody({ onActivate }: Props) {
       {!chat.open && chat.running && chat.status && (
         <div className="mascot-pill" role="status">
           <b>{chat.status}</b>
-          <i className="mono">{MASCOT_TEXT.seconds(seconds)}</i>
+          <i className="mono">{m.seconds(seconds)}</i>
         </div>
       )}
       <span className="cb-badge" aria-hidden="true" />
       <button
         type="button"
         className="mascot-hit"
-        aria-label={MASCOT_TEXT.open}
+        aria-label={m.open}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={() => release(false)}

@@ -2,23 +2,25 @@ import type { PlanTask, TaskKind } from "@kit/api/types";
 import type { CalendarDay, DueFollowUp, DuePayment } from "./types";
 import { linkTo } from "@kit/app/modules/links";
 import { addDaysIso, lira, toDate } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
 import { MILESTONE } from "@kit/lib/labels";
+import { m } from "./messages";
 
 /** What an item of the calendar is: a meeting, a follow-up, a payment or a plain task */
 export type Kind = "meet" | "follow" | "pay" | "task";
 
 export const KINDS: { key: Kind; label: string; dot: string }[] = [
-  { key: "meet", label: "Görüşme", dot: "bg-kind-meet" },
-  { key: "follow", label: "Takip", dot: "bg-kind-follow" },
-  { key: "pay", label: "Ödeme", dot: "bg-kind-pay" },
-  { key: "task", label: "Görev", dot: "bg-kind-task" },
+  { key: "meet", label: m.kinds.meet, dot: "bg-kind-meet" },
+  { key: "follow", label: m.kinds.follow, dot: "bg-kind-follow" },
+  { key: "pay", label: m.kinds.pay, dot: "bg-kind-pay" },
+  { key: "task", label: m.kinds.task, dot: "bg-kind-task" },
 ];
 export const KIND = Object.fromEntries(KINDS.map((k) => [k.key, k])) as Record<Kind, (typeof KINDS)[number]>;
 
 /** Task kinds of the core, as the calendar kinds */
 export const OF_TASK_KIND: Record<TaskKind, Kind> = { gorusme: "meet", takip: "follow", gorev: "task" };
 /** Time column of an item without a time */
-export const ANYTIME = "Gün içi";
+export const ANYTIME = m.anytime;
 /** A goal below this share of its target is shown as behind */
 export const GOAL_BEHIND = 0.66;
 const DAYS_IN_WEEK = 7;
@@ -43,18 +45,18 @@ type DayTask = Omit<PlanTask, "assignee">;
 export function itemsOf(date: string, tasks: DayTask[], payments: DuePayment[], followUps: DueFollowUp[], today: string): CalItem[] {
   const fromTask = (t: DayTask): CalItem => ({
     key: `t${t.id}`, time: t.due_time, title: t.title, kind: OF_TASK_KIND[t.kind], done: !!t.done_at, tick: { type: "task", id: t.id },
-    extra: t.due_date && t.due_date < date && !t.done_at ? ` · ${shortDate(t.due_date)} tarihliydi` : "",
+    extra: t.due_date && t.due_date < date && !t.done_at ? m.wasDue(shortDate(t.due_date)) : "",
   });
   const fromPayment = (p: DuePayment): CalItem => {
     const left = p.expected_amount - p.paid_amount;
     return {
       key: `p${p.id}`, time: null, title: `${p.project_name} ${MILESTONE[p.milestone] ?? p.milestone}`, kind: "pay", done: p.done,
-      extra: ` · ${lira(p.done ? p.expected_amount : left)}${!p.done && date < today ? " gecikti" : ""}`,
+      extra: ` · ${lira(p.done ? p.expected_amount : left)}${!p.done && date < today ? m.late : ""}`,
       tick: p.done ? null : { type: "payment", id: p.id, amount: left },
     };
   };
   const fromFollowUp = (f: DueFollowUp): CalItem => ({
-    key: `f${f.type}${f.id}`, time: null, title: `${f.name} takibi`, kind: "follow", done: f.done, extra: "", tick: null,
+    key: `f${f.type}${f.id}`, time: null, title: m.followOf(f.name), kind: "follow", done: f.done, extra: "", tick: null,
     href: linkTo(f.type, f.id) ?? undefined,
   });
   const all = [...tasks.map(fromTask), ...payments.map(fromPayment), ...followUps.map(fromFollowUp)];
@@ -66,7 +68,7 @@ const dayItems = (d: CalendarDay, today: string) => itemsOf(d.date, d.tasks, d.p
 /** Items of every day of the feed, by date */
 export const itemsByDate = (days: CalendarDay[], today: string) => new Map(days.map((d) => [d.date, dayItems(d, today)]));
 
-const shortDate = (iso: string) => new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" }).format(toDate(iso));
+const shortDate = (iso: string) => new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short" }).format(toDate(iso));
 
 /** Monday on or before the date */
 export const mondayOf = (iso: string) => addDaysIso(iso, -((toDate(iso).getDay() + 6) % DAYS_IN_WEEK));
@@ -91,6 +93,9 @@ export function rangeOf(view: View, anchor: string): { from: string; to: string 
   return { from: mondayOf(first), to: addDaysIso(mondayOf(last), DAYS_IN_WEEK - 1) };
 }
 
-const dayMonthWeekday = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", weekday: "long" });
+const dayMonthWeekday = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "long", weekday: "long" });
 /** "13 Ekim Salı", with "Bugün · " in front for today */
-export const dayTitle = (iso: string, today: string) => `${iso === today ? "Bugün · " : ""}${dayMonthWeekday.format(toDate(iso))}`;
+export const dayTitle = (iso: string, today: string) => {
+  const day = dayMonthWeekday.format(toDate(iso));
+  return iso === today ? m.todayTitle(day) : day;
+};

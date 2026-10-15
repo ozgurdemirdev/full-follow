@@ -11,7 +11,11 @@ import { FormErrorsContext } from "../components/forms/context";
 import { FormSheet } from "../components/forms/FormSheet";
 import { ago } from "../lib/format";
 import { ASSIGNEE } from "../lib/labels";
+import { m as kit } from "../messages";
+import { forms } from "../messages.forms";
 import type { FormProps } from "./shared";
+
+const m = forms.quickAdd;
 
 const FORM_ID = "quick-form";
 
@@ -47,19 +51,19 @@ export default function QuickAdd() {
   const editId = sheet && meta ? (meta.editId?.(sheet.preset ?? {}) ?? null) : null;
   const row = useQuery<Detail<{ updated_at: string }>>(meta && editId && !meta.ownRead ? `${meta.base}/${editId}` : null);
   const noun = meta?.noun ?? "";
-  const dest = editId && row.data ? `Son değişiklik ${ago(row.data.row.updated_at)}${row.data.last_actor ? ` · ${ASSIGNEE[row.data.last_actor]}` : ""}` : (meta?.dest ?? "");
+  const dest = editId && row.data ? m.lastChange(ago(row.data.row.updated_at), row.data.last_actor ? ASSIGNEE[row.data.last_actor] : "") : (meta?.dest ?? "");
   const del = meta && editId ? () => void remove(`${meta.base}/${editId}`, noun).then(closeSheet).catch(() => {}) : undefined;
 
   return (
     <FormErrorsContext.Provider value={context}>
       <FormSheet
         open={!!sheet && !!entry}
-        title={`${noun} ${editId ? "düzenle" : "ekle"}`}
+        title={editId ? m.edit(noun) : m.create(noun)}
         icon={meta?.icon ?? ""}
         dest={dest}
         formId={FORM_ID}
         busy={busy}
-        saveLabel={busy ? "Kaydediliyor" : editId ? "Değişiklikleri kaydet" : "Kaydet"}
+        saveLabel={busy ? m.saving : editId ? m.saveChanges : kit.save}
         onDelete={del}
         onClose={closeSheet}
         banners={

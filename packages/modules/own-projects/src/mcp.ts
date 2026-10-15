@@ -1,4 +1,5 @@
 import type { McpDef } from "@fullfollow/core";
+import { m } from "./messages";
 
 type Row = Record<string, any>;
 
@@ -8,10 +9,10 @@ export const mcp: McpDef = {
   skip: ["sellable", "sellable_note", "open_ideas", "done_ideas"],
   entities: {
     own_project: {
-      kind: "kendi projesi",
+      kind: m.project,
       openable: true,
-      line: (r, f) => f.join(`#${r.id} ${r.name}`, f.label(r.status), r.stage && `aşama: ${f.label(r.stage)}`, `satılabilir: ${f.label(r.sellable)}`, `${r.open_ideas} açık fikir`, r.next_idea && `sıradaki: ${r.next_idea.title}`, r.sectors?.map((x: Row) => x.path).join(", ")),
-      details: (r) => [...(r.description ? [`ne yapıyor: ${r.description}`] : []), ...(r.sellable_note ? [`satış: ${r.sellable_note}`] : [])],
+      line: (r, f) => f.join(`#${r.id} ${r.name}`, f.label(r.status), r.stage && m.mcp.stage(f.label(r.stage)), m.mcp.sellable(f.label(r.sellable)), m.mcp.openIdeas(r.open_ideas), r.next_idea && m.mcp.nextIdea(r.next_idea.title), r.sectors?.map((x: Row) => x.path).join(", ")),
+      details: (r) => [...(r.description ? [m.mcp.does(r.description)] : []), ...(r.sellable_note ? [m.mcp.sale(r.sellable_note)] : [])],
     },
   },
   docs: {
@@ -21,7 +22,7 @@ export const mcp: McpDef = {
       { at: 602, text: "own_project {status,sellable,sector}; " },
     ],
     get: [{ at: 600, text: "own_project: ideas,links,comments" }],
-    save: [{ at: 202, text: "own_project: {name,description,status,stage:fikir|dogrulama|demo|urun|null,sellable:evet|belki|hayir,sellable_note,sectors,notes}; {from_idea:'fikir adı'} fikri projeye çevirir (alt fikirler taşınır, fikir çöpe). " }],
-    move: [{ at: 131, text: "Kendi projesi: aktif|beklemede|tamamlandi|birakildi." }],
+    save: [{ at: 202, text: m.docs.save }],
+    move: [{ at: 131, text: m.docs.move }],
   },
 };

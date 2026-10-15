@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { run } from "../api/actions";
 import type { Company, Person } from "../api/types";
+import { forms } from "../messages.forms";
 
 export interface Ref {
   id: number | null;
@@ -56,7 +57,7 @@ export async function ensurePerson(
     },
     { silent: true },
   );
-  if (!r.row) throw new Error("kişi açılamadı");
+  if (!r.row) throw new Error(forms.helpers.personNotCreated);
   return r.row.id;
 }
 

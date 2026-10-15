@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { CHANNELS, zodKit } from "@fullfollow/core";
+import { m } from "../messages";
 import { DEFAULT_TASK_KIND, GOAL_DAY_PRESETS, GOAL_METRICS, TASK_ASSIGNEES, TASK_KINDS, TIME_RE } from "./constants";
 
 const { id, text, optText, date, patch } = zodKit;
 
 /** HH:MM, 00:00 to 23:59. Empty value = clear. */
-const time = z.preprocess((v) => (v === "" ? null : v), z.string().regex(TIME_RE, "saat HH:MM olmalı (00:00 ile 23:59 arası)").nullable());
+const time = z.preprocess((v) => (v === "" ? null : v), z.string().regex(TIME_RE, m.errors.time).nullable());
 
 export const taskCreate = z.strictObject({
   title: text,

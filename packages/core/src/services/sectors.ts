@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { emit, FFError, norm, parse, row, rows, stamp, type Ctx } from "../context";
 import type { Q } from "../db/client";
+import { m } from "../messages";
 import { sectors } from "../db/schema";
 import { sectorCreate, sectorUpdate } from "../schemas";
 import { duplicate } from "./dupes";
@@ -44,16 +45,16 @@ const findChild = (ctx: Ctx, name: string, parentId: number | null) =>
 /** İki seviye kuralı: üst sektör ana sektör olmalı */
 function checkParent(ctx: Ctx, parentId: number | null | undefined, selfId?: number) {
   if (!parentId) return;
-  if (parentId === selfId) throw new FFError("validation", "sektör kendi altına bağlanamaz");
-  const p = requireRow(ctx, "sectors", parentId, "üst sektör");
-  if (p.parent_id) throw new FFError("validation", `sektör en fazla iki seviye: "${p.name}" zaten bir alt sektör`);
+  if (parentId === selfId) throw new FFError("validation", m.sectors.selfParent);
+  const p = requireRow(ctx, "sectors", parentId, m.noun.parentSector);
+  if (p.parent_id) throw new FFError("validation", m.sectors.twoLevelsOfParent(p.name));
 }
 
 function insert(q: Q, ctx: Ctx, name: string, parentId: number | null) {
   const dup = findChild(ctx, name, parentId);
-  if (dup) throw duplicate({ type: "sector", id: dup.id, label: dup.name, field: "ad", in_trash: !!dup.deleted_at });
+  if (dup) throw duplicate({ type: "sector", id: dup.id, label: dup.name, field: m.field.name, in_trash: !!dup.deleted_at });
   const r = q.insert(sectors).values({ name, parent_id: parentId, ...stamp(ctx) }).returning().get();
-  emit(q, ctx, { type: "sector.created", summary: `Sektör eklendi: ${sectorPath(ctx, r.id)!.path}` });
+  emit(q, ctx, { type: "sector.created", summary: m.sectors.added(sectorPath(ctx, r.id)!.path) });
   return r;
 }
 
@@ -65,11 +66,11 @@ function insert(q: Q, ctx: Ctx, name: string, parentId: number | null) {
 export function ensureSector(q: Q, ctx: Ctx, input: string | number | null): number | null {
   if (input === null || input === "") return null;
   const s = String(input).trim();
-  const m = /^#?(\d+)$/.exec(s);
-  if (m) return requireRow(ctx, "sectors", Number(m[1]), "sektör").id;
+  const idRef = /^#?(\d+)$/.exec(s);
+  if (idRef) return requireRow(ctx, "sectors", Number(idRef[1]), m.noun.sector).id;
   const parts = s.split(/\s*[>/]\s*/).map((x) => x.trim()).filter(Boolean);
   if (!parts.length) return null;
-  if (parts.length > 2) throw new FFError("validation", "sektör en fazla iki seviye: \"Ana > Alt\"");
+  if (parts.length > 2) throw new FFError("validation", m.sectors.twoLevels);
   if (parts.length === 1) {
     const all = rows<{ id: number; name: string; deleted_at: string | null }>(ctx, "SELECT id, name, deleted_at FROM sectors").filter((x) => norm(x.name) === norm(parts[0]));
     const live = all.filter((x) => !x.deleted_at);
@@ -77,7 +78,7 @@ export function ensureSector(q: Q, ctx: Ctx, input: string | number | null): num
     if (hits.length === 1) return hits[0].id;
     if (hits.length > 1) {
       const cand = hits.map((h) => sectorPath(ctx, h.id)!.path);
-      throw new FFError("ambiguous", `"${s}" birden fazla sektörle eşleşiyor: ${cand.join(", ")}. "Ana > Alt" biçiminde yaz`);
+      throw new FFError("ambiguous", m.sectors.ambiguous(s, cand.join(", ")));
     }
     return insert(q, ctx, parts[0], null).id;
   }
@@ -105,7 +106,7 @@ export function setSectorLinks(ctx: Ctx, links: SectorLinks, ownerId: number, id
   ctx.sqlite.prepare(`DELETE FROM ${links.table} WHERE ${links.owner} = ?`).run(ownerId);
   const insert = ctx.sqlite.prepare(`INSERT INTO ${links.table} (${links.owner}, sector_id, created_at, created_by) VALUES (?, ?, ?, ?)`);
   for (const sid of [...new Set(ids)]) {
-    requireRow(ctx, "sectors", sid, "sektör");
+    requireRow(ctx, "sectors", sid, m.noun.sector);
     insert.run(ownerId, sid, ctx.clock.now(), ctx.actor);
   }
 }
@@ -129,20 +130,20 @@ export function sectorsService(ctx: Ctx) {
   function update(id: number, input: unknown) {
     const d = parse(sectorUpdate, input);
     return ctx.db.transaction((tx) => {
-      const cur = requireRow(ctx, "sectors", id, "sektör");
+      const cur = requireRow(ctx, "sectors", id, m.noun.sector);
       if (d.parent_id !== undefined && d.parent_id !== cur.parent_id) {
         checkParent(ctx, d.parent_id, id);
         if (d.parent_id && row(ctx, "SELECT 1 x FROM sectors WHERE parent_id = ?", id)) {
-          throw new FFError("validation", `"${cur.name}" altında sektörler var; başka sektörün altına taşınamaz (en fazla iki seviye)`);
+          throw new FFError("validation", m.sectors.hasChildren(cur.name));
         }
       }
       const name = d.name ?? cur.name;
       const parent = d.parent_id !== undefined ? d.parent_id : cur.parent_id;
       const dup = findChild(ctx, name, parent);
-      if (dup && dup.id !== id) throw duplicate({ type: "sector", id: dup.id, label: dup.name, field: "ad", in_trash: !!dup.deleted_at });
+      if (dup && dup.id !== id) throw duplicate({ type: "sector", id: dup.id, label: dup.name, field: m.field.name, in_trash: !!dup.deleted_at });
       if (Object.keys(d).length) {
         tx.update(sectors).set({ ...d, updated_at: ctx.clock.now() }).where(eq(sectors.id, id)).run();
-        emit(tx, ctx, { type: "sector.updated", summary: `Sektör güncellendi: ${sectorPath(ctx, id)!.path}` });
+        emit(tx, ctx, { type: "sector.updated", summary: m.sectors.updated(sectorPath(ctx, id)!.path) });
       }
       return { row: requireRow(ctx, "sectors", id), effects: [] as string[] };
     });

@@ -5,7 +5,10 @@ import { run } from "@kit/api/actions";
 import { useCompanies, usePeople, useProjects, useThreads } from "@kit/api/keys";
 import type { Company, Person, Project, Thread } from "@kit/api/types";
 import { fmtMonth, norm, todayIso } from "@kit/lib/format";
+import { LOCALE } from "@kit/lib/i18n";
 import { daysSince } from "@kit/lib/people";
+import { m as kit } from "@kit/messages";
+import { m } from "./messages";
 
 /** Tiles drawn per step: the list can pass 300 companies, "daha fazla" adds the next step */
 export const TILE_PAGE = 48;
@@ -16,9 +19,9 @@ export const UNREACHED_NAMED = 2;
 
 export type Segment = Company["segment"];
 export type SegmentFilter = "all" | Segment;
-export const SEGMENT_LABEL: Record<Segment, string> = { client: "Müşteri", lead: "Aday", partner: "Partner" };
+export const SEGMENT_LABEL: Record<Segment, string> = m.segment;
 export const SEGMENT_FILTERS: { key: SegmentFilter; label: string }[] = [
-  { key: "all", label: "Hepsi" },
+  { key: "all", label: kit.all },
   { key: "client", label: SEGMENT_LABEL.client },
   { key: "lead", label: SEGMENT_LABEL.lead },
   { key: "partner", label: SEGMENT_LABEL.partner },
@@ -26,9 +29,9 @@ export const SEGMENT_FILTERS: { key: SegmentFilter; label: string }[] = [
 
 export type SortKey = "value" | "recent" | "name";
 export const SORTS: { key: SortKey; label: string }[] = [
-  { key: "value", label: "Değer" },
-  { key: "recent", label: "Son temas" },
-  { key: "name", label: "İsim" },
+  { key: "value", label: m.sorts.value },
+  { key: "recent", label: m.sorts.recent },
+  { key: "name", label: kit.fields.name },
 ];
 
 
@@ -114,7 +117,7 @@ const byValue = (a: CompanyView, b: CompanyView) => b.total - a.total;
 export const SORT: Record<SortKey, (a: CompanyView, b: CompanyView) => number> = {
   value: byValue,
   recent: (a, b) => (a.days ?? Infinity) - (b.days ?? Infinity) || byValue(a, b),
-  name: (a, b) => a.c.name.localeCompare(b.c.name, "tr"),
+  name: (a, b) => a.c.name.localeCompare(b.c.name, LOCALE),
 };
 
 export interface Totals {
@@ -149,4 +152,4 @@ export const siteLabel = (url: string) => url.replace(/^https?:\/\//i, "").repla
 // ------------------------------------------------------------ overlay
 /** Ask Claude for a message draft to the right person of the company (a task for Claude) */
 export const askCompanyDraft = (c: Pick<Company, "id" | "name">) =>
-  run("post", "/tasks", { title: `${c.name} için mesaj taslağı hazırla`, assignee: "claude", due_date: todayIso(), company_id: c.id }, { ok: "Claude doğru kişiye taslak yazıyor, Taslaklar’a düşecek" });
+  run("post", "/tasks", { title: m.draftTask(c.name), assignee: "claude", due_date: todayIso(), company_id: c.id }, { ok: m.draftAsked });

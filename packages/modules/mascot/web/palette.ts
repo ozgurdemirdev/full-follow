@@ -1,10 +1,12 @@
 // Colours come from the design tokens at runtime (the CSS custom properties set on the mascot element, see mascot.css),
 // so this file holds no colour literals.
+import { m } from "./messages";
+
 export const PRESET_IDS = ["amber", "mercan", "lila", "lagun", "nane"] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 export type ColorChoice = PresetId | "custom";
 
-export const PRESET_NAMES: Record<PresetId, string> = { amber: "Amber", mercan: "Mercan", lila: "Lila", lagun: "Lagün", nane: "Nane" };
+export const PRESET_NAMES: Record<PresetId, string> = m.presets;
 
 export interface BellGlow {
   bell: string;

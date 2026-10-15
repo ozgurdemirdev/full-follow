@@ -1,10 +1,12 @@
 // Mükerrer kontrol anahtarları: aynı e-posta, alan adı, firma adı, LinkedIn ve Instagram ikinci kez girilmesin.
 // Büyük/küçük harf, boşluk, Türkçe karakter, www/https ve adres biçimi farkları aynı anahtara iner.
 import type Database from "better-sqlite3";
+import { LANG } from "./i18n";
+import { m } from "./messages";
 
 /** küçük harf, Türkçe karakter ve aksan duyarsız */
 function fold(s: string): string {
-  return s.toLocaleLowerCase("tr").replace(/ı/g, "i").normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return s.toLocaleLowerCase(LANG).replace(/ı/g, "i").normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 const blank = (s: string | null | undefined) => !s || !String(s).trim();
@@ -69,7 +71,7 @@ export function contactKey(s: string | null | undefined): string | null {
 }
 
 export type KeyKind = "email" | "domain" | "name" | "instagram" | "linkedin";
-export const KEY_LABEL: Record<KeyKind, string> = { email: "e-posta", domain: "alan adı", name: "firma adı", instagram: "Instagram", linkedin: "LinkedIn" };
+export const KEY_LABEL: Record<KeyKind, string> = m.keyLabel;
 
 /** Kişinin anahtar sütunları */
 export function personKeys(p: { email?: string | null; instagram?: string | null; linkedin?: string | null }) {

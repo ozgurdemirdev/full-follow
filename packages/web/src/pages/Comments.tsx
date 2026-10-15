@@ -8,6 +8,10 @@ import { ThreadCard } from "../components/comments/ThreadCard";
 import { Masonry } from "../components/layout";
 import { ErrorBox, PageSkeleton, Segmented } from "../components/ui";
 import { recentTargets, stateOf, tabFromQuery, TABS, THREADS_SHOWN, type CTab } from "../lib/comments";
+import { m as kit } from "../messages";
+import { comments } from "../messages.comments";
+
+const m = comments.page;
 
 const NO_THREADS: Thread[] = [];
 
@@ -33,9 +37,9 @@ export default function Comments() {
 
   return (
     <Page
-      title="Yorumlar"
-      sub="Sen ve Claude, kayıtların üstünde konuşursunuz. Son söz sendeyse Claude cevaplar."
-      right={<Segmented label="Konular" size="lg" value={current} onChange={(i) => pick(TABS[i].key)} items={TABS.map((x, i) => ({ label: x.label, dot: x.dot, count: counts[i] }))} />}
+      title={kit.nouns.comments}
+      sub={m.sub}
+      right={<Segmented label={m.tabs} size="lg" value={current} onChange={(i) => pick(TABS[i].key)} items={TABS.map((x, i) => ({ label: x.label, dot: x.dot, count: counts[i] }))} />}
     >
       {threads.error && !threads.data ? <ErrorBox error={threads.error} retry={threads.reload} /> : null}
       {!threads.data ? (
@@ -51,7 +55,7 @@ export default function Comments() {
                 {shown.map((i) => <ThreadCard key={i.t.id} t={i.t} state={i.s} onSeen={markSeen} onReopened={pick} />)}
               </Masonry>
               {list.length > shown.length ? (
-                <button type="button" className="btn btn-ghost self-start" onClick={() => setLimit((n) => n + THREADS_SHOWN)}>{list.length - shown.length} konu daha</button>
+                <button type="button" className="btn btn-ghost self-start" onClick={() => setLimit((n) => n + THREADS_SHOWN)}>{m.more(list.length - shown.length)}</button>
               ) : null}
             </div>
           )}

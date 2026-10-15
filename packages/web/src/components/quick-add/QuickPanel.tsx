@@ -4,8 +4,11 @@ import type { QuickAddEntry } from "../../app/modules/types";
 import type { SheetKind } from "../../app/ui";
 import { useIsDesktop } from "../../lib/media";
 import { norm } from "../../lib/format";
+import { parts } from "../../messages.parts";
 import { FORM_ICON, PathIcon } from "../forms/icons";
 import type { QuickHost } from "./store";
+
+const m = parts.quick;
 
 /** An item matches by its name, its destination, or its letter */
 const matches = (it: QuickAddEntry, q: string) => !q || norm(`${it.name} ${it.dest}`).includes(q) || norm(it.key) === q;
@@ -49,7 +52,7 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
 
   let index = -1;
   return (
-    <div className="quick-pop" role="menu" aria-label="Yeni kayıt" data-host={host} onKeyDown={key}>
+    <div className="quick-pop" role="menu" aria-label={m.title} data-host={host} onKeyDown={key}>
       <span className="quick-grab" aria-hidden="true" />
       <div className="quick-search">
         <PathIcon d={FORM_ICON.search} className="size-icon-chip" />
@@ -57,8 +60,8 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
           type="text"
           value={text}
           autoFocus={desk}
-          placeholder="Ne eklemek istiyorsun?"
-          aria-label="Kayıt türü ara"
+          placeholder={m.search}
+          aria-label={m.searchAria}
           onChange={(e) => {
             setText(e.target.value);
             setSel(0);
@@ -96,13 +99,13 @@ export function QuickPanel({ host, onPick }: { host: QuickHost; onPick: (kind: S
             </div>
           </div>
         ))}
-        {flat.length ? null : <p className="quick-empty">“{text.trim()}” diye bir kayıt türü yok.</p>}
+        {flat.length ? null : <p className="quick-empty">{m.none(text.trim())}</p>}
       </div>
       <div className="quick-foot">
-        <span>↑ ↓ seç</span>
-        <span>Enter aç</span>
-        <span>Harfle doğrudan aç</span>
-        <span>Esc kapat</span>
+        <span>{m.hintPick}</span>
+        <span>{m.hintOpen}</span>
+        <span>{m.hintLetter}</span>
+        <span>{m.hintClose}</span>
       </div>
     </div>
   );

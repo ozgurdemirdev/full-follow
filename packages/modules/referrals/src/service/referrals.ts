@@ -1,4 +1,4 @@
-import type { Ctx, PersonPipelineStats, PersonProjectStats, ReferralValue } from "@fullfollow/core";
+import { LOCALE, type Ctx, type PersonPipelineStats, type PersonProjectStats, type ReferralValue } from "@fullfollow/core";
 
 /**
  * Referans değeri: her tanıtan için alt ağaçtaki kişilerden gelen fırsat ve iş.
@@ -30,5 +30,5 @@ export function referralValues(ctx: Ctx): ReferralValue[] {
     }
     result.push({ person_id: p.id, name: p.name, company_name: p.company_name, direct: direct.length, network: seen.size - 1, ...v });
   }
-  return result.sort((a, b) => b.won_value - a.won_value || b.collected - a.collected || b.opps - a.opps || b.network - a.network || a.name.localeCompare(b.name, "tr"));
+  return result.sort((a, b) => b.won_value - a.won_value || b.collected - a.collected || b.opps - a.opps || b.network - a.network || a.name.localeCompare(b.name, LOCALE));
 }

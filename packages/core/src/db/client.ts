@@ -3,7 +3,9 @@ import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "node:fs";
 import path from "node:path";
+import { BACKUPS_KEPT, BROKEN_KEYS_SHOWN, DB_BUSY_TIMEOUT_MS } from "../constants";
 import { backfillKeys } from "../keys";
+import { m } from "../messages";
 import * as schema from "./schema";
 
 export type Db = BetterSQLite3Database<typeof schema>;
@@ -40,7 +42,7 @@ export function openDb(file: string = defaultDbPath()): DbHandle {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
   const sqlite = new Database(file);
   sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("busy_timeout = 5000");
+  sqlite.pragma(`busy_timeout = ${DB_BUSY_TIMEOUT_MS}`);
   const db = drizzle(sqlite, { schema });
   // Tablo yeniden kuran migration'lar (DROP + RENAME) foreign key kapalıyken çalışır; SQLite'ın önerdiği sıra:
   // kapat, uygula, foreign_key_check ile doğrula, aç. Pragma transaction içinde etkisiz olduğu için burada.
@@ -56,7 +58,7 @@ export function openDb(file: string = defaultDbPath()): DbHandle {
     const before = applied();
     migrate(db, { migrationsFolder: MIGRATIONS_DIR });
     const broken = applied() !== before ? (sqlite.pragma("foreign_key_check") as unknown[]) : [];
-    if (broken.length) throw new Error(`migration sonrası ${broken.length} kırık foreign key: ${JSON.stringify(broken.slice(0, 3))}`);
+    if (broken.length) throw new Error(m.brokenForeignKeys(broken.length, JSON.stringify(broken.slice(0, BROKEN_KEYS_SHOWN))));
   } finally {
     sqlite.pragma("foreign_keys = ON");
   }
@@ -68,7 +70,7 @@ export function openDb(file: string = defaultDbPath()): DbHandle {
  * Günlük yedek: <db klasörü>/backups/fullfollow-YYYY-MM-DD.db. Bugünün yedeği varsa atlar,
  * en yeni `keep` yedeği tutar. SQLite'ın çevrimiçi yedeği kullanılır (sunucu açıkken güvenli).
  */
-export async function backupDb(file: string = defaultDbPath(), keep = 14): Promise<string | null> {
+export async function backupDb(file: string = defaultDbPath(), keep = BACKUPS_KEPT): Promise<string | null> {
   if (file === ":memory:" || !fs.existsSync(file)) return null;
   const dir = path.join(path.dirname(file), "backups");
   fs.mkdirSync(dir, { recursive: true });

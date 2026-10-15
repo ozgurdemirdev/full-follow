@@ -15,7 +15,11 @@ import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { toast } from "@kit/components/toast";
 import { Avatar, ErrorBox } from "@kit/components/ui";
 import { PersonAside } from "./PersonAside";
+import { m as kit } from "@kit/messages";
+
+import { m } from "../messages";
 import { PersonExtras } from "./PersonExtras";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Menu of the header: the things the board leaves out (forms for touch and draft, editing the accounts, delete, timeline) */
 function HeaderMenu({ p, onClose }: { p: Person; onClose: () => void }) {
@@ -24,15 +28,15 @@ function HeaderMenu({ p, onClose }: { p: Person; onClose: () => void }) {
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
-      <button type="button" className="ppl-round" aria-label="Diğer işlemler" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={2.4} />
+      <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
-        {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { person_id: p.id }))}>Temas ekle</button> : null}
-        {quickByKind.has("draft") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { person_id: p.id, channel: p.awaiting?.channel ?? p.last_channel ?? defaultChannel(p) }))}>Taslak yaz</button> : null}
-        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("person", { person_id: p.id }))}>Düzenle, hesaplar</button>
-        <Slot name="person.overlay.menu" props={{ type: "person", id: p.id, role: "menuitem", className: "ppl-pop-item", label: "Tüm zaman çizelgesi" }} />
-        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/people/${p.id}`, p.name).then(onClose).catch(() => {}))}>Sil</button>
+        {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { person_id: p.id }))}>{m.actions.addTouch}</button> : null}
+        {quickByKind.has("draft") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { person_id: p.id, channel: p.awaiting?.channel ?? p.last_channel ?? defaultChannel(p) }))}>{m.actions.writeDraft}</button> : null}
+        <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("person", { person_id: p.id }))}>{m.overlay.editAccounts}</button>
+        <Slot name="person.overlay.menu" props={{ type: "person", id: p.id, role: "menuitem", className: "ppl-pop-item", label: m.timelineLink }} />
+        <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/people/${p.id}`, p.name).then(onClose).catch(() => {}))}>{kit.delete}</button>
       </div>
     </div>
   );
@@ -63,7 +67,7 @@ export function PersonOverlay({ id, from, p, onClose }: { id: number | null; fro
 
   const ask = () => {
     if (!row) return;
-    if (drafted.has(row.id)) return toast("Taslak zaten yazılıyor");
+    if (drafted.has(row.id)) return toast(m.actions.draftPending);
     askDraft(row).then(() => markDrafted(row.id)).catch(() => {});
   };
 
@@ -71,7 +75,7 @@ export function PersonOverlay({ id, from, p, onClose }: { id: number | null; fro
     <ExpandOverlay
       open={!!id && !!row}
       from={from}
-      title={row?.name ?? "Kişi"}
+      title={row?.name ?? kit.nouns.person}
       onClose={onClose}
       bodyClassName="ppl-body"
       header={row ? (
@@ -84,17 +88,17 @@ export function PersonOverlay({ id, from, p, onClose }: { id: number | null; fro
             </div>
             <span className="text-base text-text-secondary">
               {row.role}
-              {row.company_id ? <>{row.role ? " · " : ""}<RecordLink type="company" id={row.company_id} className="text-text-soft">{row.company_name}</RecordLink></> : null}
+              {row.company_id ? <>{row.role ? m.sep : ""}<RecordLink type="company" id={row.company_id} className="text-text-soft">{row.company_name}</RecordLink></> : null}
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
             <button type="button" className="ppl-ask" onClick={ask}>
               <BoardIcon name="pen" className="size-icon-chip" />
-              {drafted.has(row.id) ? "Taslak istendi" : "Claude’dan taslak iste"}
+              {drafted.has(row.id) ? m.actions.draftAsked : m.actions.askDraft}
             </button>
             <HeaderMenu p={row} onClose={onClose} />
-            <button type="button" className="ppl-round" data-close aria-label="Kapat" onClick={onClose}>
-              <BoardIcon name="close" className="size-icon-md" stroke={2} />
+            <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>
+              <BoardIcon name="close" className="size-icon-md" stroke={STROKE.regular} />
             </button>
           </div>
         </>

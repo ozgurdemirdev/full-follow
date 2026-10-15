@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createApp } from "@fullfollow/app";
 import { defaultDbPath, loadRootEnv, openDb } from "@fullfollow/core";
+import { m } from "./messages";
 import { registerTools } from "./tools";
 
 /**
@@ -23,10 +24,10 @@ async function main() {
   process.on("SIGTERM", () => { handle.close(); process.exit(0); });
 
   await server.connect(new StdioServerTransport());
-  console.error(`full-follow mcp hazır (${dbPath})`);
+  console.error(m.ready(dbPath));
 }
 
 main().catch((e) => {
-  console.error("full-follow mcp başlatılamadı:", e);
+  console.error(m.startFailed, e);
   process.exit(1);
 });

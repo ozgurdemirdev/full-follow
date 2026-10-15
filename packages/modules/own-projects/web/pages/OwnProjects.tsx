@@ -15,6 +15,9 @@ import { Empty, ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { OWN_PROJECTS_PATH } from "../paths";
 import { onShelf, useFocusId } from "../ownProjects";
 
+import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
+
 /** Size of the box the overlay grows from when a project is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
 const fallbackRect = () => new DOMRect((innerWidth - FALLBACK_BOX.width) / 2, (innerHeight - FALLBACK_BOX.height) / 2, FALLBACK_BOX.width, FALLBACK_BOX.height);
@@ -39,7 +42,7 @@ export default function OwnProjects() {
     setFrom(rect);
     navigate(`${OWN_PROJECTS_PATH}/${id}`, { replace: true });
   };
-  const revive = (p: OwnProject) => run("patch", `/own-projects/${p.id}`, { status: "aktif" }, { ok: `Raftan indirildi: ${p.name}` }).catch(() => {});
+  const revive = (p: OwnProject) => run("patch", `/own-projects/${p.id}`, { status: "aktif" }, { ok: m.revived(p.name) }).catch(() => {});
   const makeFocus = (p: OwnProject) => {
     void focusPick.set(p.id);
     if (onShelf(p)) void revive(p);
@@ -47,12 +50,12 @@ export default function OwnProjects() {
 
   return (
     <Page
-      title="Kendi projelerim"
-      sub={projects.data ? `${live.length} proje üzerinde çalışıyorsun · ${openIdeas} açık fikir` : ""}
+      title={m.label}
+      sub={projects.data ? m.sub(live.length, openIdeas) : ""}
       right={
         <button type="button" className="dash-new" onClick={() => openSheet("own_project")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={2} />
-          Proje ekle
+          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.regular} />
+          {m.addProject}
         </button>
       }
     >
@@ -61,7 +64,7 @@ export default function OwnProjects() {
         !error && <PageSkeleton />
       ) : (
         <>
-          {rows.length === 0 ? <Empty>Henüz kendi projen yok. Kendi ürününü ekle; satılabilir mi, hangi sektöre uyar, sıradaki fikirler neler, burada dursun.</Empty> : null}
+          {rows.length === 0 ? <Empty>{m.empty}</Empty> : null}
           {focus ? <Hero key={focus.id} p={focus} onOpen={(rect) => open(focus.id, rect)} /> : null}
           <Gallery rows={others} onOpen={open} />
           <Shelf rows={shelf} onRevive={revive} />
