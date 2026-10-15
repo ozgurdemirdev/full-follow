@@ -54,8 +54,8 @@ function TouchCreate(p: FormProps) {
   const submit = useSubmit(
     p,
     async () => {
-      const subject = target === "person" ? { person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }) }
-        : target === "company" ? { company_id: await ensureCompany(company) }
+      const subject = target === "person" ? { person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }, { person: setPerson }) }
+        : target === "company" ? { company_id: await ensureCompany(company, setCompany) }
         : { contact: contact.trim() };
       await saveRecord(p, null, {
         ...subject, channel, direction, kind, summary: summary.trim(),

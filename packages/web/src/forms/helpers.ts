@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { run } from "../api/actions";
+import { toast } from "../components/toast";
 import type { Company, Person } from "../api/types";
 import { forms } from "../messages.forms";
 
@@ -29,27 +30,40 @@ export function useRefText(ref: Ref, set: (r: Ref) => void, nameOf: (id: number)
   }, [ref, set, nameOf]);
 }
 
+/**
+ * Where a record made on the way to the save is written back: the form puts its id into the field at once, so when the save that follows fails
+ * and the form is sent again, the retry reuses the record instead of creating a second one.
+ */
+export interface Writeback {
+  person?: (r: Ref) => void;
+  company?: (r: Ref) => void;
+}
+
 /** Firma: seçildiyse id, yazıldıysa yeni firma açar, boşsa null */
-export async function ensureCompany(ref: Ref): Promise<number | null> {
+export async function ensureCompany(ref: Ref, writeback?: (r: Ref) => void): Promise<number | null> {
   if (ref.id) return ref.id;
   const name = ref.text.trim();
   if (!name) return null;
   const r = await run<Company>("post", "/companies", { name }, { silent: true });
-  return r.row?.id ?? null;
+  const id = r.row?.id ?? null;
+  if (id) writeback?.({ id, text: name });
+  return id;
 }
 
 /** Kişi: seçildiyse id, yazıldıysa (firmasıyla) yeni kişi açar */
 export async function ensurePerson(
   ref: Ref,
   extra: { company?: Ref; referred_by?: Ref; tags?: string[]; next_follow_up_at?: string | null } = {},
+  writeback: Writeback = {},
 ): Promise<number> {
   if (ref.id) return ref.id;
-  const company_id = extra.company ? await ensureCompany(extra.company) : null;
+  const company_id = extra.company ? await ensureCompany(extra.company, writeback.company) : null;
+  const name = ref.text.trim();
   const r = await run<Person>(
     "post",
     "/people",
     {
-      name: ref.text.trim(),
+      name,
       company_id,
       referred_by_id: extra.referred_by?.id ?? null,
       tags: extra.tags,
@@ -58,7 +72,20 @@ export async function ensurePerson(
     { silent: true },
   );
   if (!r.row) throw new Error(forms.helpers.personNotCreated);
+  writeback.person?.({ id: r.row.id, text: name });
   return r.row.id;
+}
+
+/**
+ * A step after the main save (a next step task, a first comment): the record is already saved, so when this fails the sheet still closes
+ * and a toast says which part is missing. Never throws.
+ */
+export async function optionalStep(task: () => Promise<unknown>, failedText: string): Promise<void> {
+  try {
+    await task();
+  } catch {
+    toast(failedText, "error");
+  }
 }
 
 /** datetime-local değeri (yerel saat) → ISO */

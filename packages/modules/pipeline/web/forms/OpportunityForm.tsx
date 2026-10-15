@@ -9,7 +9,8 @@ import { AreaField, ChipsField, DateField, NumField, TextField } from "@kit/comp
 import { ComboField } from "@kit/components/forms/fields-rich";
 import { addDaysIso, todayIso } from "@kit/lib/format";
 import { OPEN_STAGES, STAGE, type OppStage } from "@kit/lib/labels";
-import { emptyRef, ensurePerson, type Ref } from "@kit/forms/helpers";
+import { useTasksOn } from "@kit/lib/taskAccess";
+import { emptyRef, ensurePerson, optionalStep, type Ref } from "@kit/forms/helpers";
 import { errorsOf, saveRecord, useCompanyOptions, usePersonOptions, useSubmit, type FormProps } from "@kit/forms/shared";
 import { m } from "../messages";
 import { m as kit } from "@kit/messages";
@@ -63,7 +64,7 @@ function OpportunityEdit(p: FormProps & { id: number }) {
     p,
     async () => {
       await saveRecord(p, p.id, {
-        person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }), title: title.trim(), estimated_value: value, source_id: Number(sourceId),
+        person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }, { person: setPerson }), title: title.trim(), estimated_value: value, source_id: Number(sourceId),
         source_url: withScheme(url), source_date: srcDate || null, next_follow_up_at: date || null,
       });
     },
@@ -88,6 +89,7 @@ function OpportunityCreate(p: FormProps) {
   const people = usePeople();
   const personOptions = usePersonOptions();
   const companyOptions = useCompanyOptions();
+  const tasksOn = useTasksOn();
 
   const [person, setPerson] = useState<Ref>(emptyRef);
   const [company, setCompany] = useState<Ref>(emptyRef);
@@ -108,6 +110,8 @@ function OpportunityCreate(p: FormProps) {
   const [note, setNote] = useState("");
   const [url, setUrl] = useState("");
   const [srcDate, setSrcDate] = useState("");
+  /** a source made by an earlier try of this form: a retry reuses it (the list may not have refreshed yet) */
+  const [madeSource, setMadeSource] = useState<number | null>(null);
 
   const live = useMemo(() => pickable(sources.rows), [sources.rows]);
   const src = sourceId ? sources.byId.get(Number(sourceId)) : live[0];
@@ -116,12 +120,13 @@ function OpportunityCreate(p: FormProps) {
   const submit = useSubmit(
     p,
     async () => {
-      let source_id = src?.id;
+      let source_id = src?.id ?? madeSource;
       if (!source_id) {
         const s = await run<Source>("post", "/sources", { name: newSource.trim() || m.form.other }, { silent: true });
         source_id = s.row!.id;
+        setMadeSource(source_id);
       }
-      const person_id = await ensurePerson(person, { company, referred_by: isRef ? referrer : undefined, tags: [m.form.candidateTag], next_follow_up_at: date });
+      const person_id = await ensurePerson(person, { company, referred_by: isRef ? referrer : undefined, tags: [m.form.candidateTag], next_follow_up_at: date }, { person: setPerson, company: setCompany });
       const res = await saveRecord<Opportunity>(p, null, {
         title: title.trim() || company.text.trim() || person.text.trim(),
         person_id, source_id, stage,
@@ -130,8 +135,9 @@ function OpportunityCreate(p: FormProps) {
         source_url: withScheme(url) || undefined, source_date: srcDate || undefined,
       });
       const oid = res.row!.id;
-      if (step.trim()) await run("post", "/tasks", { title: step.trim(), assignee: "ozgur", due_date: date || undefined, opportunity_id: oid }, { silent: true });
-      if (note.trim()) await run("post", "/comments", { target_type: "opportunity", target_id: oid, body: note.trim() }, { silent: true });
+      // the opportunity is saved: the optional parts must not fail the sheet (a retry would create a second one)
+      if (tasksOn && step.trim()) await optionalStep(() => run("post", "/tasks", { title: step.trim(), assignee: "ozgur", due_date: date || undefined, opportunity_id: oid }, { silent: true }), m.form.stepFailed);
+      if (note.trim()) await optionalStep(() => run("post", "/comments", { target_type: "opportunity", target_id: oid, body: note.trim() }, { silent: true }), m.form.noteFailed);
     },
     () => errorsOf({ person: !person.text.trim() && m.form.pickPerson }),
   );
@@ -151,7 +157,7 @@ function OpportunityCreate(p: FormProps) {
       <ChipsField label={kit.fields.stage} value={stage} onChange={(v) => v && setStage(v)} options={STAGE_OPTIONS} />
       <NumField label={m.form.value} half prefix={kit.lira} step={VALUE_STEP} value={value} onChange={setValue} />
       <DateField label={m.form.nextDate} half quick value={date} onChange={setDate} placeholder={m.form.nextDatePlaceholder} />
-      <TextField label={m.form.nextStep} value={step} onChange={setStep} placeholder={m.form.titlePlaceholder} />
+      {tasksOn ? <TextField label={m.form.nextStep} value={step} onChange={setStep} placeholder={m.form.titlePlaceholder} /> : null}
       <AreaField label={m.form.firstComment} opt value={note} onChange={setNote} placeholder={m.form.firstCommentPlaceholder} rows={3} />
     </Form>
   );

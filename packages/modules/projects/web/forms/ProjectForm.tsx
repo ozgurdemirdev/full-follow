@@ -27,7 +27,7 @@ export function ProjectForm(p: FormProps) {
     p,
     async () => {
       await saveRecord(p, null, {
-        name: name.trim(), person_id: await ensurePerson(person, { tags: [m.form.customerTag] }),
+        name: name.trim(), person_id: await ensurePerson(person, { tags: [m.form.customerTag] }, { person: setPerson }),
         price: price ?? 0, maintenance_fee: fee, started_at: started || undefined, stage,
       });
     },

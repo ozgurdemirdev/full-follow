@@ -73,7 +73,7 @@ export function PersonForm(p: FormProps) {
   const submit = useSubmit(
     p,
     async () => {
-      const company_id = await ensureCompany(company);
+      const company_id = await ensureCompany(company, setCompany);
       const body = {
         name: name.trim(), company_id, role, email, phone, handle, instagram: ig.save(instagram), linkedin: personLinkedin.save(linkedin), ...labels.body,
         referred_by_id: referrer.id, next_follow_up_at: follow || null, notes,

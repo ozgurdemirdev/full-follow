@@ -82,8 +82,8 @@ export function DraftForm(p: FormProps) {
     p,
     async () => {
       const to = companyId || toKind === "company"
-        ? { company_id: companyId ?? await ensureCompany(toCompany) }
-        : { person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }) };
+        ? { company_id: companyId ?? await ensureCompany(toCompany, setToCompany) }
+        : { person_id: await ensurePerson(person, { tags: [m.form.candidateTag] }, { person: setPerson }) };
       await saveRecord(p, null, {
         ...to, channel: ch, subject: ch === EMAIL_CHANNEL ? subjectLine.trim() || undefined : undefined, body: body.trim(), template_id: templateId ?? undefined, reason: reason.trim() || undefined,
         opportunity_id: pre?.opportunity_id, project_id: pre?.project_id,

@@ -176,6 +176,8 @@ export const m = defineMessages({
       nextStep: "Sonraki adım",
       firstComment: "İlk yorum",
       firstCommentPlaceholder: "Claude’un bilmesi gereken bir şey varsa yaz",
+      stepFailed: "Fırsat eklendi ama sonraki adım eklenemedi",
+      noteFailed: "Fırsat eklendi ama ilk yorum eklenemedi",
     },
     offerForm: {
       updated: "Teklif güncellendi",
