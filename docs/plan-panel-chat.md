@@ -279,13 +279,14 @@ File layout under `packages/server/src/chat/`:
   (the marketing and network folder). Its `CLAUDE.md` (goal, lead rules, output rules)
   is then loaded as project memory, so the panel Claude knows the business context
   without a long system prompt. File tools stay disabled, so it can read nothing else
-  there. Full Follow's own runtime files (`mcp.json`, `system.md`) live in `data/chat/`
+  there. Full Follow's own runtime files (`mcp.json`, `system.md`, uploads) live in a `chat` folder next to the database in use (`data/chat/` by default, so each `FF_DB` has its own)
   (create on boot, add `data/chat/` to `.gitignore`). If `FF_CHAT_CWD` does not exist,
   fall back to `data/chat/` and log a warning.
   Pass `--setting-sources project` so user level hooks, plugins and skills from
   `~/.claude` do not run inside panel chats (they emitted `hook_started` noise in the
   smoke test). Verified 2026-10-11: with this flag auth works and no hook events are
   emitted. Keep the `system/hook_*` filter in the parser anyway.
+- Security: the panel Claude may use `WebSearch` and `WebFetch`, so a page it reads can carry instructions that make it send what it knows about the business to an outside address; keep the panel to questions where that risk is acceptable. The CLI process gets only an allowlisted environment (`CLI_ENV_NAMES` and `CLI_ENV_PREFIXES` in the chat module's `constants.ts`: no `FF_PASSWORD`, no cookie secret), and the pinned notes (`chat_pinned_notes`, part of the system prompt) can only be changed by Özgür through the web, never by Claude through the MCP.
 
 ### 6.2 Resolving the executable on Windows
 

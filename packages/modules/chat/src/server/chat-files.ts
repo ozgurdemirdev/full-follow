@@ -4,7 +4,7 @@ import path from "node:path";
 import { defaultDbPath } from "@fullfollow/core";
 import { NOTES_VERSION_CHARS } from "../constants";
 import { m } from "../messages";
-import { BRIEF_FILE, CHAT_DATA_DIR, MCP_ENTRY, MCP_SERVER_NAME } from "./chat.config";
+import { BRIEF_FILE, chatDataDir, MCP_ENTRY, MCP_SERVER_NAME } from "./chat.config";
 import { chatCwd } from "./claude-cli";
 
 /** The rules of the panel Claude, written to system.md (their text lives in the messages file) */
@@ -12,11 +12,12 @@ export const SYSTEM_RULES = m.systemRules;
 
 /** mcp.json passes the server's own database path, so the panel Claude writes to the same database (also a test copy) */
 export function writeRuntimeFiles(pinnedNotes = "", brief = ""): void {
-  fs.mkdirSync(CHAT_DATA_DIR, { recursive: true });
+  const dir = chatDataDir();
+  fs.mkdirSync(dir, { recursive: true });
   const mcp = { mcpServers: { [MCP_SERVER_NAME]: { type: "stdio", command: process.execPath, args: [MCP_ENTRY], env: { FF_DB: defaultDbPath() } } } };
-  fs.writeFileSync(path.join(CHAT_DATA_DIR, "mcp.json"), JSON.stringify(mcp, null, 2));
+  fs.writeFileSync(path.join(dir, "mcp.json"), JSON.stringify(mcp, null, 2));
   const parts = [SYSTEM_RULES, pinnedNotes.trim() && m.pinnedNotes(pinnedNotes.trim()), brief.trim() && m.panelBrief(brief.trim())];
-  fs.writeFileSync(path.join(CHAT_DATA_DIR, "system.md"), `${parts.filter(Boolean).join("\n\n")}\n`);
+  fs.writeFileSync(path.join(dir, "system.md"), `${parts.filter(Boolean).join("\n\n")}\n`);
 }
 
 /** Setup problem shown by GET /api/chat/meta instead of failing per message */

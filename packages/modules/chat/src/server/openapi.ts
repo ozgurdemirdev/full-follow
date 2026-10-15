@@ -32,7 +32,7 @@ export const docs = defineDocs({
   },
   "POST /api/chat/sessions/:id/messages": {
     summary: "Send a message to Claude",
-    description: "Answers 202 at once; the reply arrives on the event stream (`/api/chat/sessions/{id}/stream`).",
+    description: "Answers 202 at once; the reply arrives on the event stream (`/api/chat/sessions/{id}/stream`). Other answers: 409 (code `busy`) while the previous reply is still running, 429 (code `too_many_runs`) when too many chats run at once, 503 (code `cli_missing`) when the Claude CLI is not installed.",
     params: session,
     body: chatMessageCreate,
     response: object,
