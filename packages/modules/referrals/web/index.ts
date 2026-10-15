@@ -1,10 +1,10 @@
-// The referrals module's web part (the manifest); its page is still loaded from the kit.
+// The referrals module's web part: the manifest the shell builds its route and nav item from.
 import { defineWebModule } from "@kit/app/modules/define";
-import { PATHS } from "@kit/app/routes";
+import { REFERRALS_PATH } from "./paths";
 
 export default defineWebModule({
   key: "referrals",
   label: "Referanslar",
-  routes: [{ page: "referrals", path: PATHS.referrals, load: () => import("@kit/pages/Referrals") }],
-  nav: [{ group: "Network", order: 50, label: "Referanslar", icon: "link", path: PATHS.referrals }],
+  routes: [{ page: "referrals", path: REFERRALS_PATH, load: () => import("./pages/Referrals") }],
+  nav: [{ group: "Network", order: 50, label: "Referanslar", icon: "link", path: REFERRALS_PATH }],
 });

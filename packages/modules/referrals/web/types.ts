@@ -1,5 +1,5 @@
 // Referrals screen: the tree and its layout (derived in the web) and the shapes of the suggestion lists the API sends
-import type { Person, ReferralValue } from "./types";
+import type { Person, ReferralValue } from "@kit/api/types";
 
 /** Opportunity value a person brought as the contact of the opportunity */
 export interface RefOwn {

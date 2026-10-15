@@ -1,18 +1,15 @@
-import { Link } from "wouter";
-import type { RefLayout, RefPlaced } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { nodeTop, nodeValue } from "../../lib/referrals";
-import { Avatar } from "../ui";
+import type { RefLayout, RefPlaced } from "../types";
+import { RecordLink } from "@kit/app/modules/RecordLink";
+import { nodeTop, nodeValue } from "../referrals";
+import { Avatar } from "@kit/components/ui";
 
 /** Depth where the nodes would get too narrow: the tree then keeps a minimum column width and scrolls inside its box */
 const SCROLL_FROM_LEVELS = 4;
 
-const href = (p: RefPlaced) => `${PATHS.people}/${p.node.person.id}`;
-
 function TreeNode({ p, i, width }: { p: RefPlaced; i: number; width: number }) {
   const v = nodeValue(p);
   return (
-    <Link href={href(p)} className="ref-node" data-root={p.level === 0 ? "" : undefined}
+    <RecordLink type="person" id={p.node.person.id} className="ref-node" data-root={p.level === 0 ? "" : undefined}
       style={{ left: `${p.x}%`, top: nodeTop(p), width: `${width}%`, ["--i" as string]: Math.min(i, 24) }}>
       <Avatar name={p.node.person.name} id={p.node.person.id} size="sm" />
       <span className="ref-who">
@@ -20,7 +17,7 @@ function TreeNode({ p, i, width }: { p: RefPlaced; i: number; width: number }) {
         <span>{p.node.person.company_name ?? ""}</span>
       </span>
       <span className="ref-val" data-tone={v.tone}>{v.text}</span>
-    </Link>
+    </RecordLink>
   );
 }
 
@@ -46,7 +43,7 @@ export function TreeCard({ title, tree }: { title: string; tree: RefLayout }) {
       </div>
       <div className="ref-tlist">
         {tree.nodes.map((p) => (
-          <Link key={p.node.person.id} href={href(p)} className="ref-tl" style={{ ["--level" as string]: p.level }}>
+          <RecordLink key={p.node.person.id} type="person" id={p.node.person.id} className="ref-tl" style={{ ["--level" as string]: p.level }}>
             {p.level > 0 ? <span className="ref-tl-branch">└</span> : null}
             <Avatar name={p.node.person.name} id={p.node.person.id} size="sm" />
             <span className="ref-who">
@@ -54,7 +51,7 @@ export function TreeCard({ title, tree }: { title: string; tree: RefLayout }) {
               <span>{p.node.person.company_name ?? ""}</span>
             </span>
             <span className="ref-val" data-tone={nodeValue(p).tone}>{nodeValue(p).text}</span>
-          </Link>
+          </RecordLink>
         ))}
       </div>
     </section>

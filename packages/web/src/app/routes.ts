@@ -7,7 +7,6 @@ export const PATHS = {
   opportunity: "/firsatlar",
   people: "/kisiler",
   companies: "/firmalar",
-  referrals: "/referanslar",
   projects: "/projeler",
   timeline: "/zaman",
   report: "/rapor",

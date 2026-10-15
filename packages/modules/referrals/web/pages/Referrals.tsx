@@ -1,20 +1,21 @@
 import { useMemo, useState } from "react";
-import { K, useOpps, usePeople } from "../api/keys";
-import { useQuery } from "../api/store";
-import type { ReferralReport } from "../api/types";
-import { Page } from "../app/Page";
-import { Kpis } from "../components/referrals/Kpis";
-import { Leaders } from "../components/referrals/Leaders";
-import { Suggestions } from "../components/referrals/Suggestions";
-import { TreeCard } from "../components/referrals/TreeCard";
-import { Empty, ErrorBox, order, PageSkeleton } from "../components/ui";
-import { buildTree, layoutTree, ownValues, referralKpis } from "../lib/referrals";
+import { useOpps, usePeople } from "@kit/api/keys";
+import { useQuery } from "@kit/api/store";
+import type { ReferralReport } from "../types";
+import { Page } from "@kit/app/Page";
+import { Kpis } from "../components/Kpis";
+import { Leaders } from "../components/Leaders";
+import { Suggestions } from "../components/Suggestions";
+import { TreeCard } from "../components/TreeCard";
+import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
+import { REFERRALS_REPORT } from "../paths";
+import { buildTree, layoutTree, ownValues, referralKpis } from "../referrals";
 
 const NO_LEADERS: ReferralReport["leaders"] = [];
 
 /** Referrals: who introduced whom, what their network brought, whom to thank and whom to ask next */
 export default function Referrals() {
-  const report = useQuery<ReferralReport>(K.referrals);
+  const report = useQuery<ReferralReport>(REFERRALS_REPORT);
   const people = usePeople();
   const opps = useOpps();
   const [picked, setPicked] = useState<number | null>(null);

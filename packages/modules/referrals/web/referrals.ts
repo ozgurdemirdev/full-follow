@@ -1,10 +1,11 @@
 // Referrals screen: KPI numbers, the referral tree and its layout, and the requests for the two suggestion lists the API sends.
 // The KPI numbers and the tree are derived here from the people and opportunities the page already loads.
-import { run } from "../api/actions";
-import type { Opportunity, Person, RefEdge, RefKpi, RefLayout, RefNode, RefNet, RefOwn, RefPlaced, RefSuggestion, RefTone, ReferralValue } from "../api/types";
-import { layout as layoutTokens, space } from "../styles/tokens.json";
-import { lira, pct, todayIso } from "./format";
-import { OPEN_STAGES } from "./labels";
+import { run } from "@kit/api/actions";
+import type { Opportunity, Person, ReferralValue } from "@kit/api/types";
+import type { RefEdge, RefKpi, RefLayout, RefNode, RefNet, RefOwn, RefPlaced, RefSuggestion, RefTone } from "./types";
+import { layout as layoutTokens, space } from "@kit/styles/tokens.json";
+import { lira, pct, todayIso } from "@kit/lib/format";
+import { OPEN_STAGES } from "@kit/lib/labels";
 
 // ------------------------------------------------------------ tree geometry (percent of the tree width, px for the rows)
 const px = (v: string) => parseInt(v, 10);

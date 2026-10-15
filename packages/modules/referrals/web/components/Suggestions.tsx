@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link } from "wouter";
-import type { RefSuggestion } from "../../api/types";
-import { PATHS } from "../../app/routes";
-import { requestDraft, type RequestKind } from "../../lib/referrals";
-import { Avatar, order } from "../ui";
+import type { RefSuggestion } from "../types";
+import { RecordLink } from "@kit/app/modules/RecordLink";
+import { requestDraft, type RequestKind } from "../referrals";
+import { Avatar, order } from "@kit/components/ui";
 
 const LABEL: Record<RequestKind, string> = { thanks: "Claude teşekkür yazsın", ask: "Claude rica yazsın" };
 const DONE: Record<RefSuggestion["state"], string> = { idle: "", asked: "Taslak istendi", drafted: "Taslak hazır" };
@@ -23,10 +22,10 @@ function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
   return (
     <div className="ref-sug" data-dim={s.ready ? undefined : ""}>
       <Avatar name={s.person.name} id={s.person.id} size="list" />
-      <Link href={`${PATHS.people}/${s.person.id}`} className="ref-sug-who">
+      <RecordLink type="person" id={s.person.id} className="ref-sug-who">
         <b>{s.person.name}</b>
         <span data-late={s.ready ? undefined : ""}>{s.why}</span>
-      </Link>
+      </RecordLink>
       {s.ready ? (
         <button type="button" className="ref-act" data-claude={kind === "thanks" && !done ? "" : undefined} data-done={done || busy ? "" : undefined} disabled={busy && !done} onClick={() => void send()}>
           {done ? DONE[s.state] : busy ? DONE.asked : LABEL[kind]}

@@ -1,5 +1,5 @@
-import type { RefKpi } from "../../api/types";
-import { order } from "../ui";
+import type { RefKpi } from "../types";
+import { order } from "@kit/components/ui";
 
 /** Four numbers on top: won from referrals, still open, close rate against the other sources, people introduced */
 export function Kpis({ items }: { items: RefKpi[] }) {

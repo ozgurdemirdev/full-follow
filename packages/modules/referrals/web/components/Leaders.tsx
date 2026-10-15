@@ -1,6 +1,6 @@
-import type { ReferralValue } from "../../api/types";
-import { lira } from "../../lib/format";
-import { Avatar } from "../ui";
+import type { ReferralValue } from "@kit/api/types";
+import { lira } from "@kit/lib/format";
+import { Avatar } from "@kit/components/ui";
 
 const share = (v: number, max: number) => `${max ? ((v / max) * 100).toFixed(1) : 0}%`;
 
