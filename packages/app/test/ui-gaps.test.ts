@@ -70,19 +70,19 @@ suite("the data the new screens read", () => {
   });
 
   it("a loose touch gets the company its address domain belongs to; it moves there by hand or all at once, with an event and the status", () => {
-    const co = app.companies.create({ name: "Pizza Z", website: "https://www.pizzaz.com" }).row;
+    const co = app.companies.create({ name: "Kuzey Fırın", website: "https://www.kuzeyfirin.example" }).row;
     const ada = app.people.create({ name: "Ada", handle: "@ada_design" }).row;
     const mail = (contact: string) => app.touches.create({ contact, channel: "email", direction: "giden", summary: `mail ${contact}` }).row;
-    const [info, sales, other, dm] = [mail("info@pizzaz.com"), mail("Sales@PizzaZ.com"), mail("x@unknown.example"), app.touches.create({ contact: "@ada_design", channel: "instagram", direction: "giden", summary: "dm" }).row];
+    const [info, sales, other, dm] = [mail("info@kuzeyfirin.example"), mail("Sales@KuzeyFirin.example"), mail("x@unknown.example"), app.touches.create({ contact: "@ada_design", channel: "instagram", direction: "giden", summary: "dm" }).row];
     const loose = app.find("touch", { filter: { loose: true } }).rows;
     expect(loose).toHaveLength(4);
     const match = (id: number) => loose.find((t) => t.id === id)!.suggested_match;
-    expect(match(info.id)).toEqual({ type: "company", id: co.id, name: "Pizza Z" });
-    expect(match(sales.id)).toEqual({ type: "company", id: co.id, name: "Pizza Z" });
+    expect(match(info.id)).toEqual({ type: "company", id: co.id, name: "Kuzey Fırın" });
+    expect(match(sales.id)).toEqual({ type: "company", id: co.id, name: "Kuzey Fırın" });
     expect(match(other.id)).toBeNull();
     expect(match(dm.id)).toEqual({ type: "person", id: ada.id, name: "Ada" });
     // by hand: the company is set, its contact status moves like a new touch's, an event is written, a touch that has an owner cannot move again
-    expect(app.touches.update(info.id, { company_id: co.id }).effects).toEqual([expect.stringContaining("Pizza Z")]);
+    expect(app.touches.update(info.id, { company_id: co.id }).effects).toEqual([expect.stringContaining("Kuzey Fırın")]);
     expect(app.get("touch", info.id).row).toMatchObject({ company_id: co.id, suggested_match: null });
     expect(app.mod("companies")!.get(co.id)!.contact_status).toBe("yazildi");
     expect(h.sqlite.prepare("SELECT summary FROM events WHERE type = 'touch.adopted'").all()).toHaveLength(1);
@@ -99,8 +99,8 @@ suite("the data the new screens read", () => {
   });
 
   it("without the people and companies modules a loose touch has no suggestion and cannot be moved to a record", () => {
-    app.companies.create({ name: "Pizza Z", website: "pizzaz.com" });
-    const t = app.touches.create({ contact: "info@pizzaz.com", channel: "email", direction: "giden", summary: "mail" }).row;
+    app.companies.create({ name: "Kuzey Fırın", website: "kuzeyfirin.example" });
+    const t = app.touches.create({ contact: "info@kuzeyfirin.example", channel: "email", direction: "giden", summary: "mail" }).row;
     const bare = appWithout(["companies", "people"], h, "ozgur", clock);
     expect(bare.mod("network")!.touches.get(t.id)!.suggested_match).toBeNull();
     expect(bare.mod("network")!.touches.adoptSuggested().adopted).toBe(0);
