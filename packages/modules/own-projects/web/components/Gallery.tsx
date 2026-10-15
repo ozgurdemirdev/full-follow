@@ -5,6 +5,9 @@ import { rateText, STATUS_DOT } from "../ownProjects";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Masonry } from "@kit/components/layout";
 import { order } from "@kit/components/ui";
+import { m as kit } from "@kit/messages";
+import { STROKE } from "../constants";
+import { m } from "../messages";
 import { Journey, SellChip } from "./Bits";
 
 function ProjectCard({ p, i, onOpen }: { p: OwnProject; i: number; onOpen: (from: DOMRect) => void }) {
@@ -23,15 +26,15 @@ function ProjectCard({ p, i, onOpen }: { p: OwnProject; i: number; onOpen: (from
       <Journey stage={p.stage} variant="card" />
       {p.next_idea ? (
         <div className="opr-card-next">
-          <span>Sırada</span>
+          <span>{m.gallery.next}</span>
           <span className="text-base">{p.next_idea.title}</span>
         </div>
       ) : null}
       <div className="opr-card-foot">
-        <span>{p.told ? `İlgi ${rateText(p)} · ${p.told} kişi` : "Henüz anlatılmadı"}</span>
-        <button type="button" className="ff-more" aria-label={`${p.name} projesini aç`} onClick={() => root.current && onOpen(root.current.getBoundingClientRect())}>
-          Aç
-          <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={2.2} /></span>
+        <span>{p.told ? m.gallery.interestShort(rateText(p), p.told) : m.gallery.notTold}</span>
+        <button type="button" className="ff-more" aria-label={m.openProject(p.name)} onClick={() => root.current && onOpen(root.current.getBoundingClientRect())}>
+          {kit.open}
+          <span className="ff-more-ic"><BoardIcon name="expand" className="size-icon-chip" stroke={STROKE.medium} /></span>
         </button>
       </div>
     </section>
@@ -44,8 +47,8 @@ export function Gallery({ rows, onOpen }: { rows: OwnProject[]; onOpen: (id: num
   return (
     <div className="opr-sec">
       <div className="opr-sec-head">
-        <h2>Üzerinde çalıştıkların</h2>
-        <span>Odağı değiştirmek için projeyi aç</span>
+        <h2>{m.gallery.title}</h2>
+        <span>{m.gallery.hint}</span>
       </div>
       <Masonry columns={3}>
         {rows.map((p, i) => <ProjectCard key={p.id} p={p} i={i} onOpen={(from) => onOpen(p.id, from)} />)}
