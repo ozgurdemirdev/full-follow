@@ -6,9 +6,10 @@ import { BoardIcon } from "@kit/components/boardIcons";
 import { Masonry } from "@kit/components/layout";
 import { order } from "@kit/components/ui";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { Journey, SellChip } from "./Bits";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 function ProjectCard({ p, i, onOpen }: { p: OwnProject; i: number; onOpen: (from: DOMRect) => void }) {
   const root = useRef<HTMLElement>(null);

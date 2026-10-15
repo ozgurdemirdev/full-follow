@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type RefObject, type Ref } from "react";
 import type { ChatMeta } from "../api";
 import { T } from "../messages";
-import { CHAT_UI, STROKE } from "../constants";
+import { CHAT_UI } from "../constants";
 import { acceptAttr, isImage, refuseReason } from "../chatFiles";
 import { chatPrefs } from "@kit/lib/chatStore";
 import { MIC_ERROR, useDictation } from "@kit/lib/useDictation";
 import { Attachment } from "./Attachment";
 import { Icon } from "@kit/components/icons";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const micError = (e: keyof typeof MIC_ERROR | null) => (e ? MIC_ERROR[e] : null);
 

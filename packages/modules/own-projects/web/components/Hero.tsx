@@ -4,9 +4,10 @@ import type { OwnProject } from "@kit/api/types";
 import { rateNote, rateText, setStage, updatedText } from "../ownProjects";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { Journey, SellChip, StarIcon } from "./Bits";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Focus project: name, one line, journey, next step with its check, interest and idea counts, top ideas */
 export function Hero({ p, onOpen }: { p: OwnProject; onOpen: (from: DOMRect) => void }) {
@@ -41,7 +42,7 @@ export function Hero({ p, onOpen }: { p: OwnProject; onOpen: (from: DOMRect) => 
               <span className="opr-label">{m.nextStep}</span>
               <div className="opr-next-row">
                 <button type="button" className="opr-next-check" aria-pressed={checked} aria-label={m.nextCheck(next.title, checked)} onClick={check}>
-                  <BoardIcon name="check" className="size-icon-md" stroke={STROKE.check} />
+                  <BoardIcon name="check" className="size-icon-md" stroke={STROKE.bold} />
                 </button>
                 <span className="opr-next-text">{next.title}</span>
               </div>

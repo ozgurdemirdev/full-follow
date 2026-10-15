@@ -3,8 +3,9 @@ import type { ProjectTask } from "@kit/api/types";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { ASSIGNEE } from "@kit/lib/labels";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const toggle = (id: number, done: boolean) => void run("patch", `/tasks/${id}`, { done: !done }, { silent: true }).catch(() => {});
 

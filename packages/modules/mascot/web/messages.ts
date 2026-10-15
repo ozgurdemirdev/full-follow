@@ -1,16 +1,17 @@
 // User facing text of the mascot: the floating jellyfish and its Settings category
 import { defineMessages } from "@kit/lib/i18n";
+import { m as kit } from "@kit/messages";
 
 export const m = defineMessages({
   tr: {
     open: "Sohbeti aç",
     title: "Maskot",
     intro: "Panelde gezen denizanası. Tıklayınca sohbeti açar, yazı yazarken ve kaydırırken + düğmesinin üstünde bekler.",
-    show: "Göster",
+    show: kit.show,
     showHint: "Kapalıysa sohbet eski düğmeyle açılır",
     wander: "Gezinsin",
     wanderHint: "Kapalıysa + düğmesinin üstünde durur, yalnız yolundan çekilmesi gerekince hareket eder",
-    model: "Model",
+    model: kit.model,
     color: "Renk",
     customColor: "Özel renk",
     size: "Boyut",

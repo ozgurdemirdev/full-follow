@@ -14,8 +14,9 @@ import { dayTitle, GOAL_BEHIND, isoWeek, itemsByDate, KINDS, mondayOf, rangeOf, 
 import { addDaysIso, fmtDay, fmtMonth, todayIso, toDate } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { m as kit } from "@kit/messages";
-import { MONTH_STEP_DAYS, STROKE } from "../constants";
+import { MONTH_STEP_DAYS } from "../constants";
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const DAYS_IN_WEEK = 7;
 const VIEWS: { value: View; label: string }[] = [{ value: "week", label: m.views.week }, { value: "month", label: m.views.month }];

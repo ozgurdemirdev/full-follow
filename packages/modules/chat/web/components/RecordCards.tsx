@@ -5,10 +5,11 @@ import { toast } from "@kit/components/toast";
 import { fmtDay, pct, tl } from "@kit/lib/format";
 import { cardKey, parseCards, type CardGroup, type CardItem } from "../chatReply";
 import { T } from "../messages";
-import { COPIED_FEEDBACK_MS, STROKE } from "../constants";
+import { COPIED_FEEDBACK_MS } from "../constants";
 import { CHANNEL, CONTACT_STATUS, IDEA_STAGE, MILESTONE, PLATFORM, STAGE, TEMPLATE_KIND } from "@kit/lib/labels";
 import { useOpenRecord } from "../openRecord";
 import { Icon } from "@kit/components/icons";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const DOT: Record<string, string> = {
   task: "var(--color-entity-task)", goal: "var(--color-entity-payment)", person: "var(--color-entity-person)", company: "var(--color-entity-company)",

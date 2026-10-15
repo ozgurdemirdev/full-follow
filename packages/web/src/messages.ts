@@ -44,6 +44,13 @@ export const m = defineMessages({
     decrease: "Azalt",
     increase: "Artır",
     settings: "Ayarlar",
+    done: "Tamamlandı",
+    show: "Göster",
+    model: "Model",
+    thisWeek: "Bu hafta",
+    nextStep: "Sıradaki adım",
+    ownProjects: "Kendi projelerim",
+    about: "Neyle ilgili",
     claudeNever: "Claude henüz bağlanmadı",
     ownProject: "Kendi projem",
     // what the people and company screens both offer on a record

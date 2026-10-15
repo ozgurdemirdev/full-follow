@@ -2,6 +2,7 @@
 // Words the whole kit shares (Kapat, Gönder, Tekrar dene, record nouns ...) come from `@kit/messages`.
 import { defineMessages, LOCALE } from "@kit/lib/i18n";
 import { m as kit } from "@kit/messages";
+import { api } from "@kit/messages.api";
 
 export const m = defineMessages({
   tr: {
@@ -12,14 +13,14 @@ export const m = defineMessages({
     sessionsClose: "Sohbet listesini kapat",
     sessionsMore: "Daha eski sohbetler kaydırınca yüklenir",
     groupToday: kit.today,
-    groupWeek: "Bu hafta",
+    groupWeek: kit.thisWeek,
     groupOlder: "Daha eski",
     expand: kit.expand,
     shrink: kit.collapse,
     minimize: kit.collapse,
     titleLabel: "Sohbet başlığı",
     modelPopover: "Model ve efor",
-    model: "Model",
+    model: kit.model,
     effort: "Efor",
     settingsHint: "Bir sonraki mesajdan itibaren geçerli",
     context: "Bağlam",
@@ -93,7 +94,7 @@ export const m = defineMessages({
     tooBigFile: (mb: number) => `Dosya en fazla ${mb} MB olabilir`,
     badType: (name: string) => `${name}: bu dosya türü desteklenmiyor (resim, PDF, txt, md, csv)`,
     uploadFailed: "Dosya yüklenemedi",
-    serverUnreachable: "Sunucuya ulaşılamadı",
+    serverUnreachable: api.unreachable,
     composerHint: "Enter gönderir, Shift+Enter yeni satır",
     lost: "Bağlantı koptu, yeniden bağlanıyor…",
     back: "Bağlandı, cevap kaldığı yerden devam ediyor",

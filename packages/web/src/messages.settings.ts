@@ -6,7 +6,7 @@ import { m as kit } from "./messages";
 export const settings = defineMessages({
   tr: {
     page: {
-      title: "Ayarlar",
+      title: kit.settings,
       sub: "Değişiklikler anında kaydedilir",
       search: "Ayarlarda ara",
       searchPlaceholder: "Ayarlarda ara: vergi, takip, maskot, etiket",

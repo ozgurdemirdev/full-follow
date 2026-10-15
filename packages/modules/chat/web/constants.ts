@@ -21,5 +21,3 @@ export const CHAT_UI = {
 
 /** How long a template card keeps saying "Kopyalandı" after the copy button (ms) */
 export const COPIED_FEEDBACK_MS = 1_600;
-/** Stroke widths of the icons this module draws */
-export const STROKE = { thin: 1.8, regular: 2, check: 2.4, heavy: 2.6 } as const;

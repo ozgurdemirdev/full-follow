@@ -14,9 +14,10 @@ import { ExpandOverlay } from "@kit/components/ExpandOverlay";
 import { ErrorBox, Meter, Skeleton } from "@kit/components/ui";
 import { Journey, SellChip, StarIcon } from "./Bits";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { OwnLinks } from "./OwnLinks";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 type Related = { ideas: Idea[]; comments: Thread[] };
 
@@ -27,7 +28,7 @@ function HeaderMenu({ p, onClose }: { p: OwnProject; onClose: () => void }) {
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.check} />
+        <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
       <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("own_project", { own_project_id: p.id }))}>{kit.edit}</button>

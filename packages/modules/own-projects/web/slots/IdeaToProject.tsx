@@ -3,8 +3,9 @@ import { run } from "@kit/api/actions";
 import type { Idea } from "@kit/api/types";
 import { linkTo } from "@kit/app/modules/links";
 import { BoardIcon } from "@kit/components/boardIcons";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** "Projeye dönüştür" on an idea (the `idea.actions` slot of the ideas screen): opens an own project from the idea and goes to it */
 export default function IdeaToProject({ idea }: { idea: Idea }) {
@@ -22,7 +23,7 @@ export default function IdeaToProject({ idea }: { idea: Idea }) {
   return (
     <button type="button" className="ideas-project" onClick={() => void toProject()}>
       {m.ideaToProject.action}
-      <span className="ideas-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.check} /></span>
+      <span className="ideas-go"><BoardIcon name="arrowRight" className="size-icon-xs" stroke={STROKE.bold} /></span>
     </button>
   );
 }

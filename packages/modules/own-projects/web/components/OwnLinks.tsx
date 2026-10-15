@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useLinks } from "@kit/components/LinksCard";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** "Linkler" panel of the project overlay: link rows, and a dashed "Link ekle" that opens the add form */
 export function OwnLinks({ id }: { id: number }) {

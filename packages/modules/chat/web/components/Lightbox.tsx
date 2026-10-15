@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { T } from "../messages";
-import { STROKE } from "../constants";
+
 import { Icon } from "@kit/components/icons";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Full size view of an image attachment: click outside, the close button or Esc closes it (Esc does not minimize the chat behind it) */
 export function Lightbox({ url, name, onClose }: { url: string; name: string; onClose: () => void }) {

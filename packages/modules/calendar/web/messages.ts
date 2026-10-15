@@ -7,7 +7,7 @@ export const m = defineMessages({
     label: "Takvim",
     anytime: "Gün içi",
     // what an item of the calendar is
-    kinds: { meet: "Görüşme", follow: "Takip", pay: kit.nouns.payment, task: kit.nouns.task },
+    kinds: { meet: "Görüşme", follow: kit.follow, pay: kit.nouns.payment, task: kit.nouns.task },
     wasDue: (date: string) => ` · ${date} tarihliydi`,
     late: " gecikti",
     followOf: (name: string) => `${name} takibi`,
@@ -28,7 +28,7 @@ export const m = defineMessages({
     weeklyTouch: "Haftalık temas",
     todayPlan: "Bugünün planı",
     dayShort: "Gün",
-    statusDone: "Tamamlandı",
+    statusDone: kit.done,
     statusPending: "Bekliyor",
     noWorkToday: "Bugün için iş yok.",
     addToPlan: "Plana ekle",
@@ -50,7 +50,7 @@ export const m = defineMessages({
       behind: (title: string, done: number, target: number) => `${title} geride: ${done} / ${target}`,
       noGoalsThisWeek: "bu hafta hedef yok",
       goalsOnTrack: "hedefler yolunda",
-      show: "Göster",
+      show: kit.show,
     },
     week: {
       list: "Hafta",
@@ -91,7 +91,7 @@ export const m = defineMessages({
       noteLabel: (title: string) => `${title} günün notu`,
     },
     nextStep: {
-      title: "Sıradaki adım",
+      title: kit.nextStep,
       none: "Açık görev yok.",
       add: "Görev ekle",
     },
@@ -117,7 +117,7 @@ export const m = defineMessages({
       day: "Gün",
       time: "Saat",
       who: "Kim yapacak",
-      about: "Neyle ilgili",
+      about: kit.about,
       aboutPlaceholder: "Kişi, firma, fırsat ya da proje ara",
     },
     // manifest

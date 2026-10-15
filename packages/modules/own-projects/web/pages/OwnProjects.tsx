@@ -14,8 +14,9 @@ import { Shelf } from "../components/Shelf";
 import { Empty, ErrorBox, PageSkeleton } from "@kit/components/ui";
 import { OWN_PROJECTS_PATH } from "../paths";
 import { onShelf, useFocusId } from "../ownProjects";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a project is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };

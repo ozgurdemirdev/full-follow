@@ -7,8 +7,9 @@ import { BoardIcon } from "@kit/components/boardIcons";
 import { EditDelete } from "@kit/components/contact";
 import { MicButton } from "@kit/components/MicButton";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Ticking a task toggles it; ticking a payment records the whole remainder (the payments card of the dashboard does the same) */
 function tick(e: CalItem) {
@@ -24,7 +25,7 @@ function ItemRow({ e }: { e: CalItem }) {
   return (
     <div className="flex items-center gap-5 border-t border-border-subtle py-4">
       <button type="button" className="dash-ck" aria-pressed={e.done} disabled={!e.tick} aria-label={m.tickLabel(e.title, e.done)} onClick={() => tick(e)}>
-        <BoardIcon name="check" className="size-icon-xs" stroke={STROKE.check} />
+        <BoardIcon name="check" className="size-icon-xs" stroke={STROKE.bold} />
       </button>
       <span className="w-dash-time-col flex-none whitespace-nowrap font-mono text-sm text-text-secondary">{e.time ?? ANYTIME}</span>
       <span className={`flex min-w-0 flex-grow flex-col ${e.done ? "opacity-muted" : ""}`}>
@@ -56,7 +57,7 @@ function QuickAdd({ date }: { date: string }) {
       <form className="ff-field" onSubmit={(ev) => void submit(ev)}>
         <input type="text" value={text} aria-label={m.day.addToDay} placeholder={m.day.addToDayPlaceholder} onChange={(ev) => setText(ev.target.value)} />
         <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} />
-        <button type="submit" className="ff-field-go" aria-label={kit.add}><BoardIcon name="plus" className="size-icon-chip" stroke={STROKE.check} /></button>
+        <button type="submit" className="ff-field-go" aria-label={kit.add}><BoardIcon name="plus" className="size-icon-chip" stroke={STROKE.bold} /></button>
       </form>
       <div className="flex flex-wrap items-center justify-between gap-3 pl-7">
         <span className="text-sm text-text-muted">{m.day.quickHint}</span>

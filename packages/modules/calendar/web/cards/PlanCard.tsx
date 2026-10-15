@@ -2,7 +2,7 @@ import { run } from "@kit/api/actions";
 import type { GoalDay, Plan, PlanTask, Today } from "@kit/api/types";
 import { openSheet } from "@kit/app/ui";
 import { m as kit } from "@kit/messages";
-import { STROKE } from "../constants";
+
 import { m } from "../messages";
 import { CALENDAR_PATH } from "../paths";
 import { fmtDay, fmtToday } from "@kit/lib/format";
@@ -13,7 +13,7 @@ import { toast } from "@kit/components/toast";
 import { Card, Meter } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
 import { DashOverlay, type ExRow } from "@kit/components/dash/DashOverlay";
-
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 interface Item {
   key: string;
@@ -78,7 +78,7 @@ export function PlanCard({ today }: { today: Today }) {
           {list.map((i) => (
             <div key={i.key} className="flex items-center gap-5 border-t border-border-subtle py-3">
               <button type="button" className="dash-ck" aria-pressed={i.done} aria-label={m.tickLabel(i.title, i.done)} onClick={i.toggle}>
-                <BoardIcon name="check" className="size-icon-xs" stroke={STROKE.check} />
+                <BoardIcon name="check" className="size-icon-xs" stroke={STROKE.bold} />
               </button>
               <span className={`w-dash-time-col flex-none whitespace-nowrap font-mono text-sm ${i.done ? "text-entity-later" : "text-text-secondary"}`}>{i.time}</span>
               <div className={`flex min-w-0 flex-grow flex-col ${i.done ? "opacity-muted" : ""}`}>

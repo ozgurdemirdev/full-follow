@@ -25,7 +25,7 @@ export const dash = defineMessages({
       noOwn: "Aktif kendi projen yok.",
       overlaySub: (client: number, own: number) => `${client} müşteri projesi, ${own} kendi projen`,
       pageClient: "Müşteri projeleri",
-      pageOwn: "Kendi projelerim",
+      pageOwn: kit.ownProjects,
       average: (pct: number) => `Ortalama ilerleme %${pct}`,
     },
   },

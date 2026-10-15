@@ -4,13 +4,14 @@ import remarkGfm from "remark-gfm";
 import { parseTools, type ChatMessage } from "../api";
 import { fmtDay } from "@kit/lib/format";
 import { KIND_LABEL, T } from "../messages";
-import { STROKE } from "../constants";
+
 import { chatApi } from "../api";
 import { Attachment } from "./Attachment";
 import { extractSuggest, splitOpenFence } from "../chatReply";
 import { CardsSkeleton, RecordCards } from "./RecordCards";
 import { SuggestRow } from "./SuggestRow";
 import { Icon } from "@kit/components/icons";
+import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const timeFmt = new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" });
 

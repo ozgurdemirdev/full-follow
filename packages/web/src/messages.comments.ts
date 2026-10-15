@@ -17,7 +17,7 @@ export const comments = defineMessages({
     newThread: {
       opened: "Konu açıldı, Claude MCP’de görüyor",
       title: "Yeni konu",
-      writeToClaude: "Claude’a yaz",
+      writeToClaude: kit.recordActions.writeToClaude,
       about: (label: string) => `${label} hakkında Claude’a yaz`,
       open: "Konu aç",
     },
@@ -51,7 +51,7 @@ export const comments = defineMessages({
       pickTarget: "Neyle ilgili olduğunu seç",
       empty: "Yorum boş olamaz",
       noTarget: "hedef yok",
-      about: "Neyle ilgili",
+      about: kit.about,
       aboutPlaceholder: "Fırsat, proje, kişi ya da firma ara",
       body: "Yorum",
       bodyPlaceholder: "Not ya da soru yaz",

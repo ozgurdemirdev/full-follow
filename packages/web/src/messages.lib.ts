@@ -67,7 +67,7 @@ export const comments = defineMessages({
 
 export const dashboard = defineMessages({
   tr: {
-    groups: { late: "Gecikmiş", soon: "Bu hafta", later: "Sonra" },
+    groups: { late: "Gecikmiş", soon: m.thisWeek, later: "Sonra" },
   },
 });
 
