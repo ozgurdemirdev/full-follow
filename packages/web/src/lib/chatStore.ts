@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { SUGGEST_KEEP } from "./constants";
 
-/** What a running reply is doing: waiting its turn, thinking, using a tool, writing */
-export type ChatPhase = "queued" | "thinking" | "tool" | "writing";
+/** What a running reply is doing: waiting its turn, thinking, using a tool, writing, or waiting for the owner to confirm a tool call */
+export type ChatPhase = "queued" | "thinking" | "tool" | "writing" | "approval";
 
 // Chat state that must survive F5: open or not, large or not, open session, unsent drafts.
 // localStorage can throw (private window), so every access is wrapped.

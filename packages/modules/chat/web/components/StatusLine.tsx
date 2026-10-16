@@ -8,6 +8,7 @@ export function statusText(live: Live): string {
   if (live.phase === "queued") return T.statusQueued;
   if (live.phase === "thinking") return T.statusThinking;
   if (live.phase === "writing") return T.statusWriting;
+  if (live.phase === "approval") return T.permission.status;
   return T.statusTool(live.tool ?? "");
 }
 

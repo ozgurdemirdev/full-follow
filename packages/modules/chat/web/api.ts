@@ -70,6 +70,8 @@ export interface ChatMeta {
   limits: { messagesPageSize: number; sessionsPageSize: number; maxBodyChars: number; haikuPriceStepTokens: number; maxAttachments: number; maxImageBytes: number; maxFileBytes: number };
   cli_ok: boolean;
   cli_error?: "cli_missing" | "mcp_not_built";
+  /** an unanswered confirmation is refused after this long */
+  permission_timeout_ms: number;
   rate_limits: ChatLimits | null;
 }
 export interface ChatUsage {
@@ -85,6 +87,19 @@ export interface ToolRecord {
   ok: boolean;
   /** an `open` call that worked: the record that was shown */
   open?: { type: string; id: number; label: string };
+}
+
+export type PermissionState = "pending" | "allowed" | "denied" | "expired" | "cancelled";
+/** A confirmation Claude asked for before a guarded tool call: the card in the thread under the reply it belongs to */
+export interface ChatPermission {
+  id: number;
+  session_id: number;
+  message_id: number | null;
+  tool_name: string;
+  summary: string;
+  state: PermissionState;
+  created_at: string;
+  answered_at: string | null;
 }
 
 /** Live data of one record card; `missing` for a deleted or unknown record */
@@ -118,6 +133,8 @@ export const chatApi = {
   attachmentUrl: (id: number) => `/api${base}/attachments/${id}`,
   records: (keys: string[]) => api.get<CardRecord[]>(`${base}/records${qs({ keys: keys.join(",") })}`),
   stop: (id: number) => api.post<{ ok: true }>(`${base}/sessions/${id}/stop`),
+  permissions: (id: number) => api.get<{ rows: ChatPermission[] }>(`${base}/sessions/${id}/permissions`),
+  answer: (id: number, allow: boolean) => api.post<ChatPermission>(`${base}/permissions/${id}`, { allow }),
   streamUrl: (id: number, lastEventId: number) => `/api${base}/sessions/${id}/stream${qs({ last_event_id: lastEventId })}`,
 };
 

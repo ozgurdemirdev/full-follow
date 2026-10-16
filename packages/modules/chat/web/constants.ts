@@ -27,3 +27,8 @@ export const COPIED_FEEDBACK_MS = 1_600;
 
 /** Record blocks (the chips under a reply) whose rows are kept so scrolling back does not fetch again; the oldest go first */
 export const RECORD_BLOCKS_KEPT = 60;
+
+/** Confirmation cards a session keeps in memory, the newest (the server lists as many) */
+export const PERMISSION_CARDS_KEPT = 50;
+/** Milliseconds in a second, for the countdown of a confirmation card */
+export const SECOND_MS = 1_000;

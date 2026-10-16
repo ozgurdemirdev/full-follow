@@ -9,7 +9,7 @@ const session = { id: "Chat session id" };
 export const docs = defineDocs({
   "GET /api/chat/meta": {
     summary: "Get the chat settings the panel needs",
-    description: "Models, efforts, defaults, attachment types and limits, whether the Claude CLI is usable (`cli_ok`, `cli_error`) and the rate limits.",
+    description: "Models, efforts, defaults, attachment types and limits, whether the Claude CLI is usable (`cli_ok`, `cli_error`), the rate limits, and how long a confirmation waits for an answer (`permission_timeout_ms`).",
     response: object,
   },
   "GET /api/chat/records": {

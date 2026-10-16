@@ -411,6 +411,11 @@ export interface PriceFloor {
   draft_auto: boolean;
   draft_model: string;
   draft_effort: string;
+  /** the panel chat's access: nothing asks (full authority), page reading, local files and the folders they reach */
+  chat_full_access: boolean;
+  chat_web_fetch: boolean;
+  chat_local_files: boolean;
+  chat_local_folders: string[];
 }
 /** One month of the report against the price floor (also the shape of the `month` of `GET /api/report`) */
 export interface MonthReport {

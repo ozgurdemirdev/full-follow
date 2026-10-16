@@ -6,8 +6,8 @@ export type Activity = "idle" | "queued" | "thinking" | "search" | "work" | "wri
 /** Tools that only read or look: the mascot searches. Every other tool changes something: it works. */
 const SEARCH_TOOLS = new Set(["find", "get", "timeline", "today", "report", "open", "ToolSearch", "WebSearch", "WebFetch"]);
 
-/** The single mapping from the live chat state to an activity; a finished reply is not here (done cheers, error is timed by the caller) */
-export const CHAT_ACTIVITY: Record<Exclude<ChatPhase, "tool">, Activity> = { queued: "queued", thinking: "thinking", writing: "writing" };
+/** The single mapping from the live chat state to an activity; a finished reply is not here (done cheers, error is timed by the caller). Waiting for the owner's confirmation looks like waiting its turn. */
+export const CHAT_ACTIVITY: Record<Exclude<ChatPhase, "tool">, Activity> = { queued: "queued", thinking: "thinking", writing: "writing", approval: "queued" };
 
 export function activityOf(live: { running: boolean; phase: ChatPhase | null; tool: string | null }): Activity {
   if (!live.running || !live.phase) return "idle";

@@ -10,6 +10,7 @@ interface Props {
   model: string;
   effort: string;
   meta: ChatMeta | null;
+  fullAccess: boolean;
   large: boolean;
   popOpen: boolean;
   onTitle: (title: string) => void;
@@ -19,7 +20,7 @@ interface Props {
   onMinimize: () => void;
 }
 
-export function ChatHeader({ title, titleKey, model, effort, meta, large, popOpen, onTitle, onToggleSessions, onTogglePop, onToggleLarge, onMinimize }: Props) {
+export function ChatHeader({ title, titleKey, model, effort, meta, fullAccess, large, popOpen, onTitle, onToggleSessions, onTogglePop, onToggleLarge, onMinimize }: Props) {
   const [draft, setDraft] = useState(title);
   useEffect(() => setDraft(title), [title, titleKey]);
   const commit = () => {
@@ -51,6 +52,7 @@ export function ChatHeader({ title, titleKey, model, effort, meta, large, popOpe
           }
         }}
       />
+      {fullAccess && <span className="fullmark" role="note" title={T.fullAccessMarkHint} aria-label={T.fullAccessMarkHint}>{T.fullAccessMark}</span>}
       <button className="mchip" type="button" aria-expanded={popOpen} aria-haspopup="dialog" onClick={onTogglePop}>
         <span>{modelLabel} · {effortLabel}</span>
         <Icon name="down" className="size-icon-sm" />

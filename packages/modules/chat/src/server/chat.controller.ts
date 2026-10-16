@@ -6,6 +6,7 @@ import type { Request, Response } from "express";
 import { APP_TOKEN, type Core } from "@fullfollow/core";
 import { intId, parse } from "@fullfollow/core";
 import { permissionAnswer } from "../service/schemas";
+import { PERMISSION_LIMITS } from "../constants";
 import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
@@ -33,7 +34,7 @@ export class ChatController {
   @Get("meta")
   meta() {
     const cli_error = !resolveCli() ? "cli_missing" : !mcpBuilt() ? "mcp_not_built" : undefined;
-    return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, defaults: CHAT_DEFAULTS, attachment_types: CHAT_ATTACHMENT_TYPES, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits };
+    return { models: CHAT_MODELS, efforts: CHAT_EFFORTS, defaults: CHAT_DEFAULTS, attachment_types: CHAT_ATTACHMENT_TYPES, limits: CHAT_LIMITS, cli_ok: !cli_error, cli_error, rate_limits: this.hub.limits, permission_timeout_ms: PERMISSION_LIMITS.timeoutMs };
   }
 
   /** Live rows for the record cards of a reply: ?keys=task:7,person:12,template:5@12 (max 30) */

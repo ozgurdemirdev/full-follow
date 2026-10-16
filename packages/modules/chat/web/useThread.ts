@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@kit/api/client";
-import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatPhase, type ChatSession, type ChatUsage } from "./api";
+import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatPermission, type ChatPhase, type ChatSession, type ChatUsage } from "./api";
+import { PERMISSION_CARDS_KEPT } from "./constants";
 import { useChatStream, type Connection } from "./useChatStream";
 
 export interface Live {
@@ -21,6 +22,10 @@ export interface ThreadEvents {
 
 const isActive = (m: ChatMessage) => m.role === "assistant" && (m.state === "pending" || m.state === "streaming");
 
+/** A confirmation from the stream replaces the card with the same id, or joins the list in id order */
+const upsertCard = (list: ChatPermission[], row: ChatPermission) =>
+  list.some((p) => p.id === row.id) ? list.map((p) => (p.id === row.id ? row : p)) : [...list, row].sort((a, b) => a.id - b.id).slice(-PERMISSION_CARDS_KEPT);
+
 /** Newest page from a refetch: replaces rows with the same id, keeps older rows already loaded and unconfirmed bubbles */
 function mergeNewest(prev: ChatMessage[], fresh: ChatMessage[]): ChatMessage[] {
   const first = fresh[0]?.id ?? Infinity;
@@ -35,6 +40,8 @@ function mergeNewest(prev: ChatMessage[], fresh: ChatMessage[]): ChatMessage[] {
  */
 export function useThread(sessionId: number | null, ev: ThreadEvents) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  /** the confirmations Claude asked for in this session (the newest the server keeps), oldest first */
+  const [permissions, setPermissions] = useState<ChatPermission[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [live, setLive] = useState<Live | null>(null);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
@@ -59,8 +66,9 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
   const remember = (list: ChatMessage[]) => list.forEach((m) => m.role === "assistant" && lens.current.set(m.id, m.body.length));
 
   const load = useCallback(async (id: number, replace: boolean) => {
-    const r = await chatApi.messages(id);
+    const [r, cards] = await Promise.all([chatApi.messages(id), chatApi.permissions(id)]);
     if (sid.current !== id) return;
+    setPermissions(cards.rows);
     remember(r.items);
     pending.current.clear();
     setMessages((prev) => (replace ? r.items : mergeNewest(prev, r.items)));
@@ -75,6 +83,7 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
 
   useEffect(() => {
     setMessages([]);
+    setPermissions([]);
     setHasMore(false);
     setLive(null);
     setStreamUrl(null);
@@ -142,6 +151,9 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
       case "navigate":
         events.current.onNavigate(d);
         break;
+      case "permission":
+        setPermissions((list) => upsertCard(list, d));
+        break;
       case "snapshot":
         void load(id, false);
         break;
@@ -192,5 +204,11 @@ export function useThread(sessionId: number | null, ev: ThreadEvents) {
     if (sid.current) void chatApi.stop(sid.current);
   }, []);
 
-  return { messages, hasMore, live, loading, ready, connection, send, stop, loadOlder };
+  /** The owner's answer; the settled card arrives on the stream too, the reply keeps it in place at once */
+  const answer = useCallback(async (id: number, allow: boolean) => {
+    const row = await chatApi.answer(id, allow);
+    setPermissions((list) => upsertCard(list, row));
+  }, []);
+
+  return { messages, permissions, hasMore, live, loading, ready, connection, send, stop, loadOlder, answer };
 }

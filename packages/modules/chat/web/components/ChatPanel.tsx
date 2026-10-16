@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type Ref } from "react";
-import type { ChatLimits, ChatMessage, ChatMeta, ChatSession } from "../api";
+import type { ChatLimits, ChatMessage, ChatMeta, ChatPermission, ChatSession } from "../api";
 import { T } from "../messages";
 import type { Connection } from "../useChatStream";
 import type { Live } from "../useThread";
@@ -26,6 +26,11 @@ export interface PanelProps {
   hasMore: boolean;
   loading: boolean;
   live: Live | null;
+  /** the confirmations of the open session and the owner's answer to one */
+  permissions: ChatPermission[];
+  onAnswer: (id: number, allow: boolean) => Promise<void>;
+  /** full authority is on: nothing asks, the header shows it */
+  fullAccess: boolean;
   connection: Connection;
   inputRef: Ref<HTMLTextAreaElement>;
   onPickSession: (id: number) => void;
@@ -136,6 +141,7 @@ export function ChatPanel(p: PanelProps) {
           model={model}
           effort={effort}
           meta={p.meta}
+          fullAccess={p.fullAccess}
           large={p.large}
           popOpen={popOpen}
           onTitle={p.onTitle}
@@ -165,6 +171,10 @@ export function ChatPanel(p: PanelProps) {
             hasMore={p.hasMore}
             loading={p.loading}
             loadOlder={p.loadOlder}
+            permissions={p.permissions}
+            liveMessageId={p.live?.messageId ?? null}
+            permissionTimeoutMs={p.meta?.permission_timeout_ms ?? 0}
+            onAnswer={p.onAnswer}
             onRetrySend={p.onRetrySend}
             onRetryReply={p.onRetryReply}
             onOpenRecord={p.onOpenRecord}

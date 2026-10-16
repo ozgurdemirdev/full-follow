@@ -95,7 +95,7 @@ packages/modules/<key>/web/
 ### The kit and the boundary
 
 - A module's web code imports React, the npm packages `packages/web` has, `@kit/*` (an alias for `packages/web/src/*`) and its own files. Never another module's `web/`, `@fullfollow/*`, server or node code (`npm run check:boundaries` fails the build). `packages/web/src` never imports a module except `src/modules.generated.ts`.
-- The kit is: the shell (`app/`), the UI kit (`components/ui.tsx`, `layout.tsx`, `ExpandOverlay`, `NumberField`, `MicButton`, `boardIcons`, `icons`, `components/forms/*`, `forms/shared`, `forms/helpers`, `forms/pickers`), the api client and store, tokens and the shared styles, `lib/format`, `lib/media`, the Dashboard and Settings hosts, the Comments page. Anything else that a screen uses moves with the screen; a helper two modules need stays in the kit only when it is generic (formatting, layout), domain helpers move and the other module reads the data through the API or a slot.
+- The kit is: the shell (`app/`), the UI kit (`components/ui.tsx`, `layout.tsx`, `ExpandOverlay`, `Dialog`, `NumberField`, `MicButton`, `boardIcons`, `icons`, `components/forms/*`, `forms/shared`, `forms/helpers`, `forms/pickers`), the api client and store, tokens and the shared styles, `lib/format`, `lib/media`, the Dashboard and Settings hosts, the Comments page. Anything else that a screen uses moves with the screen; a helper two modules need stays in the kit only when it is generic (formatting, layout), domain helpers move and the other module reads the data through the API or a slot.
 - Import order inside a manifest matters in one way: `defineWebModule` comes from `@kit/app/modules/define`, `linkTo` and `byRecord` from `@kit/app/modules/links`. Never import `app/modules/registry`, `api/actions` or `forms/meta` (they import the registry, which imports every manifest) statically from a manifest; inside a page, card or form that is loaded lazily they are fine.
 - Lists never ask for "all": a list a screen needs whole (`useIndex`, `useQuery(path, drained)`) is read a page at a time until `total`; an endless list (people, companies, history) is `usePaged(path, size)` with a `<LoadMore>` at its end and the filters in the path; a picker is `Combo remote` (the server searches as the text is typed) and the global search is the manifest's `search` (`path` + `hit`). Counts a screen shows are the server's `total` or an aggregate route, never the length of a loaded list.
 - Types the module owns move to `web/types.ts`; the Today sections the shell itself reads (`Plan`, `Task`, `Draft` ...) stay in `packages/web/src/api/types*.ts`.
@@ -134,7 +134,7 @@ Slots that exist: `app.overlay` (props `{ onActivate }`, the mascot and the chat
 | Settings categories | hesap 10, isletme 20, takip 30, claude 40, maskot 50, liste 60, moduller 70, cop 80 |
 | Settings rows of isletme | money and floor 10 (reports), weekly target 20, daily goals 30 (calendar), payment template 40 (reports) |
 | Settings rows of takip | reply wait and cooling 10, follow-up days 20 (drafts), post refresh 30 (posts), daily send limits and warmup 40 (drafts) |
-| Settings rows of claude | connection 10, sending without asking and learned rules 20 (drafts), pinned notes 30 (chat) |
+| Settings rows of claude | connection 10, sending without asking and learned rules 20 (drafts), auto drafts 25, pinned notes 30, access (full authority, page reading, local files) 35 (chat) |
 
 Two modules may register the same dashboard `id` (projects and own-projects both show the projects card): the first one wins.
 

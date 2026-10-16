@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { chatApi, type ChatAttachment, type ChatLimits, type ChatMessage, type ChatMeta, type ChatSession, type ChatUsage } from "./api";
 import { ChatButton } from "./components/ChatButton";
 import { ChatPanel } from "./components/ChatPanel";
@@ -10,6 +10,7 @@ import { CHAT_UI, DRAFT_RUN_LIVE } from "./constants";
 import { isDesk } from "@kit/lib/media";
 import { useAutoDraft } from "@kit/lib/askClaude";
 import { useDraftActive } from "@kit/lib/draftRuns";
+import { useSettings } from "@kit/lib/settings";
 import { m as kit } from "@kit/messages";
 import { useOpenRecord } from "./openRecord";
 import { recordCache } from "./recordCache";
@@ -80,6 +81,10 @@ export default function ChatWidget() {
   }, [openRecord]);
 
   const thread = useThread(sessionId, { onSession, onUsage, onLimits: setLimits, onFinished, onNavigate });
+  // while a card of the running reply waits for the owner, the reply is waiting for them: the status line and the mascot say so
+  const waiting = thread.permissions.some((p) => p.state === "pending" && p.message_id === thread.live?.messageId);
+  const live = useMemo(() => (thread.live && waiting ? { ...thread.live, phase: "approval" as const } : thread.live), [thread.live, waiting]);
+  const fullAccess = !!useSettings().data?.chat_full_access;
 
   useEffect(() => {
     void chatApi.meta().then((m) => {
@@ -201,7 +206,7 @@ export default function ChatWidget() {
     if (last && sessionId) void thread.send(sessionId, last.body, crypto.randomUUID()).then((e) => e && toast(e.message, "error"));
   };
 
-  const secs = useElapsed(open ? null : thread.live?.since ?? null);
+  const secs = useElapsed(open ? null : live?.since ?? null);
 
   // the mascot opens the chat (never closes it): closed -> open and focus the composer, open -> just focus
   const openRef = useRef(open);
@@ -226,13 +231,13 @@ export default function ChatWidget() {
   }, []);
   // publish what the mascot shows: open, a running reply with its status (or a background draft run), a finished reply nobody saw
   const drafting = useDraftActive(useAutoDraft());
-  const status = thread.live ? statusText(thread.live) : drafting ? kit.draftRun.writing : null;
-  const since = thread.live?.since ?? null;
-  const phase = thread.live?.phase ?? (drafting ? DRAFT_RUN_LIVE.phase : null);
-  const tool = thread.live?.tool ?? (drafting ? DRAFT_RUN_LIVE.tool : null);
+  const status = live ? statusText(live) : drafting ? kit.draftRun.writing : null;
+  const since = live?.since ?? null;
+  const phase = live?.phase ?? (drafting ? DRAFT_RUN_LIVE.phase : null);
+  const tool = live?.tool ?? (drafting ? DRAFT_RUN_LIVE.tool : null);
   useEffect(() => {
-    chatLive.set({ open, running: !!thread.live || drafting, ready, status, since, phase, tool, outcome });
-  }, [open, thread.live, drafting, ready, status, since, phase, tool, outcome]);
+    chatLive.set({ open, running: !!live || drafting, ready, status, since, phase, tool, outcome });
+  }, [open, live, drafting, ready, status, since, phase, tool, outcome]);
   // the old button stays until the mascot is really there: there is always one way to open the chat
   const mascotUsable = useChatOpener();
   const defaults = meta?.defaults;
@@ -241,7 +246,7 @@ export default function ChatWidget() {
     <>
       {!mascotUsable && <ChatButton
         open={open}
-        status={thread.live ? statusText(thread.live) : null}
+        status={live ? statusText(live) : null}
         seconds={secs}
         ready={ready}
         buttonRef={button}
@@ -261,7 +266,10 @@ export default function ChatWidget() {
         messages={thread.messages}
         hasMore={thread.hasMore}
         loading={thread.loading}
-        live={thread.live}
+        live={live}
+        permissions={thread.permissions}
+        onAnswer={thread.answer}
+        fullAccess={fullAccess}
         connection={thread.connection}
         inputRef={input}
         onPickSession={pick}
