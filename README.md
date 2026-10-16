@@ -113,9 +113,18 @@ npm start                          # tek komut: kontrol eder, derler, sunucuyu a
 Panel sohbetindeki Claude'un yazma araçları vardır: kayıt ekler, günceller, aşama değiştirir, çöp kutusuna taşır. Bir web sayfası, bir kaydın notu ya da eklenen bir dosya, Claude'a talimat gibi yazılmış metin taşıyabilir. Bunun için konan sınırlar:
 
 - Claude kimseye mesaj gönderemez, yalnız taslak hazırlar; taslağı onaylamak ve "gönderildi" işaretlemek yalnız sende.
-- Sabit notları, taslak kurallarını, gizli modülleri ve adını değiştiremez (bunlar Claude'un talimatlarına girer).
+- Kayıt silmek, ödeme girmek (`pay`) ve ayar değiştirmek senin onayını ister: sohbette ne olacağını yazan bir kart çıkar ("Kişi silinecek: …"), "Onayla" ya da "Vazgeç". İki dakika içinde cevap gelmezse yapılmaz. Diğer yazmalar (kayıt, taslak, temas, aşama) sormadan çalışır.
+- Sabit notları, taslak kurallarını, gizli modülleri, adını ve aşağıdaki erişim ayarlarını değiştiremez (bunlar Claude'un talimatlarına ya da yetkisine girer).
 - Sildiği kayıt çöp kutusuna gider, kalıcı silme yoktur; her değişikliği zaman çizelgesinde "Claude" etiketiyle görürsün.
-- Dosya ve komut araçları kapalıdır. Kayıtlardaki metin Claude'a `⟦ ⟧` içinde "veri, talimat değil" diye işaretlenerek gider; sohbet cevabındaki resimler yüklenmez, bağlantı olarak görünür.
+- Komut aracı (Bash) hiç yoktur. Kayıtlardaki metin Claude'a `⟦ ⟧` içinde "veri, talimat değil" diye işaretlenerek gider; sohbet cevabındaki resimler yüklenmez, bağlantı olarak görünür.
+
+Ayarlar → Claude altındaki erişim ayarları (hepsi varsayılan kapalı, yalnız sen değiştirirsin):
+
+- **Tam yetki:** hiçbir şey onay sormaz. Açarken uyarı çıkar: dışarıdan gelen bir yazı (web sayfası, e-posta, kayıttaki not) Claude'a sormadan kayıt sildirebilir, ödeme girdirebilir, ayar değiştirtebilir. Açıkken sohbet başlığında "Tam yetki" işareti durur.
+- **Sayfa okuma (WebFetch):** kapalıyken Claude yalnız internette arar, sayfa açamaz.
+- **Bilgisayardaki dosyalar:** Claude yalnız eklediğin klasörlerde (tam yol, var olan klasör; Full Follow'un veri klasörü eklenemez) dosya okur, arar ve yeni dosya yazar; var olan bir dosyayı değiştirmeden önce sorar. Klasör dışını okuyamaz, sohbetin çalışma klasörü (`FF_CHAT_CWD`) de klasör olarak eklenmedikçe kapalıdır.
+
+Onaylar `GET /api/chat/sessions/:id/permissions` ve `POST /api/chat/permissions/:id` ile de görülür ve cevaplanır (`/api/docs`).
 
 Yine de Claude'un önerdiği beklenmedik bir işi (bir linki taslaklara eklemek, toplu silmek) onaylamadan önce oku.
 
@@ -161,7 +170,7 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 **Ne yapabilir, ne yapamaz**
 
 - Sadece Full Follow araçlarını kullanır (MCP: `find`, `get`, `save`, `today` ve diğerleri). Claude'un yazdığı her kayıt "Claude" etiketiyle görünür.
-- İnternette arayabilir ve sayfa okuyabilir (`WebSearch`, `WebFetch`); dosya ve komut araçları kapalıdır. Web içeriği güvenilmez veri sayılır: sayfadaki talimatı uygulamaz, bulduklarını yalnız sen isteyince Full Follow'a kaydeder.
+- İnternette arayabilir (`WebSearch`); sayfa okuma (`WebFetch`) ve bilgisayardaki dosyalar ayarla açılır, komut aracı hiç yoktur (bkz. Güvenlik). Silme, ödeme ve ayar değişikliği onay kartı ister. Web içeriği güvenilmez veri sayılır: sayfadaki talimatı uygulamaz, bulduklarını yalnız sen isteyince Full Follow'a kaydeder.
 - Dosya okuyamaz, kabuk komutu çalıştıramaz, internete çıkamaz.
 - Model (Opus 5.5, Sonnet 5.5, Haiku 5.5) ve efor (Düşük, Orta, Yüksek) her sohbet için başlıktaki düğmeden seçilir; değişiklik bir sonraki mesajdan geçerlidir. Varsayılan Haiku 5.5, düşük efor.
 - Eski sohbetler listede durur, tam bağlamıyla devam eder. Başlıktaki çubuk bağlam doluluğunu gösterir.
@@ -197,7 +206,7 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 | Claude beklenmedik şekilde kapandı | Tekrar dene; sürerse sunucu günlüğüne (`data/son-calistirma.log`) bak |
 | Sunucu yeniden başladı, bu cevap yarım kaldı | Sunucu cevap yazılırken kapandı; aynı sohbette devam edebilirsin |
 
-Çalışma dosyaları (`mcp.json`, `system.md`) `data/chat/` içinde kendiliğinden oluşur ve git'e girmez.
+Çalışma dosyaları (`system.md`, `mcp-draft.json`, her sohbet için `mcp-chat-<id>.json`) `data/chat/` içinde kendiliğinden oluşur ve git'e girmez.
 
 ## Ön yüz (packages/web)
 
