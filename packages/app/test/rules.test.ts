@@ -324,7 +324,7 @@ suite("Paket 2: pazarlama kuralları", () => {
   });
 
   it("13. takip dizisi: 3. ve 7. günde takip taslağı, tekrar üretmez, cevap gelince durur, süre ayardan değişir", () => {
-    const co = owner.companies.create({ name: "Gülüş Diş" }).row;
+    const co = owner.companies.create({ name: "Örnek Diş" }).row;
     const z = owner.people.create({ name: "Zeynep Kaya", company_id: co.id }).row;
     const y = owner.people.create({ name: "Yeni" }).row;
     owner.touches.create({ person_id: z.id, channel: "email", direction: "giden", summary: "tanışma", happened_at: at("2026-10-06") });
@@ -355,7 +355,7 @@ suite("Paket 2: pazarlama kuralları", () => {
     const g2 = claude.followups.generate();
     expect(g2.created.map((c) => [c.person_id, c.step])).toEqual([[z.id, 2], [y.id, 1]]);
     const d2 = sql("SELECT * FROM drafts WHERE followup_step = 2")[0];
-    expect(d2).toMatchObject({ template_id: tpl.id, body: "Selam Zeynep, Gülüş Diş için son kez yazıyorum." });
+    expect(d2).toMatchObject({ template_id: tpl.id, body: "Selam Zeynep, Örnek Diş için son kez yazıyorum." });
 
     // reddedilen adım tekrar üretilmez; dizi bitince (2 adım) yeni taslak yok
     owner.drafts.reject(d2.id, "gerek yok");
@@ -407,7 +407,7 @@ suite("fırsat detay: teklifler", () => {
   beforeEach(() => { t = setup(); });
 
   it("tek kabul edilmiş teklif: kabul diğerlerini temizler ve fırsat değerini teklif tutarına çeker", () => {
-    const o = t.opp("Pizza Z", 50000);
+    const o = t.opp("Örnek Pizza", 50000);
     const v1 = t.owner.offers.create({ opportunity_id: o.id, amount: 60000, items: [{ label: "Site", amount: 60000 }] }).row;
     const v2 = t.owner.offers.create({ opportunity_id: o.id, amount: 80000 }).row;
     expect([v1.version, v2.version]).toEqual([1, 2]);
@@ -422,7 +422,7 @@ suite("fırsat detay: teklifler", () => {
   });
 
   it("kazanınca ödeme planı kabul edilen teklif tutarından çıkar", () => {
-    const o = t.opp("Pizza Z", 50000);
+    const o = t.opp("Örnek Pizza", 50000);
     const offer = t.owner.offers.create({ opportunity_id: o.id, amount: 80000 }).row;
     t.owner.offers.update(offer.id, { accepted: true });
     // fırsat değeri sonradan elle değişse de kabul edilen teklif belirleyici

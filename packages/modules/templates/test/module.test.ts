@@ -45,8 +45,8 @@ describe("templates as a module", () => {
     const app = appFor(h, "owner", clock);
     const t = app.templates.create({ name: "T", sector: "Sağlık > Diş hekimi", body: "Merhaba {ad} ({ad_soyad}), {firma} için {sektor} {bilinmeyen}" }).row;
     const sector = (h.sqlite.prepare("SELECT id FROM sectors WHERE name = 'Diş hekimi'").get() as any).id;
-    const ada = person(h, "Dr. Ada Lovelace", { company: "Gülüş Diş", sector });
-    expect(app.templates.render(t.id, { person_id: ada }).body).toBe("Merhaba Ada (Dr. Ada Lovelace), Gülüş Diş için Diş hekimi {bilinmeyen}");
+    const ada = person(h, "Dr. Ada Lovelace", { company: "Örnek Diş", sector });
+    expect(app.templates.render(t.id, { person_id: ada }).body).toBe("Merhaba Ada (Dr. Ada Lovelace), Örnek Diş için Diş hekimi {bilinmeyen}");
     expect(app.templates.render(t.id, { contact: "info@x.example" }).body).toBe("Merhaba (info@x.example), için {bilinmeyen}");
     expect(() => app.templates.render(t.id, {})).toThrow(/kişi ya da firma gerekli/);
     expect(() => app.templates.render(999, { person_id: ada })).toThrow(/şablon #999 bulunamadı/);

@@ -60,9 +60,9 @@ suite("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
   });
 
   it("17. silme çöp kutusuna gider, geri yükleme kaydı alt kayıtları ve bağlarıyla aynı id'lerle getirir", () => {
-    const co = owner.companies.create({ name: "Gülüş Diş" }).row;
+    const co = owner.companies.create({ name: "Örnek Diş" }).row;
     const ref = owner.people.create({ name: "Tanıtan" }).row;
-    const p = owner.people.create({ name: "Zeynep", email: "z@gulus.com", company_id: co.id, referred_by_id: ref.id, tags: ["Sıcak"], sectors: ["Sağlık"] }).row;
+    const p = owner.people.create({ name: "Zeynep", email: "z@ornekdis.com", company_id: co.id, referred_by_id: ref.id, tags: ["Sıcak"], sectors: ["Sağlık"] }).row;
     const kid = owner.people.create({ name: "Zeynep tanıttı", referred_by_id: p.id }).row;
     const t = owner.touches.create({ person_id: p.id, channel: "email", direction: "giden", summary: "merhaba" }).row;
     owner.notes.create({ person_id: p.id, body: "2 kliniği var" });
@@ -76,7 +76,7 @@ suite("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
 
     owner.restore("person", "Zeynep");
     const back = owner.personCard(p.id);
-    expect(back.row).toMatchObject({ id: p.id, email: "z@gulus.com", company_id: co.id, referred_by_id: ref.id, tags: ["Sıcak"], sector_path: "Sağlık" });
+    expect(back.row).toMatchObject({ id: p.id, email: "z@ornekdis.com", company_id: co.id, referred_by_id: ref.id, tags: ["Sıcak"], sector_path: "Sağlık" });
     expect(back.touches.rows.map((x) => x.id)).toEqual([t.id]);
     expect(back.notes).toHaveLength(1);
     expect(back.threads).toHaveLength(1);
@@ -85,12 +85,12 @@ suite("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
 
     // çöpteki kaydın e-postasıyla yeni kayıt açılmaz: geri yükleme önerilir
     owner.remove("person", p.id);
-    expect(dupOf(() => owner.people.create({ name: "Başka Zeynep", email: "Z@gulus.com" }))).toMatchObject({ id: p.id, field: "e-posta", in_trash: true });
+    expect(dupOf(() => owner.people.create({ name: "Başka Zeynep", email: "Z@ornekdis.com" }))).toMatchObject({ id: p.id, field: "e-posta", in_trash: true });
 
     // her kart türü çöp kutusundan döner (firma; görev ve paylaşım modüllerinin testinde)
     owner.remove("company", co.id);
     owner.restore("company", co.id);
-    expect(sql("SELECT name FROM companies WHERE id = ?", co.id)[0].name).toBe("Gülüş Diş");
+    expect(sql("SELECT name FROM companies WHERE id = ?", co.id)[0].name).toBe("Örnek Diş");
   });
 
   it("18. etiket veritabanında: eklenir, adı değişir (slug kalır), silinen kayıtta kalır ama yenisine seçilemez", () => {
@@ -121,10 +121,10 @@ suite("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
   });
 
   it("19. firma: doğrudan ve çalışan temasları durumu ilerletir, adresli temas kayda bağlanır, takip ve şablon firmada çalışır", () => {
-    const co = owner.companies.create({ name: "Gülüş Diş", email: "info@gulus.com", sectors: ["Sağlık > Diş hekimi"] }).row;
+    const co = owner.companies.create({ name: "Örnek Diş", email: "info@ornekdis.com", sectors: ["Sağlık > Diş hekimi"] }).row;
     expect(co.contact_status).toBe("yazilmadi");
     // genel adrese soğuk mail: adres firmanınki, temas firmaya bağlanır
-    owner.touches.create({ contact: "INFO@gulus.com", channel: "email", direction: "giden", summary: "tanışma", happened_at: at("2026-10-01") });
+    owner.touches.create({ contact: "INFO@ornekdis.com", channel: "email", direction: "giden", summary: "tanışma", happened_at: at("2026-10-01") });
     expect(owner.get("company", co.id).row.contact_status).toBe("yazildi");
 
     // takip dizisi firmada: 3. günde {firma} ve {sektor} dolu taslak
@@ -132,7 +132,7 @@ suite("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
     day = "2026-10-04";
     const f = claude.followups.generate();
     expect(f.created).toEqual([expect.objectContaining({ company_id: co.id, step: 1 })]);
-    expect(sql("SELECT company_id, person_id, body FROM drafts")[0]).toMatchObject({ company_id: co.id, person_id: null, body: "Merhaba Gülüş Diş ekibi, Diş hekimi için yazmıştım" });
+    expect(sql("SELECT company_id, person_id, body FROM drafts")[0]).toMatchObject({ company_id: co.id, person_id: null, body: "Merhaba Örnek Diş ekibi, Diş hekimi için yazmıştım" });
     owner.drafts.markSent(sql("SELECT id FROM drafts")[0].id);
     expect(sql("SELECT company_id FROM touches ORDER BY id DESC")[0].company_id).toBe(co.id);
 
@@ -167,8 +167,8 @@ suite("Paket 3: firma, etiket, mükerrer, çöp kutusu", () => {
     expect(() => owner.people.create({ name: "X", source_id: li.id })).toThrow(/silinmiş/);
   });
   it("linkler: fırsat linkleri projede de görünür, fırsatla birlikte çöp kutusuna gider", () => {
-    const p = owner.people.create({ name: "Deniz" }).row;
-    const o = claude.save("opportunity", { title: "Pizza Z", person: "Deniz", source: "LinkedIn", stage: "teklif" }).row;
+    const p = owner.people.create({ name: "Deniz Örnek" }).row;
+    const o = claude.save("opportunity", { title: "Örnek Pizza", person: "Deniz Örnek", source: "LinkedIn", stage: "teklif" }).row;
     const deck = claude.save("link", { target_type: "opportunity", target_id: o.id, label: "Teklif sunumu", url: "https://example.com/deck" }).row;
     expect(deck.created_by).toBe("claude");
     expect(() => claude.save("link", { target_type: "opportunity", target_id: o.id, label: "x", url: "olmayan link" })).toThrow(FFError);

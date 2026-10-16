@@ -290,7 +290,7 @@ File layout under `packages/server/src/chat/`:
 
 ### 6.2 Resolving the executable on Windows
 
-`where claude` returns `C:\Users\ozgur\AppData\Roaming\npm\claude.cmd`, a batch shim.
+`where claude` returns `C:\Users\kullanici\AppData\Roaming\npm\claude.cmd`, a batch shim.
 Node cannot spawn `.cmd` files without a shell, and a shell is forbidden (§6.1). So:
 
 1. If `FF_CLAUDE_CLI` is set, use it.

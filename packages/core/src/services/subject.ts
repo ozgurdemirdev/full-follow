@@ -78,7 +78,7 @@ export function subjectWhere(s: ResolvedSubject | Subject, alias = ""): [string,
   return [`${a}person_id IS NULL AND ${a}company_id IS NULL AND ${a}contact = ?`, [s.contact]];
 }
 
-/** The record's own person, a colleague at the same company, or that company itself (e.g. a reply sent "as Pizza Z") */
+/** The record's own person, a colleague at the same company, or that company itself (e.g. a reply sent "as Örnek Pizza") */
 export function sameSide(ctx: Ctx, ownerId: number, s: { person_id?: number | null; company_id?: number | null }) {
   if (s.person_id === ownerId) return true;
   const own = rows<{ company_id: number | null }>(ctx, "SELECT company_id FROM people WHERE id = ?", ownerId)[0]?.company_id;
