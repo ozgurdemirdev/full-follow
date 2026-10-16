@@ -15,6 +15,7 @@ export const m = defineMessages({
     /** Refusals of the request guard */
     guard: {
       foreignHost: "bu adrese bu bilgisayardan başka bir ad ile ulaşılamaz (FF_ALLOWED_HOSTS ile eklenir)",
+      crossOrigin: "başka bir sayfadan gelen değişiklik isteği reddedildi",
       bodyType: "gövde application/json ya da multipart/form-data olmalı",
     },
 

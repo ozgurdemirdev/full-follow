@@ -34,5 +34,7 @@ export const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 export const LOOPBACK_HOSTS = ["127.0.0.1", "localhost", "::1"];
 /** Methods that change nothing: they pass the request guard without a declared body type */
 export const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
+/** Sec-Fetch-Site values a data changing request may carry: the panel itself, or the user typing the address ("same-site" is another port of this host) */
+export const SAFE_FETCH_SITES = ["same-origin", "none"];
 /** Body types a data changing request may declare (a form or text body is how another site would send one without a preflight) */
 export const ALLOWED_BODY_TYPES = ["application/json", "multipart/form-data"];

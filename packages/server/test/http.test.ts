@@ -104,6 +104,24 @@ describe("request guard", () => {
     expect([hostAllowed(undefined), hostAllowed(""), hostAllowed("[::2]:80")]).toEqual([false, false, false]);
   });
 
+  it("a data changing request from another origin or another port of this host is refused, multipart included", async () => {
+    const multipart = { "content-type": "multipart/form-data; boundary=x" };
+    const isMultipart = (url: string) => url === "/api/files" || url.endsWith("/attachments");
+    const routes = available(["/api/files", ["chat", "/api/chat/sessions/1/attachments"], ["drafts", "/api/followups/run"], ["network", "/api/touches/adopt-suggested"]]);
+    const self = `http://127.0.0.1:${server.port}`;
+    const send = (url: string, extra: Record<string, string>) =>
+      server.request(url, { method: "POST", headers: { ...(isMultipart(url) ? multipart : JSON_HEADERS), ...extra }, body: isMultipart(url) ? "--x--\r\n" : "{}" });
+    for (const r of routes) {
+      for (const extra of [{ origin: "http://127.0.0.1:5173" }, { origin: "https://evil.example" }, { origin: "null" }, { "sec-fetch-site": "same-site" }, { "sec-fetch-site": "cross-site" }, { origin: self, "sec-fetch-site": "cross-site" }]) {
+        expect((await send(r, extra)).status, `${r} ${JSON.stringify(extra)}`).toBe(403);
+      }
+      for (const extra of [{ origin: self }, { origin: self, "sec-fetch-site": "same-origin" }, { "sec-fetch-site": "none" }, {}]) {
+        expect((await send(r, extra)).status, `${r} ${JSON.stringify(extra)}`).not.toBe(403);
+      }
+    }
+    expect((await server.request("/api/health", { headers: { origin: "https://evil.example", "sec-fetch-site": "cross-site" } })).status).toBe(200);
+  });
+
   it("FF_ALLOWED_HOSTS adds names", async () => {
     process.env.FF_ALLOWED_HOSTS = "phone.local, other.local";
     try {
