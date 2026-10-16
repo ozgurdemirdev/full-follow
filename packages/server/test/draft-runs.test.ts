@@ -4,6 +4,8 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { installed, JSON_HEADERS, startServer, type TestServer } from "./helpers";
 
+/** A run starts the fake CLI and the MCP host: a few seconds each, more on a busy machine */
+const RUN_TIMEOUT_MS = 30_000;
 const needed = ["chat", "drafts", "people", "calendar"].every(installed);
 
 describe.skipIf(!needed)("background draft runs", () => {
@@ -35,7 +37,7 @@ describe.skipIf(!needed)("background draft runs", () => {
   const replyOf = async (sessionId: number) =>
     (await server.request(`/api/chat/sessions/${sessionId}/messages`)).json.items.find((x: { role: string }) => x.role === "assistant");
 
-  it("queues a request, returns the same run for a second press, and saves one draft with only the read tools and draft", async () => {
+  it("queues a request, returns the same run for a second press, and saves one draft with only the read tools and draft", { timeout: RUN_TIMEOUT_MS }, async () => {
     const first = await ask({ title: "Ayşe için mesaj taslağı hazırla", person_id: personId });
     expect(first.status, first.body).toBe(201);
     expect(first.json.mode).toBe("run");
@@ -57,7 +59,7 @@ describe.skipIf(!needed)("background draft runs", () => {
     expect(task).toMatchObject({ assignee: "claude", done_at: expect.any(String) });
   });
 
-  it("runs one request at a time: the second waits queued while the first runs", async () => {
+  it("runs one request at a time: the second waits queued while the first runs", { timeout: RUN_TIMEOUT_MS }, async () => {
     const a = (await ask({ title: "Sıra A taslağı", person_id: personId })).json.run;
     const b = (await ask({ title: "Sıra B taslağı", person_id: personId })).json.run;
     expect(a.state).toBe("running");
@@ -66,7 +68,7 @@ describe.skipIf(!needed)("background draft runs", () => {
     expect((await settle(b.id)).state).toBe("done");
   });
 
-  it("marks a failed run with the reason and removes its task, so the button can ask again", async () => {
+  it("marks a failed run with the reason and removes its task, so the button can ask again", { timeout: RUN_TIMEOUT_MS }, async () => {
     const failed = await settle((await ask({ title: "FAIL taslağı", person_id: personId })).json.run.id);
     expect(failed.state).toBe("failed");
     expect(failed.error).toBeTruthy();

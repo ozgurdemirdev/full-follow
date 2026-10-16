@@ -39,7 +39,8 @@ describe("owner_actor migration", () => {
     fs.cpSync(MIGRATIONS_DIR, old, { recursive: true });
     const journalFile = path.join(old, "meta", "_journal.json");
     const journal = JSON.parse(fs.readFileSync(journalFile, "utf8"));
-    journal.entries = journal.entries.filter((e: { tag: string }) => !e.tag.endsWith("_owner_actor"));
+    // and none after it: the migrator skips a migration older than the last one applied
+    journal.entries = journal.entries.slice(0, journal.entries.findIndex((e: { tag: string }) => e.tag.endsWith("_owner_actor")));
     fs.writeFileSync(journalFile, JSON.stringify(journal));
     const file = path.join(dir, "ff.db");
     const raw = new Database(file);
