@@ -98,6 +98,10 @@ for (const [k, val] of Object.entries(t.opacity)) {
   utils.push(`@utility opacity-${k} {\n  opacity: var(--opacity-${k});\n}`);
 }
 
+// native select arrow: the kit chevron stroked in the muted text colour; a CSS background cannot read var(), so the value is resolved here
+const selectArrow = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${t.palette[PALETTE_REF.exec(t.color.text.muted)[1]]}" stroke-width="${t.stroke.regular}" stroke-linecap="round" stroke-linejoin="round"><path d="${t.icon["chevron-down"]}"/></svg>`;
+root.push(`  --icon-select-arrow: url("data:image/svg+xml,${encodeURIComponent(selectArrow)}");`);
+
 const css = `/* OTOMATİK ÜRETİLDİ: src/styles/tokens.json → npm run tokens. Elle düzenleme. */
 @theme {
 ${theme.join("\n")}

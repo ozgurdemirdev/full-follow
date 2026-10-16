@@ -34,7 +34,7 @@ select:is(.inp, .set-input),
 .opr-add select {
   appearance: none;
   padding-right: calc(var(--spacing-5) + var(--spacing-icon-xs) + var(--spacing-2));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A8A87' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: var(--icon-select-arrow);
   background-repeat: no-repeat;
   background-position: right var(--spacing-5) center;
   background-size: var(--spacing-icon-xs);
