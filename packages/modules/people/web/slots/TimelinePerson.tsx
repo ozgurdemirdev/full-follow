@@ -1,10 +1,10 @@
 import { Link } from "wouter";
-import { run } from "@kit/api/actions";
 import type { Detail, Opportunity, Person, Touch } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { openSheet } from "@kit/app/ui";
 import { Avatar, Chip, Tags, Who } from "@kit/components/ui";
-import { todayIso } from "@kit/lib/format";
+import { useAskClaude } from "@kit/lib/askClaude";
+import { draftRequest } from "@kit/lib/people";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { useRecordHref } from "@kit/lib/useRecordHref";
 import { STAGE, STAGE_TONE } from "@kit/lib/labels";
@@ -46,6 +46,7 @@ function Referrals({ by, name, referrals }: { by: { id: number; name: string } |
 /** The person's contact summary, their opportunities and their referral network beside the timeline of a focused person */
 export default function TimelinePerson({ type, detail, touches }: AsideProps) {
   const tasksOn = useTasksOn();
+  const { asked, ask } = useAskClaude();
   if (type !== "person") return null;
   const p = detail.row as Person;
   const mine = touches.filter((t) => t.person_id === p.id);
@@ -56,8 +57,6 @@ export default function TimelinePerson({ type, detail, touches }: AsideProps) {
     { n: mine.filter((t) => t.direction === "gelen").length, l: m.timeline.statReplies },
     { n: mine.filter((t) => t.kind === "gorusme").length, l: m.timeline.statMeetings },
   ];
-  const ask = () =>
-    run("post", "/tasks", { title: m.timeline.draftTask(p.name), assignee: "claude", due_date: todayIso(), person_id: p.id }, { ok: m.timeline.taskGiven });
   return (
     <>
       <section className="card rise flex flex-col gap-6 p-8">
@@ -82,7 +81,7 @@ export default function TimelinePerson({ type, detail, touches }: AsideProps) {
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn btn-pri" onClick={() => openSheet("touch", { person_id: p.id })}>{m.actions.addTouch}</button>
-          {tasksOn ? <button type="button" className="btn btn-sec" onClick={ask}>{m.actions.askDraft}</button> : null}
+          {tasksOn ? <button type="button" className="btn btn-sec" disabled={asked(draftRequest(p))} onClick={() => void ask(draftRequest(p))}>{asked(draftRequest(p)) ? m.actions.draftAsked : m.actions.askDraft}</button> : null}
           <button type="button" className="btn btn-sec" onClick={() => openSheet("person", { person_id: p.id })}>{kit.edit}</button>
         </div>
       </section>

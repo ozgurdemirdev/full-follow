@@ -1,8 +1,8 @@
 // Companies screen: segments, money, sort and the ask for a draft.
 // The server sends the page of companies (filtered, sorted, with the people of each tile) and the numbers of the whole book; nothing is joined here.
-import { run } from "@kit/api/actions";
 import type { Company, CompanyOverviewRow } from "@kit/api/types";
-import { fmtMonth, todayIso } from "@kit/lib/format";
+import type { ClaudeRequest } from "@kit/lib/askClaude";
+import { fmtMonth } from "@kit/lib/format";
 import { daysSince } from "@kit/lib/people";
 import { m as kit } from "@kit/messages";
 import { m } from "./messages";
@@ -67,6 +67,5 @@ export function viewOf(r: CompanyOverviewRow): CompanyView {
 export const siteLabel = (url: string) => url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 
 // ------------------------------------------------------------ overlay
-/** Ask Claude for a message draft to the right person of the company (a task for Claude) */
-export const askCompanyDraft = (c: Pick<Company, "id" | "name">) =>
-  run("post", "/tasks", { title: m.draftTask(c.name), assignee: "claude", due_date: todayIso(), company_id: c.id }, { ok: m.draftAsked });
+/** The request for Claude to write a message draft to the right person of the company */
+export const companyDraftRequest = (c: Pick<Company, "id" | "name">): ClaudeRequest => ({ title: m.draftTask(c.name), target: { company_id: c.id }, ok: m.draftAsked });

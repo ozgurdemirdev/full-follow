@@ -1,10 +1,10 @@
-import { run } from "@kit/api/actions";
 import type { List, Person } from "@kit/api/types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
 import { useRegistry } from "@kit/app/modules/registry";
 import { PATHS } from "@kit/app/routes";
 import { SHOWN } from "@kit/lib/dashboard";
-import { initials, todayIso } from "@kit/lib/format";
+import { useAskClaude } from "@kit/lib/askClaude";
+import { initials } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { channelName } from "@kit/lib/network";
 import { useTasksOn } from "@kit/lib/taskAccess";
@@ -66,6 +66,7 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
   const ex = useExpand();
   const reg = useRegistry();
   const tasksOn = useTasksOn();
+  const { asked, ask } = useAskClaude();
   const personHref = (p: Person) => reg.link("person", p.id) ?? PATHS.today;
   const shown = list.rows.slice(0, SHOWN.cooling);
   const rows: ExRow[] = list.rows.map((p) => {
@@ -75,8 +76,7 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
       right: m.daysText.days(p.days_since), tag: cold ? m.cooling.cold : m.cooling.cooling, dot: "bg-entity-opportunity", href: personHref(p),
     };
   });
-  const ask = () =>
-    run("post", "/tasks", { title: m.cooling.taskTitle(shown.map((p) => p.name).join(", ")), assignee: "claude", due_date: todayIso() }, { ok: m.common.taskForClaude }).catch(() => {});
+  const request = { title: m.cooling.taskTitle(shown.map((p) => p.name).join(", ")), ok: m.common.taskForClaude };
 
   return (
     <>
@@ -96,9 +96,9 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
           </RecordLink>
         ))}
         {shown.length && tasksOn ? (
-          <button type="button" className="dash-btn is-claude mt-auto" onClick={ask}>
+          <button type="button" className="dash-btn is-claude mt-auto" disabled={asked(request)} onClick={() => void ask(request)}>
             <BoardIcon name="sparkle" className="size-icon-chip" />
-            {m.cooling.ask}
+            {asked(request) ? m.cooling.asked : m.cooling.ask}
           </button>
         ) : null}
       </Card>

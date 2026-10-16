@@ -4,9 +4,9 @@ import type { Idea } from "@kit/api/types";
 import type { IdeaRelated } from "../types";
 import { Slot } from "@kit/app/modules/Slot";
 import { ratePct } from "@kit/lib/format";
-import { askPitch, IDEA_FLOW } from "../ideas";
+import { IDEA_FLOW, pitchRequest } from "../ideas";
 import { IDEA_STAGE } from "@kit/lib/labels";
-import { useDayMarks } from "@kit/lib/people";
+import { useAskClaude } from "@kit/lib/askClaude";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { IdeaExtras } from "./IdeaExtras";
 import { m } from "../messages";
@@ -63,8 +63,8 @@ function MoneyNote({ idea }: { idea: Idea }) {
 
 /** Left panel: stage, stepper, problem, money note, interest ring with the verdict, the two actions */
 export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
-  const [pitched, markPitched] = useDayMarks("pitched");
-  const asked = pitched.has(idea.id);
+  const { asked: isAsked, ask } = useAskClaude();
+  const asked = isAsked(pitchRequest(idea));
   const tasksOn = useTasksOn();
   const stageIdx = IDEA_FLOW.indexOf(idea.stage);
   const move = (stage: string) => stage !== idea.stage && run("patch", `/ideas/${idea.id}`, { stage }, { ok: m.detail.stageSet(IDEA_STAGE[stage]) }).catch(() => {});
@@ -103,7 +103,7 @@ export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelate
       <div className="ideas-actions">
         <Slot name="idea.actions" props={{ idea }} />
         {tasksOn ? (
-          <button type="button" className={`ideas-pitch ${asked ? "is-asked" : ""}`} onClick={() => { if (!asked) askPitch(idea).then(() => markPitched(idea.id)).catch(() => {}); }}>
+          <button type="button" className={`ideas-pitch ${asked ? "is-asked" : ""}`} disabled={asked} onClick={() => void ask(pitchRequest(idea))}>
             {asked ? m.pitch.asked : m.pitch.ask}
           </button>
         ) : null}

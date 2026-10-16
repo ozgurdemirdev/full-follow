@@ -29,6 +29,7 @@ export const m = defineMessages({
       cooling: "Soğuyor",
       taskTitle: (names: string) => `Soğuyan bağlantılar için selam taslağı hazırla: ${names}`,
       ask: "Claude selam taslağı yazsın",
+      asked: "Selam taslağı istendi",
       overlaySub: (days: number) => `${days} günden uzun süredir sessiz`,
       foot: "Claude her biri için selam taslağı yazabilir",
     },

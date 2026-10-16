@@ -1,13 +1,13 @@
 // Client projects screen: tabs, the milestone money track, who a project waits on, and the one-pass join of
 // projects, payments, tasks and comment threads (everything is loaded once and joined in memory, no fetch per row).
 import { useMemo } from "react";
-import { run } from "@kit/api/actions";
 import { useProjects, useThreads } from "@kit/api/keys";
 import { drained } from "@kit/api/paged";
 import { useQuery } from "@kit/api/store";
 import type { List, Payment, ProjectTask, ProjectTaskGroup, Thread } from "@kit/api/types";
 import type { ProjectRow, WaitKey } from "./types";
 import { ACTIVE_PROJECT_STAGES, lateDays, remaining } from "@kit/lib/dashboard";
+import type { ClaudeRequest } from "@kit/lib/askClaude";
 import { daysFrom, lira, todayIso } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { MILESTONE, PROJECT_STEPS, type ProjectStage } from "@kit/lib/labels";
@@ -76,11 +76,8 @@ export interface ProjectView {
 export const reminderTitle = m.ask.reminderTitle;
 const planTitle = m.ask.planTitle;
 
-/** Gives Claude a task on a project; the result shows up in Taslaklar or the plan */
-export function askClaude(projectId: number, title: string, ok: string) {
-  return run("post", "/tasks", { title, assignee: "claude", due_date: todayIso(), project_id: projectId }, { ok }).catch(() => {});
-}
-export const requestReminder = (projectId: number, name: string) => askClaude(projectId, reminderTitle(name), m.ask.reminderOk);
+/** The request for Claude to write a payment reminder for a project (the draft shows up in Taslaklar) */
+export const reminderRequest = (projectId: number, name: string): ClaudeRequest => ({ title: reminderTitle(name), target: { project_id: projectId }, ok: m.ask.reminderOk });
 
 /** Claude's own tasks (a requested draft or plan) never put a project on hold for Özgür or the client */
 const humanTask = (t: ProjectTask) => t.assignee !== "claude";

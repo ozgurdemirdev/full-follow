@@ -1,6 +1,5 @@
-import { run } from "@kit/api/actions";
 import type { Idea, IdeaStage, InterestLevel } from "@kit/api/types";
-import { todayIso } from "@kit/lib/format";
+import type { ClaudeRequest } from "@kit/lib/askClaude";
 import { m } from "./messages";
 
 /** The four lanes, left to right: the stage order of an idea */
@@ -27,9 +26,8 @@ export function dotsOf(i: Pick<Idea, "told" | "interested" | "not_interested" | 
   ].slice(0, DOTS_MAX);
 }
 
-/** Ask Claude for a short pitch text: a task for Claude linked to the idea (the draft lands in Taslaklar) */
-export const askPitch = (i: Pick<Idea, "id">) =>
-  run("post", "/tasks", { title: m.pitch.taskTitle, idea_id: i.id, assignee: "claude", due_date: todayIso() }, { ok: m.pitch.queued });
+/** The request for Claude to write a short pitch text for the idea (the draft lands in Taslaklar) */
+export const pitchRequest = (i: Pick<Idea, "id">): ClaudeRequest => ({ title: m.pitch.taskTitle, target: { idea_id: i.id }, ok: m.pitch.queued });
 
 export type Lane = { stage: IdeaStage; ideas: Idea[] };
 

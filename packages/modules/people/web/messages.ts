@@ -36,7 +36,7 @@ export const m = defineMessages({
       influence: "Karar rolü",
       contactStatus: kit.contactStatus,
     },
-    actions: { addTouch: kit.recordActions.addTouch, writeDraft: kit.recordActions.writeDraft, askDraft: kit.recordActions.askDraft, draftPending: kit.recordActions.draftPending, draftAsked: kit.recordActions.draftAsked },
+    actions: { addTouch: kit.recordActions.addTouch, writeDraft: kit.recordActions.writeDraft, askDraft: kit.recordActions.askDraft, draftAsked: kit.recordActions.draftAsked },
     page: {
       sub: (count: number, week: number | null, cold: number) => `${count} kişi${week === null ? "" : ` · bu hafta ${week} temas`} · ${cold} ilişki soğuyor`,
       searchPlaceholder: "İsim, firma ya da etiket",
@@ -117,8 +117,6 @@ export const m = defineMessages({
       statTouches: "temas",
       statReplies: "cevap",
       statMeetings: "görüşme",
-      draftTask: (name: string) => `${name} için mesaj taslağı hazırla`,
-      taskGiven: "Claude’a görev verildi, taslak onayına düşecek",
     },
     postPeople: {
       title: (count: number) => `Kişiler · ${count}`,

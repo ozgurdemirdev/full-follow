@@ -66,7 +66,6 @@ export const m = defineMessages({
       writeDraft: kit.recordActions.writeDraft,
       writeToClaude: kit.recordActions.writeToClaude,
       editFields: "Düzenle, web ve hesaplar",
-      draftPending: kit.recordActions.draftPending,
       addPerson: kit.recordActions.addPerson,
       draftAsked: kit.recordActions.draftAsked,
       askDraft: kit.recordActions.askDraft,

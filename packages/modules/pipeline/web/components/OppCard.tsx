@@ -1,10 +1,11 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { Link } from "wouter";
-import { remove, run } from "@kit/api/actions";
+import { remove } from "@kit/api/actions";
 import type { Opportunity } from "@kit/api/types";
 import { useLinkTo } from "@kit/app/modules/registry";
 import { openSheet } from "@kit/app/ui";
-import { fmtDay, lira, todayIso } from "@kit/lib/format";
+import { useAskClaude } from "@kit/lib/askClaude";
+import { fmtDay, lira } from "@kit/lib/format";
 import { STAGE, type OppStage } from "@kit/lib/labels";
 import { opportunityPath } from "../paths";
 import { m } from "../messages";
@@ -36,7 +37,7 @@ export interface OppCardProps {
 
 /** One deal: company, person, value, age against the stage's stale limit, next step, and expandable details */
 export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, overlay, onToggle, onMove }: OppCardProps) {
-  const [asked, setAsked] = useState(false);
+  const { asked: isAsked, ask } = useAskClaude();
   const tasksOn = useTasksOn();
   const live = isLive(o);
   const rules = useStageRules();
@@ -47,17 +48,8 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
   const title = o.company_name ?? o.title;
   const sub = `${o.company_name ? `${o.title} · ` : ""}${o.person_name}`;
 
-  const draft = async () => {
-    if (asked) return;
-    setAsked(true);
-    try {
-      await run("post", "/tasks", {
-        title: m.card.claudeTask(title), assignee: "claude", due_date: todayIso(), opportunity_id: o.id,
-      }, { ok: m.card.draftQueued });
-    } catch {
-      setAsked(false);
-    }
-  };
+  const request = { title: m.card.claudeTask(title), target: { opportunity_id: o.id }, ok: m.card.draftQueued };
+  const asked = isAsked(request);
 
   return (
     <article data-record={`opportunity-${o.id}`} className={`pipe-card ${overlay ? "is-overlay" : ""}`} data-late={age?.late || undefined} aria-roledescription={m.card.dragLabel}>
@@ -100,7 +92,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
             </select>
           ) : null}
           <span className="pipe-actions">
-            {tasksOn ? <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void draft()}>{asked ? m.card.asked : m.card.askDraft}</button> : null}
+            {tasksOn ? <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void ask(request)}>{asked ? m.card.asked : m.card.askDraft}</button> : null}
             {personHref ? <Link href={personHref} className="pipe-btn">{m.card.person}</Link> : null}
           </span>
           <span className="pipe-actions">
