@@ -50,6 +50,17 @@ if (!existsSync(join(root, "node_modules"))) fail("Bağımlılıklar kurulmamı�
   }
 }
 
+// 2b. Veri klasörünün izinleri (yalnız Windows): diğer Windows hesapları yazabiliyorsa veritabanını ve .env'i de okuyabilir.
+// icacls hesap adlarını dile göre yazar (Users / Kullanıcılar, Authenticated Users / Kimliği Doğrulanmış Kullanıcılar)
+if (process.platform === "win32") {
+  const dataDir = process.env.FF_DB ? dirname(resolve(process.env.FF_DB)) : join(root, "data");
+  const acl = spawnSync("icacls", [dataDir], { encoding: "utf8", windowsHide: true });
+  const WIDE = /(BUILTIN|NT [^\\]+)\\(Users|Authenticated Users|Kullan|Kimli)[^:]*:.*\((?:[^)]*,)?(F|M|W|WD|AD)(?:,[^)]*)?\)/i;
+  if (acl.status === 0 && acl.stdout.split(/\r?\n/).some((l) => WIDE.test(l))) {
+    say(color("33", `  Uyarı: ${dataDir} klasörüne bu bilgisayardaki diğer Windows hesapları da yazabiliyor (veritabanı ve .env okunabilir). README "Güvenlik" bölümündeki icacls komutuyla kısıtla.`));
+  }
+}
+
 /** Komutu sessizce çalıştırır; çıktıyı log'a yazar, hata olursa gösterir */
 function step(title, args) {
   return new Promise((done) => {
