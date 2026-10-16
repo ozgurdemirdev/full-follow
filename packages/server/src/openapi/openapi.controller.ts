@@ -20,7 +20,7 @@ const INFO: ApiInfo = {
     "**Authentication.** When the server runs with an app password (`FF_PASSWORD`), log in with `POST /api/login` and the `ff_session` cookie authorises every other call; without a password every call is open.",
     "**Errors.** Every failure answers `{ error, code }` (see the `Error` schema). The `error` text is Turkish, meant for a person.",
     "**Lists.** `GET` on a collection takes `q`, `limit` (1 to 1000, a bigger value is cut to 1000) and `offset` (0 or more) and answers `{ rows, total }`; a `limit` or `offset` that is not a whole number in range is a 400. Writes answer `{ row, effects }`.",
-    "**Requests.** A request that changes data must send `Content-Type: application/json` (or `multipart/form-data` for an upload), even without a body, and its `Host` must be this computer (localhost, 127.0.0.1, an own address or a name in `FF_ALLOWED_HOSTS`).",
+    "**Requests.** A request that changes data must send `Content-Type: application/json` (or `multipart/form-data` for an upload), even without a body, and its `Host` must be this computer (localhost, 127.0.0.1, an own address or a name in `FF_ALLOWED_HOSTS`). A browser request that changes data from another origin (an `Origin` other than the `Host`, or `Sec-Fetch-Site` other than `same-origin` or `none`) is a 403.",
     "**Modules.** Routes are grouped by tag: one tag per installed feature module (`FF_MODULES_OFF` leaves a module's tag and routes out), plus `core`, `auth` and `docs`.",
   ].join("\n\n"),
 };
