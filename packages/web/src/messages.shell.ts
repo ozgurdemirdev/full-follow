@@ -28,7 +28,7 @@ export const shell = defineMessages({
       title: "Adın ne?",
       sub: "Panelde ve Claude’la konuşurken bu adı kullanırız.",
       label: "Adın",
-      placeholder: "Örneğin Ayşe",
+      placeholder: "Örneğin Özgür",
       failed: "Kaydedilemedi",
       go: "Devam et",
       busy: "Kaydediliyor",
