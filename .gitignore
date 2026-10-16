@@ -1,14 +1,8 @@
 node_modules/
 dist/
 *.tsbuildinfo
-data/*.db
-data/*.db-shm
-data/*.db-wal
 .env
-data/backups/
-data/*.log
 *.tgz
-data/chat/
-data/files/
-data/session.key
-data/session.epoch
+# runtime data: the database, backups, uploads, chat files, the password hash and session keys; nothing in data/ is ever committed
+data/*
+!data/.gitkeep
