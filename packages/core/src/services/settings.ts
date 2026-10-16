@@ -159,6 +159,8 @@ export function settingValues(ctx: Ctx) {
     modules_hidden: hiddenModules(ctx),
     // empty until the first run setup, which the web shows while it is
     owner_name: ownerName(ctx) ?? "",
+    // read by the server at start: a password set in the panel opens the network only while this is on
+    phone_access: readSetting(ctx, "phone_access") === "1",
     ...draftAutoSettings(ctx),
     ...chatAccessSettings(ctx),
   };
@@ -207,7 +209,7 @@ export function settingsService(ctx: Ctx) {
       stored = JSON.stringify(keys);
     } else if (key === "draft_rules") {
       stored = JSON.stringify(parse(draftRulesSchema, value));
-    } else if (key === "draft_auto" || key === "chat_full_access" || key === "chat_web_fetch" || key === "chat_local_files") {
+    } else if (key === "draft_auto" || key === "chat_full_access" || key === "chat_web_fetch" || key === "chat_local_files" || key === "phone_access") {
       stored = parse(switchSchema, value) ? "1" : "0";
     } else if (key === "chat_local_folders") {
       stored = JSON.stringify(validFolders(value));

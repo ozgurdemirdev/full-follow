@@ -116,6 +116,7 @@ export const SETTING_KEYS = [
   "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden", "owner_name",
   "draft_auto", "draft_model", "draft_effort",
   "chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders",
+  "phone_access",
 ] as const;
 
 /**
@@ -123,11 +124,12 @@ export const SETTING_KEYS = [
  * and off, so text a page or a record planted in Claude would otherwise persist and steer later chats: the pinned notes and the
  * draft rules are read into the system prompt, the hidden modules take screens away, and the auto draft switch, model and effort
  * decide how much of the owner's Claude usage background draft runs spend. The panel chat's access settings (full authority, page
- * reading, local files and their folders) decide what Claude may do without asking, so Claude must never widen them itself.
+ * reading, local files and their folders) decide what Claude may do without asking, so Claude must never widen them itself. Phone
+ * access opens the server to the local network at the next start.
  */
 export const OWNER_ONLY_SETTINGS: readonly (typeof SETTING_KEYS)[number][] = [
   "chat_pinned_notes", "draft_rules", "modules_hidden", "owner_name", "draft_auto", "draft_model", "draft_effort",
-  "chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders",
+  "chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders", "phone_access",
 ];
 
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
@@ -217,6 +219,11 @@ export type ChatPermissionState = (typeof CHAT_PERMISSION_STATES)[number];
 export const MCP_CHAT_SESSION_ENV = "FF_CHAT_SESSION";
 /** Max length of the owner's name (setting `owner_name`): the UI labels and the panel Claude's system prompt carry it */
 export const OWNER_NAME_MAX = 40;
+/** The app password the owner sets in the first run setup or in Settings: at least this many characters, at most the max (a bound on the hashing work) */
+export const OWNER_PASSWORD_MIN = 10;
+export const OWNER_PASSWORD_MAX = 256;
+/** The `code` of the 401 every API route answers while the install has no password yet (first run): the web shows the setup screen */
+export const SETUP_REQUIRED_CODE = "setup_required";
 export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_ROLES = ["user", "assistant"] as const;
 export const CHAT_INPUT_MODES = ["text", "voice"] as const;

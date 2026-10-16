@@ -20,6 +20,7 @@ const VALUES: Record<string, unknown> = {
   chat_full_access: true,
   chat_web_fetch: true,
   chat_local_files: true,
+  phone_access: true,
   // a folder of its own: the temp folder itself may hold the database in use (check:modules puts FF_DB there)
   chat_local_folders: [fs.mkdtempSync(path.join(os.tmpdir(), "ff-owner-folder-"))],
 };
@@ -29,6 +30,8 @@ describe("owner only settings", () => {
     expect(OWNER_ONLY_SETTINGS).toEqual(expect.arrayContaining(["chat_pinned_notes", "draft_rules", "modules_hidden", "owner_name"]));
     // the panel chat's access: what Claude may do without asking must never be widened by Claude itself
     expect(OWNER_ONLY_SETTINGS).toEqual(expect.arrayContaining(["chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders"]));
+    // phone access opens the server to the network: Claude must never turn it on
+    expect(OWNER_ONLY_SETTINGS).toContain("phone_access");
   });
 
   it("Claude (through the MCP save) is refused every one of them, alone or with other keys, and may still read them", () => {
