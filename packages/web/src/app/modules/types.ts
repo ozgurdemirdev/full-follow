@@ -48,6 +48,8 @@ export interface SettingsCtx {
   floor?: number;
   hasRules: boolean;
   withSession: boolean;
+  /** where the password comes from (GET /me): `env` FF_PASSWORD, `app` set in the panel; absent while unknown */
+  password?: "env" | "app";
 }
 
 /** Rows of a settings category; rows of all entries of a category are sorted by `order` (a core entry owns the numbers 10, 20, ...) */

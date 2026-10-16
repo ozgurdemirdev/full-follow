@@ -13,9 +13,12 @@ export class ApiError extends Error {
   }
 }
 
-type AuthListener = () => void;
+export const HTTP_UNAUTHORIZED = 401;
+
+/** Gets the error code of the 401: SETUP_REQUIRED_CODE while the install has no password yet (first run), else the session is gone */
+type AuthListener = (code?: string) => void;
 const authListeners = new Set<AuthListener>();
-/** 401 gelince giriş ekranına dön */
+/** 401 gelince giriş (ya da ilk kurulum) ekranına dön */
 export const onAuthRequired = (fn: AuthListener) => {
   authListeners.add(fn);
   return () => void authListeners.delete(fn);
@@ -39,7 +42,7 @@ export async function request<T>(method: string, path: string, body?: unknown, s
   const text = await res.text();
   const data = text ? JSON.parse(text) : undefined;
   if (!res.ok) {
-    if (res.status === 401) authListeners.forEach((fn) => fn());
+    if (res.status === HTTP_UNAUTHORIZED) authListeners.forEach((fn) => fn(data?.code));
     throw new ApiError(data?.error ?? res.statusText, res.status, data?.code, data?.candidates, data?.duplicate);
   }
   return data as T;

@@ -3,6 +3,7 @@ import { restore } from "../../api/actions";
 import { useTrash } from "../../api/keys";
 import { useModules } from "../../api/modules";
 import { useQuery } from "../../api/store";
+import type { Me } from "../../api/types";
 import { useRegistry } from "../../app/modules/registry";
 import type { SettingsCategoryDef, SettingsCtx, SettingsEntry } from "../../app/modules/types";
 import { BOARD_ICON } from "../../components/boardIcons";
@@ -41,7 +42,7 @@ const CORE_CATEGORIES: SettingsCategoryDef[] = [
 
 /** The kit's rows (each category's rows are sorted by `order`: 10, 20, ... so a module's rows can sit between) */
 const CORE_ENTRIES: SettingsEntry[] = [
-  { id: "account", category: "hesap", order: 10, rows: ({ withSession }) => accountRows(withSession) },
+  { id: "account", category: "hesap", order: 10, rows: ({ withSession, password }) => accountRows(withSession, password) },
   { id: "claude", category: "claude", order: 10, rows: () => claudeRows() },
   { id: "lists", category: "liste", order: 10, rows: () => listRows() },
 ];
@@ -51,16 +52,17 @@ const byOrder = <T extends { order: number }>(a: T, b: T) => a.order - b.order;
 /** The single source of categories and rows: the nav, the search and the cards all read this */
 export function useSettingCategories(): SettingCategory[] {
   const settings = useSettings();
-  const me = useQuery<{ auth: boolean }>("/me");
+  const me = useQuery<Me>("/me");
   const trash = useTrash();
   const { has } = useModules();
   const { settingsCategories, settings: entries } = useRegistry();
   const floor = settings.data?.floor;
   const hasRules = Array.isArray(settings.data?.draft_rules);
   const withSession = !!me.data?.auth;
+  const password = me.data?.password;
 
   return useMemo(() => {
-    const ctx: SettingsCtx = { floor, hasRules, withSession };
+    const ctx: SettingsCtx = { floor, hasRules, withSession, password };
     const trashRows: SettingRow[] = trash.rows.map((x) => ({
       id: `${x.type}-${x.id}`,
       name: msg.trash.name(x.label, x.what),
@@ -86,5 +88,5 @@ export function useSettingCategories(): SettingCategory[] {
       }))
       // a category a module brought goes with it: no rows, no category
       .filter((c) => core.has(c.slug) || c.rows.length);
-  }, [floor, hasRules, withSession, trash.rows, trash.data, trash.error, entries, settingsCategories, has]);
+  }, [floor, hasRules, withSession, password, trash.rows, trash.data, trash.error, entries, settingsCategories, has]);
 }

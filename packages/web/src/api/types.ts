@@ -416,6 +416,14 @@ export interface PriceFloor {
   chat_web_fetch: boolean;
   chat_local_files: boolean;
   chat_local_folders: string[];
+  /** a password set in the panel opens the server to the local network at the next start (FF_PASSWORD installs ignore it) */
+  phone_access: boolean;
+}
+/** GET /me: a logged in answer also says where the password comes from (`env`: FF_PASSWORD in .env, `app`: set in the panel) */
+export interface Me {
+  auth: boolean;
+  loggedIn: boolean;
+  password?: "env" | "app";
 }
 /** One month of the report against the price floor (also the shape of the `month` of `GET /api/report`) */
 export interface MonthReport {

@@ -74,3 +74,17 @@
   color: var(--color-accent-on);
   font-weight: var(--font-weight-medium);
 }
+/* a dialog that asks for values: the form keeps the dialog's own column rhythm */
+.dlg-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-7);
+}
+.dlg-form .dlg-input {
+  width: 100%;
+}
+.dlg-error {
+  margin: 0;
+  color: var(--color-danger-soft);
+  font-size: var(--text-base-sm);
+}
