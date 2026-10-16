@@ -61,7 +61,7 @@ npm start                          # tek komut: kontrol eder, derler, sunucuyu a
 ```
 
 - Veritabanı ilk açılışta `data/fullfollow.db` olarak kendiliğinden oluşur (WAL modu, migration otomatik).
-- İlk açılışta panel adını ve şifreni sorar (en az 10 karakter); o zamana kadar sunucu sadece bu bilgisayardan açılır. Telefondan girmek için "Güvenlik" bölümüne bak.
+- İlk açılışta panel adını ve şifreni sorar (en az 12 karakter); o zamana kadar sunucu sadece bu bilgisayardan açılır. Telefondan girmek için "Güvenlik" bölümüne bak.
 - Sunucu yalnızca bu bilgisayarın adreslerine (localhost, 127.0.0.1, kendi IP'n) gelen isteklere cevap verir; telefondan bir ad kullanıyorsan (örn. `pc.local`) `.env` içinde `FF_ALLOWED_HOSTS` ile ekle.
 - Hızlı kontrol: tarayıcıda `http://localhost:3000/api/health` → `{"ok":true}`.
 - `npm start` her adımı yazar (Arka uç derleniyor… tamam). Bir şey ters giderse sebebini ve ne yapılacağını kırmızıyla yazar; tüm çıktı `data/son-calistirma.log` dosyasında kalır.
@@ -86,7 +86,7 @@ npm start                          # tek komut: kontrol eder, derler, sunucuyu a
 
 **Şifre**
 
-- **İlk açılış:** şifre yokken panel "Adın ne?" ekranında adını ve şifreni (en az 10 karakter, iki kez) sorar; kaydedince giriş yapılmış olarak panel açılır. Şifre belirlenene kadar sunucu yalnız `127.0.0.1` adresini dinler ve kurulum ile `/api/health` dışındaki her istek reddedilir, yani ağdaki kimse kurulumu senin yerine yapamaz. Şifre veritabanına değil, yanındaki `data/auth.json` dosyasına yalnız tuzlanmış scrypt özeti olarak yazılır (Claude ve ayarlar ekranı onu görmez).
+- **İlk açılış:** şifre yokken panel "Adın ne?" ekranında adını ve şifreni (en az 12 karakter, iki kez) sorar; kaydedince giriş yapılmış olarak panel açılır. Şifre belirlenene kadar sunucu yalnız `127.0.0.1` adresini dinler ve kurulum ile `/api/health` dışındaki her istek reddedilir, yani ağdaki kimse kurulumu senin yerine yapamaz. Şifre veritabanına değil, yanındaki `data/auth.json` dosyasına yalnız tuzlanmış scrypt özeti olarak yazılır (Claude ve ayarlar ekranı onu görmez).
 - **Şifreyi değiştirmek:** Ayarlar > Hesap > Şifreyi değiştir (mevcut şifre, yeni şifre iki kez). Değişince bütün cihazlardaki oturumlar kapanır, sadece bu tarayıcı açık kalır.
 - **Şifreyi unuttuysan:** bilgisayarda sunucuyu kapat, `npm run reset-password` çalıştır ve onayla (`e`). Sadece `data/auth.json` silinir, kayıtlara dokunulmaz; `npm start` sonrası panel ilk açılıştaki gibi adını ve yeni şifreni sorar.
 - **`FF_PASSWORD` (eski kurulumlar):** `.env` içinde `FF_PASSWORD` doluysa şifre odur, panel şifre sormaz (ad yoksa sadece adı sorar) ve şifre yalnız `.env` dosyasından değişir; `npm run reset-password` ona dokunmaz. Şifre en az 12 karakter olsun (ağa açıkken daha kısaysa açılışta uyarı çıkar).

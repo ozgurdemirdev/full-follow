@@ -220,7 +220,7 @@ export const MCP_CHAT_SESSION_ENV = "FF_CHAT_SESSION";
 /** Max length of the owner's name (setting `owner_name`): the UI labels and the panel Claude's system prompt carry it */
 export const OWNER_NAME_MAX = 40;
 /** The app password the owner sets in the first run setup or in Settings: at least this many characters, at most the max (a bound on the hashing work) */
-export const OWNER_PASSWORD_MIN = 10;
+export const OWNER_PASSWORD_MIN = 12;
 export const OWNER_PASSWORD_MAX = 256;
 /** The `code` of the 401 every API route answers while the install has no password yet (first run): the web shows the setup screen */
 export const SETUP_REQUIRED_CODE = "setup_required";

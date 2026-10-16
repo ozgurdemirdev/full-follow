@@ -23,7 +23,7 @@ export const LOGIN_LOCKOUT_MEMORY_MS = 24 * 60 * 60 * 1000;
 /** Addresses the login throttle remembers at most; past this the oldest are forgotten */
 export const LOGIN_TRACKED_MAX = 10_000;
 /** An FF_PASSWORD shorter than this draws a warning at start when the server listens beyond this computer */
-export const MIN_PASSWORD_LENGTH = 12;
+export { OWNER_PASSWORD_MIN as MIN_PASSWORD_LENGTH } from "@fullfollow/core";
 /** The password set in the panel: a scrypt hash in this file beside the database (never in the settings table, which the MCP reads) */
 export const AUTH_FILE = "auth.json";
 /** scrypt cost of a new hash (each hash keeps its own, so raising these never locks out an older one); about 32 MiB and a few dozen ms */
