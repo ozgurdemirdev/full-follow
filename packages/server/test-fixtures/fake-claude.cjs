@@ -15,6 +15,7 @@ const readline = require("node:readline");
 
 const SESSION = "11111111-2222-4333-8444-555555555555";
 const MCP_PREFIX = "mcp__full-follow__";
+const PROMPT_TIMEOUT_MS = 100_000_000;
 const out = (o) => process.stdout.write(`${JSON.stringify({ ...o, session_id: SESSION })}\n`);
 const argv = process.argv.slice(2);
 const valueOf = (name) => {
@@ -152,7 +153,8 @@ async function panelCall(client, tool, input) {
   }
   if (ask) {
     const prompt = (valueOf("--permission-prompt-tool") ?? "").slice(MCP_PREFIX.length);
-    const r = await client.callTool({ name: prompt, arguments: { tool_name: tool, input, tool_use_id: id } });
+    // the real CLI waits up to MCP_TOOL_TIMEOUT (1e8 ms by default) for a tool; the SDK client would give up after a minute
+    const r = await client.callTool({ name: prompt, arguments: { tool_name: tool, input, tool_use_id: id } }, undefined, { timeout: PROMPT_TIMEOUT_MS });
     const d = parseDecision((r.content ?? []).map((c) => c.text).join(""), input);
     if (!d.allow) return answerTool(id, true, d.message), { tool, outcome: "denied", message: d.message };
   }
