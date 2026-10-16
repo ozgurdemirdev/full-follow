@@ -10,9 +10,11 @@ const password = () => process.env.FF_PASSWORD || "";
 const secret = () => process.env.FF_COOKIE_SECRET || createHash("sha256").update(`ff:${password()}`).digest("hex");
 const sign = (v: string) => createHmac("sha256", secret()).update(v).digest("hex");
 
-function safeEqual(a: string, b: string) {
-  const x = Buffer.from(a), y = Buffer.from(b);
-  return x.length === y.length && timingSafeEqual(x, y);
+const digest = (v: string) => createHash("sha256").update(v).digest();
+
+/** Compares fixed length digests, so neither the time nor an early length check tells how long the secret is */
+export function safeEqual(a: string, b: string) {
+  return timingSafeEqual(digest(a), digest(b));
 }
 
 /** Şifre tanımlı değilse (sunucu sadece bu bilgisayara açılır) giriş istenmez */
