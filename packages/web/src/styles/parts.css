@@ -301,6 +301,14 @@
   }
 }
 
+/* ---------- floating panel: positioned by Floating.tsx, above sheets and overlays, below toasts ---------- */
+.ff-floating {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-floating);
+}
+
 /* ---------- toast ---------- */
 .ff-toasts {
   position: fixed;

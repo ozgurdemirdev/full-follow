@@ -424,12 +424,10 @@
 .form-combo .form-control {
   padding: 0 var(--spacing-3) 0 var(--spacing-6);
 }
+.form-float {
+  margin: var(--spacing-2) 0;
+}
 .form-list {
-  position: absolute;
-  top: calc(var(--spacing-field-height) + var(--spacing-2));
-  right: 0;
-  left: 0;
-  z-index: var(--z-form-list);
   display: flex;
   flex-direction: column;
   margin: 0;

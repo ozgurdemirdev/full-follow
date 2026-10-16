@@ -3,6 +3,7 @@ import { pickable, useSectors, useSources, useTags } from "../api/keys";
 import type { Labeled, Sector } from "../api/types";
 import { CONTACT_STATUS, CONTACT_STATUSES } from "../lib/labels";
 import { usePopover } from "../lib/usePopover";
+import { Floating } from "./Floating";
 import { m as kit } from "../messages";
 import { parts } from "../messages.parts";
 
@@ -60,17 +61,17 @@ export function LabelFilters({ value, onChange, counts }: { value: LabelFilter; 
 
 /** The tag, sector, source and status filters of the people and company lists, behind one pill */
 export function MoreFilters({ value, onChange }: { value: LabelFilter; onChange: (v: LabelFilter) => void }) {
-  const { open, setOpen, root } = usePopover();
+  const { open, setOpen, root, panel } = usePopover();
   const active = Object.values(value).filter(Boolean).length;
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-chan ppl-filter" data-on={active > 0} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {active ? m.pillCount(active) : m.pill}
       </button>
-      <div role="dialog" aria-label={m.pill} aria-hidden={!open} className="ppl-pop" inert={!open}>
+      <Floating anchor={root} open={open} panelRef={panel} role="dialog" aria-label={m.pill} aria-hidden={!open} className="ppl-pop" inert={!open}>
         <LabelFilters value={value} onChange={onChange} />
         {active ? <button type="button" className="ppl-pop-item" onClick={() => onChange(noFilter)}>{m.clearAll}</button> : null}
-      </div>
+      </Floating>
     </div>
   );
 }

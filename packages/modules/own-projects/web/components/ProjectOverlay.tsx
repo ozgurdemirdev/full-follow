@@ -7,6 +7,7 @@ import { openSheet } from "@kit/app/ui";
 import { OWN_STATUS, OWN_STATUSES } from "../labels";
 import { ratePct } from "@kit/lib/format";
 import { rateNote, rateText, setStage } from "../ownProjects";
+import { Floating } from "@kit/components/Floating";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Comments } from "@kit/components/contact";
@@ -23,17 +24,17 @@ type Related = { ideas: Idea[]; comments: Thread[] };
 
 /** Header menu: the things the board leaves out (edit form, delete) */
 function HeaderMenu({ p, onClose }: { p: OwnProject; onClose: () => void }) {
-  const { open, setOpen, root } = usePopover();
+  const { open, setOpen, root, panel } = usePopover();
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
-      <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
+      <Floating anchor={root} open={open} panelRef={panel} role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("own_project", { own_project_id: p.id }))}>{kit.edit}</button>
         <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/own-projects/${p.id}`, m.overlay.deleteNoun(p.name)).then(onClose).catch(() => {}))}>{kit.delete}</button>
-      </div>
+      </Floating>
     </div>
   );
 }

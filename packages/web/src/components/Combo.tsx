@@ -3,6 +3,7 @@ import { BLUR_CLOSE_MS, PICKER_HITS } from "../lib/constants";
 import { initials, norm } from "../lib/format";
 import { useSearchRows, type SearchPath } from "../lib/useSearchRows";
 import { parts } from "../messages.parts";
+import { Floating } from "./Floating";
 import { FORM_ICON, PathIcon } from "./forms/icons";
 import { stroke as STROKE } from "../styles/tokens.json";
 
@@ -51,6 +52,7 @@ export function Combo({ id, value, options = NO_OPTIONS, remote, onChange, place
   const [active, setActive] = useState(0);
   const listId = useId();
   const input = useRef<HTMLInputElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
   /** closes the list shortly after blur so a click on a hit still lands */
   const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(blurTimer.current), []);
@@ -131,7 +133,7 @@ export function Combo({ id, value, options = NO_OPTIONS, remote, onChange, place
 
   if (form) {
     return (
-      <div className="form-combo">
+      <div ref={wrap} className="form-combo">
         <div className="form-control" data-invalid={invalid}>
           <PathIcon d={FORM_ICON.search} className="size-icon-chip form-icon-muted" />
           {field}
@@ -150,54 +152,58 @@ export function Combo({ id, value, options = NO_OPTIONS, remote, onChange, place
           </button>
         </div>
         {listing ? (
-          <ul id={listId} role="listbox" className="form-list">
-            {hits.map((h, i) => (
-              <li key={h.id} role="option" aria-selected={i === active}>
-                <button type="button" className="form-opt-row" data-active={i === active} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(h)} onPointerEnter={() => setActive(i)}>
-                  <span className="form-opt-ini">{initials(h.label)}</span>
-                  <span className="form-opt-name">{h.label}</span>
-                  {h.sub ? <span className="form-opt-sub">{h.sub}</span> : null}
-                </button>
-              </li>
-            ))}
-            {showNew ? (
-              <li role="option" aria-selected="false">
-                <button type="button" className="form-opt-row form-opt-new" onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen(false)}>
-                  <PathIcon d="M12 5v14M5 12h14" className="size-icon-chip" stroke={STROKE.medium} />
-                  {newLabel}: “{value.text.trim()}”
-                </button>
-              </li>
-            ) : null}
-          </ul>
+          <Floating anchor={wrap} open matchWidth className="form-float">
+            <ul id={listId} role="listbox" className="form-list">
+              {hits.map((h, i) => (
+                <li key={h.id} role="option" aria-selected={i === active}>
+                  <button type="button" className="form-opt-row" data-active={i === active} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(h)} onPointerEnter={() => setActive(i)}>
+                    <span className="form-opt-ini">{initials(h.label)}</span>
+                    <span className="form-opt-name">{h.label}</span>
+                    {h.sub ? <span className="form-opt-sub">{h.sub}</span> : null}
+                  </button>
+                </li>
+              ))}
+              {showNew ? (
+                <li role="option" aria-selected="false">
+                  <button type="button" className="form-opt-row form-opt-new" onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen(false)}>
+                    <PathIcon d="M12 5v14M5 12h14" className="size-icon-chip" stroke={STROKE.medium} />
+                    {newLabel}: “{value.text.trim()}”
+                  </button>
+                </li>
+              ) : null}
+            </ul>
+          </Floating>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className="relative">
+    <div ref={wrap} className="relative">
       {field}
       {value.id ? <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-accent-text">{m.selected}</span> : null}
       {!value.id && allowNew && value.text.trim() && !exact ? (
         <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs text-text-muted">{m.fresh}</span>
       ) : null}
       {listing ? (
-        <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-sheet mt-1 flex flex-col rounded-inner border border-border-menu bg-surface-menu p-1 shadow-menu">
-          {hits.map((h, i) => (
-            <li key={h.id} role="option" aria-selected={i === active}>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pick(h)}
-                onPointerEnter={() => setActive(i)}
-                className={`flex w-full items-baseline gap-3 rounded-md border-0 px-4 py-3 text-left text-base text-text-primary ${i === active ? "bg-surface-menu-hover" : "bg-transparent"}`}
-              >
-                <span className="truncate">{h.label}</span>
-                {h.sub ? <span className="truncate text-sm text-text-secondary">{h.sub}</span> : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <Floating anchor={wrap} open matchWidth className="my-1">
+          <ul id={listId} role="listbox" className="flex flex-col rounded-inner border border-border-menu bg-surface-menu p-1 shadow-menu">
+            {hits.map((h, i) => (
+              <li key={h.id} role="option" aria-selected={i === active}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pick(h)}
+                  onPointerEnter={() => setActive(i)}
+                  className={`flex w-full items-baseline gap-3 rounded-md border-0 px-4 py-3 text-left text-base text-text-primary ${i === active ? "bg-surface-menu-hover" : "bg-transparent"}`}
+                >
+                  <span className="truncate">{h.label}</span>
+                  {h.sub ? <span className="truncate text-sm text-text-secondary">{h.sub}</span> : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Floating>
       ) : null}
     </div>
   );

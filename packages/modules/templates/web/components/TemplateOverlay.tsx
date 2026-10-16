@@ -8,6 +8,7 @@ import { TEMPLATE_KIND } from "@kit/lib/labels";
 import { defaultChannel } from "@kit/lib/people";
 import { m } from "../messages";
 import { filledSegments, meta, openSegments, rateTone, RECIPIENTS_PATH, TONE_TEXT, useRendered } from "../templates";
+import { Floating } from "@kit/components/Floating";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
@@ -17,18 +18,18 @@ import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Menu of the header: what the board leaves out (edit, a draft for someone else through the form, delete) */
 function HeaderMenu({ t, onClose }: { t: Template; onClose: () => void }) {
-  const { open, setOpen, root } = usePopover();
+  const { open, setOpen, root, panel } = usePopover();
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
   return (
     <div ref={root} className="relative">
       <button type="button" className="ppl-round" aria-label={kit.recordActions.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
-      <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
+      <Floating anchor={root} open={open} panelRef={panel} role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("template", { template_id: t.id }))}>{kit.edit}</button>
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { template_id: t.id, channel: t.channel ?? undefined }))}>{m.overlay.draftForOther}</button>
         <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/templates/${t.id}`, m.overlay.deleteNoun(t.name)).then(onClose).catch(() => {}))}>{kit.delete}</button>
-      </div>
+      </Floating>
     </div>
   );
 }
