@@ -160,7 +160,7 @@ describe("pipeline as a module", () => {
     const rates = Object.fromEntries(app.pipeline.meta().stage_rates.map((r) => [r.stage, r.to_next]));
     // left bulundu: a, b, c forward and d lost (the move back to bulundu is a later entry); left temas: a forward, b back; others none
     expect(rates).toEqual({ bulundu: 0.75, temas: 0.5, cevap: null, gorusme: null, teklif: null });
-    expect(app.pipeline.meta().stages.find((s) => s.stage === "cevap")).toEqual({ stage: "cevap", probability: 0.25, stale_days: 5 });
+    expect(app.pipeline.meta().stages.find((s) => s.stage === "cevap")).toEqual({ stage: "cevap", stale_days: 5 });
     // events older than 90 days no longer count
     now = "2027-02-01T09:00:00Z";
     expect(app.pipeline.meta().stage_rates.every((r) => r.to_next === null)).toBe(true);

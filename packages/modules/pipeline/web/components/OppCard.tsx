@@ -8,7 +8,7 @@ import { fmtDay, lira, todayIso } from "@kit/lib/format";
 import { STAGE, type OppStage } from "@kit/lib/labels";
 import { opportunityPath } from "../paths";
 import { m } from "../messages";
-import { ageMeter, isLive, percentOf, useStageRules } from "../pipeline";
+import { ageMeter, isLive, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { Meter } from "@kit/components/ui";
@@ -93,7 +93,6 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
         <div className="pipe-more">
           <span className="pipe-kv"><span>{m.card.source}</span><span>{o.source_name}</span></span>
           {o.source_url ? <a href={o.source_url} target="_blank" rel="noreferrer" draggable={false} className="truncate text-sm">{m.card.listingLink(o.source_date ? fmtDay(o.source_date) : null)}</a> : o.source_date ? <span className="pipe-kv"><span>{m.card.listing}</span><span>{fmtDay(o.source_date)}</span></span> : null}
-          {live ? <span className="pipe-kv"><span>{m.card.chance}</span><span>{percentOf(o.stage, rules)}</span></span> : null}
           {hint ? <span className="pipe-hint">{hint}</span> : null}
           {mobile ? (
             <select className="inp h-control-height-sm w-auto" aria-label={m.card.changeStage} value={o.stage} onChange={(e) => onMove?.(o.id, e.target.value as OppStage)}>

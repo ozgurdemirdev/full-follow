@@ -14,7 +14,6 @@ import { lira } from "@kit/lib/format";
 import { STAGE, type OppStage } from "@kit/lib/labels";
 import { BOARD_STAGES, STAGE_BG } from "../labels";
 import { m } from "../messages";
-import { isLive, percentOf, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { LostReason } from "./LostReason";
 import { OppCard } from "./OppCard";
@@ -53,7 +52,6 @@ interface CardCtx {
 function Shell({ stage, count, sum, hot, dragging, setRef, children }: {
   stage: OppStage; count: number; sum: number; hot?: boolean; dragging: boolean; setRef?: (el: HTMLElement | null) => void; children: ReactNode;
 }) {
-  const rules = useStageRules();
   return (
     <section ref={setRef} id={`col-${stage}`} aria-label={STAGE[stage]} className="pipe-col" data-hot={hot || undefined}>
       <div className="pipe-col-head">
@@ -61,7 +59,7 @@ function Shell({ stage, count, sum, hot, dragging, setRef, children }: {
         <h2 className="m-0 flex-grow text-base font-medium">{STAGE[stage]}</h2>
         <span className="font-mono text-sm text-text-secondary">{count}</span>
       </div>
-      <span className="pipe-col-sum">{count ? m.board.sum(lira(sum), isLive({ stage }) ? percentOf(stage, rules) : null) : m.board.empty}</span>
+      <span className="pipe-col-sum">{count ? lira(sum) : m.board.empty}</span>
       {children}
       {count ? null : <span className="pipe-col-empty">{dragging ? m.board.dropHere : m.board.noCard}</span>}
       {stage !== "kazanildi" && stage !== "kaybedildi" ? (

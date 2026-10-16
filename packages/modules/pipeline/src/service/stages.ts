@@ -1,12 +1,12 @@
 import { addDays, keptRows, OPEN_OPP_STAGES, OPP_STAGES, type Ctx, type OppStage, type PipelineMeta, type StageRate, type StageRule } from "@fullfollow/core";
 
-/** Per open stage: the chance an opportunity there ends won, and the days after which it counts as stale (the board's age meter, the weighted forecast) */
+/** Per open stage: the days after which an opportunity there counts as stale (the board's age meter) */
 export const STAGE_RULES: readonly StageRule[] = [
-  { stage: "bulundu", probability: 0.05, stale_days: 14 },
-  { stage: "temas", probability: 0.1, stale_days: 7 },
-  { stage: "cevap", probability: 0.25, stale_days: 5 },
-  { stage: "gorusme", probability: 0.45, stale_days: 10 },
-  { stage: "teklif", probability: 0.65, stale_days: 7 },
+  { stage: "bulundu", stale_days: 14 },
+  { stage: "temas", stale_days: 7 },
+  { stage: "cevap", stale_days: 5 },
+  { stage: "gorusme", stale_days: 10 },
+  { stage: "teklif", stale_days: 7 },
 ];
 
 /** The stage to stage rates look at this many days of stage changes */

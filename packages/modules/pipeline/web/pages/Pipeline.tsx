@@ -22,7 +22,7 @@ import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
 
-/** Satış hunisi: forecast, where deals are lost, the kanban board, lost reasons and sources */
+/** Satış hunisi: KPIs, where deals are lost, the kanban board, lost reasons and sources */
 export default function Pipeline() {
   const board = useBoard();
   const lost = useLostOpps();
