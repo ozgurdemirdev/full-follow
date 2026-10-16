@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { SETTINGS_ROW_LIMIT, type SettingRow } from "../../lib/settings";
+import { m as kit } from "../../messages";
 import { parts } from "../../messages.parts";
+import { ErrorBox } from "../ui";
 
 const m = parts.settings;
 
@@ -72,6 +74,41 @@ export function SetChip({ dot, title, remove, removeLabel, children }: { dot: Re
         <svg className="size-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </span>
+  );
+}
+
+/** Type a value and press Enter (or the button) to add it; the field empties once it was added. `label` names the field when the placeholder is only an example */
+export function SetAddForm({ placeholder, label = placeholder, onAdd }: { placeholder: string; label?: string; onAdd: (value: string) => Promise<unknown> }) {
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const add = async () => {
+    if (!value.trim()) return;
+    setBusy(true);
+    try {
+      await onAdd(value.trim());
+      setValue("");
+    } catch {
+      /* the toast is shown inside run() */
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <form className="set-add" onSubmit={(e) => (e.preventDefault(), void add())}>
+      <input className="set-input" placeholder={placeholder} aria-label={label} value={value} onChange={(e) => setValue(e.target.value)} />
+      <button type="submit" className="set-btn" disabled={busy || !value.trim()}>{kit.add}</button>
+    </form>
+  );
+}
+
+/** Chip list with the add field under it; shows the load error instead when the list failed */
+export function SetListEditor({ error, retry, loaded = true, children, add }: { error?: Error; retry?: () => void; loaded?: boolean; children: ReactNode; add: ReactNode }) {
+  return (
+    <div className="set-list">
+      {error && !loaded ? <ErrorBox error={error} retry={retry} /> : null}
+      <span className="set-chips">{children}</span>
+      {add}
+    </div>
   );
 }
 

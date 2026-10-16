@@ -1,11 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { remove, run } from "../../api/actions";
 import { useSectors, useSources, useTags } from "../../api/keys";
-import { SetChip } from "../../components/settings/Parts";
-import { ErrorBox } from "../../components/ui";
+import { SetAddForm as AddForm, SetChip, SetListEditor as ListEditor } from "../../components/settings/Parts";
 import { TAG_CLS, TAG_COLORS, TONE_CLS } from "../../lib/labels";
 import { words, type SettingRow } from "../../lib/settings";
-import { m as kit } from "../../messages";
 import { settings } from "../../messages.settings";
 
 const m = settings.lists;
@@ -17,30 +15,6 @@ const dotClass = (color: string) => (TAG_CLS[color] ?? TONE_CLS.neutral).split("
 
 const usage = (people: number, companies = 0, extra = "") =>
   [people ? m.people(people) : "", companies ? m.companies(companies) : "", extra].filter(Boolean).join(settings.today.dot) || m.unused;
-
-/** Type a name and press Enter to add */
-function AddForm({ placeholder, onAdd }: { placeholder: string; onAdd: (name: string) => Promise<unknown> }) {
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const add = async () => {
-    if (!name.trim()) return;
-    setBusy(true);
-    try {
-      await onAdd(name.trim());
-      setName("");
-    } catch {
-      /* the toast is shown inside run() */
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <form className="set-add" onSubmit={(e) => (e.preventDefault(), void add())}>
-      <input className="set-input" placeholder={placeholder} aria-label={placeholder} value={name} onChange={(e) => setName(e.target.value)} />
-      <button type="submit" className="set-btn" disabled={busy || !name.trim()}>{kit.add}</button>
-    </form>
-  );
-}
 
 /** Rename in place: a click turns the name into a field, Enter or leaving saves, Escape cancels */
 function Rename({ value, onSave }: { value: string; onSave: (v: string) => Promise<unknown> }) {
@@ -54,17 +28,6 @@ function Rename({ value, onSave }: { value: string; onSave: (v: string) => Promi
   return (
     <input className="set-chip-input" aria-label={m.newName} value={v} autoFocus onChange={(e) => setV(e.target.value)} onBlur={done}
       onKeyDown={(e) => (e.key === "Enter" ? done() : e.key === "Escape" ? setV(null) : undefined)} />
-  );
-}
-
-/** Chip list with the add field under it; shows the load error instead when the list failed */
-function ListEditor({ error, retry, loaded, children, add }: { error?: Error; retry: () => void; loaded: boolean; children: ReactNode; add: ReactNode }) {
-  return (
-    <div className="set-list">
-      {error && !loaded ? <ErrorBox error={error} retry={retry} /> : null}
-      <span className="set-chips">{children}</span>
-      {add}
-    </div>
   );
 }
 

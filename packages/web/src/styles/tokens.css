@@ -153,11 +153,11 @@
   --spacing-pipeline-search-width: 240px;
   --spacing-pipeline-source-col: 110px;
   --spacing-pipeline-source-rate: 70px;
-  --spacing-pipeline-dialog-width: 460px;
-  --spacing-pipeline-dialog-gutter: 32px;
-  --spacing-pipeline-dialog-btn: 42px;
   --spacing-pipeline-funnel-pad-y: 22px;
   --spacing-pipeline-stage-label: 120px;
+  --spacing-dialog-width: 460px;
+  --spacing-dialog-gutter: 32px;
+  --spacing-dialog-btn: 42px;
   --spacing-chat-fab-size: 48px;
   --spacing-chat-panel-width: 400px;
   --spacing-chat-panel-height: 640px;

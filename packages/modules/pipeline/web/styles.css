@@ -7,12 +7,6 @@
     transform: translateY(var(--spacing-3));
   }
 }
-@keyframes pipe-pop {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -46%) scale(0.96);
-  }
-}
 
 /* ---------- header ---------- */
 .pipe-tools {
@@ -482,43 +476,6 @@
 }
 
 /* ---------- lost reason dialog ---------- */
-.pipe-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-sheet);
-  padding: 0;
-  border: 0;
-  background: var(--color-bg-scrim);
-  backdrop-filter: blur(var(--spacing-scrim-blur));
-  cursor: default;
-}
-.pipe-dlg {
-  position: fixed;
-  z-index: calc(var(--z-sheet) + 1);
-  top: 50%;
-  left: 50%;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-7);
-  box-sizing: border-box;
-  width: min(var(--spacing-pipeline-dialog-width), calc(100vw - var(--spacing-pipeline-dialog-gutter)));
-  padding: var(--spacing-10);
-  border-radius: var(--radius-overlay);
-  background: var(--color-surface-1);
-  border: var(--bw-default) solid var(--color-border);
-  box-shadow: var(--shadow-overlay);
-  color: var(--color-text-primary);
-  font-size: var(--text-base);
-  line-height: normal;
-  transform: translate(-50%, -50%);
-  animation: pipe-pop var(--dur-toast) var(--ease-out);
-}
-.pipe-dlg-title {
-  margin: 0;
-  font-size: var(--text-section);
-  font-weight: var(--font-weight-light);
-  letter-spacing: var(--tracking-title);
-}
 .pipe-chips {
   display: flex;
   flex-wrap: wrap;
@@ -547,24 +504,4 @@
   color: var(--color-text-primary);
   font-size: var(--text-base);
   outline: 0;
-}
-.pipe-dlg-foot {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-3);
-}
-.pipe-dlg-btn {
-  height: var(--spacing-pipeline-dialog-btn);
-  padding: 0 var(--spacing-8);
-  border-radius: var(--radius-pill);
-  border: var(--bw-default) solid var(--color-border);
-  background: transparent;
-  color: var(--color-text-primary);
-  font-size: var(--text-base);
-}
-.pipe-dlg-btn.is-primary {
-  border: 0;
-  background: var(--color-accent);
-  color: var(--color-accent-on);
-  font-weight: var(--font-weight-medium);
 }
