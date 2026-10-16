@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, OWNER_ONLY_SETTINGS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
 import { assertOzgur, emit, FFError, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
@@ -156,8 +156,7 @@ export function settingsService(ctx: Ctx) {
     if (!(SETTING_KEYS as readonly string[]).includes(key)) {
       throw new FFError("validation", m.settings.unknown(key, SETTING_KEYS.join(", ")));
     }
-    // the pinned notes are part of the panel Claude's system prompt: text Claude (or a page it read) wrote there would persist across chats
-    if (key === "chat_pinned_notes") assertOzgur(ctx, m.settings.pinnedNotesAction);
+    if ((OWNER_ONLY_SETTINGS as readonly string[]).includes(key)) assertOzgur(ctx, m.settings.ownerOnlyAction(key));
     let stored: string;
     if (key === "payment_template") {
       const t = parse(templateInput, typeof value === "string" ? JSON.parse(value) : value);

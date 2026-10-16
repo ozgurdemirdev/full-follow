@@ -116,6 +116,13 @@ export const SETTING_KEYS = [
   "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden",
 ] as const;
 
+/**
+ * Settings only Özgür may write; Claude (MCP, the panel chat) is refused. Each one feeds Claude's prompts or turns features on
+ * and off, so text a page or a record planted in Claude would otherwise persist and steer later chats: the pinned notes and the
+ * draft rules are read into the system prompt, the hidden modules take screens away.
+ */
+export const OWNER_ONLY_SETTINGS: readonly (typeof SETTING_KEYS)[number][] = ["chat_pinned_notes", "draft_rules", "modules_hidden"];
+
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
 export const POST_REFRESH_DEFAULT_DAYS = 30;
 export const POST_REFRESH_MAX_DAYS = 365;

@@ -142,7 +142,7 @@ export const m = defineMessages({
       moduleNotInstalled: (unknown: string, installed: string) => `kurulu olmayan modül: ${unknown} (kurulu: ${installed})`,
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",
-      pinnedNotesAction: "sabit notları değiştirmek",
+      ownerOnlyAction: (key: string) => `${key} ayarını değiştirmek`,
     },
 
     // ---- Trash
