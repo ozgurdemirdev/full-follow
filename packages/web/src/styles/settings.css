@@ -13,9 +13,6 @@
   border: var(--bw-default) solid var(--color-border-subtle);
   color: var(--color-text-muted);
 }
-.set-search:focus-within {
-  border-color: var(--color-border-strong);
-}
 .set-search input {
   flex-grow: 1;
   min-width: 0;
@@ -281,10 +278,6 @@
   color-scheme: dark;
   outline: 0;
 }
-.set-input:focus {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus-ring);
-}
 .set-input::placeholder {
   color: var(--color-text-muted);
 }
@@ -305,10 +298,6 @@
   line-height: var(--leading-normal);
   resize: vertical;
   outline: 0;
-}
-.set-textarea:focus {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus-ring);
 }
 .set-notes {
   display: flex;

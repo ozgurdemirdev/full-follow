@@ -59,7 +59,7 @@ export function GlobalSearch({ board = false }: { board?: boolean }) {
 
   return (
     <div className={board ? "relative flex-none" : "relative hidden flex-none desk:block"}>
-      <label className={board ? "dash-search" : "flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
+      <label className={board ? "dash-search" : "field-box flex h-control-height-md w-search-width items-center gap-3 rounded-lg border border-border-default bg-surface-inset px-5 text-text-secondary"}>
         {board ? <BoardIcon name="search" className="size-icon-btn" stroke={STROKE.thin} /> : <Icon name="search" className="size-icon-md" />}
         <input
           ref={input}

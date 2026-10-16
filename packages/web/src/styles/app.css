@@ -14,6 +14,7 @@
 
 /* the modules' web parts: their stylesheets and the folders scanned for utilities (written by scripts/gen-modules.mjs) */
 @import "./modules.generated.css";
+@import "./field-focus.css";
 
 @layer base {
   html {
@@ -44,6 +45,13 @@
   :focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus-ring);
+  }
+  /* a text entry shows focus on its field box (field-focus.css), never as a ring around the inner input */
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]):focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [contenteditable]:focus-visible {
+    box-shadow: none;
   }
   ::selection {
     background: var(--color-accent-soft-border);
@@ -362,10 +370,6 @@
     transition:
       border-color var(--dur-fade) var(--ease-standard),
       box-shadow var(--dur-fade) var(--ease-standard);
-  }
-  .inp:focus {
-    border-color: var(--color-accent);
-    box-shadow: var(--shadow-focus-ring);
   }
   .inp::placeholder {
     color: var(--color-text-muted);

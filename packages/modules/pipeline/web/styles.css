@@ -542,9 +542,6 @@
   font-size: var(--text-base);
   outline: 0;
 }
-.pipe-input:focus-visible {
-  box-shadow: var(--shadow-focus-ring);
-}
 .pipe-dlg-foot {
   display: flex;
   justify-content: flex-end;
