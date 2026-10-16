@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createCore, createRegistry, openDb, type Actor } from "../src";
 import { OWNER_ONLY_SETTINGS } from "../src/constants";
@@ -18,7 +20,8 @@ const VALUES: Record<string, unknown> = {
   chat_full_access: true,
   chat_web_fetch: true,
   chat_local_files: true,
-  chat_local_folders: [os.tmpdir()],
+  // a folder of its own: the temp folder itself may hold the database in use (check:modules puts FF_DB there)
+  chat_local_folders: [fs.mkdtempSync(path.join(os.tmpdir(), "ff-owner-folder-"))],
 };
 
 describe("owner only settings", () => {
