@@ -78,6 +78,10 @@ export class DraftQueue implements OnModuleInit, OnModuleDestroy {
     return this.runs.live();
   }
 
+  get(id: number): DraftRun {
+    return this.runs.get(id);
+  }
+
   /** The fallback: Claude's task for today on the record, written by its next session */
   private asTask(d: DraftRunInput): DraftRequestResult {
     const calendar = this.core.mod("calendar");

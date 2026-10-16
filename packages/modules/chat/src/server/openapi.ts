@@ -57,6 +57,7 @@ export const docs = defineDocs({
     description: "Queued and running requests, and finished ones whose draft still waits for approval (up to 50, newest first).",
     response: z.object({ rows: z.array(object) }),
   },
+  "GET /api/draft-runs/:id": { summary: "Get a draft request", description: "Its state, the draft it saved or why it failed.", params: { id: "Draft request id" }, response: object },
   "GET /api/draft-runs/stream": {
     summary: "Follow the draft requests as server-sent events",
     description: "A `run` event with the row on every state change (queued, running, done with `draft_id`, failed with `error`). Reconnect with `Last-Event-ID` (or `last_event_id`) to replay what was missed; when it cannot be replayed a `snapshot` event arrives.",
