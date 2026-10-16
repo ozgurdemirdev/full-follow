@@ -1,5 +1,6 @@
 // Builds a demo database with made-up records for screenshots and trying the app:
 //   npm run build && npm run demo:seed, then start the server with FF_DB=data/demo.db (see README)
+//   FF_DEMO_DB=<file> writes the demo database somewhere else (a folder outside the repo, for screenshots)
 // Every name, company and number here is fictional.
 const fs = require("node:fs");
 const path = require("node:path");
