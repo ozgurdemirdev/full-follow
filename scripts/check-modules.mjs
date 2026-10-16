@@ -76,9 +76,12 @@ async function pickPort() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** The installed modules as the built app sees them: key, smoke paths, tool names, record types (read from dist in a child process) */
+/**
+ * The installed modules as the built app sees them: key, smoke paths, tool names, record types (read from dist in a child process).
+ * A tool registered only for some hosts (`only`: the chat's confirmation tool exists only for a panel chat's host) is left out.
+ */
 function dumpModules(env) {
-  const code = "const m=require('./packages/app/dist/index.js').installedModules;console.log(JSON.stringify(m.map(d=>({key:d.key,smoke:d.smoke??[],tools:(d.mcp?.tools??[]).map(t=>t.name),types:Object.keys(d.entities??{})}))))";
+  const code = "const m=require('./packages/app/dist/index.js').installedModules;console.log(JSON.stringify(m.map(d=>({key:d.key,smoke:d.smoke??[],tools:(d.mcp?.tools??[]).filter(t=>!t.only||t.only()).map(t=>t.name),types:Object.keys(d.entities??{})}))))";
   const r = spawnSync(node, ["-e", code], { cwd: root, env, encoding: "utf8" });
   if (r.status !== 0) throw new CheckError(`reading the built module list: ${(r.stderr || "").split(/\r?\n/).find(Boolean) ?? r.status}`);
   return JSON.parse(r.stdout);
