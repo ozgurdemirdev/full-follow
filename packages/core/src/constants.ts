@@ -114,6 +114,7 @@ export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
   "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden",
+  "draft_auto", "draft_model", "draft_effort",
 ] as const;
 
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
@@ -193,6 +194,24 @@ export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_ROLES = ["user", "assistant"] as const;
 export const CHAT_INPUT_MODES = ["text", "voice"] as const;
 export const CHAT_STATES = ["pending", "streaming", "done", "error", "stopped"] as const;
+/** A chat session is a conversation in the panel, or a background run that writes one draft (restricted tools) */
+export const CHAT_SESSION_KINDS = ["chat", "draft"] as const;
+export type ChatSessionKind = (typeof CHAT_SESSION_KINDS)[number];
+/** Model ids the Claude CLI may be started with (the chat module adds labels and context sizes); settings and requests are checked against them */
+export const CLAUDE_MODEL_IDS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"] as const;
+export type ClaudeModelId = (typeof CLAUDE_MODEL_IDS)[number];
+export const CLAUDE_EFFORT_IDS = ["low", "medium", "high"] as const;
+export type ClaudeEffortId = (typeof CLAUDE_EFFORT_IDS)[number];
+/** Background draft runs (settings `draft_auto`, `draft_model`, `draft_effort`): on, and the model and effort they start with */
+export const DRAFT_AUTO_DEFAULTS = { on: true, model: "claude-sonnet-5-5", effort: "medium" } as const satisfies { on: boolean; model: ClaudeModelId; effort: ClaudeEffortId };
+/** The MCP host reads its mode from this variable; a mode limits the tools it registers (an unknown mode refuses to start) */
+export const MCP_MODE_ENV = "FF_MCP_MODE";
+/** The only tools of the MCP host in mode "draft" (a background draft run): reading records and saving a draft. The Claude CLI's allowlist of that run names the same ones. */
+export const MCP_MODE_TOOLS = { draft: ["get", "find", "timeline", "draft"] } as const satisfies Record<string, readonly string[]>;
+export type McpMode = keyof typeof MCP_MODE_TOOLS;
+/** Where a background draft run is: waiting its turn, running, finished with a draft, or failed */
+export const DRAFT_RUN_STATES = ["queued", "running", "done", "failed"] as const;
+export type DraftRunState = (typeof DRAFT_RUN_STATES)[number];
 
 // ---- List sizes and text lengths
 /** A `limit` that means every row: lists the app builds in memory and filters itself */

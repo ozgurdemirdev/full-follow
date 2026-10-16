@@ -1,5 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { FFError, type Core } from "@fullfollow/core";
+import { FFError, MCP_MODE_TOOLS, type Core, type McpMode } from "@fullfollow/core";
 import { z } from "zod";
 import { describer } from "./describe";
 import { FIND_LIMIT_MAX, OPENED_LABEL_CHARS, TODAY_ROWS } from "./constants";
@@ -25,14 +25,20 @@ const obj = z.record(z.string(), z.any());
  * 12 araç (modüllerin kendi araçları ayrıca). Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
  * Taslak onaylama ve "gönderildi" işaretleme MCP'de yoktur (sadece Özgür).
  */
-export function registerTools(server: McpServer, core: Core) {
+export function registerTools(server: McpServer, core: Core, mode?: McpMode) {
+  // a mode (a background draft run) registers only its tools: the others do not exist for that client, whatever it asks for
+  const allowed: ReadonlySet<string> | null = mode ? new Set(MCP_MODE_TOOLS[mode]) : null;
+  const add = server.registerTool.bind(server) as (name: string, config: unknown, handler: unknown) => unknown;
+  const register = ((name: string, config: unknown, handler: unknown) => {
+    if (!allowed || allowed.has(name)) add(name, config, handler);
+  }) as McpServer["registerTool"];
   // what the installed modules add: record formatting, description fragments, tools of their own
   const defs = core.modules.list().flatMap((mod) => (mod.mcp ? [mod.mcp] : []));
   useMcpDefs(defs);
   const describe = describer(defs);
   const openable = new Set([...CORE_OPENABLE, ...defs.flatMap((d) => Object.entries(d.entities ?? {}).filter(([, e]) => e.openable).map(([type]) => type))]);
 
-  server.registerTool("today", {
+  register("today", {
     description: describe("today", [
       [100, m.tools.todayHead],
       [320, "."],
@@ -43,7 +49,7 @@ export function registerTools(server: McpServer, core: Core) {
     return todayText({ ...core.today(limit ?? TODAY_ROWS), ...Object.assign({}, ...defs.map((d) => d.todayData?.(core.mod) ?? {})) });
   }));
 
-  server.registerTool("open", {
+  register("open", {
     description: describe("open", [
       [100, m.tools.openHead],
       [300, m.tools.openTail],
@@ -59,7 +65,7 @@ export function registerTools(server: McpServer, core: Core) {
     return m.opened(label, r.type, r.id);
   }));
 
-  server.registerTool("find", {
+  register("find", {
     description: describe("find", [
       [100, m.tools.findHead],
       [206, "|source|comment"],
@@ -74,7 +80,7 @@ export function registerTools(server: McpServer, core: Core) {
     inputSchema: { type: z.string(), q: z.string().optional(), filter: obj.optional(), limit: z.number().int().min(1).optional(), offset: z.number().int().min(0).optional() },
   }, ({ type, q, filter, limit, offset }) => run(() => list(core.normalizeType(type), core.find(type, { q, filter, limit: limit === undefined ? undefined : Math.min(limit, FIND_LIMIT_MAX), offset }), offset ?? 0)));
 
-  server.registerTool("get", {
+  register("get", {
     description: describe("get", [
       [100, m.tools.getHead],
       [203, "comments"],
@@ -90,7 +96,7 @@ export function registerTools(server: McpServer, core: Core) {
     inputSchema: { type: z.string(), id: idOrName, with: z.array(z.string()).optional() },
   }, ({ type, id, with: w }) => run(() => block(core.get(type, id, w ?? []))));
 
-  server.registerTool("save", {
+  register("save", {
     description: describe("save", [
       [100, m.tools.saveHead],
       [130, "source"],
@@ -109,7 +115,7 @@ export function registerTools(server: McpServer, core: Core) {
     return t === "setting" ? ok(m.kind.setting, undefined, [], Object.keys(data).join(",")) : ok(kindName(t), r.row?.id ?? (typeof id === "number" ? id : undefined), r.effects);
   }));
 
-  server.registerTool("move", {
+  register("move", {
     // the opportunity and project stage lists come from their modules
     description: describe("move", [
       [100, m.tools.moveHead],
@@ -121,7 +127,7 @@ export function registerTools(server: McpServer, core: Core) {
     return ok(kindName(t), r.row?.id, r.effects, `→ ${stage}`);
   }));
 
-  server.registerTool("delete", {
+  register("delete", {
     description: m.tools.deleteAll,
     inputSchema: { type: z.string(), id: idOrName, restore: z.boolean().optional() },
   }, ({ type, id, restore }) => run(() => {
@@ -133,6 +139,6 @@ export function registerTools(server: McpServer, core: Core) {
   // tools only an installed module has (the calendar's plan, the payments' pay, ...)
   for (const tool of defs.flatMap((d) => d.tools ?? [])) {
     const description = typeof tool.description === "string" ? tool.description : describe(tool.name, tool.description.map((x): [number, string] => [x.at, x.text]));
-    server.registerTool(tool.name, { description, inputSchema: tool.input }, (args: any) => run(() => tool.run(core.ctx, args, mcpFormat)));
+    register(tool.name, { description, inputSchema: tool.input }, (args: any) => run(() => tool.run(core.ctx, args, mcpFormat)));
   }
 }

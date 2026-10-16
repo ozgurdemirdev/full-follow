@@ -6,7 +6,7 @@ import {
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES,
+  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES, CHAT_SESSION_KINDS, DRAFT_RUN_STATES,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -465,6 +465,8 @@ export const chat_sessions = sqliteTable("chat_sessions", {
   ...common(),
   ...deletedAt(),
   title: text("title").notNull().default(CHAT_NEW_TITLE),
+  /** chat: a conversation in the panel; draft: a background run that writes one draft with the restricted tool set */
+  kind: text("kind", { enum: CHAT_SESSION_KINDS }).notNull().default("chat"),
   /** 1 after a manual rename: the auto title stops changing */
   title_locked: integer("title_locked", { mode: "boolean" }).notNull().default(false),
   /** UUID handed to the Claude CLI: --session-id on the first run, --resume afterwards */
@@ -511,3 +513,31 @@ export const chat_attachments = sqliteTable("chat_attachments", {
   size: integer("size").notNull(),
   path: text("path").notNull(),
 }, (t) => [index("chat_attachments_message").on(t.message_id), index("chat_attachments_session").on(t.session_id)]);
+
+/**
+ * A request for a draft that a background Claude run writes at once (the chat module's queue). The record it is about is kept as plain
+ * ids without foreign keys, so trashing that record is never blocked by a finished request; the same holds for the task and the draft.
+ */
+export const draft_runs = sqliteTable("draft_runs", {
+  ...common(),
+  /** the request as the button worded it; with the record ids it is the key that keeps a second request from starting a second run */
+  title: text("title").notNull(),
+  person_id: integer("person_id"),
+  company_id: integer("company_id"),
+  opportunity_id: integer("opportunity_id"),
+  project_id: integer("project_id"),
+  idea_id: integer("idea_id"),
+  /** the channel asked for; null lets Claude pick it from the history */
+  channel: text("channel", { enum: CHANNELS }),
+  state: text("state", { enum: DRAFT_RUN_STATES }).notNull().default("queued"),
+  /** why it failed, in Turkish (shown in the toast) */
+  error: text("error"),
+  session_id: integer("session_id").references(() => chat_sessions.id),
+  /** Claude's task for the same request, closed when the draft is saved */
+  task_id: integer("task_id"),
+  draft_id: integer("draft_id"),
+  /** the highest draft id when the run started: the draft it saved is the first one after it */
+  drafts_before: integer("drafts_before"),
+  started_at: text("started_at"),
+  finished_at: text("finished_at"),
+}, (t) => [index("draft_runs_state").on(t.state, t.id)]);

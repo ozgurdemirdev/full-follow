@@ -1,7 +1,7 @@
 import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
-import { APP_TOKEN, type ChatSession, type Core } from "@fullfollow/core";
+import { APP_TOKEN, type ChatMessage, type ChatSession, type Core } from "@fullfollow/core";
 import { LOG_RAW_CHARS } from "../constants";
 import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
@@ -48,10 +48,13 @@ interface Slot {
   stderr: string;
 }
 
+export type TurnEndListener = (sessionId: number, message: ChatMessage) => void;
+
 /** One CLI process per active session. A run belongs to the server, never to an HTTP request. */
 @Injectable()
 export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private slots = new Map<number, Slot>();
+  private turnEnded = new Set<TurnEndListener>();
   /** pinned notes and the private brief as last written to system.md, and both together (the version and the hidden update block follow it) */
   private pinned = "";
   private brief = "";
@@ -101,7 +104,8 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     for (const s of this.slots.values()) s.stale = true;
   }
 
-  send(sessionId: number, input: { body: string; client_id: string; attachment_ids?: number[]; input_mode?: string }) {
+  /** `hidden` adds text blocks the CLI reads after the message and nobody sees (a draft run's instructions); they are never stored */
+  send(sessionId: number, input: { body: string; client_id: string; attachment_ids?: number[]; input_mode?: string }, hidden: string[] = []) {
     const chat = this.chat;
     const prior = chat.findSend(sessionId, input.client_id);
     if (prior) return { user_message: prior.user, assistant_message: prior.reply };
@@ -125,7 +129,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     if (!slot) slot = this.spawn(sessionId, session);
     clearTimeout(slot.idleTimer);
     slot.turn = this.newTurn(slot, assistant.id);
-    const content = [...(user.body ? [{ type: "text", text: user.body }] : []), ...attachmentBlocks(this.core, user.id), ...this.notesBlock(session), ...(user.input_mode === "voice" ? [{ type: "text", text: VOICE_NOTE }] : [])];
+    const content = [...(user.body ? [{ type: "text", text: user.body }] : []), ...attachmentBlocks(this.core, user.id), ...this.notesBlock(session), ...(user.input_mode === "voice" ? [{ type: "text", text: VOICE_NOTE }] : []), ...hidden.map((text) => ({ type: "text", text }))];
     const line = JSON.stringify({ type: "user", message: { role: "user", content } });
     slot.child.stdin?.write(`${line}\n`);
     return { user_message: user, assistant_message: assistant };
@@ -149,6 +153,11 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     if (!slot?.turn) return;
     this.finishTurn(slot, { state: "stopped" });
     this.dropSlot(slot);
+  }
+
+  /** A new session could start now: a free place, or an idle process makeRoom may end */
+  hasRoom(): boolean {
+    return this.slots.size < CHAT_LIMITS.maxActiveProcesses || [...this.slots.values()].some((s) => !s.turn);
   }
 
   private makeRoom(sessionId: number) {
@@ -300,9 +309,21 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
       output_tokens_total: s.output_tokens_total, cost_usd_micros_total: s.cost_usd_micros_total,
     });
     if (this.slots.get(slot.sessionId) === slot && r.state === "done") {
-      slot.idleTimer = setTimeout(() => this.endGracefully(slot), CHAT_LIMITS.idleKillMs);
-      slot.idleTimer.unref();
+      // a draft run is one turn: its process goes at once and frees its place for the next run or chat
+      if (s.kind === "draft") this.endGracefully(slot);
+      else {
+        slot.idleTimer = setTimeout(() => this.endGracefully(slot), CHAT_LIMITS.idleKillMs);
+        slot.idleTimer.unref();
+      }
     }
+    // after the caller has dropped a failed slot, so a listener that starts the next run finds the place free
+    setImmediate(() => this.turnEnded.forEach((fn) => fn(slot.sessionId, row)));
+  }
+
+  /** Every finished turn (done, error or stopped) of any session; returns the unsubscribe */
+  onTurnEnd(fn: TurnEndListener): () => void {
+    this.turnEnded.add(fn);
+    return () => void this.turnEnded.delete(fn);
   }
 
   private onExit(slot: Slot) {

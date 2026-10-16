@@ -39,7 +39,7 @@ export { addTagBySlug, assignSectors, assignTags, checkSource, labelFields, sect
 export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, followUpDone, isColdEmail, opportunityTouches, PERSON_TOUCHES, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
 export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLinks } from "./services/sectors";
-export { hiddenModules, marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingsService, settingValues } from "./services/settings";
+export { draftAutoSettings, hiddenModules, marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingsService, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
 export { cleanName, HttpFailure, refuse, sniff, type Detected, type UploadType } from "./services/uploads";

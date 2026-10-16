@@ -1,8 +1,9 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { MCP_MODE_TOOLS, type ChatSessionKind } from "@fullfollow/core";
 import { m } from "../messages";
-import { chatDataDir, CLI_ENV_NAMES, CLI_ENV_PREFIXES, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, TOOL_SEARCH, WEB_TOOLS } from "./chat.config";
+import { chatDataDir, CLI_ENV_NAMES, CLI_ENV_PREFIXES, DEFAULT_CHAT_CWD, ENV, MCP_SERVER_NAME, MCP_TOOL_PREFIX, RUNTIME_FILES, TOOL_SEARCH, WEB_TOOLS } from "./chat.config";
 
 export interface CliTarget {
   command: string;
@@ -11,6 +12,7 @@ export interface CliTarget {
 }
 
 export interface RunSession {
+  kind: ChatSessionKind;
   model: string;
   effort: string;
   cli_session_id: string;
@@ -61,6 +63,25 @@ export function chatCwd(): string {
   return chatDataDir();
 }
 
+/**
+ * What a session may use. The panel: every Full Follow tool and the web tools. A draft run: only the read tools and `draft`, by name,
+ * and no built-in tool but the tool search; its MCP host runs in mode "draft", so the other tools do not exist there either.
+ */
+function toolArgs(kind: ChatSessionKind): string[] {
+  if (kind === "draft") {
+    return [
+      "--mcp-config", path.join(chatDataDir(), RUNTIME_FILES.draftMcp),
+      "--allowedTools", ...MCP_MODE_TOOLS.draft.map((t) => `${MCP_TOOL_PREFIX}${t}`),
+      "--tools", TOOL_SEARCH,
+    ];
+  }
+  return [
+    "--mcp-config", path.join(chatDataDir(), RUNTIME_FILES.mcp),
+    "--allowedTools", `mcp__${MCP_SERVER_NAME}`, ...WEB_TOOLS,
+    "--tools", [TOOL_SEARCH, ...WEB_TOOLS].join(","),
+  ];
+}
+
 /** User text never appears here: it goes through stdin only. Model and effort are pre-validated against the whitelists. */
 export function buildArgv(s: RunSession): string[] {
   return [
@@ -73,11 +94,9 @@ export function buildArgv(s: RunSession): string[] {
     "--effort", s.effort,
     s.cli_started ? "--resume" : "--session-id", s.cli_session_id,
     "--strict-mcp-config",
-    "--mcp-config", path.join(chatDataDir(), "mcp.json"),
-    "--allowedTools", `mcp__${MCP_SERVER_NAME}`, ...WEB_TOOLS,
-    "--tools", [TOOL_SEARCH, ...WEB_TOOLS].join(","),
+    ...toolArgs(s.kind),
     "--setting-sources", "project",
-    "--append-system-prompt-file", path.join(chatDataDir(), "system.md"),
+    "--append-system-prompt-file", path.join(chatDataDir(), RUNTIME_FILES.system),
   ];
 }
 

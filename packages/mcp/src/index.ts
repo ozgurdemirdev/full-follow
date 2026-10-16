@@ -2,7 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createApp } from "@fullfollow/app";
-import { defaultDbPath, loadRootEnv, openDb } from "@fullfollow/core";
+import { defaultDbPath, loadRootEnv, MCP_MODE_ENV, MCP_MODE_TOOLS, openDb, type McpMode } from "@fullfollow/core";
 import { m } from "./messages";
 import { registerTools } from "./tools";
 
@@ -13,12 +13,15 @@ import { registerTools } from "./tools";
  */
 async function main() {
   loadRootEnv();
+  // a mode limits the tools (the draft runs of the panel); an unknown one stops here instead of starting with every tool
+  const mode = process.env[MCP_MODE_ENV] || undefined;
+  if (mode !== undefined && !Object.hasOwn(MCP_MODE_TOOLS, mode)) throw new Error(m.unknownMode(mode, Object.keys(MCP_MODE_TOOLS).join(", ")));
   const dbPath = defaultDbPath();
   const handle = openDb(dbPath);
   const core = createApp(handle, "claude");
 
   const server = new McpServer({ name: "full-follow", version: "0.1.0" });
-  registerTools(server, core);
+  registerTools(server, core, mode as McpMode | undefined);
 
   process.on("SIGINT", () => { handle.close(); process.exit(0); });
   process.on("SIGTERM", () => { handle.close(); process.exit(0); });

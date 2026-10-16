@@ -13,14 +13,7 @@ import { attachmentFile, saveUpload } from "./chat-uploads";
 import { CHAT_ATTACHMENT_TYPES, CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
 import { resolveCli } from "./claude-cli";
 import { ClaudeRunner } from "./claude-runner";
-
-const SSE_HEADERS = {
-  "Content-Type": "text/event-stream; charset=utf-8",
-  "Cache-Control": "no-cache, no-transform",
-  Connection: "keep-alive",
-  "X-Accel-Buffering": "no",
-};
-const frame = (e: { seq: number; name: string; data: unknown }) => `id: ${e.seq}\nevent: ${e.name}\ndata: ${JSON.stringify(e.data)}\n\n`;
+import { serveChannel } from "./sse";
 
 @Controller("api/chat")
 export class ChatController {
@@ -116,22 +109,6 @@ export class ChatController {
   stream(@Param("id") id: string, @Query("last_event_id") qLast: string | undefined, @Req() req: Request, @Res() res: Response) {
     const n = intId(id);
     this.chat.getSession(n);
-    res.writeHead(200, SSE_HEADERS);
-    res.flushHeaders();
-    res.write(`retry: ${CHAT_LIMITS.sseRetryMs}\n\n`);
-
-    const header = req.headers["last-event-id"] ?? qLast;
-    const last = header === undefined || header === "" ? null : Number(header);
-    const unsubscribe = this.hub.subscribe(n, (e) => res.write(frame(e)));
-    if (last !== null && Number.isFinite(last)) {
-      const missed = this.hub.replay(n, last);
-      if (missed) missed.forEach((e) => res.write(frame(e)));
-      else res.write(`event: snapshot\ndata: {}\n\n`);
-    }
-    const beat = setInterval(() => res.write(": ping\n\n"), CHAT_LIMITS.sseHeartbeatMs);
-    req.on("close", () => {
-      clearInterval(beat);
-      unsubscribe();
-    });
+    serveChannel(this.hub, n, qLast, req, res);
   }
 }

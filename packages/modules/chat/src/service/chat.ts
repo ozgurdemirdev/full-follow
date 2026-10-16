@@ -3,6 +3,7 @@ import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { CHAT_NEW_TITLE, FFError, parse, schema, stamp, writeEvent as emit, type ChatApi, type Ctx } from "@fullfollow/core";
 import { CHAT_DEFAULTS, CHAT_TITLE_CHARS } from "../constants";
 import { m } from "../messages";
+import { draftRunsService } from "./draft-runs";
 import { chatAttachmentCreate, chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "./schemas";
 
 const { chat_attachments, chat_messages, chat_sessions } = schema;
@@ -60,11 +61,13 @@ export function chatService(ctx: Ctx): ChatApi {
     return ctx.db.select().from(chat_attachments).where(eq(chat_attachments.message_id, messageId)).orderBy(chat_attachments.id).all();
   }
 
-  function createSession(input: unknown = {}) {
+  /** `run` makes the session of a background draft run: its kind and a fixed title (the web's input never carries them) */
+  function createSession(input: unknown = {}, run?: { title: string }) {
     const d = parse(chatSessionCreate, input);
     return ctx.db.transaction((tx) => {
       const r = tx.insert(chat_sessions).values({
         model: d.model ?? CHAT_DEFAULTS.model, effort: d.effort ?? CHAT_DEFAULTS.effort, cli_session_id: randomUUID(), ...stamp(ctx),
+        ...(run ? { kind: "draft" as const, title: run.title, title_locked: true } : {}),
       }).returning().get();
       emit(tx, ctx, { type: "chat.created", summary: m.events.created, data: { chat_session_id: r.id } });
       return r;
@@ -206,5 +209,6 @@ export function chatService(ctx: Ctx): ChatApi {
   return {
     createSession, listSessions, getSession: sessionRow, updateSession, deleteSession, restoreSession, listMessages, getMessage: messageRow,
     addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, createAttachment, getAttachment, attachmentsOfMessage, failDanglingRuns,
+    draftRuns: draftRunsService(ctx),
   };
 }

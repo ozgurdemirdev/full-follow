@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, CLAUDE_EFFORT_IDS, CLAUDE_MODEL_IDS, DRAFT_AUTO_DEFAULTS, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
 import { assertOzgur, emit, FFError, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
@@ -126,6 +126,23 @@ const hiddenModulesSchema = z.preprocess(
 
 const num = (ctx: Ctx, key: string) => Number(readSetting(ctx, key) ?? 0) || 0;
 
+/** On or off: a boolean, or its text ("1", "0", "true", "false") */
+const switchSchema = z.preprocess((v) => (v === "1" || v === "true" ? true : v === "0" || v === "false" ? false : v), z.boolean());
+const draftModelSchema = z.enum(CLAUDE_MODEL_IDS);
+const draftEffortSchema = z.enum(CLAUDE_EFFORT_IDS);
+
+/** Background draft runs: whether a draft request starts one at once, and the model and effort it runs with (a stored value no longer on the list falls back to the default) */
+export function draftAutoSettings(ctx: Ctx): { draft_auto: boolean; draft_model: string; draft_effort: string } {
+  const on = readSetting(ctx, "draft_auto");
+  const model = draftModelSchema.safeParse(readSetting(ctx, "draft_model"));
+  const effort = draftEffortSchema.safeParse(readSetting(ctx, "draft_effort"));
+  return {
+    draft_auto: on === undefined ? DRAFT_AUTO_DEFAULTS.on : on === "1",
+    draft_model: model.success ? model.data : DRAFT_AUTO_DEFAULTS.model,
+    draft_effort: effort.success ? effort.data : DRAFT_AUTO_DEFAULTS.effort,
+  };
+}
+
 /** Tüm ayarlar (girilmemiş sayılar 0, şablon varsayılan) */
 export function settingValues(ctx: Ctx) {
   return {
@@ -139,6 +156,7 @@ export function settingValues(ctx: Ctx) {
     focus_own_project_id: focusOwnProject(ctx),
     post_refresh_days: postRefreshDays(ctx),
     modules_hidden: hiddenModules(ctx),
+    ...draftAutoSettings(ctx),
   };
 }
 
@@ -184,6 +202,12 @@ export function settingsService(ctx: Ctx) {
       stored = JSON.stringify(keys);
     } else if (key === "draft_rules") {
       stored = JSON.stringify(parse(draftRulesSchema, value));
+    } else if (key === "draft_auto") {
+      stored = parse(switchSchema, value) ? "1" : "0";
+    } else if (key === "draft_model") {
+      stored = parse(draftModelSchema, value);
+    } else if (key === "draft_effort") {
+      stored = parse(draftEffortSchema, value);
     } else if (key === "post_refresh_days") {
       stored = String(parse(z.coerce.number().int().min(1).max(POST_REFRESH_MAX_DAYS), value));
     } else if (key === "tax_rate_percent") {

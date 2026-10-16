@@ -16,6 +16,8 @@ export const DEFAULT_CHAT_CWD = "C:/Projects/Networking";
 export const ENV = { cli: "FF_CLAUDE_CLI", cwd: "FF_CHAT_CWD", configDir: "FF_CLAUDE_CONFIG_DIR" } as const;
 
 export const MCP_SERVER_NAME = "full-follow";
+/** Runtime files in chatDataDir(): the panel's MCP config and system prompt, and the MCP config of a draft run (the host in mode "draft") */
+export const RUNTIME_FILES = { mcp: "mcp.json", system: "system.md", draftMcp: "mcp-draft.json" } as const;
 export const MCP_TOOL_PREFIX = `mcp__${MCP_SERVER_NAME}__`;
 export const TOOL_SEARCH = "ToolSearch";
 /** Built-in web tools the panel Claude may use besides the Full Follow MCP tools (page content is untrusted, see the rules in chat-files.ts) */

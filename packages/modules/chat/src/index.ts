@@ -10,7 +10,7 @@ import { chatService } from "./service/chat";
 export default defineModule({
   key: "chat",
   label: m.label,
-  smoke: ["/api/chat/meta", "/api/chat/sessions"],
+  smoke: ["/api/chat/meta", "/api/chat/sessions", "/api/draft-runs"],
   api: chatService,
   contribute: {
     // a deleted session is hidden in place: the trash lists it and brings it back

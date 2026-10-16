@@ -1,22 +1,22 @@
+import { CLAUDE_EFFORT_IDS, CLAUDE_MODEL_IDS, type ClaudeEffortId, type ClaudeModelId } from "@fullfollow/core";
 import { m } from "./messages";
 
 /** Bytes in a megabyte, the unit of the upload limits */
 export const BYTES_PER_MB = 1024 * 1024;
 
 // ---- Panel chat ----
-/** Models the panel chat may use; context is the window the CLI assumes (it warns "not in catalog" for Haiku 5.5 and auto compacts at 200K); ids are passed to the Claude CLI, so they come only from this list */
-export const CHAT_MODELS = [
-  { id: "claude-opus-5-5", label: "Opus 5.5", context: 1_000_000 },
-  { id: "claude-sonnet-5-5", label: "Sonnet 5.5", context: 1_000_000 },
-  { id: "claude-haiku-5-5", label: "Haiku 5.5", context: 200_000 },
-] as const;
-export const CHAT_MODEL_IDS = CHAT_MODELS.map((model) => model.id) as unknown as readonly [string, ...string[]];
-export const CHAT_EFFORTS = [
-  { id: "low", label: m.efforts.low },
-  { id: "medium", label: m.efforts.medium },
-  { id: "high", label: m.efforts.high },
-] as const;
-export const CHAT_EFFORT_IDS = CHAT_EFFORTS.map((e) => e.id) as unknown as readonly [string, ...string[]];
+/** Label and context window of each model core allows; context is the window the CLI assumes (it warns "not in catalog" for Haiku 5.5 and auto compacts at 200K) */
+const MODEL_INFO: Record<ClaudeModelId, { label: string; context: number }> = {
+  "claude-opus-5-5": { label: "Opus 5.5", context: 1_000_000 },
+  "claude-sonnet-5-5": { label: "Sonnet 5.5", context: 1_000_000 },
+  "claude-haiku-5-5": { label: "Haiku 5.5", context: 200_000 },
+};
+/** Models the panel chat and the draft runs may use; ids are passed to the Claude CLI, so they come only from core's list */
+export const CHAT_MODELS = CLAUDE_MODEL_IDS.map((id) => ({ id, ...MODEL_INFO[id] }));
+export const CHAT_MODEL_IDS = CLAUDE_MODEL_IDS;
+const EFFORT_LABEL = m.efforts as Record<ClaudeEffortId, string>;
+export const CHAT_EFFORTS = CLAUDE_EFFORT_IDS.map((id) => ({ id, label: EFFORT_LABEL[id] }));
+export const CHAT_EFFORT_IDS = CLAUDE_EFFORT_IDS;
 export const CHAT_DEFAULTS = { model: "claude-haiku-5-5", effort: "low" } as const;
 export const CHAT_LIMITS = {
   maxBodyChars: 8_000,
@@ -36,6 +36,22 @@ export const CHAT_LIMITS = {
   /** text attachments longer than this are cut before they reach the CLI (a 10 MB file would fill the context) */
   maxTextAttachmentChars: 100_000,
 } as const;
+
+// ---- Background draft runs ----
+export const DRAFT_RUN_LIMITS = {
+  /** runs that write at the same time; the rest wait their turn in the queue */
+  concurrency: 1,
+  /** requests that may wait at once; one more is refused until the queue moves */
+  maxQueued: 10,
+  /** a finished run whose draft still waits keeps its "Taslak hazır" button this long */
+  readyKeepMs: 24 * 60 * 60_000,
+  /** most rows GET /api/draft-runs returns */
+  listMax: 50,
+  /** characters of the record name in the run's session title */
+  titleNameChars: 40,
+} as const;
+/** The SSE channel of the draft queue in the event hub (session ids start at 1, so it never meets a session) */
+export const DRAFT_RUNS_CHANNEL = 0;
 /** The first message becomes the title of a chat: this many characters, cut at a word boundary */
 export const CHAT_TITLE_CHARS = 60;
 /** Longest values the API accepts: a title typed by hand, the client's message id, the name of an uploaded file */

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CHAT_INPUT_MODES } from "@fullfollow/core";
+import { CHANNELS, CHAT_INPUT_MODES, zodKit } from "@fullfollow/core";
 import { CHAT_EFFORT_IDS, CHAT_FIELD_MAX, CHAT_LIMITS, CHAT_MODEL_IDS } from "../constants";
 import { m } from "../messages";
 
@@ -36,3 +36,16 @@ export const chatFinish = z.strictObject({
   context_tokens: z.number().int().min(0).optional(),
   ack: z.boolean().optional(),
 });
+
+const recordId = zodKit.id.nullish().transform((v) => v ?? null);
+/** A draft request: the title the button gives it, the record it is about (at most one), and the channel asked for */
+export const draftRunCreate = z.strictObject({
+  title: zodKit.text.max(CHAT_FIELD_MAX.title),
+  person_id: recordId,
+  company_id: recordId,
+  opportunity_id: recordId,
+  project_id: recordId,
+  idea_id: recordId,
+  channel: z.enum(CHANNELS).nullish().transform((v) => v ?? null),
+}).refine((d) => [d.person_id, d.company_id, d.opportunity_id, d.project_id, d.idea_id].filter((v) => v !== null).length <= 1, { message: m.draftErrors.oneRecord });
+export type DraftRunInput = z.infer<typeof draftRunCreate>;

@@ -12,6 +12,7 @@ export const m = defineMessages({
     restoredKind: "geri yüklendi",
     ready: (dbPath: string) => `full-follow mcp hazır (${dbPath})`,
     startFailed: "full-follow mcp başlatılamadı:",
+    unknownMode: (mode: string, known: string) => `bilinmeyen mcp modu "${mode}" (bilinen: ${known})`,
 
     /** Who wrote a record */
     who: { claude: "Claude", ozgur: "Özgür", customer: "Müşteri" },

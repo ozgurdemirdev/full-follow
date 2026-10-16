@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { docKit } from "@fullfollow/core";
-import { chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "../service/schemas";
+import { chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate, draftRunCreate } from "../service/schemas";
 
 const { defineDocs, object, ok, positiveInt } = docKit;
 const session = { id: "Chat session id" };
@@ -46,6 +46,23 @@ export const docs = defineDocs({
   },
   "GET /api/chat/attachments/:id": { summary: "Download an attachment", description: "Served with its stored mime type, never sniffed by the browser.", params: { id: "Attachment id" }, contentType: "application/octet-stream" },
   "POST /api/chat/sessions/:id/stop": { summary: "Stop the running answer", params: session, response: ok },
+  "POST /api/draft-runs": {
+    summary: "Ask Claude for a draft now",
+    description: "With auto drafting on (setting `draft_auto`) the request is queued and a background Claude run writes one draft on its own chat session (kind `draft`), with only the read tools and `draft`; the answer is `{ mode: \"run\", run }`. A second request with the same title and record returns the run already queued or running. With auto drafting off, no Claude CLI or no drafts module it becomes Claude's task for today: `{ mode: \"task\", task, effects }`. A full queue answers 409.",
+    body: draftRunCreate,
+    response: object,
+  },
+  "GET /api/draft-runs": {
+    summary: "List the draft requests the buttons show",
+    description: "Queued and running requests, and finished ones whose draft still waits for approval (up to 50, newest first).",
+    response: z.object({ rows: z.array(object) }),
+  },
+  "GET /api/draft-runs/stream": {
+    summary: "Follow the draft requests as server-sent events",
+    description: "A `run` event with the row on every state change (queued, running, done with `draft_id`, failed with `error`). Reconnect with `Last-Event-ID` (or `last_event_id`) to replay what was missed; when it cannot be replayed a `snapshot` event arrives.",
+    query: z.object({ last_event_id: positiveInt.optional().describe("Resume after this event sequence") }),
+    contentType: "text/event-stream",
+  },
   "GET /api/chat/sessions/:id/stream": {
     summary: "Follow a session as server-sent events",
     description: "Closing the connection only unsubscribes, a run goes on. Reconnect with `Last-Event-ID` (or `last_event_id`) to replay what was missed; when it cannot be replayed a `snapshot` event arrives.",
