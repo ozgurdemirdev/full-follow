@@ -6,26 +6,48 @@ Küçük işletmeler ve şahıs şirketleri için yapay zeka destekli CRM. Müş
 
 ## Özellikler
 
-- **Kişi ve firma kartları:** Bir kişiyle hangi kanaldan ne konuşulduğu, kimin tanıştırdığı, cevap bekleyip beklemediği tek ekranda.
-- **Satış hunisi:** Fırsatlar aşama aşama ilerler (temas, cevap, görüşme, teklif); kartlar sürükle bırak taşınır, kazanılan fırsat kendiliğinden projeye dönüşür.
+Arayüz koyu temalı, tasarım panosundan (Claude artboard) türetilmiş tek bir token kaynağına bağlı; mobilde de aynı ekranlar kullanılır.
+
+- **Kişi ve firma kartları:** Bir kişiyle hangi kanaldan ne konuşulduğu, kimin tanıştırdığı, cevap bekleyip beklemediği tek ekranda. Soğuyan bağlantılar "Bugün dokun" şeridinde öne çıkar.
+- **Satış hunisi:** Fırsatlar aşama aşama ilerler (bulundu, temas, cevap, görüşme, teklif); kartlar sürükle bırak taşınır, kazanılan fırsat kendiliğinden projeye dönüşür. Fırsat sayfasında teklif sürümleri, ödeme planı ve fırsattaki ek kişiler (ekip) durur.
 - **Proje ve ödeme takibi:** Her proje peşinat, tasarım onayı, test sürümü, yayın ve teslim adımlarından geçer; ödemesi gelmeyen adıma geçilmez, geciken ödeme Dashboard'da görünür.
-- **Dashboard:** Günlük hedefler, cevap bekleyenler, soğuyan bağlantılar ve temas grafiği.
-- **İşlem geçmişi:** Her değişiklik, kimin yaptığıyla (kullanıcı ya da asistan) birlikte zaman çizelgesine yazılır.
+- **Taslaklar:** Takip mesajları bir yığın halinde onayını bekler; neden yazıldığı ve kişiyle son temaslar yanında görünür.
+- **Takvim:** Haftalık görünüm, saatli görüşmeler, görevler, günlük hedefler ve gün sonu özeti.
+- **Dashboard:** Günlük hedefler, senden bekleyenler, cevap bekleyenler, tahsilat, soğuyan bağlantılar ve temas grafiği.
+- **İşlem geçmişi:** Her değişiklik, kimin yaptığıyla (Özgür ya da Claude) birlikte zaman çizelgesine yazılır.
+- **Kendi projelerin, gelir fikirleri, referanslar, paylaşımlar, şablonlar ve haftalık rapor** da var; her biri ayrı bir modüldür (aşağıya bak).
+
+### Modüller
+
+Her özellik, kendi API'si olan ayrı bir pakettir (`packages/modules/<ad>`): takvim, kişiler, firmalar, satış hunisi, projeler, taslaklar, Claude sohbeti ve diğerleri. Biri olmadan da gerisi derlenir ve çalışır.
+
+- **Ayarlar > Modüller:** bir modülü menüden, kartlardan ve hızlı eklemeden gizler; verisi ve Claude'un erişimi yerinde durur.
+- **`FF_MODULES_OFF=calendar,referrals`** (modül klasör adlarıyla, virgülle): modülü derlemeden, sunucudan, MCP'den ve testlerden tamamen çıkarır. `npm run check:modules` her modülü tek tek kapatıp bunun gerçekten çalıştığını kanıtlar.
+- Modül yazma kuralları: [packages/modules/README.md](packages/modules/README.md), plan: [docs/plan-moduler.md](docs/plan-moduler.md).
 
 ### Yapay zeka asistanı
 
 - **Panel sohbeti:** Her sayfada açılan pencereden Claude ile CRM verisi üzerinde konuşulur: "bu hafta kime dönmem gerekiyor", "şu firmanın durumu ne". Asistan cevap verirken hangi araçları kullandığını gösterir.
-- **Onaylı taslaklar:** Asistan takip mesajlarını taslak olarak hazırlar; kullanıcı düzenler, onaylar ya da reddeder.
-- **Kayıt yorumları:** Asistan kayıtlara not bırakır, kullanıcı aynı yerden cevap verir.
+- **Onay kartı:** Kayıt silme, ödeme girme ve ayar değiştirme sohbette "Onayla / Vazgeç" kartı çıkarır; sen demeden yapılmaz. İstersen Ayarlar > Claude altında **Tam yetki** açılır (uyarısı vardır, varsayılan kapalı). **Sayfa okuma (WebFetch)** varsayılan kapalıdır; **Bilgisayardaki dosyalar** yalnız seçtiğin klasörler için açılır.
+- **Onaylı taslaklar:** Taslak düğmelerine basınca Claude taslağı arka planda yazar (model ve düşünme seviyesi Ayarlar > Claude'da seçilir); sen düzenler, onaylar ya da reddedersin. Gerekçeyle reddettiğin taslaklardan Claude kural öğrenir ve sonraki taslaklarda uygular (kuralı Ayarlar'dan silebilirsin).
+- **Kayıt yorumları:** Asistan kayıtlara not bırakır, sen aynı yerden cevap verirsin.
 - **Aynı kurallar:** Web arayüzü de asistan da veriye yalnızca core katmanındaki iş kurallarından geçerek yazar (MCP sunucusu üzerinden). Asistanın yaptığı her işlem ayrıca etiketlenir.
 
-| Satış hunisi | Kişi kartı |
+### Ekranlar
+
+| Kişiler | Kişi kartı |
 |---|---|
-| ![Satış hunisi](docs/screenshots/huni.png) | ![Kişi kartı](docs/screenshots/kisi.png) |
-| **Asistan sohbeti** | **Onay bekleyen taslak** |
-| ![Asistan sohbeti](docs/screenshots/asistan.png) | ![Taslaklar](docs/screenshots/taslaklar.png) |
-| **Proje panosu** | |
-| ![Proje panosu](docs/screenshots/projeler.png) | |
+| ![Kişiler](docs/screenshots/kisiler.png) | ![Kişi kartı](docs/screenshots/kisi.png) |
+| **Satış hunisi** | **Fırsat sayfası: teklif ve ekip** |
+| ![Satış hunisi](docs/screenshots/huni.png) | ![Fırsat sayfası](docs/screenshots/firsat.png) |
+| **Taslaklar** | **Müşteri projeleri** |
+| ![Taslaklar](docs/screenshots/taslaklar.png) | ![Müşteri projeleri](docs/screenshots/projeler.png) |
+| **Takvim** | **Asistan sohbeti ve onay kartı** |
+| ![Takvim](docs/screenshots/takvim.png) | ![Asistan sohbeti](docs/screenshots/asistan.png) |
+| **Ayarlar (Claude)** | **İlk açılış** |
+| ![Ayarlar](docs/screenshots/ayarlar.png) | ![İlk açılış](docs/screenshots/kurulum.png) |
+| **Telefon (390 px)** | |
+| ![Telefon](docs/screenshots/telefon.png) | |
 
 Ekran görüntülerindeki kişi, firma ve tutarların hepsi uydurmadır (`npm run demo:seed`).
 
@@ -38,30 +60,36 @@ Ekran görüntülerindeki kişi, firma ve tutarların hepsi uydurmadır (`npm ru
 | Veritabanı | SQLite (better-sqlite3, WAL), Drizzle ORM ve migration |
 | Ön yüz | React 19, Vite, Tailwind 4, Motion, dnd-kit |
 | Yapay zeka | Claude, MCP sunucusu (`@modelcontextprotocol/sdk`) |
+| Yapı | npm workspaces: `core`, `app`, `server`, `mcp`, `web` ve her özellik için bir modül paketi |
+| API belgesi | OpenAPI 3.1 + Swagger UI (`/api/docs`) |
 | Test | Vitest, bellek içi SQLite |
 
-Mimari ve veri modeli: [docs/MIMARI.md](docs/MIMARI.md).
+Mimari ve veri modeli: [docs/MIMARI.md](docs/MIMARI.md), modüller: [docs/plan-moduler.md](docs/plan-moduler.md).
+
+**API belgesi:** sunucu açıkken `http://localhost:3000/api/docs` adresinde bütün uç noktalar Swagger arayüzüyle görülür; belge elle yazılmaz, kayıtlı rotalardan ve Zod şemalarından üretilir (`/api/openapi.json`). Şifre varsa önce panelden giriş yapılmış olmalıdır.
 
 ## Demo verisiyle denemek
 
 ```powershell
 npm install
 npm run build
-npm run demo:seed                  # data/demo.db: uydurma kişiler, fırsatlar, projeler ve bir asistan sohbeti
+npm run demo:seed                  # data/demo.db: uydurma kişiler, fırsatlar, teklif, projeler, takvim, taslaklar ve bir asistan sohbeti
 $env:FF_DB="data/demo.db"; npm run serve
 ```
+
+`FF_DEMO_DB` ile tohum başka bir klasöre yazılır (örn. `$env:FF_DEMO_DB="C:\temp\demo\demo.db"`); sunucuyu da aynı dosyaya `FF_DB` ile yönelt. Demo veritabanı da ilk açılışta adını ve şifreni sorar.
 
 ## Çalıştırma (Windows, Node 22+)
 
 ```powershell
 npm install                        # bağımlılıklar
-npm test                           # çekirdek testleri (bellek içi SQLite)
+npm test                           # bütün paketlerin testleri (bellek içi SQLite)
 copy .env.example .env             # isteğe bağlı ayarlar (port, yedek, sohbet)
 npm start                          # tek komut: kontrol eder, derler, sunucuyu açar, tarayıcıda http://localhost:3000 açılır
 ```
 
 - Veritabanı ilk açılışta `data/fullfollow.db` olarak kendiliğinden oluşur (WAL modu, migration otomatik).
-- İlk açılışta panel adını ve şifreni sorar (en az 12 karakter); o zamana kadar sunucu sadece bu bilgisayardan açılır. Telefondan girmek için "Güvenlik" bölümüne bak.
+- İlk açılışta panel "Adın ne?" ekranında adını ve şifreni sorar (en az 12 karakter); o zamana kadar sunucu sadece bu bilgisayardan açılır. Telefondan girmek için Ayarlar > Hesap > Telefondan erişim ve "Güvenlik" bölümü.
 - Sunucu yalnızca bu bilgisayarın adreslerine (localhost, 127.0.0.1, kendi IP'n) gelen isteklere cevap verir; telefondan bir ad kullanıyorsan (örn. `pc.local`) `.env` içinde `FF_ALLOWED_HOSTS` ile ekle.
 - Hızlı kontrol: tarayıcıda `http://localhost:3000/api/health` → `{"ok":true}`.
 - `npm start` her adımı yazar (Arka uç derleniyor… tamam). Bir şey ters giderse sebebini ve ne yapılacağını kırmızıyla yazar; tüm çıktı `data/son-calistirma.log` dosyasında kalır.
@@ -168,7 +196,7 @@ MCP ve web sunucusu aynı `data/fullfollow.db` dosyasını aynı anda açabilir.
 
 ## Panel sohbeti
 
-Web arayüzünün her sayfasında, sağ alttaki + düğmesinin üstündeki sohbet düğmesiyle açılan yüzer pencere. Claude ile Full Follow verisi üzerinde konuşursun: bugün ne var, şu firmanın durumu ne, bu haftanın raporu. Cevaplar kelime kelime akar; pencereyi küçültsen, sayfayı yenilesin ya da sekmeyi kapatsan da cevap sunucuda yazılmaya devam eder, geri döndüğünde kaldığı yerden görünür.
+Web arayüzünün her sayfasında, sağ alttaki + düğmesinin üstündeki sohbet düğmesiyle (ya da maskot denizanasına tıklayınca) açılan yüzer pencere; geniş görünüme açılınca sohbet listesi de görünür. Claude ile Full Follow verisi üzerinde konuşursun: bugün ne var, şu firmanın durumu ne, bu haftanın raporu. Cevaplar kelime kelime akar; pencereyi küçültsen, sayfayı yenilesin ya da sekmeyi kapatsan da cevap sunucuda yazılmaya devam eder, geri döndüğünde kaldığı yerden görünür.
 
 **Gerekenler**
 
@@ -182,7 +210,7 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 
 - Sadece Full Follow araçlarını kullanır (MCP: `find`, `get`, `save`, `today` ve diğerleri). Claude'un yazdığı her kayıt "Claude" etiketiyle görünür.
 - İnternette arayabilir (`WebSearch`); sayfa okuma (`WebFetch`) ve bilgisayardaki dosyalar ayarla açılır, komut aracı hiç yoktur (bkz. Güvenlik). Silme, ödeme ve ayar değişikliği onay kartı ister. Web içeriği güvenilmez veri sayılır: sayfadaki talimatı uygulamaz, bulduklarını yalnız sen isteyince Full Follow'a kaydeder.
-- Dosya okuyamaz, kabuk komutu çalıştıramaz, internete çıkamaz.
+- Kabuk komutu çalıştıramaz; sayfa okuyabilmesi ve klasörlerdeki dosyaları okuyup yazabilmesi için Ayarlar > Claude'dan açman gerekir. Tam yetki açıksa onay sormaz (bkz. Güvenlik).
 - Model (Opus 5.5, Sonnet 5.5, Haiku 5.5) ve efor (Düşük, Orta, Yüksek) her sohbet için başlıktaki düğmeden seçilir; değişiklik bir sonraki mesajdan geçerlidir. Varsayılan Haiku 5.5, düşük efor.
 - Eski sohbetler listede durur, tam bağlamıyla devam eder. Başlıktaki çubuk bağlam doluluğunu gösterir.
 
@@ -213,30 +241,17 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 | Claude Code bulunamadı | `npm i -g @anthropic-ai/claude-code`, sonra sunucuyu yeniden başlat |
 | Claude oturumu kapanmış | Terminalde `claude auth login`, sonra tekrar dene |
 | Claude kullanım sınırına takıldın | Sınır yenilenince tekrar dene (halkalardaki "Yenilenme" saatine bak) |
-| Full Follow MCP derlenmemiş | `npm run build` |
-| Claude beklenmedik şekilde kapandı | Tekrar dene; sürerse sunucu günlüğüne (`data/son-calistirma.log`) bak |
-| Sunucu yeniden başladı, bu cevap yarım kaldı | Sunucu cevap yazılırken kapandı; aynı sohbette devam edebilirsin |
-
-Çalışma dosyaları (`system.md`, `mcp-draft.json`, her sohbet için `mcp-chat-<id>.json`) `data/chat/` içinde kendiliğinden oluşur ve git'e girmez.
-
-## Ön yüz (packages/web)
-
-- Tasarım tokenleri tek kaynaktan gelir: `packages/web/src/styles/tokens.json`. `npm run tokens -w @fullfollow/web` bundan `tokens.css` (Tailwind teması + CSS değişkenleri) ve `public/favicon.svg` üretir; build ve dev bunu kendiliğinden çalıştırır.
-- Kodda sabit renk, px, ms yazmak yasak: `npm run check -w @fullfollow/web` bulursa build durur.
-- Vite + React 19 (React Compiler) + Tailwind 4 + Motion + dnd-kit. Sayfalar ayrı parçalar halinde yüklenir.
-- Derleme `.br` ve `.gz` kopyalarını da üretir; sunucu bunları hazır sıkıştırılmış gönderir. `/assets` dosyaları süresiz önbelleklenir, `index.html` her seferinde tazelenir.
-
-## Komutlar
-
-| Komut | Ne yapar |
-|---|---|
-| `npm run build` | core + server + mcp derler, ön yüzü (`packages/web`) `packages/web/dist` içine üretir |
+| Full Follow MCP derlenmemiş | `npm run build` | modül listelerini üretir, sınırları ve metinleri denetler (`check:boundaries`, `check:text`), arka ucu (core, modüller, app, server, mcp) derler, ön yüzü `packages/web/dist` içine üretir |
 | `npm run dev:web` | ön yüz geliştirme sunucusu (http://localhost:5173, `/api` isteklerini 3000'e yönlendirir; sunucu ayrıca `npm start` ile açık olmalı) |
-| `npm test` | core testleri |
+| `npm test` | modül listesini yeniler, core, app, server, mcp, web ve her modül paketinin testlerini çalıştırır |
 | `npm start` | kontrol + derleme + sunucu + tarayıcı (tek komut) |
 | `npm run serve` | derlemeden sunucuyu açar |
+| `npm run gen:modules` | `packages/modules/*` klasörlerinden app, server ve web modül listelerini üretir (`FF_MODULES_OFF=a,b` ile modül çıkarılır) |
+| `npm run check:modules` | her modülü ve hepsini kapatıp derleme, test, sunucu ve MCP açılışını dener (modül çıkarmanın bozmadığının kanıtı; uzun sürer) |
+| `npm run check:boundaries` | paketlerin yalnız izinli yerlerden içe aktardığını denetler (modül başka modülün koduna girmez) |
+| `npm run check:text` | satır içine yazılmış kullanıcı metnini ya da ayarlanabilir sayıyı bulur; metin `messages`, sayı `constants` dosyasında durur |
 | `npm run backup` | veritabanını `data/backups` içine yedekler |
 | `npm run reset-password` | unutulan şifreyi siler (onay sorar, kayıtlara dokunmaz); sonraki açılışta ad ve yeni şifre sorulur |
-| `npm run demo:seed` | uydurma verilerle `data/demo.db` kurar (açmak için `FF_DB=data/demo.db`) |
+| `npm run demo:seed` | uydurma verilerle `data/demo.db` kurar (açmak için `FF_DB=data/demo.db`; başka klasör için `FF_DEMO_DB`) |
 | `npm run mcp` | MCP sunucusunu elle başlatır (stdio) |
 | `npm run db:generate` | şema (`packages/core/src/db/schema.ts`) değişince yeni migration üretir |
