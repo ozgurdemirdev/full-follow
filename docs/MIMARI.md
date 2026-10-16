@@ -554,7 +554,7 @@ Gerçekleşen yapı (`packages/core/src` altında): `constants.ts`, `dates.ts`, 
 - Silme: bağlı fırsat/proje/ödeme varsa reddedilir; hafif bağlantılar (etiket, temas, görev, yorum) kişiyle birlikte gider. Her silme olay yazar; olaylar silinen kayıttan sonra da kalır.
 - Yorum silme: Claude sadece kendi yorumunu (ve sadece kendi cevapları olan kökü) silebilir; Özgür her yorumu silebilir. Kapalı konuya cevap yazılınca `comment.reopened` olayı yazılır.
 - Bağlantı tutarlılığı: temas, taslak ve projede verilen fırsat/proje aynı kişiye ait olmalı. Proje hakkındaki temas (project verilmiş) kişinin açık fırsatına otomatik bağlanmaz, satış aşamasını ilerletmez. Referans ağacında döngü kurulamaz.
-- Web sunucusu: şifre (`FF_PASSWORD`) tanımlıysa `0.0.0.0`, değilse sadece `127.0.0.1` dinler. Ayarlar kök `.env` dosyasından okunur.
+- Web sunucusu: `FF_PASSWORD` tanımlıysa `0.0.0.0` dinler. Yoksa ilk açılışta panel şifre sorar (`data/auth.json`, scrypt özeti); bu şifreyle `127.0.0.1` dinler, `phone_access` ayarı açıksa `0.0.0.0`. Şifre yokken yalnız `127.0.0.1` ve yalnız kurulum ucu açıktır. Ayarlar kök `.env` dosyasından okunur.
 
 ---
 

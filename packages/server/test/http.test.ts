@@ -109,7 +109,8 @@ describe("web address fields", () => {
 
 describe("request guard", () => {
   it("a data changing request must declare a JSON or multipart body", async () => {
-    expect((await post("/api/login")).status).toBeLessThan(300);
+    // a JSON post passes the guard: the login itself answers (no password in the body)
+    expect((await post("/api/login")).status).toBe(400);
     expect((await server.request("/api/login", { method: "POST" })).status).toBe(415);
     expect((await server.request("/api/login", { method: "POST", headers: { "content-type": "text/plain" }, body: "{}" })).status).toBe(415);
     expect((await server.request("/api/login", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "a=1" })).status).toBe(415);

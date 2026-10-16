@@ -13,6 +13,7 @@
 // it builds many times, so take the lock once around the whole run.
 import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -87,9 +88,9 @@ function dumpModules(env) {
   return JSON.parse(r.stdout);
 }
 
-async function get(url) {
+async function get(url, headers = {}) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(30_000) });
     return { status: res.status, text: await res.text() };
   } catch (e) {
     return { status: 0, text: String(e?.cause?.code ?? e) };
@@ -101,7 +102,9 @@ async function checkServer(caseDir, env, installed, all) {
   const port = await pickPort();
   const base = `http://127.0.0.1:${port}`;
   const fd = openSync(join(caseDir, "server.log"), "w");
-  const child = spawn(node, [join(root, "packages", "server", "dist", "main.js")], { cwd: root, env: { ...env, FF_PORT: String(port) }, stdio: ["ignore", fd, fd] });
+  // a password of its own, so the server is not in its first run (where every route but the setup is a 401) and its routes can be asked
+  const password = randomBytes(16).toString("hex");
+  const child = spawn(node, [join(root, "packages", "server", "dist", "main.js")], { cwd: root, env: { ...env, FF_PORT: String(port), FF_PASSWORD: password }, stdio: ["ignore", fd, fd] });
   let exited = null;
   child.on("exit", (code, sig) => (exited = code ?? sig));
   try {
@@ -111,9 +114,12 @@ async function checkServer(caseDir, env, installed, all) {
     }
     if (exited !== null) throw new CheckError(`server exited (${exited}): ${firstError(join(caseDir, "server.log")) ?? ""}`);
     if ((await get(`${base}/api/health`)).status !== 200) throw new CheckError("server: /api/health did not answer in 60 s");
+    const login = await fetch(`${base}/api/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password }) });
+    if (!login.ok) throw new CheckError(`POST /api/login answered ${login.status}`);
+    const session = { cookie: String(login.headers.get("set-cookie")).split(";")[0] };
     const paths = [...CORE_PATHS, ...installed.flatMap((m) => m.smoke)];
     for (const p of paths) {
-      const r = await get(base + p);
+      const r = await get(base + p, session);
       if (r.status !== 200) throw new CheckError(`GET ${p} answered ${r.status || "no answer"}: ${r.text.slice(0, 160)}`);
       if (p === "/api/modules") {
         const keys = JSON.parse(r.text).map((m) => m.key).sort().join(",");
@@ -131,7 +137,7 @@ async function checkServer(caseDir, env, installed, all) {
     }
     // a garbage date is a 400 at once (it once looped until the server ran out of memory); without the calendar module the route is gone (404)
     const started = Date.now();
-    const bad = await get(`${base}/api/plan?date=garbage`);
+    const bad = await get(`${base}/api/plan?date=garbage`, session);
     const calendarOn = installed.some((m) => m.key === "calendar");
     if (bad.status !== (calendarOn ? 400 : 404) || Date.now() - started > 1000) throw new CheckError(`GET /api/plan?date=garbage answered ${bad.status || "no answer"} in ${Date.now() - started} ms (expected ${calendarOn ? 400 : 404} within 1000)`);
     const page = await get(`${base}/`);

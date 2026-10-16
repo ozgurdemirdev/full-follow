@@ -33,8 +33,15 @@ export interface TestServer {
   close(): Promise<void>;
 }
 
-/** The whole app (module, guard, filters, body parsers) on an ephemeral port, as main.ts sets it up */
-export async function startServer(): Promise<TestServer> {
+/** The app password of a test server that logs itself in (FF_PASSWORD, unless the test file set its own) */
+export const TEST_PASSWORD = "test-server-password";
+
+/**
+ * The whole app (module, guard, filters, body parsers) on an ephemeral port, as main.ts sets it up. By default it has a password
+ * and every request carries a session cookie (a request that names its own cookie keeps it); `login: false` leaves both to the test.
+ */
+export async function startServer({ login = true }: { login?: boolean } = {}): Promise<TestServer> {
+  if (login) process.env.FF_PASSWORD ||= TEST_PASSWORD;
   const { AppModule } = await import("../src/app.module");
   const { configureApp } = await import("../src/setup");
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false, bodyParser: false });
@@ -42,9 +49,10 @@ export async function startServer(): Promise<TestServer> {
   await app.listen(0, "127.0.0.1");
   const port = (app.getHttpServer().address() as { port: number }).port;
 
+  let session: Record<string, string> = {};
   const request = (urlPath: string, req: Req = {}) =>
     new Promise<Reply>((resolve, reject) => {
-      const call = http.request({ host: "127.0.0.1", port, path: urlPath, method: req.method ?? "GET", headers: req.headers }, (res) => {
+      const call = http.request({ host: "127.0.0.1", port, path: urlPath, method: req.method ?? "GET", headers: { ...session, ...req.headers } }, (res) => {
         res.on("error", () => {});
         // an event stream never ends: the reply counts once its headers are in
         if (String(res.headers["content-type"]).startsWith("text/event-stream")) {
@@ -68,6 +76,11 @@ export async function startServer(): Promise<TestServer> {
       call.end(req.body);
     });
 
+  if (login) {
+    const r = await request("/api/login", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ password: process.env.FF_PASSWORD }) });
+    if (r.status >= 300) throw new Error(`test login failed: ${r.status} ${r.body}`);
+    session = { cookie: String(r.headers["set-cookie"]).split(";")[0] };
+  }
   return { port, dir, request, close: () => app.close() };
 }
 

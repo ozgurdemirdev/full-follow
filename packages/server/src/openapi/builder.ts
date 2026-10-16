@@ -131,7 +131,7 @@ const COMPONENTS: Json = {
   securitySchemes: {
     session: {
       type: "apiKey", in: "cookie", name: "ff_session",
-      description: "Session cookie set by POST /api/login with the app password (FF_PASSWORD). When no password is configured the server accepts every request.",
+      description: "Session cookie set by POST /api/login with the app password (FF_PASSWORD, or the one set in the first run setup) and by POST /api/setup.",
     },
   },
   schemas: {
@@ -140,7 +140,7 @@ const COMPONENTS: Json = {
       required: ["error", "code"],
       properties: {
         error: { type: "string", description: "What went wrong, in a sentence a person can read (Turkish)" },
-        code: { type: "string", description: "validation, not_found, rule, ambiguous, forbidden, duplicate, http (a malformed request: wrong id, number or body type, oversized body, foreign Host), attachment (an upload the chat refuses), file (a record file upload refused or missing), busy, too_many_runs, cli_missing (chat) or internal" },
+        code: { type: "string", description: "setup_required (401 in the first run, before any password exists), validation, not_found, rule, ambiguous, forbidden, duplicate, http (a malformed request: wrong id, number or body type, oversized body, foreign Host), attachment (an upload the chat refuses), file (a record file upload refused or missing), busy, too_many_runs, cli_missing (chat) or internal" },
         candidates: { type: "array", items: {}, description: "Code ambiguous: the records the name could mean" },
         duplicate: { type: "object", additionalProperties: {}, description: "Code duplicate: the record that already exists" },
       },

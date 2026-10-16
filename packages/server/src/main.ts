@@ -5,7 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
-import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS, LOOPBACK_HOSTS, MIN_PASSWORD_LENGTH } from "./constants";
+import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS, LISTEN_NETWORK, LOOPBACK_HOSTS, MIN_PASSWORD_LENGTH } from "./constants";
+import type { Core } from "./core.provider";
 import { m } from "./messages.start";
 
 const red = (s: string) => (process.stdout.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
@@ -41,10 +42,13 @@ async function alreadyRunning(port: number): Promise<boolean> {
 }
 
 async function load() {
-  const [{ NestFactory }, core, app, auth, setup] = await Promise.all([
-    import("@nestjs/core"), import("@fullfollow/core"), import("./app.module"), import("./auth"), import("./setup"),
+  const [{ NestFactory }, core, app, auth, setup, provider, listen] = await Promise.all([
+    import("@nestjs/core"), import("@fullfollow/core"), import("./app.module"), import("./auth"), import("./setup"), import("./core.provider"), import("./listen"),
   ]);
-  return { NestFactory, core, AppModule: app.AppModule, authEnabled: auth.authEnabled, weakPassword: auth.weakPassword, configureApp: setup.configureApp };
+  return {
+    NestFactory, core, AppModule: app.AppModule, CORE: provider.CORE, passwordSource: auth.passwordSource, weakPassword: auth.weakPassword,
+    configureApp: setup.configureApp, listenHost: listen.listenHost, mayListen: listen.mayListen,
+  };
 }
 
 async function bootstrap() {
@@ -58,12 +62,6 @@ async function bootstrap() {
   mods.core.loadRootEnv();
 
   const port = Number(process.env.FF_PORT || DEFAULT_PORT);
-  // Şifre varsa yerel ağa (telefon) açılır; yoksa sadece bu bilgisayara
-  const host = process.env.FF_HOST || (mods.authEnabled() ? "0.0.0.0" : "127.0.0.1");
-  // without a password nothing but this computer may reach the panel: no setting opens it to the network
-  if (!mods.authEnabled() && !LOOPBACK_HOSTS.includes(host)) die(m.openWithoutPassword(host), m.openWithoutPasswordHint);
-  // a warning, not a refusal: an install that already has a short password keeps starting
-  if (mods.weakPassword() && !LOOPBACK_HOSTS.includes(host)) console.warn(red(m.weakPassword(MIN_PASSWORD_LENGTH)));
   const url = `http://localhost:${port}`;
 
   let app: NestExpressApplication;
@@ -74,6 +72,19 @@ async function bootstrap() {
   } catch (e) {
     die(m.dbOpenFailed(mods.core.defaultDbPath()), m.dbOpenFailedHint, e);
   }
+
+  let source: ReturnType<typeof mods.passwordSource>;
+  try {
+    source = mods.passwordSource();
+  } catch (e) {
+    die((e as Error).message);
+  }
+  // the phone setting is read only for a password set in the panel: FF_PASSWORD keeps its own rule, the first run never opens
+  const phoneAccess = source === "app" && app.get<Core>(mods.CORE).settings.all().phone_access;
+  const host = mods.listenHost(source, phoneAccess);
+  if (!mods.mayListen(source, host)) die(m.openWithoutPassword(host), m.openWithoutPasswordHint);
+  // a warning, not a refusal: an install that already has a short password keeps starting
+  if (mods.weakPassword() && !LOOPBACK_HOSTS.includes(host)) console.warn(red(m.weakPassword(MIN_PASSWORD_LENGTH)));
 
   // Ctrl+C ve SIGTERM: sohbet CLI süreçleri de kapansın (onModuleDestroy)
   app.enableShutdownHooks();
@@ -108,13 +119,16 @@ async function bootstrap() {
   }
 
   console.log(green(m.ready(url)));
-  if (host === "0.0.0.0") {
+  if (!source) {
+    console.log(m.firstRun(url));
+  } else if (host === LISTEN_NETWORK) {
     for (const list of Object.values(os.networkInterfaces())) {
       for (const n of list ?? []) if (n.family === "IPv4" && !n.internal) console.log(m.phone(n.address, port));
     }
   } else {
-    console.log(m.noPassword);
+    console.log(source === "app" && !process.env.FF_HOST ? m.localOnlyPhoneHint : m.localOnly);
   }
+  if (source === "app") console.log(m.resetHint);
   if (!fs.existsSync(index)) console.log(m.webNotBuilt);
   console.log(m.stopHint);
   openBrowser(url);

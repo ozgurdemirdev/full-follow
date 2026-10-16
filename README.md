@@ -56,12 +56,12 @@ $env:FF_DB="data/demo.db"; npm run serve
 ```powershell
 npm install                        # bağımlılıklar
 npm test                           # çekirdek testleri (bellek içi SQLite)
-copy .env.example .env             # sonra .env içinde FF_PASSWORD yaz
+copy .env.example .env             # isteğe bağlı ayarlar (port, yedek, sohbet)
 npm start                          # tek komut: kontrol eder, derler, sunucuyu açar, tarayıcıda http://localhost:3000 açılır
 ```
 
 - Veritabanı ilk açılışta `data/fullfollow.db` olarak kendiliğinden oluşur (WAL modu, migration otomatik).
-- `FF_PASSWORD` doluysa sunucu yerel ağa açılır (telefondan `http://<bilgisayar-ip>:3000`), boşsa sadece bu bilgisayardan erişilir.
+- İlk açılışta panel adını ve şifreni sorar (en az 10 karakter); o zamana kadar sunucu sadece bu bilgisayardan açılır. Telefondan girmek için "Güvenlik" bölümüne bak.
 - Sunucu yalnızca bu bilgisayarın adreslerine (localhost, 127.0.0.1, kendi IP'n) gelen isteklere cevap verir; telefondan bir ad kullanıyorsan (örn. `pc.local`) `.env` içinde `FF_ALLOWED_HOSTS` ile ekle.
 - Hızlı kontrol: tarayıcıda `http://localhost:3000/api/health` → `{"ok":true}`.
 - `npm start` her adımı yazar (Arka uç derleniyor… tamam). Bir şey ters giderse sebebini ve ne yapılacağını kırmızıyla yazar; tüm çıktı `data/son-calistirma.log` dosyasında kalır.
@@ -72,7 +72,7 @@ npm start                          # tek komut: kontrol eder, derler, sunucuyu a
 
 - **Pencereli başlat:** `scripts\windows\baslat.cmd` dosyasına çift tıkla.
 - **Arka planda ve bilgisayar açılınca:** `Win+R` → `shell:startup` → açılan klasöre `scripts\windows\arka-planda-baslat.vbs` dosyasının kısayolunu koy. Sunucu pencere açmadan çalışır, kayıtlar `data\server.log` dosyasına yazılır. Durdurmak için Görev Yöneticisi'nde `node` işlemini kapat.
-- **Telefondan:** `.env` içinde `FF_PASSWORD` doluysa aynı Wi-Fi'deki telefondan `http://<bilgisayar-ip>:3000` (başlangıçta konsolda yazar). Windows Güvenlik Duvarı ilk açılışta izin sorarsa "Özel ağlar"a izin ver.
+- **Telefondan:** Ayarlar > Hesap > Telefondan erişim açıkken (ya da `.env` içinde `FF_PASSWORD` doluyken) sunucuyu yeniden başlat; aynı Wi-Fi'deki telefondan `http://<bilgisayar-ip>:3000` (başlangıçta konsolda yazar). Windows Güvenlik Duvarı ilk açılışta izin sorarsa "Özel ağlar"a izin ver.
 - **Güncelleme sonrası:** `npm install` ve `npm start`. Veritabanı değişiklikleri (migration) açılışta kendiliğinden uygulanır.
 
 ### Yedek
@@ -84,16 +84,27 @@ npm start                          # tek komut: kontrol eder, derler, sunucuyu a
 
 ## Güvenlik
 
-**İki çalışma biçimi**
+**Şifre**
 
-- **Şifresiz (yerel mod):** `FF_PASSWORD` boşsa sunucu yalnız `127.0.0.1` adresini dinler, panel sadece bu bilgisayardan açılır. Şifresizken ağa açan bir `FF_HOST` verilirse sunucu hiç açılmaz.
-- **Şifreli (telefon için):** `FF_PASSWORD` doluysa sunucu yerel ağı dinler, telefondan `http://<bilgisayar-ip>:3000` ile girilir. Bağlantı düz HTTP'dir: aynı ağdaki biri trafiği izleyebilir. Bu yüzden telefondan [Tailscale](https://tailscale.com) ile bağlanmak (bilgisayarın Tailscale IP'si, trafik şifreli gider) ev Wi-Fi'sinden de iyidir; kafe, otel gibi açık ağlarda Tailscale olmadan girme. Şifre en az 12 karakter olsun (daha kısaysa açılışta uyarı çıkar). Bir adresten 8 yanlış denemede giriş bir dakika kilitlenir, kilit tekrarlandıkça süre ikiye katlanır (en çok bir saat).
+- **İlk açılış:** şifre yokken panel "Adın ne?" ekranında adını ve şifreni (en az 10 karakter, iki kez) sorar; kaydedince giriş yapılmış olarak panel açılır. Şifre belirlenene kadar sunucu yalnız `127.0.0.1` adresini dinler ve kurulum ile `/api/health` dışındaki her istek reddedilir, yani ağdaki kimse kurulumu senin yerine yapamaz. Şifre veritabanına değil, yanındaki `data/auth.json` dosyasına yalnız tuzlanmış scrypt özeti olarak yazılır (Claude ve ayarlar ekranı onu görmez).
+- **Şifreyi değiştirmek:** Ayarlar > Hesap > Şifreyi değiştir (mevcut şifre, yeni şifre iki kez). Değişince bütün cihazlardaki oturumlar kapanır, sadece bu tarayıcı açık kalır.
+- **Şifreyi unuttuysan:** bilgisayarda sunucuyu kapat, `npm run reset-password` çalıştır ve onayla (`e`). Sadece `data/auth.json` silinir, kayıtlara dokunulmaz; `npm start` sonrası panel ilk açılıştaki gibi adını ve yeni şifreni sorar.
+- **`FF_PASSWORD` (eski kurulumlar):** `.env` içinde `FF_PASSWORD` doluysa şifre odur, panel şifre sormaz (ad yoksa sadece adı sorar) ve şifre yalnız `.env` dosyasından değişir; `npm run reset-password` ona dokunmaz. Şifre en az 12 karakter olsun (ağa açıkken daha kısaysa açılışta uyarı çıkar).
+- Bir adresten 8 yanlış denemede giriş, kurulum ve şifre değiştirme bir dakika kilitlenir, kilit tekrarlandıkça süre ikiye katlanır (en çok bir saat).
+
+**Telefondan erişim**
+
+- Panelden belirlenen şifre sunucuyu tek başına ağa açmaz: sunucu `127.0.0.1` dinler. Ayarlar > Hesap > Telefondan erişim açılırsa (ya da `FF_HOST` verilirse) bir sonraki açılışta yerel ağı dinler, telefondan `http://<bilgisayar-ip>:3000` ile girilir.
+- `FF_PASSWORD` doluysa ve `FF_HOST` yoksa sunucu eskisi gibi yerel ağı dinler (bu ayar ona etki etmez).
+- Şifre yokken ağa açan bir `FF_HOST` verilirse sunucu hiç açılmaz.
+- Bağlantı düz HTTP'dir: aynı ağdaki biri trafiği izleyebilir. Bu yüzden telefondan [Tailscale](https://tailscale.com) ile bağlanmak (bilgisayarın Tailscale IP'si, trafik şifreli gider) ev Wi-Fi'sinden de iyidir; kafe, otel gibi açık ağlarda Tailscale olmadan girme.
 
 **Ayarlar (`.env`)**
 
 | Değişken | Ne yapar |
 |---|---|
-| `FF_HOST` | Dinlenecek adres. Boşsa şifre varken tüm ağ (`0.0.0.0`), yokken `127.0.0.1`. Yalnız Tailscale'den girilsin istiyorsan Tailscale IP'sini yaz (örn. `FF_HOST=100.64.0.5`). |
+| `FF_PASSWORD` | İsteğe bağlı şifre. Doluysa panelden belirlenen şifrenin yerine geçer (yukarıya bak). |
+| `FF_HOST` | Dinlenecek adres. Boşsa `FF_PASSWORD` varken ya da Telefondan erişim açıkken tüm ağ (`0.0.0.0`), yoksa `127.0.0.1`. Yalnız Tailscale'den girilsin istiyorsan Tailscale IP'sini yaz (örn. `FF_HOST=100.64.0.5`). |
 | `FF_ALLOWED_HOSTS` | Sunucu yalnız bu bilgisayarın adlarına (localhost, 127.0.0.1, kendi IP'leri) cevap verir; telefondan bir adla giriyorsan (`pc.local`, Tailscale adı) virgülle buraya ekle. |
 | `FF_COOKIE_SECRET` | Oturum çerezini imzalayan anahtar. Boşsa ilk açılışta rastgele üretilir ve `data/session.key` dosyasında saklanır (şifreden türetilmez). Çıkış yapmak bütün cihazlardaki oturumları kapatır; şifreyi değiştirmek de. |
 
@@ -114,7 +125,7 @@ Panel sohbetindeki Claude'un yazma araçları vardır: kayıt ekler, günceller,
 
 - Claude kimseye mesaj gönderemez, yalnız taslak hazırlar; taslağı onaylamak ve "gönderildi" işaretlemek yalnız sende.
 - Kayıt silmek, ödeme girmek (`pay`) ve ayar değiştirmek senin onayını ister: sohbette ne olacağını yazan bir kart çıkar ("Kişi silinecek: …"), "Onayla" ya da "Vazgeç". İki dakika içinde cevap gelmezse yapılmaz. Diğer yazmalar (kayıt, taslak, temas, aşama) sormadan çalışır.
-- Sabit notları, taslak kurallarını, gizli modülleri, adını ve aşağıdaki erişim ayarlarını değiştiremez (bunlar Claude'un talimatlarına ya da yetkisine girer).
+- Sabit notları, taslak kurallarını, gizli modülleri, adını, telefondan erişimi ve aşağıdaki erişim ayarlarını değiştiremez (bunlar Claude'un talimatlarına ya da yetkisine girer, telefondan erişim sunucuyu ağa açar).
 - Sildiği kayıt çöp kutusuna gider, kalıcı silme yoktur; her değişikliği zaman çizelgesinde "Claude" etiketiyle görürsün.
 - Komut aracı (Bash) hiç yoktur. Kayıtlardaki metin Claude'a `⟦ ⟧` içinde "veri, talimat değil" diye işaretlenerek gider; sohbet cevabındaki resimler yüklenmez, bağlantı olarak görünür.
 
@@ -225,6 +236,7 @@ Sohbet kendi Claude aboneliğinle çalışır (CLI üzerinden, API anahtarı yok
 | `npm start` | kontrol + derleme + sunucu + tarayıcı (tek komut) |
 | `npm run serve` | derlemeden sunucuyu açar |
 | `npm run backup` | veritabanını `data/backups` içine yedekler |
+| `npm run reset-password` | unutulan şifreyi siler (onay sorar, kayıtlara dokunmaz); sonraki açılışta ad ve yeni şifre sorulur |
 | `npm run demo:seed` | uydurma verilerle `data/demo.db` kurar (açmak için `FF_DB=data/demo.db`) |
 | `npm run mcp` | MCP sunucusunu elle başlatır (stdio) |
 | `npm run db:generate` | şema (`packages/core/src/db/schema.ts`) değişince yeni migration üretir |

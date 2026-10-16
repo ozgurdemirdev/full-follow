@@ -9,13 +9,13 @@ import { openApiDocument } from "../src/openapi/openapi.controller";
 import { JSON_HEADERS, startServer, type TestServer } from "./helpers";
 
 const PASSWORD = "test-password-123";
-/** The routes that answer without a session: who is logged in, the login and logout themselves, and the health check */
-const PUBLIC = new Set(["/api/me", "/api/login", "/api/logout", "/api/health"]);
+/** The routes that answer without a session: who is logged in, the login and logout themselves, the health check and the first run setup */
+const PUBLIC = new Set(["/api/me", "/api/login", "/api/logout", "/api/health", "/api/setup"]);
 
 let server: TestServer;
 beforeAll(async () => {
   process.env.FF_PASSWORD = PASSWORD;
-  server = await startServer();
+  server = await startServer({ login: false });
 });
 afterAll(async () => {
   delete process.env.FF_PASSWORD;

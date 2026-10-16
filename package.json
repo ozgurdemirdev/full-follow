@@ -19,6 +19,7 @@
     "start": "node scripts/start.mjs",
     "serve": "node scripts/start.mjs --no-build",
     "backup": "node scripts/backup.cjs",
+    "reset-password": "node scripts/reset-password.cjs",
     "demo:seed": "node scripts/demo-seed.cjs",
     "dev:web": "npm run dev -w @fullfollow/web",
     "mcp": "node packages/mcp/dist/index.js",

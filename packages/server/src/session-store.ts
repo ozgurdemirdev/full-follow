@@ -4,8 +4,8 @@ import path from "node:path";
 import { defaultDbPath } from "@fullfollow/core";
 import { SESSION_EPOCH_FILE, SESSION_SECRET_BYTES, SESSION_SECRET_FILE } from "./constants";
 
-/** Files beside the database: a throwaway FF_DB gets its own key and epoch */
-const fileOf = (name: string) => path.join(path.dirname(defaultDbPath()), name);
+/** Files beside the database: a throwaway FF_DB gets its own key, epoch and password */
+export const dataFile = (name: string) => path.join(path.dirname(defaultDbPath()), name);
 
 const secrets = new Map<string, string>();
 const epochs = new Map<string, number>();
@@ -16,7 +16,7 @@ const epochs = new Map<string, number>();
  */
 export function sessionSecret(): string {
   if (process.env.FF_COOKIE_SECRET) return process.env.FF_COOKIE_SECRET;
-  const file = fileOf(SESSION_SECRET_FILE);
+  const file = dataFile(SESSION_SECRET_FILE);
   let s = secrets.get(file);
   if (s) return s;
   try {
@@ -40,7 +40,7 @@ export function sessionSecret(): string {
 
 /** The session epoch: part of every signed cookie, so raising it ends every session given out before */
 export function sessionEpoch(): number {
-  const file = fileOf(SESSION_EPOCH_FILE);
+  const file = dataFile(SESSION_EPOCH_FILE);
   let e = epochs.get(file);
   if (e === undefined) {
     const n = Number.parseInt(fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "", 10);
@@ -52,7 +52,7 @@ export function sessionEpoch(): number {
 
 /** Ends every session (logout): the next cookie is signed with the new epoch */
 export function bumpSessionEpoch(): void {
-  const file = fileOf(SESSION_EPOCH_FILE);
+  const file = dataFile(SESSION_EPOCH_FILE);
   const next = sessionEpoch() + 1;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, String(next), { mode: 0o600 });

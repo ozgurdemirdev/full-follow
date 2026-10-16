@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { coreSchemas, docKit, SETTING_KEYS } from "@fullfollow/core";
+import { coreSchemas, docKit, OWNER_PASSWORD_MIN, SETTING_KEYS } from "@fullfollow/core";
 import type { RouteDocs } from "@fullfollow/core";
 
 const { crud, defineDocs, filtered, flag, limitOf, listOf, object, ok, positiveInt, saveResult } = docKit;
@@ -10,9 +10,22 @@ const all = { all: flag("Include hidden (deleted) entries; they still show on th
 export const authDocs: RouteDocs = defineDocs({
   "GET /api/me": {
     summary: "Get the session state",
-    description: "`auth` is false when no app password is configured; `loggedIn` tells whether this request carries a valid session.",
-    response: z.object({ auth: z.boolean(), loggedIn: z.boolean() }),
+    description: "`loggedIn` tells whether this request carries a valid session; a logged in request also gets `password`: `env` (FF_PASSWORD in .env) or `app` (set in the panel, changed with `POST /api/password`). In the first run (no password yet) this answers 401 with code `setup_required`, like every route but the setup and the health check.",
+    response: z.object({ auth: z.literal(true), loggedIn: z.boolean(), password: z.enum(["env", "app"]).optional() }),
     public: true,
+  },
+  "POST /api/setup": {
+    summary: "Set the owner's name and the app password (first run)",
+    description: `Works only while no password exists (neither FF_PASSWORD nor one set before): afterwards 409. The password must have at least ${OWNER_PASSWORD_MIN} characters; it is stored as a salted scrypt hash in \`auth.json\` beside the database, never in the settings. Sets the \`ff_session\` cookie. The first run server listens on 127.0.0.1 only. Counts toward the login attempt limit.`,
+    body: z.object({ name: z.string(), password: z.string() }),
+    response: z.object({ ok: z.literal(true), owner_name: z.string() }),
+    public: true,
+  },
+  "POST /api/password": {
+    summary: "Change the app password",
+    description: "Only for a password set in the panel (409 while FF_PASSWORD is in use: it is changed in .env). A wrong `current` is a 403 and counts toward the login attempt limit. Every session ends; this request gets a new `ff_session` cookie.",
+    body: z.object({ current: z.string(), password: z.string() }),
+    response: ok,
   },
   "POST /api/login": {
     summary: "Log in with the app password",
