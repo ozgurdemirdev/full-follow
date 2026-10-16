@@ -27,7 +27,7 @@ describe("own projects as a module", () => {
 
   it("the list counts the open and done ideas of each project and puts active ones first", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const a = app.projects.create({ name: "A", status: "tamamlandi" }).row;
     const b = app.projects.create({ name: "B" }).row;
     idea(h, "açık 1", { own_project_id: b.id });
@@ -41,7 +41,7 @@ describe("own projects as a module", () => {
 
   it("the journey stage is one of four steps or empty, and it reads back from the list and the single record", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = app.projects.create({ name: "Full Follow" }).row;
     expect(app.projects.get(p.id)!.stage).toBeNull();
     expect(app.projects.update(p.id, { stage: "demo" }).row.stage).toBe("demo");
@@ -54,7 +54,7 @@ describe("own projects as a module", () => {
 
   it("interest counts each person once across a project's ideas: interested over answered, the next step is the first open high priority idea", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = app.projects.create({ name: "Full Follow" }).row;
     const empty = app.projects.get(p.id)!;
     expect([empty.told, empty.interested, empty.answered, empty.interest_share, empty.next_idea, empty.top_ideas]).toEqual([0, 0, 0, null, null, []]);
@@ -77,7 +77,7 @@ describe("own projects as a module", () => {
 
   it("deleting a project takes its sectors, links and comments and announces itself; restoring brings them back", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = app.projects.create({ name: "Full Follow", sectors: ["Yazılım"] }).row;
     app.save("link", { target_type: "own_project", target_id: p.id, label: "repo", url: "https://x.example/r" });
     app.save("comment", { target_type: "own_project", target_id: p.id, body: "not" });
@@ -95,16 +95,16 @@ describe("own projects as a module", () => {
 
   it("turning an idea into a project needs the ideas module, which hands the idea over; only a top level general idea qualifies", () => {
     const h = openDb(":memory:");
-    const alone = appFor(h, "ozgur", clock);
+    const alone = appFor(h, "owner", clock);
     expect(() => alone.projects.fromIdea(1)).toThrow(/"ideas" modülü kurulu olmalı/);
     expect(() => alone.save("own_project", { from_idea: "Klinik botu" })).toThrow(/"idea" türü için "ideas" modülü kurulu değil/);
 
     const seen: string[] = [];
-    const app = appFor(h, "ozgur", clock, [fakeIdeas(seen)]);
+    const app = appFor(h, "owner", clock, [fakeIdeas(seen)]);
     const top = idea(h, "Klinik botu", { problem: "randevu kaçıyor" });
     h.sqlite.prepare("UPDATE ideas SET notes = 'not' WHERE id = ?").run(top);
-    const sector = Number(h.sqlite.prepare("INSERT INTO sectors (name, created_at, updated_at, created_by) VALUES ('Sağlık', ?, ?, 'ozgur')").run(clock.now(), clock.now()).lastInsertRowid);
-    h.sqlite.prepare("INSERT INTO idea_sectors (idea_id, sector_id, created_at, created_by) VALUES (?, ?, ?, 'ozgur')").run(top, sector, clock.now());
+    const sector = Number(h.sqlite.prepare("INSERT INTO sectors (name, created_at, updated_at, created_by) VALUES ('Sağlık', ?, ?, 'owner')").run(clock.now(), clock.now()).lastInsertRowid);
+    h.sqlite.prepare("INSERT INTO idea_sectors (idea_id, sector_id, created_at, created_by) VALUES (?, ?, ?, 'owner')").run(top, sector, clock.now());
     const kid = idea(h, "Alt", { parent_id: top });
     const r = app.save("own_project", { from_idea: "Klinik botu" });
     expect(r.row).toMatchObject({ name: "Klinik botu", description: "randevu kaçıyor", notes: "not", status: "aktif", sellable: "belki" });

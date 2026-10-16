@@ -13,7 +13,7 @@ const fakeNetwork = () => defineModule({
     touches: {
       insert: (_q: unknown, i: { draft_id: number; person_id: number | null; summary: string; channel: string }) => {
         const id = Number(ctx.sqlite.prepare(`INSERT INTO touches (person_id, channel, direction, kind, summary, happened_at, draft_id, created_at, updated_at, created_by)
-          VALUES (?, ?, 'giden', 'mesaj', ?, ?, ?, ?, ?, 'ozgur')`).run(i.person_id, i.channel, i.summary, ctx.clock.now(), i.draft_id, ctx.clock.now(), ctx.clock.now()).lastInsertRowid);
+          VALUES (?, ?, 'giden', 'mesaj', ?, ?, ?, ?, ?, 'owner')`).run(i.person_id, i.channel, i.summary, ctx.clock.now(), i.draft_id, ctx.clock.now(), ctx.clock.now()).lastInsertRowid);
         return { row: { id, draft_id: i.draft_id }, effects: ["probe: temas yazıldı"] };
       },
     },
@@ -31,10 +31,10 @@ describe("drafts as a module", () => {
     expect(app.find("draft", { q: "merha" }).total).toBe(1);
     expect(app.find("draft", { filter: { person_id: ada } }).total).toBe(1);
     expect(app.save("draft", { body: "Selam" }, d.id).row.body).toBe("Selam");
-    const ozgur = appFor(h, "ozgur", clock);
-    ozgur.drafts.approve(d.id);
-    expect(() => ozgur.drafts.update(d.id, { body: "x" })).toThrow(/sadece bekleyen taslak düzenlenir/);
-    expect(() => ozgur.drafts.approve(d.id)).toThrow(/"onaylandi" durumunda/);
+    const owner = appFor(h, "owner", clock);
+    owner.drafts.approve(d.id);
+    expect(() => owner.drafts.update(d.id, { body: "x" })).toThrow(/sadece bekleyen taslak düzenlenir/);
+    expect(() => owner.drafts.approve(d.id)).toThrow(/"onaylandi" durumunda/);
     expect(app.remove("draft", d.id).trash).toEqual({ type: "draft", id: d.id });
     expect(app.find("trash").rows[0]).toMatchObject({ type: "draft", what: "taslak" });
     app.restore("draft", d.id);
@@ -45,36 +45,36 @@ describe("drafts as a module", () => {
   it("a reject note becomes a learned rule in the same step: a repeat is skipped, the list keeps the newest, Today and the settings carry it, the settings can drop one", () => {
     const h = openDb(":memory:");
     const claude = appFor(h, "claude", clock);
-    const ozgur = appFor(h, "ozgur", clock);
+    const owner = appFor(h, "owner", clock);
     const ada = person(h);
-    const reject = (note: string) => ozgur.drafts.reject(claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id, note);
-    expect(ozgur.today(5)).not.toHaveProperty("draft_rules");
+    const reject = (note: string) => owner.drafts.reject(claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id, note);
+    expect(owner.today(5)).not.toHaveProperty("draft_rules");
     reject("  çok uzun  ");
     reject("çok uzun");
     reject("resmi yazma");
     // a reject without a reason (the explicit flag) keeps its note on the draft but teaches nothing; no text is matched to tell it apart
     const bare = claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id;
-    expect(ozgur.drafts.reject(bare, { no_reason: true }).row.reject_note).toBe("Neden yazılmadı");
-    expect(() => ozgur.drafts.reject(claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id, {})).toThrow(/ret nedeni gerekli/);
-    expect(ozgur.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma"]);
-    expect(ozgur.today(5).draft_rules).toEqual(["çok uzun", "resmi yazma"]);
+    expect(owner.drafts.reject(bare, { no_reason: true }).row.reject_note).toBe("Neden yazılmadı");
+    expect(() => owner.drafts.reject(claude.drafts.create({ person_id: ada, channel: "email", body: "x" }).row.id, {})).toThrow(/ret nedeni gerekli/);
+    expect(owner.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma"]);
+    expect(owner.today(5).draft_rules).toEqual(["çok uzun", "resmi yazma"]);
     expect(h.sqlite.prepare("SELECT COUNT(*) n FROM events WHERE type = 'draft.rejected'").get()).toEqual({ n: 4 });
     // the same words typed as a real reason are a reason like any other
     reject("Neden yazılmadı");
-    expect(ozgur.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma", "Neden yazılmadı"]);
-    ozgur.settings.set("draft_rules", ["çok uzun", "resmi yazma"]);
+    expect(owner.settings.view().draft_rules).toEqual(["çok uzun", "resmi yazma", "Neden yazılmadı"]);
+    owner.settings.set("draft_rules", ["çok uzun", "resmi yazma"]);
     for (let i = 0; i < DRAFT_RULES_MAX; i++) reject(`kural ${i}`);
-    const kept = ozgur.settings.view().draft_rules as string[];
+    const kept = owner.settings.view().draft_rules as string[];
     expect(kept).toHaveLength(DRAFT_RULES_MAX);
     expect(kept[0]).toBe("kural 0");
-    ozgur.settings.setMany({ draft_rules: kept.slice(1) });
-    expect((ozgur.settings.view().draft_rules as string[])[0]).toBe("kural 1");
-    expect(() => ozgur.settings.setMany({ draft_rules: ["a", "a"] })).toThrow(/farklı/);
+    owner.settings.setMany({ draft_rules: kept.slice(1) });
+    expect((owner.settings.view().draft_rules as string[])[0]).toBe("kural 1");
+    expect(() => owner.settings.setMany({ draft_rules: ["a", "a"] })).toThrow(/farklı/);
     // a reject that fails (the draft is already rejected) leaves the list alone
     const done = claude.drafts.create({ person_id: ada, channel: "email", body: "y" }).row.id;
-    ozgur.drafts.reject(done, "yeni kural");
-    expect(() => ozgur.drafts.reject(done, "olmaz")).toThrow(/durumunda/);
-    expect(ozgur.settings.view().draft_rules).not.toContain("olmaz");
+    owner.drafts.reject(done, "yeni kural");
+    expect(() => owner.drafts.reject(done, "olmaz")).toThrow(/durumunda/);
+    expect(owner.settings.view().draft_rules).not.toContain("olmaz");
   });
 
   it("the drafts of an opportunity or a project are listed by that link only", () => {
@@ -92,23 +92,23 @@ describe("drafts as a module", () => {
     expect(app.find("draft", {}).rows.map((d) => d.id)).toEqual([c, b, a]);
   });
 
-  it("approving, rejecting and marking sent are Özgür's; a rejection needs its note", () => {
+  it("approving, rejecting and marking sent are the owner's; a rejection needs its note", () => {
     const h = openDb(":memory:");
     const claude = appFor(h, "claude", clock);
-    const ozgur = appFor(h, "ozgur", clock);
+    const owner = appFor(h, "owner", clock);
     const d = claude.drafts.create({ contact: "a@x.example", channel: "email", body: "x" }).row;
-    expect(() => claude.drafts.approve(d.id)).toThrow(/sadece Özgür/);
-    expect(() => claude.drafts.reject(d.id, "no")).toThrow(/sadece Özgür/);
-    expect(() => claude.drafts.markSent(d.id)).toThrow(/sadece Özgür/);
-    expect(() => ozgur.drafts.reject(d.id, "  ")).toThrow(/ret nedeni gerekli/);
-    expect(ozgur.drafts.reject(d.id, "olmamış").row).toMatchObject({ status: "reddedildi", reject_note: "olmamış" });
-    expect(() => ozgur.drafts.markSent(d.id)).toThrow(/Taslak zaten reddedildi/);
+    expect(() => claude.drafts.approve(d.id)).toThrow(/sadece kullanıcı/);
+    expect(() => claude.drafts.reject(d.id, "no")).toThrow(/sadece kullanıcı/);
+    expect(() => claude.drafts.markSent(d.id)).toThrow(/sadece kullanıcı/);
+    expect(() => owner.drafts.reject(d.id, "  ")).toThrow(/ret nedeni gerekli/);
+    expect(owner.drafts.reject(d.id, "olmamış").row).toMatchObject({ status: "reddedildi", reject_note: "olmamış" });
+    expect(() => owner.drafts.markSent(d.id)).toThrow(/Taslak zaten reddedildi/);
     expect(h.sqlite.prepare("SELECT type FROM events ORDER BY id").all().map((e: any) => e.type)).toEqual(["draft.created", "draft.rejected", "settings.updated"]);
   });
 
   it("marking a draft as sent writes the touch through the network module in the same transaction; without it the draft is only marked", () => {
     const h = openDb(":memory:");
-    const bare = appFor(h, "ozgur", clock);
+    const bare = appFor(h, "owner", clock);
     const ada = person(h);
     const alone = bare.drafts.create({ person_id: ada, channel: "email", body: "x" }).row;
     const sent = bare.drafts.markSent(alone.id);
@@ -117,7 +117,7 @@ describe("drafts as a module", () => {
     expect(sent.row.status).toBe("gonderildi");
     expect(() => bare.drafts.remove(alone.id)).toThrow(/Gönderilmiş taslak silinemez/);
 
-    const app = appFor(h, "ozgur", clock, [fakeNetwork()]);
+    const app = appFor(h, "owner", clock, [fakeNetwork()]);
     const d = app.drafts.create({ person_id: ada, channel: "instagram", body: "merhaba" }).row;
     const r = app.drafts.markSent(d.id);
     expect(r.touch!.draft_id).toBe(d.id);
@@ -145,7 +145,7 @@ describe("drafts as a module", () => {
 
   it("the daily quota counts outgoing messages per limited channel and a touch over the limit (or a cold email in warmup) warns without blocking", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     app.settings.setMany({ channel_limits: { email: 2, instagram: 1 }, email_warmup_until: "2026-10-20" });
     touch(h, { contact: "a@x.example", at: at("2026-10-14") });
     touch(h, { contact: "b@x.example", at: at("2026-10-14") });
@@ -173,7 +173,7 @@ describe("drafts as a module", () => {
   it("the follow-up sequence: an unanswered message gets a follow-up draft after the set days, once per step, and an answer stops it", () => {
     const h = openDb(":memory:");
     const claude = appFor(h, "claude", clock);
-    const ozgur = appFor(h, "ozgur", clock);
+    const owner = appFor(h, "owner", clock);
     const ada = person(h);
     touch(h, { person_id: ada, at: at("2026-10-11") });
     touch(h, { contact: "x@y.example", at: at("2026-10-13") });
@@ -185,10 +185,10 @@ describe("drafts as a module", () => {
     ]);
     expect(claude.drafts.followups.generate().created).toEqual([]);
     // a rejected follow-up is not made again for the same step
-    ozgur.drafts.reject(made.created[0].draft_id, "gerek yok");
+    owner.drafts.reject(made.created[0].draft_id, "gerek yok");
     expect(claude.drafts.followups.due()).toEqual([]);
     // the days come from the settings; an answer resets the sequence
-    ozgur.settings.setMany({ followup_days: "1,2" });
+    owner.settings.setMany({ followup_days: "1,2" });
     touch(h, { person_id: ada, direction: "gelen", at: at("2026-10-12") });
     touch(h, { contact: "q@y.example", at: at("2026-10-12") });
     expect(claude.drafts.followups.due().map((f) => f.contact ?? f.name)).toEqual(["q@y.example", "x@y.example"]);
@@ -197,7 +197,7 @@ describe("drafts as a module", () => {
 
   it("a follow-up draft uses the template the templates module suggests", () => {
     const h = openDb(":memory:");
-    h.sqlite.prepare("INSERT INTO templates (name, kind, body, created_at, updated_at, created_by) VALUES ('T', 'takip', 'Selam {ad}', ?, ?, 'ozgur')").run(at("2026-10-01"), at("2026-10-01"));
+    h.sqlite.prepare("INSERT INTO templates (name, kind, body, created_at, updated_at, created_by) VALUES ('T', 'takip', 'Selam {ad}', ?, ?, 'owner')").run(at("2026-10-01"), at("2026-10-01"));
     const templates = defineModule({ key: "templates", label: "T", api: () => ({ ref: (id: number) => ({ id, body: "x" }), suggest: () => [{ id: 1, body: "Selam {ad}, bakar mısın?" }] }) });
     const app = appFor(h, "claude", clock, [templates]);
     const ada = person(h);
@@ -227,7 +227,7 @@ describe("drafts as a module", () => {
     // a stand-in whose key sorts after "drafts" still runs first: the draft rows are there while it runs
     let draftsSeen = -1;
     const probe = defineModule({ key: "zz", label: "Z", hooks: { "record.trashed": (ctx) => { draftsSeen = (ctx.sqlite.prepare("SELECT COUNT(*) n FROM drafts").get() as any).n; } } });
-    const app = appFor(h, "ozgur", clock, [probe]);
+    const app = appFor(h, "owner", clock, [probe]);
     const ada = person(h);
     const d = app.drafts.create({ person_id: ada, channel: "email", body: "x" }).row;
     app.save("comment", { target_type: "draft", target_id: d.id, body: "yorum" });

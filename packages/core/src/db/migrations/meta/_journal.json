@@ -169,6 +169,13 @@
       "when": 1791999102032,
       "tag": "0023_offer_qty_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1792117645586,
+      "tag": "0024_owner_actor",
+      "breakpoints": true
     }
   ]
 }

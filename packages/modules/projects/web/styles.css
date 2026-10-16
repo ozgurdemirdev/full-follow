@@ -345,7 +345,7 @@
   border-radius: var(--radius-pill);
   font-size: var(--text-xs);
 }
-.prj-by[data-by="ozgur"] {
+.prj-by[data-by="owner"] {
   background: var(--color-chip-neutral-bg);
   color: var(--color-text-primary);
 }

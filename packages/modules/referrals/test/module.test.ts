@@ -15,7 +15,7 @@ const node = (id: number, name: string, referred_by_id: number | null = null): R
 describe("referrals as a module", () => {
   it("walks the tree below each introducer: direct and whole network, opportunities, wins, projects and money; best first", () => {
     const tree = [node(1, "Tanıtan"), node(2, "B", 1), node(3, "C", 2), node(4, "D", 1)];
-    const app = appFor(openDb(":memory:"), "ozgur", clock, fakes(
+    const app = appFor(openDb(":memory:"), "owner", clock, fakes(
       tree,
       [[2, { opps: 2, won: 1, won_value: 40000 }], [3, { opps: 2, open_value: 5000 }]],
       [[2, { projects: 1, collected: 16000 }]],
@@ -31,7 +31,7 @@ describe("referrals as a module", () => {
 
   it("the screen's numbers and tree come from the server: introduced people against the rest, and the branches by weight", () => {
     const tree = [node(1, "Tanıtan"), node(2, "B", 1), node(3, "C", 2), node(4, "D", 1), node(5, "E")];
-    const app = appFor(openDb(":memory:"), "ozgur", clock, fakes(
+    const app = appFor(openDb(":memory:"), "owner", clock, fakes(
       tree,
       [[2, { opps: 2, won: 1, lost: 1, won_value: 40000 }], [3, { opps: 1, open_value: 5000 }], [4, { opps: 1, lost: 1 }], [5, { opps: 1, won: 1, won_value: 9000 }]],
     ));
@@ -50,16 +50,16 @@ describe("referrals as a module", () => {
   });
 
   it("a loop in the tree ends, and without the people, pipeline and projects modules the report is empty", () => {
-    const loop = appFor(openDb(":memory:"), "ozgur", clock, fakes([node(1, "A", 2), node(2, "B", 1)]));
+    const loop = appFor(openDb(":memory:"), "owner", clock, fakes([node(1, "A", 2), node(2, "B", 1)]));
     expect(loop.referrals.report().map((r) => [r.person_id, r.network])).toEqual([[1, 1], [2, 1]]);
-    const bare = appFor(openDb(":memory:"), "ozgur", clock);
+    const bare = appFor(openDb(":memory:"), "owner", clock);
     expect(bare.referrals.report()).toEqual([]);
     expect(bare.referrals.of(1)).toBeNull();
     expect(bare.referrals.suggestions()).toEqual({ thanks: [], asks: [] });
   });
 
   it("the money numbers are zero when only the tree is there", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [fakes([node(1, "A"), node(2, "B", 1)])[0]]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [fakes([node(1, "A"), node(2, "B", 1)])[0]]);
     expect(app.referrals.report()).toEqual([{ person_id: 1, name: "A", company_name: null, direct: 1, network: 1, opps: 0, won: 0, won_value: 0, open_value: 0, projects: 0, collected: 0 }]);
   });
 });

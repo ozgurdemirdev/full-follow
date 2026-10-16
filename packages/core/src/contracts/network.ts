@@ -27,7 +27,7 @@ export interface TouchRecord {
   idea_id: number | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** The person or company a loose touch's address belongs to, found among the records that exist */

@@ -23,14 +23,14 @@ describe("people as a module", () => {
   });
 
   it("a company given by name is refused with a clear error while the companies module is not installed", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     expect(() => app.save("person", { name: "Ada", company: "ABC Ltd" })).toThrow(/"companies" modülü kurulu değil/);
     expect(app.find("person").total).toBe(0);
     expect(() => app.save("company", { name: "ABC" })).toThrow(/"company" türü için "companies" modülü kurulu değil/);
   });
 
   it("without the network module a person has no touch state: empty rhythm, nothing awaited", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const p = app.people.create({ name: "Ada" }).row;
     expect(app.find("person").rows[0]).toMatchObject({ id: p.id, last_touch_at: null, awaiting: null, cooling: false, days_since: 0 });
     expect(app.find("person").rows[0].rhythm).toHaveLength(12);
@@ -47,7 +47,7 @@ describe("people as a module", () => {
       label: "Probe",
       hooks: { "record.trashed": (ctx, p: RecordTrashed) => { seen.push({ type: p.type, id: p.id, bin: p.bin }); return [`stage ${ctx.sqlite.prepare("SELECT COUNT(*) n FROM people").get().n}`]; } },
     });
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [probe]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [probe]);
     const p = app.people.create({ name: "Ada" }).row;
     app.remove("person", p.id);
     expect(seen.map((s) => [s.type, s.id])).toEqual([["person", p.id]]);
@@ -57,7 +57,7 @@ describe("people as a module", () => {
 
   it("a hook that fails on record.trashed rolls the delete back", () => {
     const boom = defineModule({ key: "boom", label: "Boom", hooks: { "record.trashed": () => { throw new FFError("rule", "cleanup failed"); } } });
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [boom]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [boom]);
     const p = app.people.create({ name: "Ada" }).row;
     expect(() => app.remove("person", p.id)).toThrow("cleanup failed");
     expect(app.find("person").total).toBe(1);
@@ -87,7 +87,7 @@ describe("people as a module", () => {
   });
 
   it("comments hang on a person and read its name; the module's record label and chat card exist", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const p = app.people.create({ name: "Ada" }).row;
     app.save("comment", { target_type: "person", target_id: p.id, body: "selam" });
     expect(app.find("comment").rows[0]).toMatchObject({ target_type: "person", target_label: "Ada" });

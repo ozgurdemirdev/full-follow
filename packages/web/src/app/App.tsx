@@ -2,14 +2,17 @@ import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "
 import { Redirect, Route, Switch } from "wouter";
 import { api, onAuthRequired } from "../api/client";
 import { loadModules } from "../api/modules";
+import type { PriceFloor } from "../api/types";
 import { PageSkeleton } from "../components/ui";
 import { requestChatOpen } from "../lib/chatStore";
+import { setOwnerName, useOwner } from "../lib/owner";
 import { shell } from "../messages.shell";
 import { Fab } from "./Fab";
 import { Login } from "./Login";
 import { lazyOf, preloadRoute, useRegistry } from "./modules/registry";
 import { Slot } from "./modules/Slot";
 import { PATHS } from "./routes";
+import { Setup } from "./Setup";
 import { Sidebar } from "./Sidebar";
 
 // Formlar ve bildirimler (Motion dahil) ilk boyamadan sonra ayrı parçalar halinde yüklenir
@@ -22,6 +25,7 @@ export function App() {
   const [auth, setAuth] = useState<Auth>("checking");
   const [modulesKnown, setModulesKnown] = useState(false);
   const { routes } = useRegistry();
+  const { needsSetup } = useOwner();
 
   useEffect(() => {
     api
@@ -31,9 +35,11 @@ export function App() {
     return onAuthRequired(() => setAuth("out"));
   }, []);
 
-  // the installed modules are known before anything draws, so no screen asks for an endpoint that is not there
+  // the installed modules and the owner's name are known before anything draws, so no screen asks for an endpoint that is not there
   useEffect(() => {
-    if (auth === "in") void loadModules().then(() => setModulesKnown(true));
+    if (auth !== "in") return;
+    const settings = api.get<PriceFloor>("/settings").catch(() => null);
+    void Promise.all([loadModules(settings), settings.then((s) => setOwnerName(s?.owner_name))]).then(() => setModulesKnown(true));
   }, [auth]);
 
   useEffect(() => {
@@ -46,6 +52,7 @@ export function App() {
 
   if (auth === "checking" || (auth === "in" && !modulesKnown)) return null;
   if (auth === "out") return <Login onDone={() => setAuth("in")} />;
+  if (needsSetup) return <Setup />;
   return (
     <>
       <div className="ff-shell">

@@ -1,12 +1,12 @@
 import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
-import { APP_TOKEN, type ChatSession, type Core } from "@fullfollow/core";
+import { APP_TOKEN, ownerName, type ChatSession, type Core } from "@fullfollow/core";
 import { LOG_RAW_CHARS } from "../constants";
 import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
 import { attachmentBlocks } from "./chat-uploads";
-import { notesVersion, readBrief, SYSTEM_RULES, writeRuntimeFiles } from "./chat-files";
+import { notesVersion, readBrief, writeRuntimeFiles } from "./chat-files";
 import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, ACK_MARKER, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, VOICE_NOTE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
 import { createParser, errorCode, type ChatEvent, type ToolRecord } from "./stream-parser";
@@ -52,7 +52,8 @@ interface Slot {
 @Injectable()
 export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private slots = new Map<number, Slot>();
-  /** pinned notes and the private brief as last written to system.md, and both together (the version and the hidden update block follow it) */
+  /** the owner's name, the pinned notes and the private brief as last written to system.md, and all of it together (the version and the hidden update block follow it) */
+  private owner: string | null = null;
   private pinned = "";
   private brief = "";
   private notes = "";
@@ -64,10 +65,11 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
+    this.owner = ownerName(this.core.ctx);
     this.pinned = this.core.settings.all().chat_pinned_notes;
     this.brief = readBrief();
     this.notes = this.combined();
-    writeRuntimeFiles(this.pinned, this.brief);
+    writeRuntimeFiles(this.owner, this.pinned, this.brief);
     const n = this.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
     if (n) console.log(m.log.danglingFailed(n));
   }
@@ -82,17 +84,19 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   }
 
   /** The rules are part of it: a resumed CLI session keeps its first system prompt, so changed rules reach it as the hidden update block too */
-  private combined = () => [SYSTEM_RULES, this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
+  private combined = () => [m.systemRules(this.owner), this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
 
-  /** Pinned notes saved in Settings or a changed brief file (or by Claude): rewrite system.md and let every process pick them up on its next message */
+  /** A name given in Settings, pinned notes saved there or a changed brief file: rewrite system.md and let every process pick them up on its next message */
   private syncNotes() {
+    const owner = ownerName(this.core.ctx);
     const pinned = this.core.settings.all().chat_pinned_notes;
     const brief = readBrief();
-    if (pinned === this.pinned && brief === this.brief) return;
+    if (owner === this.owner && pinned === this.pinned && brief === this.brief) return;
+    this.owner = owner;
     this.pinned = pinned;
     this.brief = brief;
     this.notes = this.combined();
-    writeRuntimeFiles(pinned, brief);
+    writeRuntimeFiles(owner, pinned, brief);
     this.markAllStale();
   }
 

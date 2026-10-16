@@ -18,7 +18,7 @@ const shift = (days) => {
   return d.toISOString().slice(0, 10);
 };
 // The app (core plus installed modules) whose clock sits `days` from today, so history spreads over the past weeks
-const at = (days, actor = "ozgur") => {
+const at = (days, actor = "owner") => {
   const day = shift(days);
   return createApp(handle, actor, { today: () => day, now: () => `${day}T09:30:00Z` });
 };
@@ -129,10 +129,10 @@ claude.save("comment", { target_type: "opportunity", target_id: fleet.id, body: 
 
 // A finished panel chat: the assistant reads the same records through MCP tools
 const chat = (actor) => at(0, actor).mod("chat");
-const session = chat("ozgur").createSession();
-chat("ozgur").updateSession(session.id, { title: "Bu haftanın takipleri" });
+const session = chat("owner").createSession();
+chat("owner").updateSession(session.id, { title: "Bu haftanın takipleri" });
 const exchange = (n, question, tools, answer) => {
-  chat("ozgur").addUserMessage(session.id, { body: question, client_id: `demo-${n}` });
+  chat("owner").addUserMessage(session.id, { body: question, client_id: `demo-${n}` });
   const reply = chat("claude").startAssistantMessage(session.id);
   chat("claude").setAssistantTools(reply.id, tools);
   chat("claude").appendAssistantText(reply.id, answer);

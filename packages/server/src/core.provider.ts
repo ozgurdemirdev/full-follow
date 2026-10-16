@@ -9,13 +9,13 @@ export type Core = App;
 let shared: { core: Core; claude: Core } | null = null;
 
 /**
- * Tek veritabanı bağlantısı. Web her işlemi actor = "ozgur" ile yapar; `claude` aynı uygulamanın actor = "claude" ile olanıdır:
+ * Tek veritabanı bağlantısı. Web her işlemi actor = "owner" ile yapar; `claude` aynı uygulamanın actor = "claude" ile olanıdır:
  * zamanlanmış işler (modüllerin `jobs` katkısı, örneğin takip dizisi taslakları) ve Claude adına yazan modül uçları onu kullanır.
  */
 function init() {
   if (shared) return shared;
   const handle = openDb();
-  shared = { core: createApp(handle, "ozgur"), claude: createApp(handle, "claude") };
+  shared = { core: createApp(handle, "owner"), claude: createApp(handle, "claude") };
   return shared;
 }
 

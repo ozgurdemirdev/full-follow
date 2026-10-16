@@ -7,16 +7,13 @@ import { m } from "../messages";
 import { BRIEF_FILE, chatDataDir, MCP_ENTRY, MCP_SERVER_NAME } from "./chat.config";
 import { chatCwd } from "./claude-cli";
 
-/** The rules of the panel Claude, written to system.md (their text lives in the messages file) */
-export const SYSTEM_RULES = m.systemRules;
-
-/** mcp.json passes the server's own database path, so the panel Claude writes to the same database (also a test copy) */
-export function writeRuntimeFiles(pinnedNotes = "", brief = ""): void {
+/** mcp.json passes the server's own database path, so the panel Claude writes to the same database (also a test copy). system.md: the rules (with the owner's name), the pinned notes, the brief */
+export function writeRuntimeFiles(owner: string | null, pinnedNotes = "", brief = ""): void {
   const dir = chatDataDir();
   fs.mkdirSync(dir, { recursive: true });
   const mcp = { mcpServers: { [MCP_SERVER_NAME]: { type: "stdio", command: process.execPath, args: [MCP_ENTRY], env: { FF_DB: defaultDbPath() } } } };
   fs.writeFileSync(path.join(dir, "mcp.json"), JSON.stringify(mcp, null, 2));
-  const parts = [SYSTEM_RULES, pinnedNotes.trim() && m.pinnedNotes(pinnedNotes.trim()), brief.trim() && m.panelBrief(brief.trim())];
+  const parts = [m.systemRules(owner), pinnedNotes.trim() && m.pinnedNotes(pinnedNotes.trim()), brief.trim() && m.panelBrief(brief.trim())];
   fs.writeFileSync(path.join(dir, "system.md"), `${parts.filter(Boolean).join("\n\n")}\n`);
 }
 

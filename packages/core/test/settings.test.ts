@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createCore, createRegistry, defineModule, FFError, openDb, type ModuleDef } from "../src";
 
 const clock = { now: () => "2026-10-14T10:00:00Z", today: () => "2026-10-14" };
-const makeCore = (defs: ModuleDef[], off: string[] = []) => createCore(openDb(":memory:"), "ozgur", clock, createRegistry(defs, off));
+const makeCore = (defs: ModuleDef[], off: string[] = []) => createCore(openDb(":memory:"), "owner", clock, createRegistry(defs, off));
 const mod = (key: string) => defineModule({ key, label: key });
 
 describe("modules_hidden setting", () => {
@@ -27,9 +27,9 @@ describe("modules_hidden setting", () => {
 
   it("a stored key whose module is gone is not reported (it comes back with the module)", () => {
     const db = openDb(":memory:");
-    const both = createCore(db, "ozgur", clock, createRegistry([mod("a"), mod("b")]));
+    const both = createCore(db, "owner", clock, createRegistry([mod("a"), mod("b")]));
     both.settings.setMany({ modules_hidden: ["a", "b"] });
-    const withoutB = createCore(db, "ozgur", clock, createRegistry([mod("a"), mod("b")], ["b"]));
+    const withoutB = createCore(db, "owner", clock, createRegistry([mod("a"), mod("b")], ["b"]));
     expect(withoutB.settings.view().modules_hidden).toEqual(["a"]);
     expect(both.settings.view().modules_hidden).toEqual(["a", "b"]);
   });

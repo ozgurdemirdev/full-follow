@@ -11,5 +11,5 @@ export const MCP_NOTE_LENGTH = 40;
 /** The longest email subject line of a draft */
 export const DRAFT_SUBJECT_MAX = 200;
 
-/** The note kept on a draft that Özgür rejected without a reason (`no_reason`); it never becomes a learned rule */
+/** The note kept on a draft that the owner rejected without a reason (`no_reason`); it never becomes a learned rule */
 export const REJECT_NO_REASON_NOTE = "Neden yazılmadı";

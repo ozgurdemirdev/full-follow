@@ -10,5 +10,5 @@ export type TestApp = ReturnType<typeof appFor>;
 
 /** The people module is not installed here: a bare row is all a project needs */
 export function person(handle: DbHandle, name = "Ada", at = "2026-10-14T10:00:00Z"): number {
-  return Number(handle.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'ozgur')").run(name, at, at).lastInsertRowid);
+  return Number(handle.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'owner')").run(name, at, at).lastInsertRowid);
 }

@@ -12,7 +12,7 @@ suite("the data the new screens read", () => {
   beforeEach(() => {
     today = "2026-10-14";
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   it("a company's segment and money come from its projects, payments and open opportunities, and degrade without those modules", () => {
@@ -33,9 +33,9 @@ suite("the data the new screens read", () => {
     // a company without a project or opportunity has zeros; without the projects module there is no client and no money received
     app.companies.create({ name: "Boş" });
     expect(app.find("company", { q: "Boş" }).rows[0]).toMatchObject({ segment: "lead", money: { won: 0, due: 0, open: 0 } });
-    const bare = appWithout(["projects"], h, "ozgur", clock);
+    const bare = appWithout(["projects"], h, "owner", clock);
     expect(bare.mod("companies")!.get(abc.id)).toMatchObject({ segment: "lead", money: { won: 0, due: 0, open: 20000 } });
-    const noPipeline = appWithout(["pipeline", "projects"], h, "ozgur", clock);
+    const noPipeline = appWithout(["pipeline", "projects"], h, "owner", clock);
     expect(noPipeline.mod("companies")!.get(abc.id)).toMatchObject({ segment: "lead", money: { won: 0, due: 0, open: 0 }, open_opps: 0 });
   });
 
@@ -52,7 +52,7 @@ suite("the data the new screens read", () => {
     expect(waiting()).toEqual([null, 0]);
     const client = ask("musteri", "2026-10-20");
     expect(waiting()).toEqual(["musteride", 40000]);
-    const mine = ask("ozgur", "2026-10-18");
+    const mine = ask("owner", "2026-10-18");
     expect(waiting()).toEqual(["sende", 40000]);
     app.tasks.update(mine.id, { done: true });
     expect(waiting()).toEqual(["musteride", 40000]);
@@ -101,7 +101,7 @@ suite("the data the new screens read", () => {
   it("without the people and companies modules a loose touch has no suggestion and cannot be moved to a record", () => {
     app.companies.create({ name: "Kuzey Fırın", website: "kuzeyfirin.example" });
     const t = app.touches.create({ contact: "info@kuzeyfirin.example", channel: "email", direction: "giden", summary: "mail" }).row;
-    const bare = appWithout(["companies", "people"], h, "ozgur", clock);
+    const bare = appWithout(["companies", "people"], h, "owner", clock);
     expect(bare.mod("network")!.touches.get(t.id)!.suggested_match).toBeNull();
     expect(bare.mod("network")!.touches.adoptSuggested().adopted).toBe(0);
   });

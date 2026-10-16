@@ -14,8 +14,8 @@ export const settings = defineMessages({
       noHits: (q: string) => `“${q}” için ayar bulunamadı.`,
     },
     account: {
-      name: "Ad",
-      nameKeywords: "hesap,kullanıcı",
+      name: "Adın",
+      nameKeywords: "hesap,kullanıcı,isim",
       session: "Oturum açık",
       sessionHint: "Bu tarayıcıdaki oturum",
       sessionKeywords: "oturum,çıkış,şifre",
@@ -98,7 +98,7 @@ export const settings = defineMessages({
       empty: "Çöp kutusu boş.",
     },
     today: {
-      greeting: "Merhaba, Özgür",
+      greeting: (name: string) => (name ? `Merhaba, ${name}` : "Merhaba"),
       followUps: (n: number) => `${n} takip`,
       drafts: (n: number) => `${n} taslak`,
       and: " ve ",

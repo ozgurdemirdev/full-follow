@@ -13,18 +13,18 @@ const run = (handle: DbHandle, sql: string, ...a: unknown[]) => Number(handle.sq
 
 /** The people module is not installed here: a bare row is all an interest needs */
 export function person(handle: DbHandle, name = "Ada"): number {
-  return run(handle, "INSERT INTO people (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'ozgur')", name, AT, AT);
+  return run(handle, "INSERT INTO people (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'owner')", name, AT, AT);
 }
 
 /** An own project row written by hand (the own-projects module is not installed here) */
 export function project(handle: DbHandle, name = "Full Follow"): number {
-  return run(handle, "INSERT INTO own_projects (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'ozgur')", name, AT, AT);
+  return run(handle, "INSERT INTO own_projects (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'owner')", name, AT, AT);
 }
 
 /** A touch row written by hand (the network module is not installed here) */
 export function touch(handle: DbHandle, personId: number): number {
   return run(handle, `INSERT INTO touches (person_id, channel, direction, kind, summary, happened_at, created_at, updated_at, created_by)
-    VALUES (?, 'email', 'giden', 'mesaj', 'x', ?, ?, ?, 'ozgur')`, personId, AT, AT, AT);
+    VALUES (?, 'email', 'giden', 'mesaj', 'x', ?, ?, ?, 'owner')`, personId, AT, AT, AT);
 }
 
 /** Stand-in for the own-projects module: the record type (by name) and the lookup the idea checks use */

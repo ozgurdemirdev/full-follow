@@ -80,7 +80,7 @@ function dayCounts(ctx: Ctx, kinds: Record<string, TimelineEventDef>, page: Even
   const from = iso(Date.parse(page[page.length - 1].created_at) - DAY_MS);
   const to = iso(Date.parse(page[0].created_at) + DAY_MS);
   const shown = new Set(page.map((e) => e.day));
-  const counts: Record<string, DayCount> = Object.fromEntries([...shown].map((d) => [d, { ozgur: 0, claude: 0 }]));
+  const counts: Record<string, DayCount> = Object.fromEntries([...shown].map((d) => [d, { owner: 0, claude: 0 }]));
   for (const r of keptRows<{ day: string; actor: Actor; n: number }>(ctx, DAYS, JSON.stringify(Object.keys(kinds)), from, to)) {
     if (shown.has(r.day)) counts[r.day][r.actor] = r.n;
   }

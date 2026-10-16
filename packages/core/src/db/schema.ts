@@ -244,8 +244,8 @@ export const payments = sqliteTable("payments", {
 export const tasks = sqliteTable("tasks", {
   ...common(),
   title: text("title").notNull(),
-  /** ozgur | claude | musteri: the calendar module validates it */
-  assignee: text("assignee").notNull().default("ozgur"),
+  /** owner | claude | musteri: the calendar module validates it */
+  assignee: text("assignee").notNull().default("owner"),
   due_date: text("due_date"),
   /** "HH:MM" on the due date; null = sometime that day */
   due_time: text("due_time"),
@@ -260,7 +260,7 @@ export const tasks = sqliteTable("tasks", {
   idea_id: integer("idea_id").references((): AnySQLiteColumn => ideas.id),
 });
 
-/** Kayıtlara yorum: kök yorum + cevaplar (parent_id = kök). Özgür ve Claude yazar. */
+/** Kayıtlara yorum: kök yorum + cevaplar (parent_id = kök). Kullanıcı ve Claude yazar. */
 export const comments = sqliteTable("comments", {
   ...common(),
   /** record type of the target; core and the modules each own some (the registry knows which exist) */
@@ -272,7 +272,7 @@ export const comments = sqliteTable("comments", {
   resolved_at: text("resolved_at"),
   /** JSON list of short answers Claude offers with a question (quick answer chips) */
   options: text("options"),
-  /** When Özgür opened the thread; set on Claude's comments only, null while unread */
+  /** When the owner opened the thread; set on Claude's comments only, null while unread */
   read_at: text("read_at"),
 }, (t) => [index("comments_target").on(t.target_type, t.target_id), index("comments_parent").on(t.parent_id)]);
 
@@ -405,7 +405,7 @@ export const idea_sectors = sqliteTable("idea_sectors", {
 
 // ---------------------------------------------------------------- Kendi projelerim
 
-/** Own products Özgür builds for himself (Full Follow); not client work, no payments */
+/** Own products the owner builds for their own use (Full Follow); not client work, no payments */
 export const own_projects = sqliteTable("own_projects", {
   ...common(),
   name: text("name").notNull(),

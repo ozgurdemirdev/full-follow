@@ -21,7 +21,7 @@ export interface IdeaRecord {
   money_note: string | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** An idea as listed: the row plus the interest measure (told, interested), target sectors and what hangs on it */
@@ -59,7 +59,7 @@ export interface InterestRecord {
   touch_id: number | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** An interest row with the names it hangs on */

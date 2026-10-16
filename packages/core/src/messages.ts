@@ -18,11 +18,12 @@ export const m = defineMessages({
     /** Names of the fields a duplicate is found on */
     keyLabel: { email: "e-posta", domain: "alan adı", name: "firma adı", instagram: "Instagram", linkedin: "LinkedIn" },
     field: { name: "ad" },
-    actor: { claude: "Claude", ozgur: "Özgür" },
+    /** `owner` is the neutral word used while the owner has not given a name (setting `owner_name`) */
+    actor: { claude: "Claude", owner: "kullanıcı" },
     /** Words the date parser understands, besides "+3g" */
     date: { today: "bugün", todayAscii: "bugun", tomorrow: "yarın", tomorrowAscii: "yarin", yesterday: "dün", yesterdayAscii: "dun" },
 
-    forbiddenAction: (what: string) => `${what} sadece Özgür tarafından yapılır`,
+    forbiddenAction: (what: string, owner: string) => `${what} sadece ${owner} tarafından yapılır`,
     invalidId: (id: unknown) => `geçersiz id "${id}"`,
     invalidNumber: (name: string, min: number, max: number) => `${name}, ${max === Number.MAX_SAFE_INTEGER ? `${min} ya da daha büyük` : `${min} ile ${max} arasında`} bir tam sayı olmalı`,
     notFound: (what: string, id: unknown) => `${what} #${id} bulunamadı`,
@@ -102,7 +103,7 @@ export const m = defineMessages({
       needsTarget: "yorum için target_type ve target_id (ya da reply_to) gerekli",
       targetInvalid: (type: string, valid: string) => `target_type: "${type}" için yorum yazılamaz (geçerli: ${valid})`,
       optionsClaudeOnly: "Hızlı cevap seçeneklerini sadece Claude ekler",
-      written: (by: string, target: string, preview: string) => `${by} yorum yazdı (${target}): ${preview}`,
+      written: (by: string, target: string, preview: string) => `${cap(by)} yorum yazdı (${target}): ${preview}`,
       markReadAction: "Konuyu okundu işaretlemek",
       authorOnlyEdit: "Yorumu sadece yazarı düzenleyebilir",
       claudeOnlyOwn: "Claude sadece kendi yorumlarını silebilir",
@@ -143,6 +144,7 @@ export const m = defineMessages({
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",
       pinnedNotesAction: "sabit notları değiştirmek",
+      ownerNameAction: "adı değiştirmek",
     },
 
     // ---- Trash

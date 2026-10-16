@@ -1,4 +1,4 @@
-// Which feature modules this server has (`GET /api/modules`) and which of them Özgür hid (setting `modules_hidden`), both read once before the app draws.
+// Which feature modules this server has (`GET /api/modules`) and which of them the owner hid (setting `modules_hidden`), both read once before the app draws.
 // Two different questions: `has(key)` is "is the module installed" (a read for a module that is not there is never sent, data guards use it),
 // `visible(key)` is "installed and not hidden" (everything that is only on screen: routes, nav, cards, forms, links, slots, search).
 // Core features (dashboard, comments, settings) belong to no module.
@@ -29,11 +29,11 @@ const publish = (patch: Partial<State>) => {
   listeners.forEach((fn) => fn());
 };
 
-/** Reads `GET /api/modules` and the hidden list of `GET /api/settings`; never fails (a server without the endpoint keeps everything on) */
-export async function loadModules() {
+/** Reads `GET /api/modules` and the hidden list of the settings the app read at start (null: they could not be read); never fails (a server without the endpoint keeps everything on) */
+export async function loadModules(settings: Promise<{ modules_hidden?: string[] } | null>) {
   const [keys, hidden] = await Promise.all([
     api.get<{ key: string }[]>("/modules").then((l) => new Set(l.map((m) => m.key)), () => null),
-    api.get<{ modules_hidden?: string[] }>("/settings").then((s) => s.modules_hidden ?? [], () => [] as string[]),
+    settings.then((s) => s?.modules_hidden ?? []),
   ]);
   publish({ installed: keys, hidden: new Set(hidden) });
 }

@@ -7,7 +7,7 @@ const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:0
 /** An opportunity row for the foreign key (the pipeline module is not installed here) */
 function opportunityRow(h: ReturnType<typeof openDb>, personId: number, title = "Site"): number {
   const sourceId = (h.sqlite.prepare("SELECT id FROM sources LIMIT 1").get() as { id: number }).id;
-  return Number(h.sqlite.prepare("INSERT INTO opportunities (title, person_id, source_id, stage, created_at, updated_at, created_by) VALUES (?, ?, ?, 'kazanildi', ?, ?, 'ozgur')")
+  return Number(h.sqlite.prepare("INSERT INTO opportunities (title, person_id, source_id, stage, created_at, updated_at, created_by) VALUES (?, ?, ?, 'kazanildi', ?, ?, 'owner')")
     .run(title, personId, sourceId, clock.now(), clock.now()).lastInsertRowid);
 }
 
@@ -32,7 +32,7 @@ describe("projects as a module", () => {
 
   it("the deposit rule, partial payments, corrections and the money the reports read", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = app.projects.projects.create({ name: "Site", person_id: person(h), price: 100000 }).row;
     const [dep, design] = app.projects.payments.list({ filter: { project_id: p.id } }).rows;
     expect(() => app.move("project", p.id, "tasarim_onayi")).toThrow(/Peşinat tam ödenmeden/);
@@ -60,10 +60,10 @@ describe("projects as a module", () => {
 
   it("a project's get loads its uploaded files, and a project waits on nobody without payments or tasks", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = app.projects.projects.create({ name: "Site", person_id: person(h) }).row;
     expect(app.get("project", p.id, ["files"]).related.files).toEqual([]);
-    h.sqlite.prepare("INSERT INTO files (target_type, target_id, name, mime, size, stored_name, created_at, updated_at, created_by) VALUES ('project', ?, 'brief.pdf', 'application/pdf', 10, 'x1', ?, ?, 'ozgur')")
+    h.sqlite.prepare("INSERT INTO files (target_type, target_id, name, mime, size, stored_name, created_at, updated_at, created_by) VALUES ('project', ?, 'brief.pdf', 'application/pdf', 10, 'x1', ?, ?, 'owner')")
       .run(p.id, clock.now(), clock.now());
     expect(app.get("project", p.id, ["files"]).related.files).toMatchObject([{ name: "brief.pdf", target_id: p.id }]);
     expect(app.get("project", p.id).row).toMatchObject({ waiting: null, waiting_amount: 0 });
@@ -71,7 +71,7 @@ describe("projects as a module", () => {
 
   it("the Today view and the comment targets carry the module's payments and records", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = app.projects.projects.create({ name: "Site", person_id: person(h), price: 10000 }).row;
     expect(app.today().payments.total).toBe(1);
     const pay = app.projects.payments.list({}).rows[0];
@@ -85,7 +85,7 @@ describe("projects as a module", () => {
 
   it("a won opportunity opens its project and plan from the event payload, once", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const ada = person(h);
     const oppId = opportunityRow(h, ada);
     const won = (price: number): OpportunityWon => ({
@@ -112,7 +112,7 @@ describe("projects as a module", () => {
     const h = openDb(":memory:");
     const seen: RecordTrashed[] = [];
     const probe = defineModule({ key: "probe", label: "Probe", hooks: { "record.trashed": (_ctx, p: RecordTrashed) => { seen.push({ type: p.type, id: p.id, bin: p.bin }); } } });
-    const app = appFor(h, "ozgur", clock, [probe]);
+    const app = appFor(h, "owner", clock, [probe]);
     const ada = person(h);
     expect(() => app.projects.projects.create({ name: "Site", person_id: ada, opportunity_id: 1 })).toThrow(/"pipeline" modülü kurulu değil/);
     const p = app.projects.projects.create({ name: "Site", person_id: ada, price: 1000 }).row;
@@ -123,7 +123,7 @@ describe("projects as a module", () => {
     app.restore("project", "Site");
     expect(h.sqlite.prepare("SELECT COUNT(*) n FROM payments").get()).toEqual({ n: 3 });
     const boom = defineModule({ key: "boom", label: "Boom", hooks: { "record.trashed": () => { throw new FFError("rule", "cleanup failed"); } } });
-    const app2 = appFor(h, "ozgur", clock, [boom]);
+    const app2 = appFor(h, "owner", clock, [boom]);
     expect(() => app2.remove("project", p.id)).toThrow("cleanup failed");
     expect(app2.projects.projects.get(p.id)).toBeTruthy();
   });

@@ -52,7 +52,7 @@ export interface FeedQuery {
   limit?: string | number;
   /** feed kinds, comma separated */
   type?: string;
-  /** ozgur | claude */
+  /** owner | claude */
   actor?: string;
   /** only events from this date (or time) on */
   since?: string;
@@ -64,7 +64,7 @@ export interface FeedQuery {
 
 /** Events of one local day, by who wrote them */
 export interface DayCount {
-  ozgur: number;
+  owner: number;
   claude: number;
 }
 
@@ -82,7 +82,7 @@ export interface FeedPage {
 export interface WeekStrip {
   /** Monday of the week */
   start: string;
-  /** feed rows written by Özgür / by Claude */
+  /** feed rows written by the owner / by Claude */
   me: number;
   claude: number;
   touches: number;
@@ -91,7 +91,7 @@ export interface WeekStrip {
   collections_count: number;
   tasks_done: number;
   claude_drafts: number;
-  /** of those, the drafts Özgür approved or sent */
+  /** of those, the drafts the owner approved or sent */
   claude_drafts_approved: number;
   /** the same counts of the week before, for the "geçen hafta" lines */
   prev: { touches: number; tasks_done: number };

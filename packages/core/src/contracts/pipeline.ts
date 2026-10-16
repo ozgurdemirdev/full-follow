@@ -22,7 +22,7 @@ export interface OpportunityRecord {
   source_date: string | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** An opportunity as listed: the row plus the names it hangs on and the project it became (null when the projects module is missing) */
@@ -91,7 +91,7 @@ export interface OfferRecord {
   file_id: number | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** An extra person on an opportunity (the main contact is the opportunity's own person_id) */

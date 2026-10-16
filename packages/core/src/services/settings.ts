@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
-import { assertOzgur, emit, FFError, parse, row, type Ctx } from "../context";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, OWNER_NAME_MAX, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
+import { assertOwner, emit, FFError, ownerName, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
 import { isIsoDate, resolveRelativeDate } from "../dates";
@@ -90,7 +90,7 @@ export function marketingSettings(ctx: Ctx): { followup_days: number[]; weekly_t
   };
 }
 
-/** The own project Özgür works on first: the stored id while that project still exists, else null */
+/** The own project the owner works on first: the stored id while that project still exists, else null */
 function focusOwnProject(ctx: Ctx): number | null {
   const id = Number(readSetting(ctx, "focus_own_project_id")) || null;
   return id && row(ctx, "SELECT 1 x FROM own_projects WHERE id = ?", id) ? id : null;
@@ -99,7 +99,7 @@ function focusOwnProject(ctx: Ctx): number | null {
 /** Days after which a post without an interval of its own is due for a refresh */
 export const postRefreshDays = (ctx: Ctx): number => Number(readSetting(ctx, "post_refresh_days")) || POST_REFRESH_DEFAULT_DAYS;
 
-/** Modules Özgür hid in the web (setting `modules_hidden`, a list of keys): only installed ones count, the rest of the stored list is ignored. Hiding is a web concern: the data, the API and the hooks keep working */
+/** Modules the owner hid in the web (setting `modules_hidden`, a list of keys): only installed ones count, the rest of the stored list is ignored. Hiding is a web concern: the data, the API and the hooks keep working */
 export function hiddenModules(ctx: Ctx): string[] {
   const raw = readSetting(ctx, "modules_hidden");
   if (!raw) return [];
@@ -139,6 +139,8 @@ export function settingValues(ctx: Ctx) {
     focus_own_project_id: focusOwnProject(ctx),
     post_refresh_days: postRefreshDays(ctx),
     modules_hidden: hiddenModules(ctx),
+    // empty until the first run setup, which the web shows while it is
+    owner_name: ownerName(ctx) ?? "",
   };
 }
 
@@ -157,7 +159,9 @@ export function settingsService(ctx: Ctx) {
       throw new FFError("validation", m.settings.unknown(key, SETTING_KEYS.join(", ")));
     }
     // the pinned notes are part of the panel Claude's system prompt: text Claude (or a page it read) wrote there would persist across chats
-    if (key === "chat_pinned_notes") assertOzgur(ctx, m.settings.pinnedNotesAction);
+    if (key === "chat_pinned_notes") assertOwner(ctx, m.settings.pinnedNotesAction);
+    // the name is in the panel Claude's system prompt too, so only the owner sets it
+    if (key === "owner_name") assertOwner(ctx, m.settings.ownerNameAction);
     let stored: string;
     if (key === "payment_template") {
       const t = parse(templateInput, typeof value === "string" ? JSON.parse(value) : value);
@@ -170,6 +174,8 @@ export function settingsService(ctx: Ctx) {
       stored = JSON.stringify(parse(channelLimitsSchema, value));
     } else if (key === "email_warmup_until") {
       stored = parse(warmupUntilSchema, value);
+    } else if (key === "owner_name") {
+      stored = parse(z.string().trim().min(1).max(OWNER_NAME_MAX), value);
     } else if (key === "chat_pinned_notes") {
       stored = parse(z.string().trim().max(CHAT_PINNED_MAX), value);
     } else if (key === "focus_own_project_id") {

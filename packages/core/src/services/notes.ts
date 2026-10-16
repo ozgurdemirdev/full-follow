@@ -31,7 +31,7 @@ export function notesService(ctx: Ctx) {
 
   function remove(id: number) {
     const cur = requireRow(ctx, "notes", id);
-    if (ctx.actor !== "ozgur" && cur.created_by !== ctx.actor) throw new FFError("forbidden", m.notes.claudeOnlyOwn);
+    if (ctx.actor !== "owner" && cur.created_by !== ctx.actor) throw new FFError("forbidden", m.notes.claudeOnlyOwn);
     return ctx.db.transaction((tx) => {
       const bin = new Bin(ctx);
       bin.take("notes", "id = ?", id);

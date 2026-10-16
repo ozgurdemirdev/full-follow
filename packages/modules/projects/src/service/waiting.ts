@@ -8,7 +8,7 @@ export interface Waiting {
   waiting_amount: number;
 }
 
-/** Tasks given to Claude (a draft or a plan he was asked for) never put a project on hold for Özgür or the client */
+/** Tasks given to Claude (a draft or a plan he was asked for) never put a project on hold for the owner or the client */
 const NOBODY_WAITS_ON = "claude";
 
 interface PaymentLine {
@@ -24,8 +24,8 @@ const left = (p: PaymentLine) => Math.max(0, p.expected_amount - p.paid_amount);
 
 /**
  * Who each project waits on, for a whole list: a few statements, never one per project. A cancelled project waits on nobody.
- * Late (gecikti): a payment is overdue, or an open task of Özgür or the client is. Otherwise the open task due first that is not Claude's decides:
- * Özgür's means sende, the client's means musteride, none means nobody. The amount is the overdue money for a late project, else what is left of the
+ * Late (gecikti): a payment is overdue, or an open task of the owner or the client is. Otherwise the open task due first that is not Claude's decides:
+ * The owner's means sende, the client's means musteride, none means nobody. The amount is the overdue money for a late project, else what is left of the
  * first unpaid payment (in milestone order) while somebody waits. The tasks come from the calendar module (without it only overdue payments make a project wait).
  */
 export function waitingOf(ctx: Ctx, projectIds: number[]): Map<number, Waiting> {
@@ -47,7 +47,7 @@ export function waitingOf(ctx: Ctx, projectIds: number[]): Map<number, Waiting> 
     const open: OpenProjectTask[] = (tasks?.get(id) ?? []).filter((t) => t.assignee !== NOBODY_WAITS_ON);
     const lateTask = open.some((t) => t.due_date && t.due_date < today);
     const owner = open[0]?.assignee;
-    const waiting: ProjectWaiting | null = overdue.length || lateTask ? "gecikti" : owner === "ozgur" ? "sende" : owner === "musteri" ? "musteride" : null;
+    const waiting: ProjectWaiting | null = overdue.length || lateTask ? "gecikti" : owner === "owner" ? "sende" : owner === "musteri" ? "musteride" : null;
     const amount = waiting === "gecikti" ? overdue.reduce((a, p) => a + left(p), 0) : waiting && firstUnpaid ? left(firstUnpaid) : 0;
     out.set(id, { waiting, waiting_amount: amount });
   }

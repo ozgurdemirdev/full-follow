@@ -340,7 +340,7 @@ export interface Comment extends Base {
   parent_id: number | null;
   resolved_at: string | null;
   options: string[] | null; // quick answer chips of a Claude question
-  read_at: string | null; // when Özgür opened the thread; set on Claude comments, null while unread
+  read_at: string | null; // when the owner opened the thread; set on Claude comments, null while unread
 }
 export interface Thread {
   id: number;
@@ -401,8 +401,10 @@ export interface PriceFloor {
   post_refresh_days: number;
   /** the own project in focus; null when none was picked or it is gone */
   focus_own_project_id: number | null;
-  /** modules Özgür hid in Settings (keys of installed modules); the shell reads it with the module list */
+  /** modules the owner hid in Settings (keys of installed modules); the shell reads it with the module list */
   modules_hidden?: string[];
+  /** The owner's name, "" until the first run setup; absent on an older server */
+  owner_name?: string;
   /** reject rules Claude learned, oldest first (PUT /settings { draft_rules } keeps the ones left in the list); absent when the drafts module is not installed */
   draft_rules?: string[];
 }

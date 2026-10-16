@@ -5,7 +5,7 @@ import { mcp } from "./mcp";
 import { m } from "./messages";
 
 /**
- * Own projects: Özgür's own products (Full Follow), their status, sellability and sectors. Their ideas belong to the ideas module,
+ * Own projects: the owner's own products (Full Follow), their status, sellability and sectors. Their ideas belong to the ideas module,
  * which also hands an idea over when it becomes a project.
  * Its tables (own_projects, own_project_sectors) stay in core's schema; removing this package leaves their rows in place.
  */

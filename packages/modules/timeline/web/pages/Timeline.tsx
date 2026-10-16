@@ -26,7 +26,7 @@ import { useDebounced } from "@kit/lib/useDebounced";
 import { useTimelineFeed } from "../useTimelineFeed";
 import { stroke as STROKE } from "@kit/styles/tokens.json";
 
-/** Timeline: everything Özgür and Claude did, newest first. /zaman/:type/:id focuses one record. */
+/** Timeline: everything the owner and Claude did, newest first. /zaman/:type/:id focuses one record. */
 export default function Timeline() {
   const params = useParams<{ type?: string; id?: string }>();
   const [, navigate] = useLocation();
