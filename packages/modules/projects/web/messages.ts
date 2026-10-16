@@ -55,7 +55,7 @@ export const m = defineMessages({
       personRequired: "Müşteriyi seç ya da yeni bir ad yaz",
       customerTag: "müşteri",
       name: "Proje adı",
-      namePlaceholder: "Örn. Pizza Z mobil uygulama",
+      namePlaceholder: "Örn. Pizzacı mobil uygulama",
       customer: "Müşteri",
       customerPlaceholder: "Kişi ara ya da yeni ad yaz",
       newPerson: "Yeni kişi",

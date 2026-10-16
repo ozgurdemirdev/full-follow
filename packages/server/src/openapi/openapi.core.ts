@@ -16,12 +16,12 @@ export const authDocs: RouteDocs = defineDocs({
   },
   "POST /api/login": {
     summary: "Log in with the app password",
-    description: "Sets the `ff_session` cookie (30 days). After 8 wrong attempts from one address the answer is 429 for a minute.",
+    description: "Sets the `ff_session` cookie (30 days). After 8 wrong attempts from one address every login (the right password too) is 429 for a minute; each further lockout of that address doubles the wait, up to an hour.",
     body: z.object({ password: z.string() }),
     response: ok,
     public: true,
   },
-  "POST /api/logout": { summary: "Log out", description: "Clears the session cookie.", response: ok, public: true },
+  "POST /api/logout": { summary: "Log out", description: "Clears the session cookie. With a valid session it also ends every other session given out so far (every device logs in again).", response: ok, public: true },
 });
 
 /** The routes the server host itself owns: records every module can hang things on, settings, trash and the shared lists */

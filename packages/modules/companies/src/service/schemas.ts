@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { CONTACT_STATUSES, zodKit } from "@fullfollow/core";
 
-const { id, text, optText, patch, tagLabels } = zodKit;
+const { id, text, optText, optWebUrl, patch, tagLabels } = zodKit;
 
 const companyShape = {
   name: text,
-  website: optText,
+  website: optWebUrl,
   email: optText,
   phone: optText,
   instagram: optText,

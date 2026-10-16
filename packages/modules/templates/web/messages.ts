@@ -43,7 +43,7 @@ export const m = defineMessages({
     form: {
       sampleFirstName: "Ayşe",
       sampleFullName: "Ayşe Demir",
-      sampleCompany: "Gülüş Diş",
+      sampleCompany: "Örnek Diş",
       sampleSector: "Diş hekimi",
       nameRequired: "Şablon adı gerekli",
       bodyRequired: "Metin boş olamaz",

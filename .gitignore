@@ -10,3 +10,5 @@ data/*.log
 *.tgz
 data/chat/
 data/files/
+data/session.key
+data/session.epoch

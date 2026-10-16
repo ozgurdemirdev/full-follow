@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { APP_CSP, DOCS_CSP } from "../src/constants";
 import { hostAllowed } from "../src/guard";
 import { precompressed } from "../src/static";
 import { available, installed, JSON_HEADERS, startServer, type TestServer } from "./helpers";
@@ -81,6 +82,31 @@ describe("date and number inputs", () => {
   });
 });
 
+describe("web address fields", () => {
+  const BAD = ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>", "file:///C:/Windows/win.ini"];
+  const patch = (p: string, body: unknown) => server.request(p, { method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify(body) });
+
+  it.skipIf(!installed("companies"))("a company website and a link accept only http and https, and a bare domain gets https", async () => {
+    const company = await post("/api/companies", { name: "Örnek Yazılım", website: "ornekyazilim.com" });
+    expect(company.status).toBe(201);
+    expect(company.json.row.website).toBe("https://ornekyazilim.com");
+    for (const url of BAD) {
+      expect((await post("/api/companies", { name: `Kötü ${url.slice(0, 4)}`, website: url })).status, url).toBe(400);
+      expect((await patch(`/api/companies/${company.json.row.id}`, { website: url })).status, url).toBe(400);
+    }
+    const link = { target_type: "company", target_id: company.json.row.id, label: "Site" };
+    for (const url of BAD) expect((await post("/api/links", { ...link, url })).status, url).toBe(400);
+  });
+
+  it("opportunity and post links refuse other schemes before anything else is checked", async () => {
+    for (const p of available([["pipeline", "/api/opportunities/999999"], ["posts", "/api/posts/999999"]])) {
+      const field = p.includes("posts") ? "url" : "source_url";
+      for (const url of BAD) expect((await patch(p, { [field]: url })).status, `${p} ${url}`).toBe(400);
+      expect((await patch(p, { [field]: "https://ornek.com/ilan" })).status, p).toBe(404);
+    }
+  });
+});
+
 describe("request guard", () => {
   it("a data changing request must declare a JSON or multipart body", async () => {
     expect((await post("/api/login")).status).toBeLessThan(300);
@@ -102,6 +128,36 @@ describe("request guard", () => {
     for (const host of ["evil.example", "evil.example:3000", "localhost.evil.example"]) expect((await get(host)).status, host).toBe(421);
     expect((await server.request("/api/login", { method: "POST", headers: { ...JSON_HEADERS, host: "evil.example" }, body: "{}" })).status).toBe(421);
     expect([hostAllowed(undefined), hostAllowed(""), hostAllowed("[::2]:80")]).toEqual([false, false, false]);
+  });
+
+  it("a data changing request from another origin or another port of this host is refused, multipart included", async () => {
+    const multipart = { "content-type": "multipart/form-data; boundary=x" };
+    const isMultipart = (url: string) => url === "/api/files" || url.endsWith("/attachments");
+    const routes = available(["/api/files", ["chat", "/api/chat/sessions/1/attachments"], ["drafts", "/api/followups/run"], ["network", "/api/touches/adopt-suggested"]]);
+    const self = `http://127.0.0.1:${server.port}`;
+    const send = (url: string, extra: Record<string, string>) =>
+      server.request(url, { method: "POST", headers: { ...(isMultipart(url) ? multipart : JSON_HEADERS), ...extra }, body: isMultipart(url) ? "--x--\r\n" : "{}" });
+    for (const r of routes) {
+      for (const extra of [{ origin: "http://127.0.0.1:5173" }, { origin: "https://evil.example" }, { origin: "null" }, { "sec-fetch-site": "same-site" }, { "sec-fetch-site": "cross-site" }, { origin: self, "sec-fetch-site": "cross-site" }]) {
+        expect((await send(r, extra)).status, `${r} ${JSON.stringify(extra)}`).toBe(403);
+      }
+      for (const extra of [{ origin: self }, { origin: self, "sec-fetch-site": "same-origin" }, { "sec-fetch-site": "none" }, {}]) {
+        expect((await send(r, extra)).status, `${r} ${JSON.stringify(extra)}`).not.toBe(403);
+      }
+    }
+    expect((await server.request("/api/health", { headers: { origin: "https://evil.example", "sec-fetch-site": "cross-site" } })).status).toBe(200);
+  });
+
+  it("every answer carries the security headers, refusals included; the Swagger UI page gets its own policy", async () => {
+    for (const r of [await server.request("/api/health"), await server.request("/api/health", { headers: { host: "evil.example" } }), await server.request("/api/files/999999")]) {
+      expect(r.headers["content-security-policy"]).toBe(APP_CSP);
+      expect(r.headers).toMatchObject({ "x-frame-options": "DENY", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" });
+    }
+    expect(APP_CSP).toMatch(/default-src 'self'.*frame-ancestors 'none'/);
+    expect(APP_CSP).not.toContain("unsafe");
+    expect((await server.request("/api/docs")).headers["content-security-policy"]).toBe(DOCS_CSP);
+    expect((await server.request("/api/docs/init.js")).headers["content-security-policy"]).toBe(DOCS_CSP);
+    expect((await server.request("/api/docsx")).headers["content-security-policy"]).toBe(APP_CSP);
   });
 
   it("FF_ALLOWED_HOSTS adds names", async () => {

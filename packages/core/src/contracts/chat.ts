@@ -145,6 +145,8 @@ export interface ChatApi {
   createAttachment(sessionId: number, input: unknown): ChatAttachment;
   getAttachment(id: number): ChatAttachment;
   attachmentsOfMessage(messageId: number): ChatAttachment[];
+  /** boot cleanup: removes the attachments never sent with a message and created before `before` (ISO); returns them, so their files can be deleted */
+  takeUnsentAttachments(before: string): ChatAttachment[];
   /** boot cleanup: a run owned by a dead server can never finish; returns how many rows were closed */
   failDanglingRuns(reason: string): number;
   draftRuns: DraftRunsApi;

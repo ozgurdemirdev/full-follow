@@ -1,6 +1,33 @@
+import fs from "node:fs";
 import path from "node:path";
-import { FILE_NAME_MAX } from "../constants";
+import { FILE_NAME_MAX, UPLOAD_DIRS, UPLOAD_QUOTA_BYTES } from "../constants";
+import { defaultDbPath } from "../db/client";
 import { m } from "../messages";
+
+/** A folder of uploaded bytes beside the database in use, so a throwaway FF_DB gets its own */
+export const uploadDir = (kind: keyof typeof UPLOAD_DIRS) => path.join(path.dirname(defaultDbPath()), UPLOAD_DIRS[kind]);
+
+/** Bytes under a folder, its subfolders included; a missing folder is empty */
+function folderBytes(dir: string): number {
+  let total = 0;
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    total += e.isDirectory() ? folderBytes(full) : e.isFile() ? fs.statSync(full).size : 0;
+  }
+  return total;
+}
+
+/** Refuses an upload (413) that would take the uploaded bytes of every folder past the quota */
+export function assertUploadRoom(incoming: number, quota = UPLOAD_QUOTA_BYTES): void {
+  const used = Object.keys(UPLOAD_DIRS).reduce((sum, k) => sum + folderBytes(uploadDir(k as keyof typeof UPLOAD_DIRS)), 0);
+  if (used + incoming > quota) throw refuse(m.uploadQuota(Math.round(quota / 1024 / 1024 / 1024)), 413, "quota");
+}
 
 const SNIFF_BYTES = 8_192;
 

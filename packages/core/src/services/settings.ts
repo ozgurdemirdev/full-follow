@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, CLAUDE_EFFORT_IDS, CLAUDE_MODEL_IDS, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_AUTO_DEFAULTS, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, OWNER_NAME_MAX, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
+import { CHANNEL_LIMIT_DEFAULTS, CHANNEL_LIMIT_MAX, CHANNELS, CHAT_PINNED_MAX, CLAUDE_EFFORT_IDS, CLAUDE_MODEL_IDS, DEFAULT_PAYMENT_TEMPLATE, DEPOSIT_MILESTONE, DRAFT_AUTO_DEFAULTS, DRAFT_RULE_CHARS, DRAFT_RULES_MAX, MARKETING_DEFAULTS, MILESTONES, NETWORK_DEFAULTS, OWNER_NAME_MAX, OWNER_ONLY_SETTINGS, POST_REFRESH_DEFAULT_DAYS, POST_REFRESH_MAX_DAYS, SETTING_KEYS, type Channel } from "../constants";
 import { assertOwner, emit, FFError, ownerName, parse, row, type Ctx } from "../context";
 import { m } from "../messages";
 import { id as idSchema } from "../schemas/kit";
@@ -176,12 +176,7 @@ export function settingsService(ctx: Ctx) {
     if (!(SETTING_KEYS as readonly string[]).includes(key)) {
       throw new FFError("validation", m.settings.unknown(key, SETTING_KEYS.join(", ")));
     }
-    // the pinned notes are part of the panel Claude's system prompt: text Claude (or a page it read) wrote there would persist across chats
-    if (key === "chat_pinned_notes") assertOwner(ctx, m.settings.pinnedNotesAction);
-    // the name is in the panel Claude's system prompt too, so only the owner sets it
-    if (key === "owner_name") assertOwner(ctx, m.settings.ownerNameAction);
-    // a draft run spends the owner's Claude usage: whether it starts on its own, and with which model, is the owner's choice
-    if (key === "draft_auto" || key === "draft_model" || key === "draft_effort") assertOwner(ctx, m.settings.draftAutoAction);
+    if ((OWNER_ONLY_SETTINGS as readonly string[]).includes(key)) assertOwner(ctx, m.settings.ownerOnlyAction(key));
     let stored: string;
     if (key === "payment_template") {
       const t = parse(templateInput, typeof value === "string" ? JSON.parse(value) : value);

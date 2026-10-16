@@ -3,7 +3,7 @@ import { FFError, MCP_MODE_TOOLS, ownerName, type Core, type McpMode } from "@fu
 import { z } from "zod";
 import { describer } from "./describe";
 import { FIND_LIMIT_MAX, OPENED_LABEL_CHARS, TODAY_ROWS } from "./constants";
-import { block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs, useOwnerName } from "./format";
+import { asData, block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs, useOwnerName } from "./format";
 import { m } from "./messages";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
@@ -60,7 +60,7 @@ export function registerTools(server: McpServer, core: Core, mode?: McpMode) {
     const t = core.normalizeType(type);
     if (!openable.has(t)) throw new FFError("validation", m.openNoPage(t));
     const r = core.get(t, id);
-    const row = r.row as Record<string, any>;
+    const row = asData(r.row) as Record<string, any>;
     const label = String(row.name ?? row.title ?? row.target_label ?? row.to_name ?? `#${r.id}`).slice(0, OPENED_LABEL_CHARS);
     // "(tür #id)": the panel chat reads the canonical record from this suffix
     return m.opened(label, r.type, r.id);

@@ -8,6 +8,7 @@ import { KIND_LABEL, T } from "../messages";
 import { chatApi } from "../api";
 import { Attachment } from "./Attachment";
 import { extractSuggest, splitOpenFence } from "../chatReply";
+import { LinkedImage } from "../markdownImage";
 import { CardsSkeleton, RecordCards } from "./RecordCards";
 import { SuggestRow } from "./SuggestRow";
 import { Icon } from "@kit/components/icons";
@@ -24,10 +25,11 @@ function stamp(iso: string): string {
 const FF = /language-(ff-[a-z]+)/;
 const ffLang = (node: unknown) => (isValidElement<{ className?: string }>(node) ? FF.exec(node.props.className ?? "")?.[1] : undefined);
 
-/** Raw HTML stays off (react-markdown default): never dangerouslySetInnerHTML. ```ff-cards renders as record cards, ```ff-suggest renders elsewhere (under the user's message). */
+/** Raw HTML stays off (react-markdown default): never dangerouslySetInnerHTML; an image is a link, never loaded. ```ff-cards renders as record cards, ```ff-suggest renders elsewhere (under the user's message). */
 function Reply({ body, caret, messageId }: { body: string; caret: boolean; messageId: number }) {
   const components = useMemo(() => ({
     a: (p: React.ComponentProps<"a">) => <a {...p} target="_blank" rel="noreferrer" />,
+    img: LinkedImage,
     pre: ({ children }: { children?: React.ReactNode }) => (ffLang(Children.toArray(children)[0]) ? <>{children}</> : <pre>{children}</pre>),
     code: ({ className, children }: { className?: string; children?: React.ReactNode }) => {
       const lang = FF.exec(className ?? "")?.[1];

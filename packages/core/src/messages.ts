@@ -8,6 +8,8 @@ export const m = defineMessages({
     currency: "₺",
     /** "none" in a list of names ("geçerli ilişkiler: yok") */
     none: "yok",
+    /** An upload past UPLOAD_QUOTA_BYTES */
+    uploadQuota: (gb: number) => `yükleme alanı dolu: yüklenen dosyalar toplam ${gb} GB'ı geçemez`,
     /** Names of the records, as the sentences say them ("kişi #3 bulunamadı") */
     noun: {
       person: "kişi", company: "firma", opportunity: "fırsat", project: "proje", task: "görev", draft: "taslak",
@@ -43,7 +45,7 @@ export const m = defineMessages({
 
     // ---- Zod messages
     schema: {
-      linkInvalid: "geçerli bir link gerekli",
+      webUrl: "geçerli bir http ya da https adresi gerekli",
       dateShape: "tarih YYYY-MM-DD olmalı",
       dateIso: "tarih ISO olmalı",
       subjectNeeded: "kişi, firma ya da adres (contact) gerekli",
@@ -143,9 +145,7 @@ export const m = defineMessages({
       moduleNotInstalled: (unknown: string, installed: string) => `kurulu olmayan modül: ${unknown} (kurulu: ${installed})`,
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",
-      pinnedNotesAction: "sabit notları değiştirmek",
-      draftAutoAction: "otomatik taslak ayarlarını değiştirmek",
-      ownerNameAction: "adı değiştirmek",
+      ownerOnlyAction: (key: string) => `${key} ayarını değiştirmek`,
     },
 
     // ---- Trash

@@ -117,6 +117,14 @@ export const SETTING_KEYS = [
   "draft_auto", "draft_model", "draft_effort",
 ] as const;
 
+/**
+ * Settings only the owner may write; Claude (MCP, the panel chat) is refused. Each one feeds Claude's prompts or turns features on
+ * and off, so text a page or a record planted in Claude would otherwise persist and steer later chats: the pinned notes and the
+ * draft rules are read into the system prompt, the hidden modules take screens away, and the auto draft switch, model and effort
+ * decide how much of the owner's Claude usage background draft runs spend.
+ */
+export const OWNER_ONLY_SETTINGS: readonly (typeof SETTING_KEYS)[number][] = ["chat_pinned_notes", "draft_rules", "modules_hidden", "owner_name", "draft_auto", "draft_model", "draft_effort"];
+
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
 export const POST_REFRESH_DEFAULT_DAYS = 30;
 export const POST_REFRESH_MAX_DAYS = 365;
@@ -180,6 +188,10 @@ export const FILE_TYPES = [
 ] as const;
 /** Upload limits of record files (offer decks and scans are bigger than chat attachments) */
 export const FILE_LIMITS = { maxImageBytes: 10 * 1024 * 1024, maxFileBytes: 25 * 1024 * 1024 } as const;
+/** Folders of uploaded bytes, beside the database: record files and the chat's attachments */
+export const UPLOAD_DIRS = { files: "files", chat: "chat/uploads" } as const;
+/** All uploaded bytes together may take this much; an upload past it is refused (413) */
+export const UPLOAD_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
 /** Max name length kept for an uploaded file */
 export const FILE_NAME_MAX = 120;
 /** Max items in one offer price breakdown */

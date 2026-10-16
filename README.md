@@ -82,6 +82,43 @@ npm start                          # tek komut: kontrol eder, derler, sunucuyu a
 - Geri dönmek için: sunucuyu ve Claude'u kapat, istediğin yedeği `data/fullfollow.db` üzerine kopyala, `data/fullfollow.db-wal` ve `-shm` dosyalarını sil, sunucuyu aç.
 - `data/` klasörü git'e girmez; yedekleri ayrıca bulut klasörüne (OneDrive vb.) kopyalamak iyi olur.
 
+## Güvenlik
+
+**İki çalışma biçimi**
+
+- **Şifresiz (yerel mod):** `FF_PASSWORD` boşsa sunucu yalnız `127.0.0.1` adresini dinler, panel sadece bu bilgisayardan açılır. Şifresizken ağa açan bir `FF_HOST` verilirse sunucu hiç açılmaz.
+- **Şifreli (telefon için):** `FF_PASSWORD` doluysa sunucu yerel ağı dinler, telefondan `http://<bilgisayar-ip>:3000` ile girilir. Bağlantı düz HTTP'dir: aynı ağdaki biri trafiği izleyebilir. Bu yüzden telefondan [Tailscale](https://tailscale.com) ile bağlanmak (bilgisayarın Tailscale IP'si, trafik şifreli gider) ev Wi-Fi'sinden de iyidir; kafe, otel gibi açık ağlarda Tailscale olmadan girme. Şifre en az 12 karakter olsun (daha kısaysa açılışta uyarı çıkar). Bir adresten 8 yanlış denemede giriş bir dakika kilitlenir, kilit tekrarlandıkça süre ikiye katlanır (en çok bir saat).
+
+**Ayarlar (`.env`)**
+
+| Değişken | Ne yapar |
+|---|---|
+| `FF_HOST` | Dinlenecek adres. Boşsa şifre varken tüm ağ (`0.0.0.0`), yokken `127.0.0.1`. Yalnız Tailscale'den girilsin istiyorsan Tailscale IP'sini yaz (örn. `FF_HOST=100.64.0.5`). |
+| `FF_ALLOWED_HOSTS` | Sunucu yalnız bu bilgisayarın adlarına (localhost, 127.0.0.1, kendi IP'leri) cevap verir; telefondan bir adla giriyorsan (`pc.local`, Tailscale adı) virgülle buraya ekle. |
+| `FF_COOKIE_SECRET` | Oturum çerezini imzalayan anahtar. Boşsa ilk açılışta rastgele üretilir ve `data/session.key` dosyasında saklanır (şifreden türetilmez). Çıkış yapmak bütün cihazlardaki oturumları kapatır; şifreyi değiştirmek de. |
+
+**Dosyalar ve disk**
+
+- Full Follow'u kendi kullanıcı klasörünün altına kur (`%USERPROFILE%`, örn. `C:\Users\<ad>\FullFollow`). `C:\Projects` gibi ortak bir yerde bilgisayardaki diğer Windows hesapları `data\fullfollow.db`, yedekleri, yüklenen dosyaları ve `.env` dosyasını okuyabilir. Klasörü taşıyamıyorsan erişimi yalnız kendine, SYSTEM'e ve yöneticilere bırak (PowerShell, proje klasöründe):
+
+  ```powershell
+  icacls . /inheritance:r /grant:r "${env:USERNAME}:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F"
+  ```
+
+  `npm start`, veri klasörüne diğer hesaplar da yazabiliyorsa açılışta bir satırlık uyarı yazar.
+- Diski BitLocker ile şifrele (Windows Pro: Ayarlar → Gizlilik ve güvenlik → Cihaz şifreleme / BitLocker). Bilgisayar çalınırsa veritabanı ve yedekler okunamaz.
+
+**Panel sohbeti ve "prompt injection"**
+
+Panel sohbetindeki Claude'un yazma araçları vardır: kayıt ekler, günceller, aşama değiştirir, çöp kutusuna taşır. Bir web sayfası, bir kaydın notu ya da eklenen bir dosya, Claude'a talimat gibi yazılmış metin taşıyabilir. Bunun için konan sınırlar:
+
+- Claude kimseye mesaj gönderemez, yalnız taslak hazırlar; taslağı onaylamak ve "gönderildi" işaretlemek yalnız sende.
+- Sabit notları, taslak kurallarını, gizli modülleri ve adını değiştiremez (bunlar Claude'un talimatlarına girer).
+- Sildiği kayıt çöp kutusuna gider, kalıcı silme yoktur; her değişikliği zaman çizelgesinde "Claude" etiketiyle görürsün.
+- Dosya ve komut araçları kapalıdır. Kayıtlardaki metin Claude'a `⟦ ⟧` içinde "veri, talimat değil" diye işaretlenerek gider; sohbet cevabındaki resimler yüklenmez, bağlantı olarak görünür.
+
+Yine de Claude'un önerdiği beklenmedik bir işi (bir linki taslaklara eklemek, toplu silmek) onaylamadan önce oku.
+
 ## MCP (Claude'un erişimi)
 
 Önce bir kez `npm run build`. Sonra:

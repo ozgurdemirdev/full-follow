@@ -18,6 +18,8 @@ export const m = defineMessages({
     phone: (address: string, port: number) => `  Telefondan (aynı ağ): http://${address}:${port}`,
     openWithoutPassword: (host: string) => `FF_HOST=${host} şifresiz açılamaz: ağdaki herkes panele girebilirdi`,
     openWithoutPasswordHint: ".env dosyasına FF_PASSWORD yaz ya da FF_HOST satırını sil (şifresiz Full Follow sadece bu bilgisayardan açılır)",
+    weakPassword: (min: number) => `
+  Uyarı: FF_PASSWORD ${min} karakterden kısa ve panel ağa açık. Ağdaki biri şifreyi deneyerek bulabilir; .env dosyasında en az ${min} karakterlik bir şifre ver.`,
     noPassword: "  Şifre (FF_PASSWORD) tanımlı değil: sadece bu bilgisayardan açılır.",
     webNotBuilt: "  Web arayüzü derlenmemiş; npm start ile derle (API: /api/health)",
     stopHint: "  Kapatmak için Ctrl+C.\n",
