@@ -9,6 +9,10 @@ export const BACKUP_CHECK_MS = 6 * 60 * 60 * 1000;
 
 /** A session cookie lives this long */
 export const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+/** The generated cookie signing key (used when FF_COOKIE_SECRET is empty) and the session epoch, both beside the database */
+export const SESSION_SECRET_FILE = "session.key";
+export const SESSION_EPOCH_FILE = "session.epoch";
+export const SESSION_SECRET_BYTES = 32;
 /** Wrong logins from one address: this many within the window lock it for the window (every login, the right one too, is a 429) */
 export const LOGIN_MAX_ATTEMPTS = 8;
 export const LOGIN_WINDOW_MS = 60_000;

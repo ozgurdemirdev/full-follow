@@ -21,7 +21,7 @@ export const authDocs: RouteDocs = defineDocs({
     response: ok,
     public: true,
   },
-  "POST /api/logout": { summary: "Log out", description: "Clears the session cookie.", response: ok, public: true },
+  "POST /api/logout": { summary: "Log out", description: "Clears the session cookie. With a valid session it also ends every other session given out so far (every device logs in again).", response: ok, public: true },
 });
 
 /** The routes the server host itself owns: records every module can hang things on, settings, trash and the shared lists */

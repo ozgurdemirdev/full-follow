@@ -1,6 +1,10 @@
+import { createHash, createHmac } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import type { Type } from "@nestjs/common";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
+import { SESSION_SECRET_FILE } from "../src/constants";
 import { openApiDocument } from "../src/openapi/openapi.controller";
 import { JSON_HEADERS, startServer, type TestServer } from "./helpers";
 
@@ -52,5 +56,48 @@ describe("password protection", () => {
   it("the public routes answer without a cookie", async () => {
     expect((await server.request("/api/health")).status).toBe(200);
     expect((await server.request("/api/me")).json).toMatchObject({ auth: true, loggedIn: false });
+  });
+});
+
+describe("session cookie", () => {
+  const login = async () => {
+    const r = await server.request("/api/login", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ password: process.env.FF_PASSWORD }) });
+    expect(r.status).toBeLessThan(300);
+    return String(r.headers["set-cookie"]).split(";")[0];
+  };
+  const tags = (cookie: string) => server.request("/api/tags", { headers: { cookie } });
+
+  it("is signed with a random key kept beside the database, never with one derived from the password", async () => {
+    const cookie = await login();
+    const [exp, epoch, sig] = decodeURIComponent(cookie.split("=")[1]).split(".");
+    const derived = createHash("sha256").update(`ff:${PASSWORD}`).digest("hex");
+    const pwDigest = createHash("sha256").update(PASSWORD).digest("hex");
+    for (const text of [exp, `${exp}.${epoch}`, `${exp}.${epoch}.${pwDigest}`]) expect(createHmac("sha256", derived).update(text).digest("hex")).not.toBe(sig);
+    const key = fs.readFileSync(path.join(server.dir, SESSION_SECRET_FILE), "utf8");
+    expect(key).toMatch(/^[0-9a-f]{64}$/);
+    expect(createHmac("sha256", key).update(`${exp}.${epoch}.${pwDigest}`).digest("hex")).toBe(sig);
+  });
+
+  it("stops working after logout, on every device, and a logout without a session ends nothing", async () => {
+    const phone = await login();
+    const computer = await login();
+    expect((await tags(phone)).status).toBe(200);
+    expect((await server.request("/api/logout", { method: "POST", headers: JSON_HEADERS, body: "{}" })).status).toBe(201);
+    expect((await tags(phone)).status).toBe(200);
+    expect((await server.request("/api/logout", { method: "POST", headers: { ...JSON_HEADERS, cookie: computer }, body: "{}" })).status).toBe(201);
+    expect((await tags(computer)).status).toBe(401);
+    expect((await tags(phone)).status).toBe(401);
+    expect((await tags(await login())).status).toBe(200);
+  });
+
+  it("stops working when the password changes", async () => {
+    const cookie = await login();
+    process.env.FF_PASSWORD = "another-password-456";
+    try {
+      expect((await tags(cookie)).status).toBe(401);
+    } finally {
+      process.env.FF_PASSWORD = PASSWORD;
+    }
+    expect((await tags(cookie)).status).toBe(200);
   });
 });
