@@ -8,6 +8,7 @@ import { CAMERA_FOV, CFG, MAX_DT } from "./config";
 import { createFace } from "./face";
 import { clamp, type MotionState } from "./motion";
 import { faceColors, propColors, type BellGlow } from "./palette";
+import { releaseSharedLut } from "./sharedLut";
 
 export interface SceneOptions {
   /** element carrying the token custom properties (the mascot root) */
@@ -186,6 +187,7 @@ export async function createMascotScene(canvas: HTMLCanvasElement, opts: SceneOp
     },
     dispose() {
       renderer.setAnimationLoop(null);
+      releaseSharedLut();
       renderer.dispose();
     },
   };
