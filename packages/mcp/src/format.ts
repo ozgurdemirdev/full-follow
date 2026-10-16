@@ -1,6 +1,6 @@
 /** Kısa düz metin çıktılar: boş alan yazılmaz, tek satır = tek kayıt */
 import { label, LOCALE, type McpDef, type McpEntityDoc, type McpFormat } from "@fullfollow/core";
-import { CUT_CHARS, NOTE_CUT_CHARS } from "./constants";
+import { CUT_CHARS, DATA_CLOSE, DATA_OPEN, FREE_TEXT_FIELDS, NOTE_CUT_CHARS } from "./constants";
 import { m } from "./messages";
 
 const thisYear = () => new Date().getFullYear();
@@ -11,9 +11,40 @@ export function d(iso?: string | null): string {
   return Number(y) === thisYear() ? `${day}.${m}` : `${day}.${m}.${y.slice(2)}`;
 }
 export const tl = (n?: number | null) => (n === null || n === undefined ? "" : `${n.toLocaleString(LOCALE)}${m.currency}`);
+/** The marker letters taken out of record text, so no text can open or close a data block of its own */
+const unmark = (s: string) => s.replaceAll(DATA_OPEN, "[").replaceAll(DATA_CLOSE, "]");
+const isWrapped = (s: string) => s.startsWith(DATA_OPEN) && s.endsWith(DATA_CLOSE);
+/** One line: line breaks and runs of whitespace become one space */
+export const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+
+/** Free text inside the data marker; empty stays empty, so `r.note && ...` still means "has a note" */
+function wrapText(s: string): string {
+  const t = unmark(s).trim();
+  return t ? `${DATA_OPEN}${t}${DATA_CLOSE}` : "";
+}
+
+const cleaned = new WeakSet<object>();
+
+/**
+ * Record data the way MCP output may show it: a one line field (name, title, email, url, label, ...) loses its line breaks, so
+ * a name cannot start a fake section or record line, and a free text field (FREE_TEXT_FIELDS) is wrapped in the data marker, so
+ * Claude reads where people's text starts and ends. Every formatter entry point runs its input through this once.
+ */
+export function asData<T>(v: T, key = ""): T {
+  if (typeof v === "string") return (FREE_TEXT_FIELDS.includes(key) ? wrapText(v) : oneLine(unmark(v))) as T;
+  if (!v || typeof v !== "object" || cleaned.has(v)) return v;
+  const out = Array.isArray(v) ? v.map((x) => asData(x, key)) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, asData(x, k)]));
+  cleaned.add(out);
+  return out as T;
+}
+
+/** A text cut to one line of at most n characters; a wrapped free text is cut inside its marker */
 export function cut(s: string | null | undefined, n = CUT_CHARS): string {
-  const t = (s ?? "").replace(/\s+/g, " ").trim();
-  return t.length > n ? t.slice(0, n - 1) + "…" : t;
+  const raw = s ?? "";
+  const wrapped = isWrapped(raw);
+  const t = oneLine(wrapped ? raw.slice(DATA_OPEN.length, -DATA_CLOSE.length) : raw);
+  const c = t.length > n ? t.slice(0, n - 1) + "…" : t;
+  return wrapped && c ? `${DATA_OPEN}${c}${DATA_CLOSE}` : c;
 }
 export const who = (a?: string) => (a === "claude" ? m.who.claude : a === "ozgur" ? m.who.ozgur : a === "musteri" ? m.who.customer : a ?? "");
 export const join = (...p: (string | number | null | undefined | false)[]) => p.filter((x) => x !== null && x !== undefined && x !== "" && x !== false).join(" · ");
@@ -28,7 +59,7 @@ const LINE: Record<string, (r: Row) => string> = {
   tag: (r) => join(`#${r.id} ${r.name}`, m.line.people(r.people_count), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
   trash: (r) => join(`${r.type} #${r.id} ${r.label}`, m.line.trashWhat(r.what, d(r.deleted_at))),
   source: (r) => join(`#${r.id} ${r.name}`, r.kind, m.line.opportunities(r.opp_count ?? 0), !!r.people_count && m.line.people(r.people_count), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
-  comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: "${cut(r.root_body, CUT_CHARS)}" → ` : ""}${who(r.last_by)} ${d(r.last_at)}: "${cut(r.last_body, CUT_CHARS)}"`, r.count > 1 && m.line.commentCount(r.count), r.last_by === "ozgur" && !r.resolved_at && m.line.unanswered, r.resolved_at && m.line.closed),
+  comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: ${cut(r.root_body, CUT_CHARS)} → ` : ""}${who(r.last_by)} ${d(r.last_at)}: ${cut(r.last_body, CUT_CHARS)}`, r.count > 1 && m.line.commentCount(r.count), r.last_by === "ozgur" && !r.resolved_at && m.line.unanswered, r.resolved_at && m.line.closed),
   setting: (r) => `${r.key}=${r.value}`,
 };
 
@@ -48,7 +79,8 @@ export function useMcpDefs(defs: McpDef[]) {
   skip = new Set([...CORE_SKIP, ...defs.flatMap((d) => d.skip ?? [])]);
 }
 
-export function line(type: string, r: Row): string {
+export function line(type: string, row: Row): string {
+  const r = asData(row);
   // a type whose module is not installed (a list of records that still exist): the name or title is all there is
   return (LINE[type] ?? ((x: Row) => entityDocs[type]?.line(x, mcpFormat) ?? join(`#${x.id}`, x.name ?? x.title)))(r);
 }
@@ -71,7 +103,8 @@ const CORE_SKIP = ["updated_at", "position", "tag_list", "created_at", "person_n
 let skip = new Set<string>(CORE_SKIP);
 
 /** Tek kaydın tam hali + istenen ilişkili kayıtlar */
-export function block(res: { type: string; id: number; row: Row; related: Record<string, any[]>; comments_open?: number }): string {
+export function block(raw: { type: string; id: number; row: Row; related: Record<string, any[]>; comments_open?: number }): string {
+  const res = asData(raw);
   const { type, id, row, related } = res;
   const out: string[] = [];
   if (type === "comment") {
@@ -105,7 +138,8 @@ export function block(res: { type: string; id: number; row: Row; related: Record
 const sec = (title: string, type: string, res: { rows: Row[]; total: number }) =>
   res.total ? `${title} (${res.total}):\n` + res.rows.map((r) => "  " + line(type, r)).join("\n") + (res.total > res.rows.length ? `\n  … +${res.total - res.rows.length}` : "") : "";
 
-export function todayText(t: any): string {
+export function todayText(raw: any): string {
+  const t = asData(raw);
   // core's sections are numbered 100, 200, ...; a module's section has its own number and lands between them
   const core: { at: number; text: string }[] = [
     { at: 100, text: sec(m.today.comments, "comment", t.comments) },
@@ -122,7 +156,10 @@ export function todayText(t: any): string {
 export const KIND_NAME: Record<string, string> = m.kind;
 
 /** Toplu kayıt özeti: eklenen sayısı, mükerrer diye atlananlar (hangi kayıtla çakıştı), hatalılar */
-export function bulkText(kind: string, r: { created: { id: number; label: string; effects: string[] }[]; skipped: { index: number; label: string; existing: { type: string; id: number; label: string; field: string; in_trash: boolean } }[]; failed: { index: number; label: string; error: string }[] }): string {
+type BulkResult = { created: { id: number; label: string; effects: string[] }[]; skipped: { index: number; label: string; existing: { type: string; id: number; label: string; field: string; in_trash: boolean } }[]; failed: { index: number; label: string; error: string }[] };
+
+export function bulkText(kind: string, raw: BulkResult): string {
+  const r = asData(raw);
   const out = [m.bulk.added(r.created.length, kind, r.created.length ? ` (#${r.created[0].id}…#${r.created[r.created.length - 1].id})` : "")];
   const eff = r.created.flatMap((c) => c.effects);
   if (eff.length) out.push(m.bulk.effects(eff.join(" · ")));

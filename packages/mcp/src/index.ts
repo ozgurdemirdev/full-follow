@@ -17,7 +17,7 @@ async function main() {
   const handle = openDb(dbPath);
   const core = createApp(handle, "claude");
 
-  const server = new McpServer({ name: "full-follow", version: "0.1.0" });
+  const server = new McpServer({ name: "full-follow", version: "0.1.0" }, { instructions: m.instructions });
   registerTools(server, core);
 
   process.on("SIGINT", () => { handle.close(); process.exit(0); });

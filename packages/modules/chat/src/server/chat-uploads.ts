@@ -27,7 +27,16 @@ export function attachmentFile(core: Core, id: number) {
   return row;
 }
 
-type Block = { type: "text"; text: string } | { type: "image" | "document"; source: { type: "base64"; media_type: string; data: string } };
+/**
+ * A text attachment as Claude reads it. The file's own `<file` and `</file` are escaped, so a text cannot close its block and go
+ * on as if Özgür had written the rest; the name loses quotes, angle brackets and line breaks for the same reason.
+ */
+export function fileBlock(name: string, text: string): string {
+  const safeName = name.replace(/["<>]/g, "'").replace(/\s+/g, " ");
+  return `<file name="${safeName}">${text.replace(/<(\/?)file/gi, "&lt;$1file")}</file>`;
+}
+
+type Block ={ type: "text"; text: string } | { type: "image" | "document"; source: { type: "base64"; media_type: string; data: string } };
 
 /** Stdin content blocks of one user message: images and PDF as base64, text files inlined (cut at maxTextAttachmentChars) */
 export function attachmentBlocks(core: Core, messageId: number): Block[] {
@@ -37,7 +46,7 @@ export function attachmentBlocks(core: Core, messageId: number): Block[] {
     if (kind === "text") {
       const text = fs.readFileSync(a.path, "utf8");
       const cut = text.length > CHAT_LIMITS.maxTextAttachmentChars;
-      return { type: "text", text: `<file name="${a.name.replace(/"/g, "'")}">${cut ? text.slice(0, CHAT_LIMITS.maxTextAttachmentChars) + m.cutHere : text}</file>` };
+      return { type: "text", text: fileBlock(a.name, cut ? text.slice(0, CHAT_LIMITS.maxTextAttachmentChars) + m.cutHere : text) };
     }
     return { type: kind === "pdf" ? "document" : "image", source: { type: "base64", media_type: a.mime, data: fs.readFileSync(a.path).toString("base64") } };
   });
