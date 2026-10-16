@@ -3,7 +3,7 @@ import { linkTo } from "../app/modules/links";
 import { comments as m } from "../messages.lib";
 import { TARGET } from "./labels";
 
-/** Where a thread stands, from Özgür's side (the states of the Comments board) */
+/** Where a thread stands, from the owner's side (the states of the Comments board) */
 export type CState = "you" | "answered" | "answered_seen" | "claude" | "closed";
 export type CTab = "open" | "you" | "claude" | "closed";
 
@@ -51,13 +51,13 @@ export const tabFromQuery = (search: string): CTab => FILTER_TAB[new URLSearchPa
 export const optionsOf = (t: Thread): string[] => t.comments?.at(-1)?.options ?? [];
 
 /**
- * Last word from Özgür: "Claude'da". Last word from Claude: "Sana soruldu" when it asked (chips, or Claude opened the
- * thread), otherwise a reply to Özgür's own question: "Yeni cevap" while unread (`read_at`), "Cevaplandı" after.
+ * Last word from the owner: "Claude'da". Last word from Claude: "Sana soruldu" when it asked (chips, or Claude opened the
+ * thread), otherwise a reply to the owner's own question: "Yeni cevap" while unread (`read_at`), "Cevaplandı" after.
  * `seen` holds threads opened in this session whose read mark is still on its way.
  */
 export function stateOf(t: Thread, seen: ReadonlySet<number>): CState {
   if (t.resolved_at) return "closed";
-  if (t.last_by === "ozgur") return "claude";
+  if (t.last_by === "owner") return "claude";
   if (optionsOf(t).length || t.comments?.[0]?.created_by === "claude") return "you";
   return t.comments?.at(-1)?.read_at || seen.has(t.id) ? "answered_seen" : "answered";
 }

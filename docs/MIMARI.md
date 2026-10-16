@@ -39,7 +39,7 @@ Amaç: **önce ilişki ve pazarlama takibi.** Full Follow, bir işletmenin kimin
 Kurallar:
 
 - **Tek giriş kapısı core.** Web de MCP de veritabanına doğrudan yazmaz; sadece core servislerini çağırır. "Fırsat kazanıldı, proje açılsın" gibi kurallar tek yerde durur.
-- **Kim yaptı, giriş noktasından gelir.** NestJS her çağrıya `actor = "ozgur"`, MCP sunucusu `actor = "claude"` verir. Kullanıcıdan gelen veride `created_by` alanı kabul edilmez.
+- **Kim yaptı, giriş noktasından gelir.** NestJS her çağrıya `actor = "owner"`, MCP sunucusu `actor = "claude"` verir. Kullanıcıdan gelen veride `created_by` alanı kabul edilmez.
 - **Her önemli adım bir olay yazar.** Core, kaydı değiştirdiği aynı transaction içinde `events` tablosuna satır ekler. Zaman çizelgesi ve rapor buradan okunur.
 - **Tek süreç, tek port.** NestJS hem API'yi hem derlenmiş web dosyalarını sunar. MCP sunucusu ayrı bir küçük süreçtir, aynı `.db` dosyasını açar; WAL modu sayesinde ikisi aynı anda çalışır.
 
@@ -60,7 +60,7 @@ Kurallar:
 
 ## 2. Veri modeli
 
-Ortak alanlar (her tabloda): `id INTEGER PK`, `created_at`, `updated_at`, `created_by ('ozgur'|'claude')`.
+Ortak alanlar (her tabloda): `id INTEGER PK`, `created_at`, `updated_at`, `created_by ('owner'|'claude')`.
 Tarihler ISO metin (`2026-10-09` ya da `2026-10-09T20:55:00Z`). Tutarlar **tam sayı TL** (kuruş yok).
 
 ### 2.1 Kişiler ve firmalar
@@ -170,7 +170,7 @@ Durum hesaplanır, saklanmaz: `paid_amount >= expected` ise ödendi, kısmen öd
 | alan | tip | not |
 |---|---|---|
 | title | text | |
-| assignee | enum | `ozgur` / `claude` |
+| assignee | enum | `owner` / `claude` |
 | due_date | date | |
 | done_at | datetime | boşsa açık |
 | person_id, opportunity_id, project_id | | en fazla biri dolu olabilir, hepsi boş da olabilir |
@@ -345,7 +345,7 @@ her kayıt 1─* comments (target_type + target_id) 1─* comments (parent_id)
 2. **Kazanıldı**: `closed_at` dolar, otomatik proje açılır (`pesinat` aşamasında, fiyat = `estimated_value`), ödeme planı şablondan üretilir, kişiye `musteri` etiketi eklenir. Fırsat zaten projeye bağlıysa ikinci proje açılmaz.
 3. **Kaybedildi**: `lost_reason` zorunlu, `closed_at` dolar.
 4. **Temas otomatik ilerletir**: `bulundu` aşamasındaki fırsata giden temas girilirse aşama `temas` olur; `temas` aşamasındaki fırsata gelen temas girilirse `cevap` olur. Daha ileri aşamalara dokunmaz.
-5. **Taslak akışı**: Claude taslak oluşturur (`bekliyor`). Özgür onaylar; "gönderdim" dediği anda taslak `gonderildi` olur ve aynı bilgilerle bir **giden temas** oluşturulur (`created_by = ozgur`, `draft_id` dolu). Böylece kural 4 de çalışır.
+5. **Taslak akışı**: Claude taslak oluşturur (`bekliyor`). Özgür onaylar; "gönderdim" dediği anda taslak `gonderildi` olur ve aynı bilgilerle bir **giden temas** oluşturulur (`created_by = owner`, `draft_id` dolu). Böylece kural 4 de çalışır.
 6. **Proje aşaması**: peşinat ödemesi tam yapılmadan proje `pesinat`tan ileri geçemez (blok). Geri almak ve `iptal` serbest.
 7. **Ödeme** kaydı olay yazar; kısmi ödeme desteklenir.
 8. **Kim yaptı** her zaman giriş noktasından gelir, girdiden değil.
@@ -453,7 +453,7 @@ Hepsi `core` paketinde, bellek içi SQLite ile, Vitest. Gerisi elle test edilir.
 2. **Kaybedildi için neden zorunlu**: neden yoksa hata, varsa `closed_at` dolu.
 3. **Gönderilen taslak temas olur**: taslak `gonderildi` olunca `draft_id` bağlı tek bir giden temas oluşur ve `bulundu` aşamasındaki fırsat `temas`a geçer.
 4. **Temas otomatik ilerletme sınırları**: gelen temas `temas → cevap` yapar; `teklif` aşamasındaki fırsata temas aşamayı değiştirmez.
-5. **Kim yaptı doğru yazılır**: MCP actor'üyle yapılan işlem `created_by = claude`, girdide `created_by: "ozgur"` gönderilse bile.
+5. **Kim yaptı doğru yazılır**: MCP actor'üyle yapılan işlem `created_by = claude`, girdide `created_by: "owner"` gönderilse bile.
 6. **Fiyat tabanı ve aylık rapor**: verilen ayar değerleri ve ödemelerle taban, tahsilat ve fark doğru hesaplanır; kısmi ödeme ödendiği aya sayılır.
 7. **Kaynak dönüşüm oranı**: kaynak başına kazanılan / kapanan (kazanılan + kaybedilen) doğru; açık fırsatlar paydaya girmez.
 
@@ -540,7 +540,7 @@ full-follow/
       └─ src/              app/, pages/, components/, api/, styles/
 ```
 
-`createCore(db, actor)`: core'u kimin adına çalıştığını bilerek kurar. NestJS `actor="ozgur"`, MCP `actor="claude"` ile çağırır.
+`createCore(db, actor)`: core'u kimin adına çalıştığını bilerek kurar. NestJS `actor="owner"`, MCP `actor="claude"` ile çağırır.
 
 Gerçekleşen yapı (`packages/core/src` altında): `constants.ts`, `dates.ts`, `context.ts` (hata sınıfı, olay yazımı, ham SQL yardımcıları), `db/` (şema, client, `migrations/`), `schemas/index.ts` (Zod), `services/` (people, companies, opportunities, projects, payments, touches, drafts, tasks, comments, settings, queries, reports, today, records, shared), `index.ts` (`createCore`). Tablolar: 15 (companies, people, person_tags, sources, opportunities, touches, drafts, projects, payments, tasks, comments, events, settings + Paket 1: sectors, notes). Paket 1 servisleri: `services/network.ts` (cevap bekleyen, soğuyan, kişi kartı, haftalık sayılar, referans değeri), `services/sectors.ts`, `services/notes.ts`. Migration'lar: `0000` ilk şema, `0001_burly_bucky` (taslak `reason`, ön yüz thread'i), `0002_paket1_network` (sectors, notes, people.instagram/linkedin/sector_id, touches.expects_reply; mevcut giden mesajlar cevap bekliyor sayılır). Haftalık sayılar (`today.week`), taslak nedeni, yorumların mesajlarla tek istekte gelmesi, gzip/br ve günlük yedek ön yüz thread'inde yapıldı; Paket 1 bunları genişletti (kanal kırılımı, yeni kişi).
 
@@ -708,7 +708,7 @@ Test 10'a sektör soft delete kontrolü eklendi. Toplam 19 test.
 
 ## 14. Fırsat detay sayfası (2026-10-13)
 
-Değerli bir fırsatın (ör. "Örnek Pizza") ekibi, teklif sürümleri, dosyaları ve değeri tek sayfada görünür. Eskiden fırsat sadece zaman çizelgesinde ve kanban kartı olarak vardı.
+Değerli bir fırsatın (ör. "Pizza Z") ekibi, teklif sürümleri, dosyaları ve değeri tek sayfada görünür. Eskiden fırsat sadece zaman çizelgesinde ve kanban kartı olarak vardı.
 
 - **Yeni tablolar** (migration `0017_opportunity_page`, mevcut veriye dokunmaz):
   - `opportunity_people` (`opportunity_id`, `person_id`, `role` karar_verici|teknik|ortak|diger, `note`, `created_by`, zaman damgaları; çift tekil). Fırsatın `person_id` alanı ana muhatap olarak kalır, rolsüzdür ve bu tabloda yer almaz.
@@ -722,5 +722,5 @@ Değerli bir fırsatın (ör. "Örnek Pizza") ekibi, teklif sürümleri, dosyala
   - Fırsat, kişi ya da proje silinirken bu tabloların satırları aynı çöp kutusu kaydına girer ve geri yüklemede döner. Dosya silinirken ona bağlı tekliflerin `file_id` alanı boşaltılır, geri yüklenince yeniden bağlanır.
 - **Dosya yükleme** (server): `POST /api/files` (multipart: `file`, `target_type`, `target_id`). Tür baytlardan anlaşılır (png, jpg, gif, webp, pdf; docx, pptx, xlsx zip imzası + uzantı; txt, md, csv metin denetimiyle), uzantıya güvenilmez. Resim en fazla 10 MB, dosya 25 MB (`FILE_LIMITS`). Ortak kısım `packages/server/src/upload.ts` (chat ekleri de aynı `sniff` ve `cleanName` işlevini kullanır). `GET /api/files/:id` indirir (`Content-Disposition`: resim ve PDF sekmede açılır, kalanı iner, `nosniff`).
 - **Uç noktalar**: `GET /api/opportunities/:id?with=people,offers,files,links,tasks,touches,comments` (ekip ana muhatap hariç), `POST /api/opportunity-people` (`opportunity_id, person_id, role, note`), `PATCH|DELETE /api/opportunity-people/:id`, `POST /api/offers`, `PATCH|DELETE /api/offers/:id`, `POST /api/files`, `GET|DELETE /api/files/:id`.
-- **MCP** (yeni araç yok, `offer` kayıt türü eklendi): `get opportunity with:['people','offers','files']` ekip, teklif sürümleri ve dosya listesini kısa satırlarla verir. Ekip yazımı `save opportunity {add_people:[{person:'Deniz', role:'karar_verici', note?}], remove_people:['Ahmet']}` ile (id ile güncellerken; isim ya da id kabul eder). Teklifler `offer` türüyle: `save offer {opportunity:'Örnek Pizza'|id, amount, offered_at?, items:[{label,amount}]?, note?}` sıradaki sürümü açar, `save offer {...} id` günceller, `save offer {accepted:true|false} id` aynı çekirdek kuralla kabul eder ya da kabulü geri alır (tek kabul, fırsat değeri teklif tutarına çekilir), `delete offer id` çöp kutusuna atar (`restore:true` ile döner), `find offer {opportunity_id}` kısa satırlar verir (`#2 v2 · 12.10 · 85.000₺ · kabul edildi · Örnek Pizza`). Dosya yazımı MCP'de yok, web'den yapılır.
+- **MCP** (yeni araç yok, `offer` kayıt türü eklendi): `get opportunity with:['people','offers','files']` ekip, teklif sürümleri ve dosya listesini kısa satırlarla verir. Ekip yazımı `save opportunity {add_people:[{person:'Deniz', role:'karar_verici', note?}], remove_people:['Ahmet']}` ile (id ile güncellerken; isim ya da id kabul eder). Teklifler `offer` türüyle: `save offer {opportunity:'Pizza Z'|id, amount, offered_at?, items:[{label,amount}]?, note?}` sıradaki sürümü açar, `save offer {...} id` günceller, `save offer {accepted:true|false} id` aynı çekirdek kuralla kabul eder ya da kabulü geri alır (tek kabul, fırsat değeri teklif tutarına çekilir), `delete offer id` çöp kutusuna atar (`restore:true` ile döner), `find offer {opportunity_id}` kısa satırlar verir (`#2 v2 · 12.10 · 85.000₺ · kabul edildi · Pizza Z`). Dosya yazımı MCP'de yok, web'den yapılır.
 - **Web**: `/firsatlar/:id` (Pipeline kartı, genel arama, Bugün, kişi ve firma kartları, zaman çizelgesindeki kişi kartı bu sayfaya açılır; `recordPath("opportunity")` de). Üstte özet kartı: tahmini değer (KDV hariç), kaynak ve ilan linki, tıklanır aşama çubuğu (telefonda yatay kayar, `kaybedildi` neden sorar, kazanılınca "Projeye git"), temas ekle. Sol sütunda Teklifler ve Akış (Hepsi, Temaslar, Yorumlar, Aşama süzgeçleri, yorum kutusu), sağ sütunda Sıradaki adım (takip tarihi gecikince vurgulu + en yakın açık görev), Ekip, Dosyalar, Linkler. Telefonda tek sütun: sıradaki adım, teklifler, ekip, dosyalar, linkler, akış. Akış, sıradaki adım ve "neden kaybedildi" sayfası zaman çizelgesi ve satış hunisinden çıkarılıp paylaşıldı (`components/Feed.tsx`, `NextStep.tsx`, `LostReason.tsx`); zaman çizelgesinde aşama olayları artık ayrı "Aşama" süzgecinde.

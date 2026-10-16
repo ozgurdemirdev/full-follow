@@ -10,7 +10,7 @@ suite("people, companies and network together", () => {
   const sql = <T = any>(q: string, ...a: unknown[]) => h.sqlite.prepare(q).all(...a) as T[];
   beforeEach(() => {
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   it("a person saved with a company name opens the company, reuses an existing one and refuses one in the trash", () => {
@@ -108,7 +108,7 @@ suite("people, companies and network together", () => {
     expect(sent.touch.draft_id).toBe(d.id);
     expect(sent.effects).toEqual(expect.arrayContaining([`temas #${sent.touch.id} oluştu`, "Ada: yazıldı", `fırsat #${o.id} → temas`]));
     expect(app.get("opportunity", o.id).row.stage).toBe("temas");
-    const bare = appWithout(["network"], h, "ozgur", clock);
+    const bare = appWithout(["network"], h, "owner", clock);
     const d2 = bare.mod("drafts")!.create({ person_id: p.id, channel: "email", body: "ikinci" }).row;
     const sent2 = bare.mod("drafts")!.markSent(d2.id);
     expect(sent2.touch).toBeUndefined();
@@ -133,7 +133,7 @@ suite("people, companies and network together", () => {
 
     it.each(matrix)("without %s", (...off) => {
       const { c, p, o } = seed();
-      const bare = appWithout(off, h, "ozgur", clock);
+      const bare = appWithout(off, h, "owner", clock);
       expect(bare.modules.list().map((m) => m.key)).not.toEqual(expect.arrayContaining(off));
       // the views and aggregators answer, with less in them
       const today = bare.today(50);
@@ -189,7 +189,7 @@ suite("people, companies and network together", () => {
 
     it("everything switched off at once still deletes what has no dependants and says why the rest cannot go", () => {
       const { p } = seed();
-      const bare = appWithout(everyKey, h, "ozgur", clock);
+      const bare = appWithout(everyKey, h, "owner", clock);
       expect(bare.modules.list()).toEqual([]);
       expect(bare.today(5)).toMatchObject({ comments: { total: 2 } });
       expect(bare.today(5)).not.toHaveProperty("follow_ups");

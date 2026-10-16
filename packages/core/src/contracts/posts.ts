@@ -24,7 +24,7 @@ export interface PostRecord {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** A post with what it brought: the people who came from it, their opportunities, the won ones and their value */

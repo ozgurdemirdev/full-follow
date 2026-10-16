@@ -7,22 +7,20 @@ import { m } from "../messages";
 import { BRIEF_FILE, chatDataDir, MCP_ENTRY, MCP_SERVER_NAME, RUNTIME_FILES } from "./chat.config";
 import { chatCwd } from "./claude-cli";
 
-/** The rules of the panel Claude, written to system.md (their text lives in the messages file) */
-export const SYSTEM_RULES = m.systemRules;
-
 const mcpConfig = (env: Record<string, string>) =>
   JSON.stringify({ mcpServers: { [MCP_SERVER_NAME]: { type: "stdio", command: process.execPath, args: [MCP_ENTRY], env: { FF_DB: defaultDbPath(), ...env } } } }, null, 2);
 
 /**
  * The MCP configs pass the server's own database path, so Claude writes to the same database (also a test copy). A draft run's config
  * starts the host in mode "draft": it registers only the read tools and `draft`, whatever the CLI is told.
+ * system.md: the rules (with the owner's name), the pinned notes, the brief.
  */
-export function writeRuntimeFiles(pinnedNotes = "", brief = ""): void {
+export function writeRuntimeFiles(owner: string | null, pinnedNotes = "", brief = ""): void {
   const dir = chatDataDir();
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, RUNTIME_FILES.mcp), mcpConfig({}));
   fs.writeFileSync(path.join(dir, RUNTIME_FILES.draftMcp), mcpConfig({ [MCP_MODE_ENV]: "draft" }));
-  const parts = [SYSTEM_RULES, pinnedNotes.trim() && m.pinnedNotes(pinnedNotes.trim()), brief.trim() && m.panelBrief(brief.trim())];
+  const parts = [m.systemRules(owner), pinnedNotes.trim() && m.pinnedNotes(pinnedNotes.trim()), brief.trim() && m.panelBrief(brief.trim())];
   fs.writeFileSync(path.join(dir, RUNTIME_FILES.system), `${parts.filter(Boolean).join("\n\n")}\n`);
 }
 

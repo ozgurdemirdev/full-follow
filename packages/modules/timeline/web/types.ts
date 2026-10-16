@@ -41,7 +41,7 @@ export interface TlRow {
 }
 
 export interface TlDayCount {
-  ozgur: number;
+  owner: number;
   claude: number;
 }
 

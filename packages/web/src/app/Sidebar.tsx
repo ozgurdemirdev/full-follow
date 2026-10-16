@@ -6,7 +6,7 @@ import type { Today } from "../api/types";
 import { BoardIcon, type BoardIconName } from "../components/boardIcons";
 import { ago } from "../lib/format";
 import { useIsDesktop } from "../lib/media";
-import { m as kit } from "../messages";
+import { useOwner } from "../lib/owner";
 import { shell } from "../messages.shell";
 import { preloadRoute, useRegistry } from "./modules/registry";
 import { PATHS } from "./routes";
@@ -50,6 +50,7 @@ export function Sidebar() {
   const [path] = useLocation();
   const strip = useRef<HTMLDivElement>(null);
   const today = useQuery<Today>(K.today);
+  const owner = useOwner();
   // the groups and items come from the installed, visible modules (a group without items has no label)
   const groups = useRegistry().nav;
   const isActive = (to: string) => (to === PATHS.today ? path === "/" : path === to || path.startsWith(`${to}/`));
@@ -90,9 +91,9 @@ export function Sidebar() {
       <div className="ff-sidefoot">
         <NavLink item={SETTINGS} active={isActive(PATHS.settings)} />
         <div className="ff-user">
-          <div className="ff-user-avatar">{kit.ownerInitials}</div>
+          <div className="ff-user-avatar">{owner.initials}</div>
           <div className="ff-userinfo">
-            <span className="ff-username">{m.userName}</span>
+            <span className="ff-username">{owner.label}</span>
             <span className="ff-userstatus" title={m.claudeLastTitle}>
               <i />
               <span>{today.data?.claude_last_at ? m.claudeLast(ago(today.data.claude_last_at)) : m.claudeNever}</span>

@@ -54,7 +54,7 @@ export const chatPrefs = {
     return Number.isInteger(n) && n > 0 ? n : null;
   },
   setSession: (id: number | null) => write(KEY.session, id === null ? null : String(id)),
-  /** what Özgür did with a suggestion button: "done" or "no" (kept per reply so F5 does not bring the buttons back) */
+  /** what the owner did with a suggestion button: "done" or "no" (kept per reply so F5 does not bring the buttons back) */
   suggest: (messageId: number) => read(`${KEY.suggest}${messageId}`),
   setSuggest: (messageId: number, v: "done" | "no") => {
     write(`${KEY.suggest}${messageId}`, v);

@@ -99,7 +99,7 @@ export interface DraftRunsApi {
   /** stores a queued request (validated); the caller checks for a twin first */
   enqueue(input: unknown, taskId: number | null): DraftRun;
   get(id: number): DraftRun;
-  /** queued and running requests, plus the finished ones whose draft still waits for Özgür (the buttons show "Taslak hazır"), newest first */
+  /** queued and running requests, plus the finished ones whose draft still waits for the owner (the buttons show "Taslak hazır"), newest first */
   live(): DraftRun[];
   queuedCount(): number;
   /** the oldest queued request, or null */
@@ -110,7 +110,7 @@ export interface DraftRunsApi {
   /** the draft a run saved: the first draft of Claude's after its start, preferring one on the request's record; null when it saved none */
   findDraft(id: number): number | null;
   markDone(id: number, draftId: number): DraftRun;
-  /** a queued or running request fails with the reason shown to Özgür */
+  /** a queued or running request fails with the reason shown to the owner */
   markFailed(id: number, reason: string): DraftRun;
 }
 

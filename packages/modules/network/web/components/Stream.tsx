@@ -75,7 +75,7 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
           <span>{ago(item.at)}</span>
           {th?.resolved_at ? <span>· {m.common.resolved}</span> : null}
           {t ? <Tools label={m.stream.touch} onEdit={() => openSheet("touch", { edit: t.id })} onDelete={() => void remove(`/touches/${t.id}`, m.stream.touch).catch(() => {})} /> : null}
-          {n ? <Tools label={m.stream.note} onEdit={n.created_by === "ozgur" ? () => setDraft(n.body) : undefined} onDelete={() => void remove(`/notes/${n.id}`, m.stream.note).catch(() => {})} /> : null}
+          {n ? <Tools label={m.stream.note} onEdit={n.created_by === "owner" ? () => setDraft(n.body) : undefined} onDelete={() => void remove(`/notes/${n.id}`, m.stream.note).catch(() => {})} /> : null}
         </span>
         {n && draft !== null ? <NoteEdit id={n.id} value={draft} onChange={setDraft} onDone={() => setDraft(null)} /> : <span className="whitespace-pre-line text-base leading-normal text-text-body">{t?.summary ?? n?.body ?? c?.body}</span>}
         {t?.outcome ? <span className="text-sm text-text-secondary">→ {t.outcome}</span> : null}

@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from "@nestjs/common";
 import { APP_TOKEN, intId, listOpts, withList, type Core } from "@fullfollow/core";
 
-/** Kendi projelerim: Özgür'ün kendi ürünleri (satılabilirlik, sektörler, projeye bağlı fikirler) */
+/** Kendi projelerim: kullanıcının kendi ürünleri (satılabilirlik, sektörler, projeye bağlı fikirler) */
 @Controller("api/own-projects")
 export class OwnProjectsController {
   constructor(@Inject(APP_TOKEN) private app: Core) {}

@@ -4,7 +4,7 @@ export const m = defineMessages({
   tr: {
     label: "Zaman çizelgesi",
     sub: "Sen ve Claude ne yaptınız, kayıt kayıt",
-    actor: { ozgur: "Sen", claude: "Claude" },
+    actor: { owner: "Sen", claude: "Claude" },
     types: { touch: "Temas", payment: "Ödeme", task: "Görev", stage: "Aşama", draft: "Taslak", comment: "Yorum" },
     records: {
       project: "Proje", person: "Kişi", company: "Firma", opportunity: "Fırsat", ownProject: "Kendi projem",
@@ -14,7 +14,7 @@ export const m = defineMessages({
       today: (date: string) => `Bugün · ${date}`,
       yesterday: (date: string) => `Dün · ${date}`,
       titled: (weekday: string, date: string) => `${weekday} · ${date}`,
-      sum: (ozgur: number, claude: number) => `${ozgur} sen · ${claude} Claude`,
+      sum: (owner: number, claude: number) => `${owner} sen · ${claude} Claude`,
     },
     focus: {
       events: (n: number) => `${n} olay`,
@@ -67,7 +67,7 @@ export const m = defineMessages({
       addComment: "Yorumu ekle",
       commentAdded: "Yorum eklendi",
     },
-    feedTouch: { meeting: "Görüşme", call: "Arama", reply: "Cevap", message: "Mesaj", approvedDraft: "Claude taslağı · Özgür onayladı" },
+    feedTouch: { meeting: "Görüşme", call: "Arama", reply: "Cevap", message: "Mesaj", approvedDraft: "Claude taslağı · sen onayladın" },
     feedGroups: { touches: "Temaslar", comments: "Yorumlar", stage: "Aşama", tasks: "Görevler", payments: "Ödemeler", other: "Diğer" },
   },
 });

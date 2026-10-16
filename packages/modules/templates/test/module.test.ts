@@ -30,7 +30,7 @@ describe("templates as a module", () => {
 
   it("deleting a template keeps its drafts and only empties their template link; restoring ties them back", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const t = app.templates.create({ name: "T", body: "x" }).row;
     sentDraft(h, t.id, "a@x.example", false);
     expect(app.templates.get(t.id)).toMatchObject({ used: 1, sent: 1 });
@@ -42,7 +42,7 @@ describe("templates as a module", () => {
 
   it("render fills {ad}, {ad_soyad}, {firma} and {sektor} for the recipient and leaves unknown placeholders alone", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const t = app.templates.create({ name: "T", sector: "Sağlık > Diş hekimi", body: "Merhaba {ad} ({ad_soyad}), {firma} için {sektor} {bilinmeyen}" }).row;
     const sector = (h.sqlite.prepare("SELECT id FROM sectors WHERE name = 'Diş hekimi'").get() as any).id;
     const ada = person(h, "Dr. Ada Lovelace", { company: "Gülüş Diş", sector });
@@ -54,7 +54,7 @@ describe("templates as a module", () => {
 
   it("suggest ranks the templates that fit the recipient and channel: same channel over all channels, the recipient's sector over none, others are left out", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const mk = (b: Record<string, unknown>) => app.templates.create({ body: "x", ...b }).row;
     const general = mk({ name: "Genel" });
     const email = mk({ name: "E-posta", channel: "email" });
@@ -76,7 +76,7 @@ describe("templates as a module", () => {
 
   it("statistics count the drafts made from a template, the sent ones and the answered ones; a rate over few messages is early", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const a = app.templates.create({ name: "A", channel: "email", body: "x" }).row;
     const b = app.templates.create({ name: "B", channel: "email", body: "y" }).row;
     for (let i = 0; i < 22; i++) sentDraft(h, a.id, `a${i}@x.example`, i < 10);
@@ -111,7 +111,7 @@ describe("templates as a module", () => {
   it("the panel chat chip shows the stored text and, for a person, the text filled for them", () => {
     const h = openDb(":memory:");
     const people = defineModule({ key: "people", label: "P", api: () => ({ get: (id: number) => ({ id, name: "Ada Lovelace" }) }) });
-    const app = appFor(h, "ozgur", clock, [people]);
+    const app = appFor(h, "owner", clock, [people]);
     const t = app.templates.create({ name: "T", body: "Merhaba {ad}" }).row;
     const ada = person(h, "Ada Lovelace");
     const card = app.ctx.types.chatCard("template")!;

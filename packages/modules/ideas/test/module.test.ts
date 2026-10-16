@@ -8,7 +8,7 @@ const events = (h: ReturnType<typeof openDb>) => h.sqlite.prepare("SELECT type F
 describe("ideas as a module", () => {
   it("the money note is saved and edited; the verdict reads the share of answers that were interested, with its own sentence per case", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const idea = app.ideas.create({ title: "Klinik botu", money_note: "₺2.500 × 10 klinik" }).row;
     expect(app.get("idea", idea.id).row).toMatchObject({ money_note: "₺2.500 × 10 klinik", told: 0, answered: 0, interest_share: null, rate_tone: null });
     expect(app.get("idea", idea.id).row.verdict).toBe("Karar için az. En az 3 kişiden cevap al; 0 kişi henüz dönmedi.");
@@ -61,7 +61,7 @@ describe("ideas as a module", () => {
 
   it("two levels only, and an idea that belongs to a project is checked against the own-projects module", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [fakeProjects()]);
+    const app = appFor(h, "owner", clock, [fakeProjects()]);
     const p = project(h);
     const top = app.ideas.create({ title: "Üst" }).row;
     const sub = app.ideas.create({ title: "Alt", parent_id: top.id }).row;
@@ -87,7 +87,7 @@ describe("ideas as a module", () => {
     expect(app.ideas.update(b.id, { own_project_id: null }).row).toMatchObject({ own_project_id: null, done_at: null, position: 0 });
     expect(app.ideas.update(a.id, { own_project_id: null }).effects).toEqual(["fikir → Para kazanma fikirleri"]);
     // without the own-projects module a project cannot be given
-    const bare = appFor(h, "ozgur", clock);
+    const bare = appFor(h, "owner", clock);
     expect(() => bare.ideas.create({ title: "q", own_project_id: p })).toThrow(/"own-projects" modülü kurulu değil/);
     // but an idea that already sits in a project can still be renamed
     expect(bare.ideas.update(mine.id, { title: "Yeni ad" }).row.title).toBe("Yeni ad");
@@ -95,7 +95,7 @@ describe("ideas as a module", () => {
 
   it("interest: a person is linked once per idea, told first, interest and note updated later, removal goes to the trash and comes back", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [fakePeople()]);
+    const app = appFor(h, "owner", clock, [fakePeople()]);
     const idea = app.ideas.create({ title: "Klinik botu" }).row;
     const ada = person(h);
     const first = app.ideas.saveInterest({ idea_id: idea.id, person_id: ada });
@@ -123,7 +123,7 @@ describe("ideas as a module", () => {
 
   it("a touch about an idea links its person to it (touch.created and touch.updated), keeping an interest that was set", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const idea = app.ideas.create({ title: "Klinik botu" }).row;
     const ada = person(h);
     const t = touch(h, ada);
@@ -146,7 +146,7 @@ describe("ideas as a module", () => {
 
   it("a person, touch or own project that goes to the trash takes or frees what points at it", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const p = project(h);
     const idea = app.ideas.create({ title: "Fikir" }).row;
     h.sqlite.prepare("UPDATE ideas SET own_project_id = ? WHERE id = ?").run(p, idea.id);
@@ -171,7 +171,7 @@ describe("ideas as a module", () => {
 
   it("an own project takes an idea over: the sub ideas move into it, the idea goes to the trash", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const top = app.ideas.create({ title: "Üst", sectors: ["Yazılım"] }).row;
     const a = app.ideas.create({ title: "A", parent_id: top.id }).row;
     const b = app.ideas.create({ title: "B", parent_id: top.id }).row;
@@ -188,7 +188,7 @@ describe("ideas as a module", () => {
 
   it("comments hang on ideas, the panel chat shows a chip, and the project's ideas list with their priority order", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [fakeProjects()]);
+    const app = appFor(h, "owner", clock, [fakeProjects()]);
     const p = project(h);
     const idea = app.ideas.create({ title: "Klinik botu", stage: "demo" }).row;
     app.save("comment", { target_type: "idea", target_id: idea.id, body: "güzel" });

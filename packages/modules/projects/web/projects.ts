@@ -69,7 +69,7 @@ export interface ProjectView {
   pays: PayView[];
   note: string | null;
   comments: number;
-  /** the Claude request offered on the row: a payment reminder, or a plan when the work waits on Özgür */
+  /** the Claude request offered on the row: a payment reminder, or a plan when the work waits on the owner */
   ask: { title: string; label: string; ok: string; requested: boolean };
 }
 
@@ -79,7 +79,7 @@ const planTitle = m.ask.planTitle;
 /** The request for Claude to write a payment reminder for a project (the draft shows up in Taslaklar) */
 export const reminderRequest = (projectId: number, name: string): ClaudeRequest => ({ title: reminderTitle(name), target: { project_id: projectId }, ok: m.ask.reminderOk });
 
-/** Claude's own tasks (a requested draft or plan) never put a project on hold for Özgür or the client */
+/** Claude's own tasks (a requested draft or plan) never put a project on hold for the owner or the client */
 const humanTask = (t: ProjectTask) => t.assignee !== "claude";
 const stepIndex = (milestone: string) => PROJECT_STEPS.indexOf(milestone as ProjectStage);
 const byMilestone = (a: Payment, b: Payment) => stepIndex(a.milestone) - stepIndex(b.milestone) || a.id - b.id;

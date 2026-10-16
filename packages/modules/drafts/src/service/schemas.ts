@@ -22,7 +22,7 @@ export const draftCreate = z.strictObject({
 export const draftUpdate = patch({ channel: z.enum(CHANNELS), subject, body: text, reason: optText, template_id: id.nullable() });
 
 /**
- * Rejecting: a note (the reason Claude learns from) or an explicit `no_reason` when Özgür gave none; a bare text is a note.
+ * Rejecting: a note (the reason Claude learns from) or an explicit `no_reason` when the owner gave none; a bare text is a note.
  * Asking for no reason is a flag of its own, so no note text has to be matched later to tell the two apart.
  */
 export const draftReject = z.preprocess(

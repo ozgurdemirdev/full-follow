@@ -1,8 +1,9 @@
 // Ekranda görünen adlar ve token sınıf eşlemeleri.
 // Tailwind sınıfları derleme anında tarandığı için tam sınıf adları burada açıkça yazılır.
 import { labels } from "../messages.labels";
+import { ownerLabel } from "./owner";
 
-export type Actor = "ozgur" | "claude";
+export type Actor = "owner" | "claude";
 export type OppStage = "bulundu" | "temas" | "cevap" | "gorusme" | "teklif" | "kazanildi" | "kaybedildi";
 export type ProjectStage = "pesinat" | "tasarim_onayi" | "test_surumu" | "yayin" | "teslim" | "bakim" | "iptal";
 export type PostFormat = "metin" | "gorsel" | "video" | "karusel";
@@ -26,7 +27,13 @@ export const STATUS_TONE: Record<string, Tone> = { yazilmadi: "neutral", yazildi
 
 export const TARGET: Record<string, string> = labels.target;
 
-export const ACTOR: Record<Actor, string> = labels.actor;
+/** Author names: the owner's is read each time a label is drawn, so it follows the name given in the setup or in Settings */
+export const ACTOR: Record<Actor, string> = {
+  get owner() {
+    return ownerLabel();
+  },
+  claude: labels.actor.claude,
+};
 
 // ---- Paket 2: pazarlama ----
 export const PLATFORM: Record<string, string> = labels.platform;
@@ -35,7 +42,7 @@ export const IDEA_STAGE: Record<string, string> = labels.ideaStage;
 
 /** Yazar çipi */
 export const WHO_CLS: Record<Actor, string> = {
-  ozgur: "bg-author-ozgur-bg text-author-ozgur-fg",
+  owner: "bg-author-owner-bg text-author-owner-fg",
   claude: "bg-claude-bg text-claude-soft",
 };
 
@@ -70,7 +77,7 @@ export const STAGE_TONE: Record<OppStage, Tone> = {
   bulundu: "neutral", temas: "opportunity", cevap: "opportunity", gorusme: "source", teklif: "payment", kazanildi: "success", kaybedildi: "warning",
 };
 
-/** Who a task belongs to: Özgür, Claude, or the client (the project then waits on the client) */
+/** Who a task belongs to: the owner, Claude, or the client (the project then waits on the client) */
 export type TaskAssignee = Actor | "musteri";
 export const ASSIGNEE: Record<TaskAssignee, string> = labels.assignee;
 

@@ -23,7 +23,7 @@ describe("network as a module", () => {
   it("writing a touch emits touch.created with the row and the subject; hooks of other modules add effects before core's own rules", () => {
     const seen: TouchCreated[] = [];
     const probe = defineModule({ key: "probe", label: "Probe", hooks: { "touch.created": (_ctx, p: TouchCreated) => { seen.push(p); return ["probe ran"]; } } });
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [probe]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [probe]);
     const r = app.network.touches.create(mail("ilk"));
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({ touch: { id: r.row.id, summary: "ilk" }, subject: { person_id: null, contact: "info@x.example" }, cold: true, input: { channel: "email", direction: "giden", kind: "mesaj" } });
@@ -37,19 +37,19 @@ describe("network as a module", () => {
   it("editing a touch emits touch.updated with the fields that were sent; a failing hook rolls the edit back", () => {
     const seen: TouchUpdated[] = [];
     const probe = defineModule({ key: "probe", label: "Probe", hooks: { "touch.updated": (_c, p: TouchUpdated) => { seen.push(p); } } });
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [probe]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [probe]);
     const t = app.network.touches.create(mail("ilk")).row;
     app.network.touches.update(t.id, { summary: "düzeltildi" });
     expect(seen[0]).toMatchObject({ touch: { id: t.id, summary: "düzeltildi" }, changes: { summary: "düzeltildi" } });
     const boom = defineModule({ key: "boom", label: "Boom", hooks: { "touch.updated": () => { throw new FFError("rule", "no edits"); } } });
-    const strict = appFor(openDb(":memory:"), "ozgur", clock, [boom]);
+    const strict = appFor(openDb(":memory:"), "owner", clock, [boom]);
     const u = strict.network.touches.create(mail("ilk")).row;
     expect(() => strict.network.touches.update(u.id, { summary: "x" })).toThrow("no edits");
     expect(strict.get("touch", u.id).row.summary).toBe("ilk");
   });
 
   it("without the people and companies modules nothing moves a status; the module still counts touches", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     expect(app.network.touches.create(mail("a")).effects).toEqual([]);
     expect(app.network.stats().size).toBe(0);
     expect(app.network.weekStats()).toMatchObject({ week_start: "2026-10-12", this_week: { sent: 1, replies: 0, reply_rate: 0 }, open_offers: 0 });
@@ -58,7 +58,7 @@ describe("network as a module", () => {
   });
 
   it("the Today view gets the network lists and the week numbers; the touch relation loads on a few types", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [fakeIdeas()]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [fakeIdeas()]);
     app.network.touches.create(mail("a"));
     app.network.touches.create(mail("b", { direction: "gelen" }));
     const today = app.today();
@@ -70,7 +70,7 @@ describe("network as a module", () => {
   });
 
   it("activity buckets, a bad period is refused", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     app.network.touches.create(mail("a"));
     const a = app.network.activity("day");
     expect(a.buckets).toHaveLength(14);
@@ -79,10 +79,10 @@ describe("network as a module", () => {
   });
 
   it("an idea, opportunity or project that is deleted lets go of its touches; the touches stay", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock, [fakeIdeas()]);
+    const app = appFor(openDb(":memory:"), "owner", clock, [fakeIdeas()]);
     const idea = app.save("idea", { title: "Klinik botu" }).row;
     // an idea link needs a person: write the row by hand (the people module is not installed here)
-    app.ctx.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES ('Ada', ?, ?, 'ozgur')").run(clock.now(), clock.now());
+    app.ctx.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES ('Ada', ?, ?, 'owner')").run(clock.now(), clock.now());
     const t = app.network.touches.create({ person_id: 1, channel: "email", direction: "giden", summary: "fikir", idea_id: idea.id }).row;
     expect(app.find("touch", { filter: { idea_id: idea.id } }).total).toBe(1);
     app.remove("idea", idea.id);

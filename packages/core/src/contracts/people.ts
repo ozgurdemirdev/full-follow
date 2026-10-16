@@ -28,7 +28,7 @@ export interface PersonRecord {
   influence: Influence | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** A person as listed: the row plus names, labels and the touch state (the touch parts are empty when the network module is missing) */

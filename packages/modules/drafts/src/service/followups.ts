@@ -70,7 +70,7 @@ export function followupsDue(ctx: Ctx): FollowupDue[] {
 
 /**
  * Zamanı gelen her takip için onaya taslak bırakır (şablon: muhatabın kanal ve sektörüne uyan "takip" şablonu, yoksa varsayılan metin).
- * Tekrar çağrılırsa aynı adım için ikinci taslak açılmaz. Onay ve gönderme yine Özgür'de.
+ * Tekrar çağrılırsa aynı adım için ikinci taslak açılmaz. Onay ve gönderme yine kullanıcıda.
  * The template comes from the templates module when it is installed.
  */
 export function generateFollowups(ctx: Ctx) {

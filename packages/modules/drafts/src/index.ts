@@ -12,8 +12,8 @@ const FOLLOWUP_FIRST_RUN_MS = 3000;
 const FOLLOWUP_EVERY_MS = 60 * 60 * 1000;
 
 /**
- * Drafts: drafts Claude (or Özgür) leaves for approval, the follow-up sequence (unanswered messages become follow-up drafts), the daily
- * send limits per channel, the email warmup and the warnings when one is passed. Only Özgür approves, rejects and marks "sent";
+ * Drafts: drafts Claude (or the owner) leaves for approval, the follow-up sequence (unanswered messages become follow-up drafts), the daily
+ * send limits per channel, the email warmup and the warnings when one is passed. Only the owner approves, rejects and marks "sent";
  * a sent draft writes its touch through the network module. Templates come from the templates module (a draft without one still works).
  * Its table (drafts) stays in core's schema; removing this package leaves the rows in place.
  */
@@ -69,7 +69,7 @@ export default defineModule({
         drafts: drafts.list({ limit, filter: { status: "bekliyor" } }),
         followups: { rows: due.slice(0, limit), total: due.length },
         quota: drafts.quota(),
-        // what Özgür taught through his reject notes, for the next drafts (left out while there is none)
+        // what the owner taught through the reject notes, for the next drafts (left out while there is none)
         ...(rules.length ? { draft_rules: rules } : {}),
       };
     },

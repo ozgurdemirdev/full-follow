@@ -4,6 +4,7 @@ import { PATHS } from "../../app/routes";
 import { SHOWN } from "../../lib/dashboard";
 import { ago } from "../../lib/format";
 import { ACTOR, TARGET } from "../../lib/labels";
+import { useOwner } from "../../lib/owner";
 import { m as kit } from "../../messages";
 import { comments } from "../../messages.comments";
 import { Card } from "../ui";
@@ -11,17 +12,18 @@ import { useExpand } from "../ExpandOverlay";
 import { DashOverlay, type ExRow } from "./DashOverlay";
 
 const m = comments.card;
-const WHO_CHIP = { ozgur: "bg-accent-soft-bg text-accent", claude: "bg-claude-bg text-claude-soft" };
-const WAITING = { claude: m.waitingOnYou, ozgur: m.waitingOnClaude };
+const WHO_CHIP = { owner: "bg-accent-soft-bg text-accent", claude: "bg-claude-bg text-claude-soft" };
+const WAITING = { claude: m.waitingOnYou, owner: m.waitingOnClaude };
 
 /** "Yorumlar": the open threads, who wrote last and whose answer is waited for */
 export function CommentsCard() {
   const ex = useExpand();
   const threads = useThreads();
+  const owner = useOwner();
   const open = threads.rows.filter((t) => !t.resolved_at);
   const mine = open.filter((t) => t.last_by === "claude").length;
   const rows: ExRow[] = open.map((t) => ({
-    key: t.id, lead: t.last_by === "claude" ? comments.claudeInitials : kit.ownerInitials, title: t.target_label, sub: t.last_body, right: ago(t.last_at),
+    key: t.id, lead: t.last_by === "claude" ? comments.claudeInitials : owner.initials, title: t.target_label, sub: t.last_body, right: ago(t.last_at),
     tag: t.last_by === "claude" ? m.tagYou : m.tagClaude, dot: t.last_by === "claude" ? "bg-warning" : "bg-claude", href: PATHS.comments,
   }));
 

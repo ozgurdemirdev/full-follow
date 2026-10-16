@@ -29,7 +29,7 @@ export class DraftsController {
     return this.drafts.update(intId(id), b);
   }
 
-  /** Taslak onayı, ret ve "gönderdim" sadece Özgür'de (web); MCP'de yok */
+  /** Taslak onayı, ret ve "gönderdim" sadece kullanıcıda (web); MCP'de yok */
   @Post(":id/approve")
   approve(@Param("id") id: string) {
     return this.drafts.approve(intId(id));

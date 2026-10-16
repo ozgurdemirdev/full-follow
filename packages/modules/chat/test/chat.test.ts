@@ -8,7 +8,7 @@ describe("Panel chat", () => {
   let sql: <T = any>(q: string, ...a: unknown[]) => T[];
   beforeEach(() => {
     const h = openDb(":memory:");
-    c = { chat: createCore(h, "ozgur", clock, createRegistry([chat])).mod("chat")! };
+    c = { chat: createCore(h, "owner", clock, createRegistry([chat])).mod("chat")! };
     sql = (q, ...a) => h.sqlite.prepare(q).all(...a) as any[];
   });
 
@@ -79,13 +79,13 @@ describe("Panel chat", () => {
 
   it("28. silinen sohbet çöp kutusunda görünür ve çekirdeğin restore'u ile geri gelir; modül yokken çöp kutusunda yok", () => {
     const h = openDb(":memory:");
-    const core = createCore(h, "ozgur", clock, createRegistry([chat]));
+    const core = createCore(h, "owner", clock, createRegistry([chat]));
     const s = core.mod("chat")!.createSession();
     expect(core.mod("chat")!.deleteSession(s.id).trash).toEqual({ type: "chat_session", id: s.id });
     expect(core.trash.list()).toEqual([expect.objectContaining({ type: "chat_session", id: s.id, what: "sohbet", trash_id: null })]);
     expect(core.restore("chat_session", s.id)).toMatchObject({ label: "Yeni sohbet" });
     expect(core.trash.list()).toEqual([]);
-    const bare = createCore(h, "ozgur", clock);
+    const bare = createCore(h, "owner", clock);
     core.mod("chat")!.deleteSession(s.id);
     expect(bare.trash.list()).toEqual([]);
     expect(() => bare.restore("chat_session", s.id)).toThrow(/bilinmeyen tür "chat_session"/);

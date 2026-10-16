@@ -30,7 +30,7 @@ export * from "./modules";
 export type * from "./contracts";
 
 // ---- What a module's services and server code build on ("service kit") ----
-export { assertOzgur, emit as writeEvent, keptRow, keptRows, money, norm, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
+export { actorName, assertOwner, emit as writeEvent, keptRow, keptRows, money, norm, ownerName, page, parse, row, rows, stamp, type Ctx, type EventInput } from "./context";
 export { placeInGroup, renumberGroup, requireRow, requireTarget, resolveRef, truncate, link as eventLink } from "./services/shared";
 export { filesOf } from "./services/files";
 export { announceTrashed, Bin } from "./services/trash";
@@ -61,7 +61,7 @@ export interface BulkResult {
 }
 
 /**
- * Çekirdek: web (NestJS, actor="ozgur") ve MCP (actor="claude") sadece buradan geçer.
+ * Çekirdek: web (NestJS, actor="owner") ve MCP (actor="claude") sadece buradan geçer.
  * `actor` giriş noktasından gelir; girdideki created_by asla kabul edilmez.
  */
 export function createCore(handle: DbHandle, actor: Actor, clock: Clock = systemClock, registry: ModuleRegistry = createRegistry()) {

@@ -1,9 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { FFError, MCP_MODE_TOOLS, type Core, type McpMode } from "@fullfollow/core";
+import { FFError, MCP_MODE_TOOLS, ownerName, type Core, type McpMode } from "@fullfollow/core";
 import { z } from "zod";
 import { describer } from "./describe";
 import { FIND_LIMIT_MAX, OPENED_LABEL_CHARS, TODAY_ROWS } from "./constants";
-import { block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs } from "./format";
+import { block, bulkText, kindName, list, mcpFormat, ok, todayText, useMcpDefs, useOwnerName } from "./format";
 import { m } from "./messages";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
@@ -23,7 +23,7 @@ const idOrName = z.union([z.number(), z.string()]);
 const obj = z.record(z.string(), z.any());
 /**
  * 12 araç (modüllerin kendi araçları ayrıca). Tanım metinleri her istekte bağlama girdiği için kısa tutulur.
- * Taslak onaylama ve "gönderildi" işaretleme MCP'de yoktur (sadece Özgür).
+ * Taslak onaylama ve "gönderildi" işaretleme MCP'de yoktur (sadece kullanıcı).
  */
 export function registerTools(server: McpServer, core: Core, mode?: McpMode) {
   // a mode (a background draft run) registers only its tools: the others do not exist for that client, whatever it asks for
@@ -35,6 +35,7 @@ export function registerTools(server: McpServer, core: Core, mode?: McpMode) {
   // what the installed modules add: record formatting, description fragments, tools of their own
   const defs = core.modules.list().flatMap((mod) => (mod.mcp ? [mod.mcp] : []));
   useMcpDefs(defs);
+  useOwnerName(() => ownerName(core.ctx));
   const describe = describer(defs);
   const openable = new Set([...CORE_OPENABLE, ...defs.flatMap((d) => Object.entries(d.entities ?? {}).filter(([, e]) => e.openable).map(([type]) => type))]);
 

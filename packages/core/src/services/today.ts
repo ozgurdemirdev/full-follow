@@ -23,7 +23,7 @@ export function todayService(ctx: Ctx) {
     const o = { limit };
     return {
       date,
-      // Claude'un cevap vermesi gereken yorumlar (son yorum Özgür'den)
+      // Claude'un cevap vermesi gereken yorumlar (son yorum kullanıcıdan)
       comments: q.comments({ ...o, filter: { unanswered: true } }),
       window_end: addDays(date, 7),
       // Claude'un MCP üzerinden yaptığı son işlem (bağlı mı, ne zaman çalıştı)
