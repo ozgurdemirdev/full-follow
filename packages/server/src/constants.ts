@@ -38,3 +38,12 @@ export const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 export const SAFE_FETCH_SITES = ["same-origin", "none"];
 /** Body types a data changing request may declare (a form or text body is how another site would send one without a preflight) */
 export const ALLOWED_BODY_TYPES = ["application/json", "multipart/form-data"];
+
+/** Content-Security-Policy of the panel and every API answer: only this server's own files; images also from data: and blob: (previews, the mascot's textures) */
+export const APP_CSP = [
+  "default-src 'self'", "script-src 'self'", "style-src 'self'", "img-src 'self' data: blob:", "font-src 'self'", "connect-src 'self'",
+  "media-src 'self' blob:", "worker-src 'self' blob:", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
+].join("; ");
+/** The Swagger UI page and its files: the same, except that Swagger UI writes inline styles */
+export const DOCS_PATH = "/api/docs";
+export const DOCS_CSP = APP_CSP.replace("style-src 'self'", "style-src 'self' 'unsafe-inline'");

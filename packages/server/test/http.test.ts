@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { APP_CSP, DOCS_CSP } from "../src/constants";
 import { hostAllowed } from "../src/guard";
 import { precompressed } from "../src/static";
 import { available, installed, JSON_HEADERS, startServer, type TestServer } from "./helpers";
@@ -120,6 +121,18 @@ describe("request guard", () => {
       }
     }
     expect((await server.request("/api/health", { headers: { origin: "https://evil.example", "sec-fetch-site": "cross-site" } })).status).toBe(200);
+  });
+
+  it("every answer carries the security headers, refusals included; the Swagger UI page gets its own policy", async () => {
+    for (const r of [await server.request("/api/health"), await server.request("/api/health", { headers: { host: "evil.example" } }), await server.request("/api/files/999999")]) {
+      expect(r.headers["content-security-policy"]).toBe(APP_CSP);
+      expect(r.headers).toMatchObject({ "x-frame-options": "DENY", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" });
+    }
+    expect(APP_CSP).toMatch(/default-src 'self'.*frame-ancestors 'none'/);
+    expect(APP_CSP).not.toContain("unsafe");
+    expect((await server.request("/api/docs")).headers["content-security-policy"]).toBe(DOCS_CSP);
+    expect((await server.request("/api/docs/init.js")).headers["content-security-policy"]).toBe(DOCS_CSP);
+    expect((await server.request("/api/docsx")).headers["content-security-policy"]).toBe(APP_CSP);
   });
 
   it("FF_ALLOWED_HOSTS adds names", async () => {
