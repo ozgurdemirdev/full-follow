@@ -16,6 +16,8 @@ export const m = defineMessages({
     listenFailed: "Sunucu dinlemeye başlayamadı",
     ready: (url: string) => `\n  Full Follow hazır: ${url}\n`,
     phone: (address: string, port: number) => `  Telefondan (aynı ağ): http://${address}:${port}`,
+    openWithoutPassword: (host: string) => `FF_HOST=${host} şifresiz açılamaz: ağdaki herkes panele girebilirdi`,
+    openWithoutPasswordHint: ".env dosyasına FF_PASSWORD yaz ya da FF_HOST satırını sil (şifresiz Full Follow sadece bu bilgisayardan açılır)",
     noPassword: "  Şifre (FF_PASSWORD) tanımlı değil: sadece bu bilgisayardan açılır.",
     webNotBuilt: "  Web arayüzü derlenmemiş; npm start ile derle (API: /api/health)",
     stopHint: "  Kapatmak için Ctrl+C.\n",

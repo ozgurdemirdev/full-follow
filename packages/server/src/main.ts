@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
-import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS } from "./constants";
+import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS, LOOPBACK_HOSTS } from "./constants";
 import { m } from "./messages.start";
 
 const red = (s: string) => (process.stdout.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
@@ -60,6 +60,8 @@ async function bootstrap() {
   const port = Number(process.env.FF_PORT || DEFAULT_PORT);
   // Şifre varsa yerel ağa (telefon) açılır; yoksa sadece bu bilgisayara
   const host = process.env.FF_HOST || (mods.authEnabled() ? "0.0.0.0" : "127.0.0.1");
+  // without a password nothing but this computer may reach the panel: no setting opens it to the network
+  if (!mods.authEnabled() && !LOOPBACK_HOSTS.includes(host)) die(m.openWithoutPassword(host), m.openWithoutPasswordHint);
   const url = `http://localhost:${port}`;
 
   let app: NestExpressApplication;
