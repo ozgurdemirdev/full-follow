@@ -10,18 +10,21 @@ export const REPO_ROOT = path.resolve(__dirname, "../../../../..");
 /** Runtime files of the chat (mcp.json, system.md, uploads) sit next to the database in use, so each FF_DB has its own folder; git ignored. A function: FF_DB may come from .env, which loads after this file */
 export const chatDataDir = () => path.join(path.dirname(defaultDbPath()), "chat");
 export const MCP_ENTRY = path.join(REPO_ROOT, "packages", "mcp", "dist", "index.js");
-/** Business folder whose CLAUDE.md gives the panel Claude its context; file tools stay disabled */
+/** Business folder whose CLAUDE.md gives the panel Claude its context; the file tools never reach it unless the owner allows it as a folder */
 export const DEFAULT_CHAT_CWD = "C:/Projects/Networking";
 
 export const ENV = { cli: "FF_CLAUDE_CLI", cwd: "FF_CHAT_CWD", configDir: "FF_CLAUDE_CONFIG_DIR" } as const;
 
-export const MCP_SERVER_NAME = "full-follow";
-/** Runtime files in chatDataDir(): the panel's MCP config and system prompt, and the MCP config of a draft run (the host in mode "draft") */
-export const RUNTIME_FILES = { mcp: "mcp.json", system: "system.md", draftMcp: "mcp-draft.json" } as const;
-export const MCP_TOOL_PREFIX = `mcp__${MCP_SERVER_NAME}__`;
+export { FILE_READ_TOOLS, FILE_WRITE_TOOLS, MCP_SERVER_NAME, MCP_TOOL_PREFIX, PERMISSION_TOOL } from "../constants";
+/**
+ * Runtime files in chatDataDir(): the system prompt, the MCP config of a draft run (the host in mode "draft"), and one MCP config per
+ * panel chat (`mcp-chat-<session id>.json`), which tells its host the session its confirmations belong to
+ */
+export const RUNTIME_FILES = { system: "system.md", draftMcp: "mcp-draft.json", chatMcp: (sessionId: number) => `mcp-chat-${sessionId}.json`, chatMcpPattern: /^mcp-chat-\d+\.json$/ } as const;
 export const TOOL_SEARCH = "ToolSearch";
-/** Built-in web tools the panel Claude may use besides the Full Follow MCP tools (page content is untrusted, see the rules in chat-files.ts) */
-export const WEB_TOOLS = ["WebSearch", "WebFetch"] as const;
+/** Built-in web tools of the panel Claude: search always, reading a page only while the owner allows it (setting `chat_web_fetch`); page content is untrusted, see the rules */
+export const WEB_SEARCH = "WebSearch";
+export const WEB_FETCH = "WebFetch";
 export const TOOL_SEARCH_LABEL = m.toolSearchLabel;
 export const TOOL_SUMMARY_CHARS = 80;
 /** After closing stdin, how long a process gets to exit before it is killed */

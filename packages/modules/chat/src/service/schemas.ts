@@ -37,6 +37,9 @@ export const chatFinish = z.strictObject({
   ack: z.boolean().optional(),
 });
 
+/** The owner's answer to a confirmation of the panel chat */
+export const permissionAnswer = z.strictObject({ allow: z.boolean() });
+
 const recordId = zodKit.id.nullish().transform((v) => v ?? null);
 /** A draft request: the title the button gives it, the record it is about (at most one), and the channel asked for */
 export const draftRunCreate = z.strictObject({

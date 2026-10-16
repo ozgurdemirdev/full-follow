@@ -4,7 +4,8 @@ import fs from "node:fs";
 import { pipeline } from "node:stream";
 import type { Request, Response } from "express";
 import { APP_TOKEN, type Core } from "@fullfollow/core";
-import { intId } from "@fullfollow/core";
+import { intId, parse } from "@fullfollow/core";
+import { permissionAnswer } from "../service/schemas";
 import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
 import { mcpBuilt } from "./chat-files";
@@ -13,11 +14,17 @@ import { attachmentFile, saveUpload } from "./chat-uploads";
 import { CHAT_ATTACHMENT_TYPES, CHAT_DEFAULTS, CHAT_EFFORTS, CHAT_LIMITS, CHAT_MODELS } from "./chat.config";
 import { resolveCli } from "./claude-cli";
 import { ClaudeRunner } from "./claude-runner";
+import { PermissionWatch } from "./permission-watch";
 import { serveChannel } from "./sse";
 
 @Controller("api/chat")
 export class ChatController {
-  constructor(@Inject(APP_TOKEN) private core: Core, @Inject(ClaudeRunner) private runner: ClaudeRunner, @Inject(ChatHub) private hub: ChatHub) {}
+  constructor(
+    @Inject(APP_TOKEN) private core: Core,
+    @Inject(ClaudeRunner) private runner: ClaudeRunner,
+    @Inject(ChatHub) private hub: ChatHub,
+    @Inject(PermissionWatch) private permissions: PermissionWatch,
+  ) {}
 
   private get chat() {
     return this.core.mod("chat")!;
@@ -95,6 +102,22 @@ export class ChatController {
     res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(a.name)}`);
     // pipeline destroys the file stream when the response closes early, so an aborted download never holds the file handle
     pipeline(fs.createReadStream(a.path), res, () => {});
+  }
+
+  /** The confirmations of a session, newest kept, oldest first: the cards of the chat window */
+  @Get("sessions/:id/permissions")
+  sessionPermissions(@Param("id") id: string) {
+    const n = intId(id);
+    this.chat.getSession(n);
+    return { rows: this.chat.permissions.ofSession(n) };
+  }
+
+  /** The owner's answer to a confirmation: { allow: true } runs the tool, false refuses it */
+  @Post("permissions/:id")
+  @HttpCode(200)
+  answer(@Param("id") id: string, @Body() b: unknown) {
+    const { allow } = parse(permissionAnswer, b);
+    return this.permissions.answer(intId(id), allow);
   }
 
   @Post("sessions/:id/stop")

@@ -1,14 +1,15 @@
 import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import { HttpException, Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
-import { APP_TOKEN, ownerName, type ChatMessage, type ChatSession, type Core } from "@fullfollow/core";
+import { APP_TOKEN, chatAccessSettings, MCP_CORE_TOOLS, ownerName, type ChatAccess, type ChatMessage, type ChatSession, type ChatSessionKind, type Core } from "@fullfollow/core";
 import { LOG_RAW_CHARS } from "../constants";
 import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
 import { attachmentBlocks, removeUnsentAttachments } from "./chat-uploads";
-import { notesVersion, readBrief, writeRuntimeFiles } from "./chat-files";
+import { notesVersion, readBrief, removeChatMcps, rulesAccess, writeChatMcp, writeRuntimeFiles } from "./chat-files";
 import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, ACK_MARKER, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, VOICE_NOTE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
+import { PermissionWatch } from "./permission-watch";
 import { createParser, errorCode, type ChatEvent, type ToolRecord } from "./stream-parser";
 
 /** Error with an app code (busy, too_many_runs, cli_missing); the ErrorFilter turns it into { error, code } */
@@ -38,6 +39,7 @@ interface Turn {
 
 interface Slot {
   sessionId: number;
+  kind: ChatSessionKind;
   child: ChildProcess;
   model: string;
   effort: string;
@@ -55,13 +57,16 @@ export type TurnEndListener = (sessionId: number, message: ChatMessage) => void;
 export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   private slots = new Map<number, Slot>();
   private turnEnded = new Set<TurnEndListener>();
-  /** the owner's name, the pinned notes and the private brief as last written to system.md, and all of it together (the version and the hidden update block follow it) */
+  /** the owner's name, the pinned notes, the private brief and the access settings as last written to system.md, and all of it together (the version and the hidden update block follow it) */
   private owner: string | null = null;
   private pinned = "";
   private brief = "";
+  private access: ChatAccess = { chat_full_access: false, chat_web_fetch: false, chat_local_files: false, chat_local_folders: [] };
   private notes = "";
+  /** the tools of the Full Follow MCP host: the generic ones and the installed modules' */
+  private mcpTools: string[] = [];
 
-  constructor(@Inject(APP_TOKEN) private core: Core, @Inject(ChatHub) private hub: ChatHub) {}
+  constructor(@Inject(APP_TOKEN) private core: Core, @Inject(ChatHub) private hub: ChatHub, @Inject(PermissionWatch) private permissions: PermissionWatch) {}
 
   private get chat() {
     return this.core.mod("chat")!;
@@ -71,8 +76,11 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     this.owner = ownerName(this.core.ctx);
     this.pinned = this.core.settings.all().chat_pinned_notes;
     this.brief = readBrief();
+    this.access = chatAccessSettings(this.core.ctx);
     this.notes = this.combined();
-    writeRuntimeFiles(this.owner, this.pinned, this.brief);
+    this.mcpTools = [...MCP_CORE_TOOLS, ...this.core.modules.list().flatMap((mod) => mod.mcp?.tools?.map((t) => t.name) ?? [])];
+    removeChatMcps();
+    writeRuntimeFiles(this.owner, this.pinned, this.brief, rulesAccess(this.access));
     const n = this.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
     if (n) console.log(m.log.danglingFailed(n));
     const unsent = removeUnsentAttachments(this.core);
@@ -89,19 +97,24 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   }
 
   /** The rules are part of it: a resumed CLI session keeps its first system prompt, so changed rules reach it as the hidden update block too */
-  private combined = () => [m.systemRules(this.owner), this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
+  private combined = () => [m.systemRules(this.owner, rulesAccess(this.access)), this.pinned.trim(), this.brief.trim()].filter(Boolean).join("\n\n");
 
-  /** A name given in Settings, pinned notes saved there or a changed brief file: rewrite system.md and let every process pick them up on its next message */
+  /**
+   * A name given in Settings, pinned notes saved there, changed access settings or a changed brief file: rewrite system.md and let every
+   * process pick them up on its next message (changed access settings also change the tools a process starts with)
+   */
   private syncNotes() {
     const owner = ownerName(this.core.ctx);
     const pinned = this.core.settings.all().chat_pinned_notes;
     const brief = readBrief();
-    if (owner === this.owner && pinned === this.pinned && brief === this.brief) return;
+    const access = chatAccessSettings(this.core.ctx);
+    if (owner === this.owner && pinned === this.pinned && brief === this.brief && JSON.stringify(access) === JSON.stringify(this.access)) return;
     this.owner = owner;
     this.pinned = pinned;
     this.brief = brief;
+    this.access = access;
     this.notes = this.combined();
-    writeRuntimeFiles(owner, pinned, brief);
+    writeRuntimeFiles(owner, pinned, brief, rulesAccess(access));
     this.markAllStale();
   }
 
@@ -135,6 +148,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     if (!slot) slot = this.spawn(sessionId, session);
     clearTimeout(slot.idleTimer);
     slot.turn = this.newTurn(slot, assistant.id);
+    if (slot.kind === "chat") this.permissions.watch(sessionId);
     const content = [...(user.body ? [{ type: "text", text: user.body }] : []), ...attachmentBlocks(this.core, user.id), ...this.notesBlock(session), ...(user.input_mode === "voice" ? [{ type: "text", text: VOICE_NOTE }] : []), ...hidden.map((text) => ({ type: "text", text }))];
     const line = JSON.stringify({ type: "user", message: { role: "user", content } });
     slot.child.stdin?.write(`${line}\n`);
@@ -175,8 +189,9 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
   }
 
   private spawn(sessionId: number, session: ChatSession): Slot {
-    const child = spawnClaude(resolveCli()!, session);
-    const slot: Slot = { sessionId, child, model: session.model, effort: session.effort, stale: false, turn: null, lastUsed: Date.now(), stderr: "" };
+    if (session.kind === "chat") writeChatMcp(sessionId);
+    const child = spawnClaude(resolveCli()!, session, session.kind === "chat" ? { access: this.access, mcpTools: this.mcpTools } : undefined);
+    const slot: Slot = { sessionId, kind: session.kind, child, model: session.model, effort: session.effort, stale: false, turn: null, lastUsed: Date.now(), stderr: "" };
     this.slots.set(sessionId, slot);
     createInterface({ input: child.stdout! }).on("line", (l) => this.onLine(slot, l));
     child.stderr?.on("data", (d) => (slot.stderr = (slot.stderr + d).slice(-STDERR_LOG_CHARS)));
@@ -307,6 +322,7 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     });
     slot.turn = null;
     slot.lastUsed = Date.now();
+    if (slot.kind === "chat") this.permissions.unwatch(slot.sessionId);
     this.hub.emit(slot.sessionId, "message", row);
     const s = chat.getSession(slot.sessionId);
     const limit = CHAT_MODELS.find((model) => model.id === s.model)?.context ?? 0;

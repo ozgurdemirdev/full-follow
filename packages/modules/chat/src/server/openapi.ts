@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { docKit } from "@fullfollow/core";
-import { chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate, draftRunCreate } from "../service/schemas";
+import { chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate, draftRunCreate, permissionAnswer } from "../service/schemas";
 
 const { defineDocs, object, ok, positiveInt } = docKit;
 const session = { id: "Chat session id" };
@@ -45,7 +45,20 @@ export const docs = defineDocs({
     response: object,
   },
   "GET /api/chat/attachments/:id": { summary: "Download an attachment", description: "Served with its stored mime type, never sniffed by the browser.", params: { id: "Attachment id" }, contentType: "application/octet-stream" },
-  "POST /api/chat/sessions/:id/stop": { summary: "Stop the running answer", params: session, response: ok },
+  "POST /api/chat/sessions/:id/stop": { summary: "Stop the running answer", description: "A confirmation it left open is cancelled.", params: session, response: ok },
+  "GET /api/chat/sessions/:id/permissions": {
+    summary: "List the confirmations Claude asked for in a session",
+    description: "Before deleting a record, entering a payment, changing a setting or changing an existing file, the panel Claude asks the owner (unless the setting `chat_full_access` is on). Each row has the tool, a Turkish `summary` of what will happen, the reply it belongs to (`message_id`) and its `state`: pending, allowed, denied, expired (no answer within two minutes) or cancelled (the reply ended first). New and settled rows also arrive on the session's event stream as `permission` events. The newest 50, oldest first.",
+    params: session,
+    response: z.object({ rows: z.array(object) }),
+  },
+  "POST /api/chat/permissions/:id": {
+    summary: "Answer a confirmation",
+    description: "`allow: true` lets the tool run, `false` refuses it and Claude is told. Owner only; a confirmation that is no longer pending is refused.",
+    params: { id: "Confirmation id" },
+    body: permissionAnswer,
+    response: object,
+  },
   "POST /api/draft-runs": {
     summary: "Ask Claude for a draft now",
     description: "With auto drafting on (setting `draft_auto`) the request is queued and a background Claude run writes one draft on its own chat session (kind `draft`), with only the read tools and `draft`; the answer is `{ mode: \"run\", run }`. A second request with the same title and record returns the run already queued or running. With auto drafting off, no Claude CLI or no drafts module it becomes Claude's task for today: `{ mode: \"task\", task, effects }`. A full queue answers 409.",

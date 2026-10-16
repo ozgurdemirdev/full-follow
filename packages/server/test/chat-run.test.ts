@@ -36,6 +36,8 @@ describe.skipIf(!installed("chat"))("a chat run", () => {
 
   it("keeps the runtime files next to the database in use, not in the shared data folder", () => {
     expect(fs.existsSync(path.join(server.dir, "chat", "system.md"))).toBe(true);
-    expect(fs.existsSync(path.join(server.dir, "chat", "mcp.json"))).toBe(true);
+    expect(fs.existsSync(path.join(server.dir, "chat", "mcp-draft.json"))).toBe(true);
+    // the chat that ran above has its own MCP config, which tells its host the session
+    expect(fs.readdirSync(path.join(server.dir, "chat")).some((f) => /^mcp-chat-\d+\.json$/.test(f))).toBe(true);
   });
 });

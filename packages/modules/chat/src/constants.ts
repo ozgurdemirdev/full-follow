@@ -54,6 +54,34 @@ export const DRAFT_RUN_LIMITS = {
 } as const;
 /** The SSE channel of the draft queue in the event hub (session ids start at 1, so it never meets a session) */
 export const DRAFT_RUNS_CHANNEL = 0;
+
+// ---- Confirmations of the panel chat
+/** The Full Follow MCP server as the Claude CLI names it, and the prefix of its tools */
+export const MCP_SERVER_NAME = "full-follow";
+export const MCP_TOOL_PREFIX = `mcp__${MCP_SERVER_NAME}__`;
+/** The MCP host's confirmation tool: the CLI's --permission-prompt-tool, which the CLI hides from the model */
+export const PERMISSION_TOOL = "permission";
+/** Full Follow tools that always ask the owner (a `delete` that restores does not); `save` asks only when it writes a setting */
+export const DELETE_TOOL = "delete";
+export const PAY_TOOL = "pay";
+export const SETTING_WRITE_TOOL = "save";
+/** The ones the Claude CLI's allowlist leaves out, so every call of them reaches the confirmation tool */
+export const GUARDED_TOOLS = [DELETE_TOOL, PAY_TOOL, SETTING_WRITE_TOOL] as const;
+/** Built-in file tools of the panel chat while local files are on: the read ones never leave the folders, the write ones ask before changing an existing file */
+export const FILE_READ_TOOLS = ["Read", "Glob", "Grep"] as const;
+export const FILE_WRITE_TOOLS = ["Write", "Edit"] as const;
+export const PERMISSION_LIMITS = {
+  /** an unanswered confirmation is refused after this long */
+  timeoutMs: 2 * 60_000,
+  /** how often the waiting MCP host reads its row */
+  answerPollMs: 300,
+  /** how often the server looks for new and settled confirmations while a panel reply runs */
+  watchPollMs: 400,
+  /** rows of a session GET /api/chat/sessions/:id/permissions returns, newest kept */
+  listMax: 50,
+  /** characters of one value or path in a summary */
+  valueChars: 80,
+} as const;
 /** The first message becomes the title of a chat: this many characters, cut at a word boundary */
 export const CHAT_TITLE_CHARS = 60;
 /** Longest values the API accepts: a title typed by hand, the client's message id, the name of an uploaded file */

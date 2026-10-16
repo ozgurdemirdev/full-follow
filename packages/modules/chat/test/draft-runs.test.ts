@@ -66,7 +66,7 @@ describe("draft run queue rows", () => {
 });
 
 describe("argv of a draft run", () => {
-  const session = { model: "claude-sonnet-5-5", effort: "medium", cli_session_id: "s", cli_started: false };
+  const session = { id: 7, model: "claude-sonnet-5-5", effort: "medium", cli_session_id: "s", cli_started: false };
   const after = (argv: string[], flag: string) => {
     const i = argv.indexOf(flag);
     const list: string[] = [];
@@ -82,9 +82,8 @@ describe("argv of a draft run", () => {
     expect(argv.join(" ")).not.toMatch(/WebSearch|WebFetch|mcp__full-follow(\s|$)/);
   });
 
-  it("keeps every Full Follow tool and the web tools for a panel chat", () => {
-    const argv = buildArgv({ ...session, kind: "chat" });
-    expect(after(argv, "--allowedTools")).toEqual(["mcp__full-follow", "WebSearch", "WebFetch"]);
-    expect(after(argv, "--mcp-config")[0]).toMatch(/mcp\.json$/);
+  it("stays the same whatever a panel chat is allowed", () => {
+    const panel = { access: { chat_full_access: true, chat_web_fetch: true, chat_local_files: true, chat_local_folders: [] }, mcpTools: ["delete", "find"], cwd: "." };
+    expect(buildArgv({ ...session, kind: "draft" }, panel)).toEqual(buildArgv({ ...session, kind: "draft" }));
   });
 });

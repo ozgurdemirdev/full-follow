@@ -4,6 +4,7 @@ import { CHAT_NEW_TITLE, FFError, parse, schema, stamp, writeEvent as emit, type
 import { CHAT_DEFAULTS, CHAT_TITLE_CHARS } from "../constants";
 import { m } from "../messages";
 import { draftRunsService } from "./draft-runs";
+import { permissionsService } from "./permissions";
 import { chatAttachmentCreate, chatFinish, chatMessageCreate, chatMessagesQuery, chatSessionCreate, chatSessionsQuery, chatSessionUpdate } from "./schemas";
 
 const { chat_attachments, chat_messages, chat_sessions } = schema;
@@ -215,5 +216,6 @@ export function chatService(ctx: Ctx): ChatApi {
     createSession, listSessions, getSession: sessionRow, updateSession, deleteSession, restoreSession, listMessages, getMessage: messageRow,
     addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, createAttachment, getAttachment, attachmentsOfMessage, takeUnsentAttachments, failDanglingRuns,
     draftRuns: draftRunsService(ctx),
+    permissions: permissionsService(ctx),
   };
 }
