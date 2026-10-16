@@ -2,7 +2,7 @@ import { z } from "zod";
 import { DEPOSIT_MILESTONE, MILESTONES, OFFER_ITEMS_MAX, OFFER_PLAN_PARTS_MAX, OFFER_PLAN_TOTAL_PCT, OPP_ROLES, OPP_STAGES, zodKit } from "@fullfollow/core";
 import { m } from "../messages";
 
-const { id, text, optText, tl, date, patch } = zodKit;
+const { id, text, optText, optWebUrl, tl, date, patch } = zodKit;
 
 export const oppCreate = z.strictObject({
   title: text,
@@ -12,7 +12,7 @@ export const oppCreate = z.strictObject({
   estimated_value: tl.nullish(),
   next_follow_up_at: date.optional(),
   /** ilanın/konunun linki ve tarihi */
-  source_url: optText,
+  source_url: optWebUrl,
   source_date: date.optional(),
 });
 /** Extra people on an opportunity: a person reference (id or name) with an optional role and note */
@@ -23,7 +23,7 @@ export const oppUpdate = patch({
   source_id: id,
   estimated_value: tl.nullable(),
   next_follow_up_at: date,
-  source_url: optText,
+  source_url: optWebUrl,
   source_date: date,
   /** team changes (MCP): add or change a member by person id or name, remove members */
   add_people: z.array(teamMember),

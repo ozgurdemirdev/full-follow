@@ -43,7 +43,7 @@ export const m = defineMessages({
 
     // ---- Zod messages
     schema: {
-      linkInvalid: "geçerli bir link gerekli",
+      webUrl: "geçerli bir http ya da https adresi gerekli",
       dateShape: "tarih YYYY-MM-DD olmalı",
       dateIso: "tarih ISO olmalı",
       subjectNeeded: "kişi, firma ya da adres (contact) gerekli",

@@ -82,6 +82,31 @@ describe("date and number inputs", () => {
   });
 });
 
+describe("web address fields", () => {
+  const BAD = ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>", "file:///C:/Windows/win.ini"];
+  const patch = (p: string, body: unknown) => server.request(p, { method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify(body) });
+
+  it.skipIf(!installed("companies"))("a company website and a link accept only http and https, and a bare domain gets https", async () => {
+    const company = await post("/api/companies", { name: "Örnek Yazılım", website: "ornekyazilim.com" });
+    expect(company.status).toBe(201);
+    expect(company.json.row.website).toBe("https://ornekyazilim.com");
+    for (const url of BAD) {
+      expect((await post("/api/companies", { name: `Kötü ${url.slice(0, 4)}`, website: url })).status, url).toBe(400);
+      expect((await patch(`/api/companies/${company.json.row.id}`, { website: url })).status, url).toBe(400);
+    }
+    const link = { target_type: "company", target_id: company.json.row.id, label: "Site" };
+    for (const url of BAD) expect((await post("/api/links", { ...link, url })).status, url).toBe(400);
+  });
+
+  it("opportunity and post links refuse other schemes before anything else is checked", async () => {
+    for (const p of available([["pipeline", "/api/opportunities/999999"], ["posts", "/api/posts/999999"]])) {
+      const field = p.includes("posts") ? "url" : "source_url";
+      for (const url of BAD) expect((await patch(p, { [field]: url })).status, `${p} ${url}`).toBe(400);
+      expect((await patch(p, { [field]: "https://ornek.com/ilan" })).status, p).toBe(404);
+    }
+  });
+});
+
 describe("request guard", () => {
   it("a data changing request must declare a JSON or multipart body", async () => {
     expect((await post("/api/login")).status).toBeLessThan(300);

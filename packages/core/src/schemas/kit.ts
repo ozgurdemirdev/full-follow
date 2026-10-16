@@ -8,6 +8,32 @@ export const text = z.string().trim().min(1);
 export const optText = z.string().trim().nullish().transform((v) => (v ? v : null));
 export const tl = z.coerce.number().int().min(0);
 
+/**
+ * A web address as stored: http or https only, without user or password; a bare domain ("firma.com", "firma.com/ilan") gets
+ * https://. Every other scheme (javascript:, data:, file:, ...) is refused, because the panel turns these fields into links.
+ */
+export function toWebUrl(raw: string): string | null {
+  const parse = (s: string) => {
+    try {
+      return new URL(s);
+    } catch {
+      return null;
+    }
+  };
+  const direct = parse(raw);
+  const u = direct && (direct.protocol === "http:" || direct.protocol === "https:") ? direct : raw.includes("://") ? null : parse(`https://${raw}`);
+  if (!u || (u.protocol !== "http:" && u.protocol !== "https:") || u.username || u.password || !u.hostname) return null;
+  return u === direct ? raw : `https://${raw}`;
+}
+
+const webUrlOf = (v: string, ctx: z.RefinementCtx) => {
+  const url = toWebUrl(v);
+  if (url === null) ctx.addIssue({ code: "custom", message: m.schema.webUrl });
+  return url ?? v;
+};
+export const webUrl = z.string().trim().min(1).transform(webUrlOf);
+export const optWebUrl = z.string().trim().nullish().transform((v, ctx) => (v ? webUrlOf(v, ctx) : null));
+
 /** YYYY-MM-DD; "bugün", "yarın", "+3g" gibi kısa biçimler de kabul edilir. Boş değer = temizle. */
 export const date = z.preprocess(
   (v) => (v === "" ? null : resolveRelativeDate(v)),
