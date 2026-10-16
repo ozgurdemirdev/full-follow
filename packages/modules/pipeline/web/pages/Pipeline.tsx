@@ -4,6 +4,7 @@ import { useQuery } from "@kit/api/store";
 import type { Report } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { openSheet } from "@kit/app/ui";
+import { AddButton } from "@kit/components/AddButton";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Board, scrollToStage } from "../components/Board";
 import { LostReasons, SourceWins } from "../components/Breakdowns";
@@ -64,10 +65,7 @@ export default function Pipeline() {
           <button type="button" className="pipe-toggle" aria-pressed={hideLost} onClick={() => setHideLost((v) => !v)}>
             {hideLost ? m.page.showLost : m.page.hideLost}
           </button>
-          <button type="button" className="dash-new" onClick={() => openSheet("opportunity")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-            {m.page.add}
-          </button>
+          <AddButton label={m.page.add} onClick={() => openSheet("opportunity")} />
         </div>
       }
     >

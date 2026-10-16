@@ -7,6 +7,7 @@ import type { CompaniesOverview, CompanyOverviewRow, CompanyTotals } from "@kit/
 import { Page } from "@kit/app/Page";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
+import { AddButton } from "@kit/components/AddButton";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { CompanyOverlay } from "../components/CompanyOverlay";
 import { CompanyTile } from "../components/CompanyTile";
@@ -77,10 +78,7 @@ export default function Companies() {
             <span className="sr-only">{m.page.searchLabel}</span>
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.page.searchPlaceholder} />
           </label>
-          <button type="button" className="dash-new" onClick={() => openSheet("company")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-            {m.page.add}
-          </button>
+          <AddButton label={m.page.add} onClick={() => openSheet("company")} />
         </div>
       }
     >

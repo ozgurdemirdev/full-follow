@@ -7,6 +7,7 @@ import { useQuery } from "@kit/api/store";
 import type { PeopleOverview, Person, Today } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { openSheet } from "@kit/app/ui";
+import { AddButton } from "@kit/components/AddButton";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { noFilter, type LabelFilter } from "@kit/components/filters";
 import { PEOPLE_PATH } from "../paths";
@@ -81,10 +82,7 @@ export default function People() {
             <span className="sr-only">{m.searchPerson}</span>
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={m.page.searchPlaceholder} />
           </label>
-          <button type="button" className="dash-new" onClick={() => openSheet("person")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-            {m.page.add}
-          </button>
+          <AddButton label={m.page.add} onClick={() => openSheet("person")} />
         </div>
       }
     >
