@@ -7,12 +7,13 @@ import type { List, Payment, Report } from "@kit/api/types";
 import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
 import { fmtDay, fmtNum, initials, lira, todayIso } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
+import { useAskClaude } from "@kit/lib/askClaude";
 import { useTasksOn } from "@kit/lib/taskAccess";
 import { MILESTONE } from "@kit/lib/labels";
 import { MIN_PAYMENT } from "../constants";
 import { m } from "../messages";
 import { PROJECTS_PATH } from "../paths";
-import { requestReminder } from "../projects";
+import { reminderRequest } from "../projects";
 import { NumberField } from "@kit/components/NumberField";
 import { Card } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
@@ -60,6 +61,7 @@ export function PaymentsCard() {
   const payments = useQuery<List<Payment>>("/payments?unpaid=true", drained);
   const report = useQuery<Report>("/report");
   const tasksOn = useTasksOn();
+  const { asked, ask } = useAskClaude();
   const [group, setGroup] = useState<PaymentGroup | null>(null);
   const [paying, setPaying] = useState(false);
   if (isMissing(payments.error)) return null;
@@ -69,7 +71,6 @@ export function PaymentsCard() {
   const sum = (g?: PaymentGroup) => withGroup.filter((x) => !g || x.g === g).reduce((s, x) => s + remaining(x.p), 0);
   const late = withGroup.filter((x) => x.g === "late");
   const shown = withGroup.filter((x) => !group || x.g === group).slice(0, SHOWN.payments);
-  const remind = (p: Payment) => requestReminder(p.project_id, p.project_name);
   const rows: ExRow[] = withGroup.map(({ p, g }) => ({
     key: p.id, lead: initials(p.project_name), title: p.project_name, sub: `${MILESTONE[p.milestone] ?? p.milestone} · ${dueText(p, today)}`, right: lira(remaining(p)),
     rightCls: g === "late" ? "text-danger-soft" : undefined, tag: PAYMENT_GROUPS.find((x) => x.key === g)!.label, dot: PAYMENT_GROUPS.find((x) => x.key === g)!.dot, href: `${PROJECTS_PATH}/${p.project_id}`,
@@ -110,7 +111,7 @@ export function PaymentsCard() {
                 <span className={`text-sm ${g === "late" ? "text-danger-soft" : "text-text-secondary"}`}>{MILESTONE[p.milestone] ?? p.milestone} · {dueText(p, today)}</span>
               </div>
               <span className={`flex-none font-mono text-base ${g === "late" ? "text-danger-soft" : ""}`}>{lira(remaining(p))}</span>
-              {g === "late" && tasksOn ? <button type="button" className="dash-btn is-claude is-small flex-none" onClick={() => void remind(p)}>{m.card.remind}</button> : null}
+              {g === "late" && tasksOn ? <button type="button" className="dash-btn is-claude is-small flex-none" disabled={asked(reminderRequest(p.project_id, p.project_name))} onClick={() => void ask(reminderRequest(p.project_id, p.project_name))}>{asked(reminderRequest(p.project_id, p.project_name)) ? m.ask.requested : m.card.remind}</button> : null}
             </div>
           ))}
         </div>

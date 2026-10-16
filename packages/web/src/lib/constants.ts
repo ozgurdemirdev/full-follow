@@ -31,3 +31,6 @@ export const quickAddSelector = (part: QuickAddPart) => `[${QUICK_ADD_ATTR}="${p
 
 /** Reply suggestion answers (`ff.chat.suggest.<id>`) kept in this browser; the oldest go first */
 export const SUGGEST_KEEP = 200;
+
+/** A floating panel keeps at least this far from the edges of the window (px) */
+export const FLOATING_MARGIN_PX = 8;

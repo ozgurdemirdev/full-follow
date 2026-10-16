@@ -7,7 +7,7 @@ import type { List, Person } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { POSTS_PATH } from "../paths";
 import { openSheet } from "@kit/app/ui";
-import { BoardIcon } from "@kit/components/boardIcons";
+import { AddButton } from "@kit/components/AddButton";
 import { LoadMore } from "@kit/components/LoadMore";
 import { TileColumns } from "@kit/components/layout";
 import { PlatformStrip } from "../components/PlatformStrip";
@@ -19,7 +19,6 @@ import { TILE_PAGE } from "../constants";
 import { m } from "../messages";
 import { byValue, peopleByPost, perPost, platformStats, staleDays } from "../posts";
 import { m as kit } from "@kit/messages";
-import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a post is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -60,10 +59,7 @@ export default function Posts() {
       sub={m.page.sub}
       className="flex flex-col gap-10"
       right={
-        <button type="button" className="dash-new" onClick={() => openSheet("post")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-          {m.page.add}
-        </button>
+        <AddButton label={m.page.add} onClick={() => openSheet("post")} />
       }
     >
       {posts.error && !posts.data ? <ErrorBox error={posts.error} retry={posts.reload} /> : null}

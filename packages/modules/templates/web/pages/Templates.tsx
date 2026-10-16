@@ -3,7 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { Page } from "@kit/app/Page";
 import { TEMPLATES_PATH } from "../paths";
 import { openSheet } from "@kit/app/ui";
-import { BoardIcon } from "@kit/components/boardIcons";
+import { AddButton } from "@kit/components/AddButton";
 import { TileColumns } from "@kit/components/layout";
 import { TemplateOverlay } from "../components/TemplateOverlay";
 import { TemplateTile } from "../components/TemplateTile";
@@ -13,7 +13,6 @@ import { TEMPLATE_KINDS } from "../labels";
 import { m } from "../messages";
 import { byRate, useTemplates } from "../templates";
 import { m as kit } from "@kit/messages";
-import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a template is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -42,10 +41,7 @@ export default function Templates() {
       title={m.label}
       sub={m.page.sub}
       right={
-        <button type="button" className="dash-new" onClick={() => openSheet("template")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-          {m.page.add}
-        </button>
+        <AddButton label={m.page.add} onClick={() => openSheet("template")} />
       }
     >
       {templates.error && !templates.data ? <ErrorBox error={templates.error} retry={templates.reload} /> : null}

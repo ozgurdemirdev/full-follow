@@ -8,7 +8,7 @@ import type { IdeaRelated } from "../types";
 import { Page } from "@kit/app/Page";
 import { useLinkTo } from "@kit/app/modules/registry";
 import { openSheet } from "@kit/app/ui";
-import { BoardIcon } from "@kit/components/boardIcons";
+import { AddButton } from "@kit/components/AddButton";
 import { IdeaDetail } from "../components/IdeaDetail";
 import { IdeaLanes } from "../components/IdeaLanes";
 import { IdeaPeople } from "../components/IdeaPeople";
@@ -16,7 +16,6 @@ import { Empty, ErrorBox, order, PageSkeleton } from "@kit/components/ui";
 import { groupByStage } from "../ideas";
 import { m } from "../messages";
 import { IDEAS_PATH } from "../paths";
-import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Gelir fikirleri: four stage lanes, the chosen idea with its interest numbers, and who it was told to */
 export default function Ideas() {
@@ -42,10 +41,7 @@ export default function Ideas() {
       title={m.page.title}
       sub={m.page.sub}
       right={
-        <button type="button" className="dash-new" onClick={() => openSheet("idea")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-          {m.page.add}
-        </button>
+        <AddButton label={m.page.add} onClick={() => openSheet("idea")} />
       }
     >
       {all.error && !all.data ? <ErrorBox error={all.error} retry={all.reload} /> : null}

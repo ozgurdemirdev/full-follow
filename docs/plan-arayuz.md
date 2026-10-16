@@ -93,11 +93,11 @@ Each step: board file, target files, data sources, interactions, and what the cu
 
 ### 3.5 Pipeline (`Pipeline.dc.html`) → `pages/Pipeline.tsx` (327 lines, split board and analytics)
 
-- KPI row: open value, weighted forecast, won this month vs floor, stale count.
+- KPI row: open value, won this month vs floor, stale count.
 - "Nerede kaybediyorsun": stage funnel with stage to stage rates over 90 days; clicking a stage scrolls the board to that column.
-- Board: dnd-kit (already used) with edge auto scroll while dragging; scroll snap off on the board while a drag runs. Card: company, person, value, age meter against the stage's stale limit, next step, expandable details (source, win chance, hint, "Claude takip yazsın", person link). Dropping on Kaybedildi opens the lost reason dialog (existing `components/LostReason.tsx`, restyled with reason chips); cancel puts the card back. Won card links to its project; the card title opens the opportunity page.
+- Board: dnd-kit (already used) with edge auto scroll while dragging; scroll snap off on the board while a drag runs. Card: company, person, value, age meter against the stage's stale limit, next step, expandable details (source, hint, "Claude takip yazsın", person link). Dropping on Kaybedildi opens the lost reason dialog (existing `components/LostReason.tsx`, restyled with reason chips); cancel puts the card back. Won card links to its project; the card title opens the opportunity page.
 - Below: lost reasons breakdown (`lost_reason`), sources with win rate (`GET /api/report/sources`).
-- Data: `GET /api/opportunities`, `POST /:id/move`. Probabilities, stale limits and rates need G9.
+- Data: `GET /api/opportunities`, `POST /:id/move`. Stale limits and rates need G9.
 - Board leaves out: mobile list mode (keep for under 860px), hide lost toggle exists on the board.
 
 ### 3.6 Drafts (`Drafts.dc.html`) → `pages/Drafts.tsx`
@@ -186,7 +186,7 @@ Each gap lists the smallest core change; "derive" means a new core query with no
 | G6 | Influence role on company people (Karar verici, Etkileyici, Kullanıcı), KPI "Karar vericiye ulaşılmamış" | `people.influence` nullable enum | Use opportunity team roles only | Build |
 | G7 | Company money: won, due, open | Derive from projects, payments, opportunities | none needed | Build |
 | G8 | Loose touches with a suggested person or company | Derive by matching existing keys (domain, email) | Show list without suggestion | Build |
-| G9 | Win probability and stale days per stage, weighted forecast, stage to stage rates, card hint | Named constants in core plus a stage rate query over stage events; hint = latest open Claude comment on the opportunity | Drop probability and forecast | Build, hint from comments |
+| G9 | Stale days per stage, stage to stage rates, card hint | Named constants in core plus a stage rate query over stage events; hint = latest open Claude comment on the opportunity | Drop the stage rates | Build, hint from comments |
 | G10 | Draft tone rewrite (kısa, sıcak, resmi) | Needs Claude: button opens a comment asking for a rewrite, Claude saves a new body over MCP (not instant) | Drop, keep Düzenle | Alternative |
 | G11 | Email subject on drafts | `drafts.subject` nullable | Subject inside the body | Build |
 | G12 | "Claude'un öğrendikleri" from reject reasons, deletable in Settings | Setting `draft_rules` (JSON list) filled from reject notes, shown to Claude in `today()` | Show recent reject notes read only | Build |

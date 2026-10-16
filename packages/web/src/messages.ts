@@ -58,7 +58,6 @@ export const m = defineMessages({
       addTouch: "Temas ekle",
       writeDraft: "Taslak yaz",
       askDraft: "Claude’dan taslak iste",
-      draftPending: "Taslak zaten yazılıyor",
       draftAsked: "Taslak istendi",
       moreActions: "Diğer işlemler",
       addPerson: "Kişi ekle",

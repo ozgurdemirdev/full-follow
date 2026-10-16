@@ -20,7 +20,7 @@ export const docs = defineDocs({
     create: oppCreate,
     update: oppUpdate,
     list: {
-      description: "The list plus `meta`: the stage rules (probability, stale days) and the stage to stage rates of the last 90 days.",
+      description: "The list plus `meta`: the stage rules (stale days) and the stage to stage rates of the last 90 days.",
       response: listOf().extend({ meta: object }),
     },
   }),

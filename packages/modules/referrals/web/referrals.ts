@@ -1,11 +1,11 @@
 // Referrals screen: KPI numbers, the referral tree and its layout, and the requests for the two suggestion lists the API sends.
 // The KPI numbers and the tree come from the server; only the tree's layout is worked out here.
-import { run } from "@kit/api/actions";
 import type { ReferralValue } from "@kit/api/types";
 import type { RefEdge, RefKpi, RefLayout, RefNode, RefPlaced, RefSuggestion, RefTone } from "./types";
 import type { ReferralKpis } from "./types";
 import { layout as layoutTokens, space } from "@kit/styles/tokens.json";
-import { lira, pct, todayIso } from "@kit/lib/format";
+import type { ClaudeRequest } from "@kit/lib/askClaude";
+import { lira, pct } from "@kit/lib/format";
 import { m } from "./messages";
 
 // ------------------------------------------------------------ tree geometry (percent of the tree width, px for the rows)
@@ -84,6 +84,6 @@ export function nodeValue(p: RefPlaced): { text: string; tone: RefTone } {
 // ------------------------------------------------------------ suggestion requests
 export type RequestKind = "thanks" | "ask";
 
-/** Ask Claude for the draft (a task for Claude with the title the API sent; the draft lands in Taslaklar) */
-export const requestDraft = (kind: RequestKind, s: Pick<RefSuggestion, "person" | "request_title">) =>
-  run("post", "/tasks", { title: s.request_title, assignee: "claude", due_date: todayIso(), person_id: s.person.id }, { ok: m.requestOk[kind] });
+/** The request for Claude to write the draft (the task title is the one the API sent; the draft lands in Taslaklar) */
+export const suggestionRequest = (kind: RequestKind, s: Pick<RefSuggestion, "person" | "request_title">): ClaudeRequest =>
+  ({ title: s.request_title, target: { person_id: s.person.id }, ok: m.requestOk[kind] });

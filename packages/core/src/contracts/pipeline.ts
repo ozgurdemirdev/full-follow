@@ -34,10 +34,9 @@ export interface OpportunityRow extends OpportunityRecord {
   project_id: number | null;
 }
 
-/** Per open stage: the chance an opportunity there is won (0 to 1, for the weighted forecast) and the days after which it counts as stale */
+/** Per open stage: the days after which an opportunity there counts as stale */
 export interface StageRule {
   stage: OppStage;
-  probability: number;
   stale_days: number;
 }
 

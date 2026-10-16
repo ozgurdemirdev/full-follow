@@ -775,7 +775,7 @@
   --z-mascot: 45;
   --z-mascot-perch: 55;
   --z-overlay: 48;
-  --z-form-list: 5;
+  --z-floating: 52;
   --bw-default: 1px;
   --bw-check: 1.5px;
   --bw-strong: 2px;
@@ -1024,8 +1024,8 @@
   z-index: var(--z-overlay);
 }
 
-@utility z-form-list {
-  z-index: var(--z-form-list);
+@utility z-floating {
+  z-index: var(--z-floating);
 }
 
 @utility bw-default {

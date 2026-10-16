@@ -8,15 +8,15 @@ import type { CompanyCard, List, Person, Project } from "@kit/api/types";
 import { useRegistry } from "@kit/app/modules/registry";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
-import { askCompanyDraft, SEGMENT_LABEL, siteLabel, type CompanyView } from "../companies";
+import { companyDraftRequest, SEGMENT_LABEL, siteLabel, type CompanyView } from "../companies";
 import { initials } from "@kit/lib/format";
 import { webUrl } from "@kit/lib/network";
-import { useDayMarks } from "@kit/lib/people";
+import { useAskClaude } from "@kit/lib/askClaude";
 import { useTasksOn } from "@kit/lib/taskAccess";
+import { Floating } from "@kit/components/Floating";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { ExpandOverlay } from "@kit/components/ExpandOverlay";
-import { toast } from "@kit/components/toast";
 import { avatarPair, ErrorBox } from "@kit/components/ui";
 import { m as kit } from "@kit/messages";
 
@@ -32,7 +32,7 @@ interface ClaudeMode {
 
 /** Menu of the header: the parts the board leaves out (detailed touch and draft forms, editing the fields, delete) */
 function HeaderMenu({ v, onClaude, onClose }: { v: CompanyView; onClaude: () => void; onClose: () => void }) {
-  const { open, setOpen, root } = usePopover();
+  const { open, setOpen, root, panel } = usePopover();
   const { quickByKind } = useRegistry();
   const c = v.c;
   const pick = (fn: () => void) => () => { setOpen(false); fn(); };
@@ -41,13 +41,13 @@ function HeaderMenu({ v, onClaude, onClose }: { v: CompanyView; onClaude: () => 
       <button type="button" className="ppl-round" aria-label={m.overlay.moreActions} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <BoardIcon name="dots" className="size-icon-md" stroke={STROKE.bold} />
       </button>
-      <div role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
+      <Floating anchor={root} open={open} panelRef={panel} role="menu" aria-hidden={!open} className="ppl-pop" inert={!open}>
         {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("touch", { company_id: c.id }))}>{m.overlay.addTouch}</button> : null}
         {quickByKind.has("draft") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("draft", { company_id: c.id, channel: "email" }))}>{m.overlay.writeDraft}</button> : null}
         {quickByKind.has("touch") ? <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(onClaude)}>{m.overlay.writeToClaude}</button> : null}
         <button type="button" role="menuitem" className="ppl-pop-item" onClick={pick(() => openSheet("company", { edit: c.id }))}>{m.overlay.editFields}</button>
         <button type="button" role="menuitem" className="ppl-pop-item text-danger hover:text-danger" onClick={pick(() => void remove(`/companies/${c.id}`, c.name).then(onClose).catch(() => {}))}>{kit.delete}</button>
-      </div>
+      </Floating>
     </div>
   );
 }
@@ -75,16 +75,11 @@ function Body({ v, max, card, claude, onClaude }: { v: CompanyView; max: number;
 /** A company as the board's dialog: grows from the clicked tile, header with the actions, money and facts left, people and stream right */
 export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | null; from: DOMRect | null; v: CompanyView | undefined; max: number; onClose: () => void }) {
   const d = useQuery<CompanyCard>(id ? companyCardKey(id) : null);
-  const [drafted, markDrafted] = useDayMarks("companyDrafted");
+  const { asked, ask } = useAskClaude();
   const [claude, setClaude] = useState<ClaudeMode | null>(null);
   const { quickByKind } = useRegistry();
   const tasksOn = useTasksOn();
 
-  const ask = () => {
-    if (!v) return;
-    if (drafted.has(v.c.id)) return toast(m.overlay.draftPending);
-    askCompanyDraft(v.c).then(() => markDrafted(v.c.id)).catch(() => {});
-  };
   const site = v?.c.website ? siteLabel(v.c.website) : null;
   const sub = v ? [v.c.sector_path, v.c.city].filter(Boolean).join(m.sep) : "";
 
@@ -111,9 +106,9 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
           <div className="flex flex-wrap gap-3">
             {quickByKind.has("person") ? <button type="button" className="co-btn" onClick={() => openSheet("person", { company_id: v.c.id })}>{m.overlay.addPerson}</button> : null}
             {tasksOn ? (
-              <button type="button" className="ppl-ask" onClick={ask}>
+              <button type="button" className="ppl-ask" disabled={asked(companyDraftRequest(v.c))} onClick={() => void ask(companyDraftRequest(v.c))}>
                 <BoardIcon name="pen" className="size-icon-chip" />
-                {drafted.has(v.c.id) ? m.overlay.draftAsked : m.overlay.askDraft}
+                {asked(companyDraftRequest(v.c)) ? m.overlay.draftAsked : m.overlay.askDraft}
               </button>
             ) : null}
             <HeaderMenu v={v} onClaude={() => setClaude({ id: v.c.id, replyTo: null })} onClose={onClose} />

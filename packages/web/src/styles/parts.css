@@ -301,6 +301,31 @@
   }
 }
 
+/* ---------- add pill: the add button of a page header ---------- */
+.add-pill {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--spacing-3);
+  height: var(--spacing-control-height-2xl);
+  padding: 0 var(--spacing-8) 0 var(--spacing-6);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* ---------- floating panel: positioned by Floating.tsx, above sheets and overlays, below toasts ---------- */
+.ff-floating {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-floating);
+}
+
 /* ---------- toast ---------- */
 .ff-toasts {
   position: fixed;

@@ -4,7 +4,7 @@ import { useQuery } from "@kit/api/store";
 import type { Draft, List } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { openSheet } from "@kit/app/ui";
-import { BoardIcon } from "@kit/components/boardIcons";
+import { AddButton } from "@kit/components/AddButton";
 import { DraftHistory } from "../components/DraftHistory";
 import { DraftReview, type Handled } from "../components/DraftReview";
 import { MotionScope } from "@kit/components/MotionScope";
@@ -12,7 +12,6 @@ import { ErrorBox, PageSkeleton, Segmented } from "@kit/components/ui";
 import { ONE_ROW } from "@kit/lib/constants";
 import { draftsOf, TABS, type DraftRules } from "../drafts";
 import { m } from "../messages";
-import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const NO_RULES: string[] = [];
 
@@ -44,10 +43,7 @@ export default function Drafts() {
           <div className="drf-tabs">
             <Segmented label={m.page.status} size="lg" value={tab} onChange={setTab} items={TABS.map((t, i) => ({ label: t.label, count: counts[i] }))} />
           </div>
-          <button type="button" className="dash-new" onClick={() => openSheet("draft")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-            {m.page.write}
-          </button>
+          <AddButton label={m.page.write} onClick={() => openSheet("draft")} />
         </div>
       }>
       {error && !ready ? <ErrorBox error={error} retry={() => { void waiting.reload(); void approved.reload(); }} /> : null}

@@ -6,7 +6,7 @@ import { useOwnProjects } from "@kit/api/keys";
 import type { OwnProject } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { openSheet } from "@kit/app/ui";
-import { BoardIcon } from "@kit/components/boardIcons";
+import { AddButton } from "@kit/components/AddButton";
 import { Gallery } from "../components/Gallery";
 import { Hero } from "../components/Hero";
 import { ProjectOverlay } from "../components/ProjectOverlay";
@@ -16,7 +16,6 @@ import { OWN_PROJECTS_PATH } from "../paths";
 import { onShelf, useFocusId } from "../ownProjects";
 
 import { m } from "../messages";
-import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Size of the box the overlay grows from when a project is opened by address, not by a click */
 const FALLBACK_BOX = { width: 240, height: 140 };
@@ -53,10 +52,7 @@ export default function OwnProjects() {
       title={m.label}
       sub={projects.data ? m.sub(live.length, openIdeas) : ""}
       right={
-        <button type="button" className="dash-new" onClick={() => openSheet("own_project")}>
-          <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.regular} />
-          {m.addProject}
-        </button>
+        <AddButton label={m.addProject} onClick={() => openSheet("own_project")} />
       }
     >
       {error ? <ErrorBox error={error.error} retry={error.reload} /> : null}

@@ -3,13 +3,12 @@ import { useParams } from "wouter";
 import type { WaitKey } from "../types";
 import { Page } from "@kit/app/Page";
 import { openSheet } from "@kit/app/ui";
-import { BoardIcon } from "@kit/components/boardIcons";
+import { AddButton } from "@kit/components/AddButton";
 import { ProjectRow } from "../components/ProjectRow";
 import { WaitCards } from "../components/WaitCards";
 import { ErrorBox, PageSkeleton, Segmented } from "@kit/components/ui";
 import { m } from "../messages";
 import { hasClientTasks, TABS, type TabKey, useProjectViews } from "../projects";
-import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 /** Client projects: tabs, the waiting cards (filters), and one expandable row per project (/projeler/:id opens that one) */
 export default function Projects() {
@@ -44,10 +43,7 @@ export default function Projects() {
         <div className="prj-tools">
           <Segmented label={m.page.status} size="lg" value={Math.max(0, tabs.findIndex((t) => t.key === tab))} onChange={pick}
             items={tabs.map((t) => ({ label: t.label, count: t.count }))} />
-          <button type="button" className="dash-new" onClick={() => openSheet("project")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-            {m.page.add}
-          </button>
+          <AddButton label={m.page.add} onClick={() => openSheet("project")} />
         </div>
       }
     >

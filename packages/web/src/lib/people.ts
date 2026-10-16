@@ -1,9 +1,9 @@
 // What the people, companies, network and marketing screens share about a person: statuses, warmth thresholds, channels, the per day memory
 import { useSyncExternalStore } from "react";
-import { run } from "../api/actions";
 import type { Person } from "../api/types";
 import type { BoardIconName } from "../components/boardIcons";
 import { people as m } from "../messages.lib";
+import type { ClaudeRequest } from "./askClaude";
 import { daysFrom, todayIso } from "./format";
 
 /** Last touch up to this many days ago reads "Sıcak" */
@@ -52,12 +52,11 @@ const DRAFT_KIND: Partial<Record<PStatus, string>> = { due: m.followDraft, wait:
 /** Label after "Claude yazsın:" */
 export const draftKind = (p: Person, s: PStatus) => (s === "due" && p.last_direction === "gelen" ? m.replyDraft : DRAFT_KIND[s] ?? m.otherDraft);
 
-/** Ask Claude for a message draft (a task for Claude; the draft lands in Taslaklar) */
-export const askDraft = (p: Pick<Person, "id" | "name">) =>
-  run("post", "/tasks", { title: m.draftTask(p.name), assignee: "claude", due_date: todayIso(), person_id: p.id }, { ok: m.draftAsked });
+/** The request for Claude to write a message draft to a person (the draft lands in Taslaklar) */
+export const draftRequest = (p: Pick<Person, "id" | "name">): ClaudeRequest => ({ title: m.draftTask(p.name), target: { person_id: p.id }, ok: m.draftAsked });
 
 // ------------------------------------------------------------ per day memory (this browser only)
-type Kind = "gone" | "drafted" | "companyDrafted" | "pitched";
+type Kind = "gone";
 const cache = new Map<string, ReadonlySet<number>>();
 const listeners = new Set<() => void>();
 const KEY_PREFIX = "ff.people.";
@@ -95,7 +94,7 @@ function read(kind: Kind): ReadonlySet<number> {
   return set;
 }
 
-/** People marked for today in this browser: "gone" (Yaptım) and "drafted" (draft asked); yesterday's marks are not read */
+/** People marked for today in this browser: "gone" (Yaptım); yesterday's marks are not read */
 export function useDayMarks(kind: Kind) {
   const set = useSyncExternalStore((fn) => (listeners.add(fn), () => void listeners.delete(fn)), () => read(kind));
   const mark = (id: number) => {

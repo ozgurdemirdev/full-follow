@@ -1,22 +1,20 @@
-// Pipeline screen logic: forecast, age meter, funnel rates. Pure functions over the lists the page already loaded;
-// the stage rules (win probability, stale days) and the stage to stage rates come from core with the opportunity list.
+// Pipeline screen logic: KPI row, age meter, funnel rates. Pure functions over the lists the page already loaded;
+// the stage rules (stale days) and the stage to stage rates come from core with the opportunity list.
 import { createContext, useContext } from "react";
 import type { Opportunity, PipelineMeta, Task, Thread } from "@kit/api/types";
 import { daysFrom, followNote, lira, todayIso } from "@kit/lib/format";
 import { OPEN_STAGES, type OppStage } from "@kit/lib/labels";
 import { m } from "./messages";
 
-/** Win probability (0 to 1) and stale limit (days) per open stage */
-export type StageRules = ReadonlyMap<string, { prob: number; staleDays: number }>;
+/** Stale limit (days) per open stage */
+export type StageRules = ReadonlyMap<string, { staleDays: number }>;
 export const stageRulesOf = (meta: PipelineMeta | undefined): StageRules =>
-  new Map((meta?.stages ?? []).map((s) => [s.stage, { prob: s.probability, staleDays: s.stale_days }]));
+  new Map((meta?.stages ?? []).map((s) => [s.stage, { staleDays: s.stale_days }]));
 /** The page provides the rules it loaded; the cards and columns read them */
 const RulesContext = createContext<StageRules>(new Map());
 export const StageRulesProvider = RulesContext.Provider;
 export const useStageRules = () => useContext(RulesContext);
 
-/** The forecast is shown rounded to this step (TL) */
-const FORECAST_STEP = 1000;
 /** From this amount on a value is written short: "₺45B" for 45 thousand */
 const SHORT_FROM = 1000;
 const PERCENT = 100;
@@ -26,8 +24,6 @@ const NO_DUE = "9999-12-31";
 export const isLive = (o: Pick<Opportunity, "stage">) => OPEN_STAGES.includes(o.stage);
 /** Value written short in the funnel: ₺45B */
 export const shortLira = (n: number) => (n >= SHORT_FROM ? m.shortLira(Math.round(n / SHORT_FROM)) : lira(n));
-export const probOf = (stage: OppStage, rules: StageRules) => rules.get(stage)?.prob ?? 0;
-export const percentOf = (stage: OppStage, rules: StageRules) => m.percent(Math.round(probOf(stage, rules) * PERCENT));
 
 /** Days an open opportunity has sat in its stage, from `stage_since` */
 export function ageDays(o: Opportunity, today = todayIso()): number {
@@ -43,24 +39,21 @@ export function ageMeter(o: Opportunity, rules: StageRules, today = todayIso()) 
 export interface PipelineStats {
   open: number;
   openValue: number;
-  weighted: number;
   wonValue: number;
   stale: number;
 }
-/** KPI row: open count and value, weighted forecast, won this month, stale count */
+/** KPI row: open count and value, won this month, stale count */
 export function pipelineStats(rows: Opportunity[], rules: StageRules, today = todayIso()): PipelineStats {
   const month = today.slice(0, 7);
-  const s: PipelineStats = { open: 0, openValue: 0, weighted: 0, wonValue: 0, stale: 0 };
+  const s: PipelineStats = { open: 0, openValue: 0, wonValue: 0, stale: 0 };
   for (const o of rows) {
     const v = o.estimated_value ?? 0;
     if (isLive(o)) {
       s.open++;
       s.openValue += v;
-      s.weighted += v * probOf(o.stage, rules);
       if (ageMeter(o, rules, today).late) s.stale++;
     } else if (o.stage === "kazanildi" && o.closed_at?.slice(0, 7) === month) s.wonValue += v;
   }
-  s.weighted = Math.round(s.weighted / FORECAST_STEP) * FORECAST_STEP;
   return s;
 }
 

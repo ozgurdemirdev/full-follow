@@ -4,6 +4,7 @@ import { useQuery } from "@kit/api/store";
 import type { Report } from "@kit/api/types";
 import { Page } from "@kit/app/Page";
 import { openSheet } from "@kit/app/ui";
+import { AddButton } from "@kit/components/AddButton";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Board, scrollToStage } from "../components/Board";
 import { LostReasons, SourceWins } from "../components/Breakdowns";
@@ -21,7 +22,7 @@ import { stroke as STROKE } from "@kit/styles/tokens.json";
 
 const ALL_STAGES: OppStage[] = [...BOARD_STAGES, "kaybedildi"];
 
-/** Satış hunisi: forecast, where deals are lost, the kanban board, lost reasons and sources */
+/** Satış hunisi: KPIs, where deals are lost, the kanban board, lost reasons and sources */
 export default function Pipeline() {
   const board = useBoard();
   const lost = useLostOpps();
@@ -64,10 +65,7 @@ export default function Pipeline() {
           <button type="button" className="pipe-toggle" aria-pressed={hideLost} onClick={() => setHideLost((v) => !v)}>
             {hideLost ? m.page.showLost : m.page.hideLost}
           </button>
-          <button type="button" className="dash-new" onClick={() => openSheet("opportunity")}>
-            <BoardIcon name="plus" className="size-icon-md" stroke={STROKE.medium} />
-            {m.page.add}
-          </button>
+          <AddButton label={m.page.add} onClick={() => openSheet("opportunity")} />
         </div>
       }
     >

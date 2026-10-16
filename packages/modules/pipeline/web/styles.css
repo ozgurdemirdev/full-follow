@@ -58,9 +58,15 @@
   gap: var(--spacing-9);
   padding-block: var(--spacing-9);
 }
+.pipe-kpi:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
 @variant wide {
   .ff-card.pipe-panel.is-kpi {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pipe-kpi:last-child:nth-child(odd) {
+    grid-column: auto;
   }
 }
 .pipe-kpi {
