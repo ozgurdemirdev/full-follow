@@ -248,9 +248,7 @@
 }
 .ttl:focus {
   outline: none;
-  border-color: var(--color-accent);
   background: var(--color-surface-inset);
-  box-shadow: var(--shadow-focus-ring);
 }
 .mchip {
   display: inline-flex;

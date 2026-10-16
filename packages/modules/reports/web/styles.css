@@ -360,9 +360,6 @@
   border: var(--bw-default) solid var(--color-border);
   transition: border-color var(--dur-fade) var(--ease-standard);
 }
-.rep-pill:focus-within {
-  border-color: var(--color-accent);
-}
 .rep-pill > span {
   color: var(--color-text-muted);
   font-size: var(--text-base-sm);
@@ -379,9 +376,6 @@
   color: var(--color-text-primary);
   font-size: var(--text-base);
   text-align: right;
-}
-.rep-pill input:focus-visible {
-  box-shadow: none;
 }
 .rep-stack {
   display: flex;

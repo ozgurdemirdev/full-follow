@@ -485,9 +485,6 @@
   border: var(--bw-default) solid var(--color-border);
   background: var(--color-surface-inset);
 }
-.ideas-add:focus-within {
-  border-color: var(--color-accent);
-}
 .ideas-add > div {
   flex-grow: 1;
   min-width: 0;

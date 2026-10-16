@@ -1,0 +1,46 @@
+/* Focus of a text entry is drawn on the visible field box: the wrapper when the input sits inside a pill or
+   composite field, the element itself when it is the bordered box. The global ring never lands on the inner
+   input (app.css). Form sheet fields (.form-*) and the quick add search keep the board's quieter border in
+   forms.css. A new wrapper only needs to join the first list (or carry .field-box). */
+:is(
+    .field-box,
+    .ff-field,
+    .ff-stepper,
+    .cmt-field,
+    .dash-search,
+    .dash-ex-search,
+    .login-field,
+    .tlx-search,
+    .ppl-search,
+    .set-search,
+    .set-chip,
+    .composer,
+    .opr-add,
+    .ideas-add,
+    .rep-pill
+  ):not([data-invalid="true"]):has(:is(input, textarea, select, [contenteditable]):focus) {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus-ring);
+}
+
+:is(.inp, .set-input, .set-textarea, .ttl, .pipe-input, .drf-subject-edit, .drf-edit, .drf-rinput):focus {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus-ring);
+}
+
+/* native selects: the field's dark box with the kit chevron (FORM_ICON.chevronDown in forms/icons.tsx, stroked in
+   the text-muted stone) instead of the system arrow; a CSS background cannot read a token, so the stone lives here */
+select:is(.inp, .set-input),
+.opr-add select {
+  appearance: none;
+  padding-right: calc(var(--spacing-5) + var(--spacing-icon-xs) + var(--spacing-2));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A8A87' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-5) center;
+  background-size: var(--spacing-icon-xs);
+  cursor: pointer;
+}
+.opr-add select {
+  padding-right: calc(var(--spacing-3) + var(--spacing-icon-xs));
+  background-position: right var(--spacing-1) center;
+}

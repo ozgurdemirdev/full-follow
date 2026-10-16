@@ -487,11 +487,3 @@
   line-height: var(--leading-snug);
   white-space: pre-line;
 }
-
-/* the focus of a field is the control's own border, not the global ring */
-.form-control input:focus-visible,
-.form-area textarea:focus-visible,
-.form-tags input:focus-visible,
-.form-item-cell input:focus-visible {
-  box-shadow: none;
-}
