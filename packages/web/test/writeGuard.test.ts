@@ -9,9 +9,9 @@ afterEach(() => vi.unstubAllGlobals());
 describe("a write to a module that is not installed", () => {
   it("is refused before any request is sent, like the reads", async () => {
     setEndpointOwners(() => [["/tasks", "calendar"], ["/people", "people"]]);
-    const fetcher = vi.fn(async (url: string) => (url.endsWith("/modules") ? json([{ key: "people" }]) : json({ modules_hidden: [] })));
+    const fetcher = vi.fn(async (url: string) => (url.endsWith("/modules") ? json([{ key: "people" }]) : json({})));
     vi.stubGlobal("fetch", fetcher);
-    await loadModules();
+    await loadModules(Promise.resolve({ modules_hidden: [] }));
     fetcher.mockClear();
 
     expect(endpointOn("/tasks")).toBe(false);

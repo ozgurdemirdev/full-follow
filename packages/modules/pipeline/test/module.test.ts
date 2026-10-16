@@ -40,7 +40,7 @@ describe("pipeline as a module", () => {
   it("winning emits opportunity.won with plain data inside the move, adds the customer tag, and works without any project module", () => {
     const h = openDb(":memory:");
     const { seen, probe } = watcher();
-    const app = appFor(h, "ozgur", clock, [probe]);
+    const app = appFor(h, "owner", clock, [probe]);
     const ada = person(h);
     const o = app.pipeline.opportunities.create({ title: "Site", person_id: ada, source_id: app.get("source", "R10").row.id, estimated_value: 50000 }).row;
     const offer = app.pipeline.offers.create({ opportunity_id: o.id, amount: 42000, items: [{ label: "paket", amount: 42000 }] }).row;
@@ -64,7 +64,7 @@ describe("pipeline as a module", () => {
   it("a hook that fails on opportunity.won rolls the whole move back", () => {
     const h = openDb(":memory:");
     const boom = defineModule({ key: "boom", label: "Boom", hooks: { "opportunity.won": () => { throw new FFError("rule", "no project today"); } } });
-    const app = appFor(h, "ozgur", clock, [boom]);
+    const app = appFor(h, "owner", clock, [boom]);
     const o = app.pipeline.opportunities.create({ title: "Site", person_id: person(h), source_id: app.get("source", "R10").row.id }).row;
     expect(() => app.pipeline.opportunities.move(o.id, { stage: "kazanildi" })).toThrow("no project today");
     expect(app.get("opportunity", o.id).row.stage).toBe("bulundu");
@@ -73,7 +73,7 @@ describe("pipeline as a module", () => {
 
   it("offers: versions, one accepted offer, the accepted amount is the estimate, and a removed accepted offer is no longer accepted", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const o = app.pipeline.opportunities.create({ title: "Site", person_id: person(h), source_id: app.get("source", "R10").row.id, estimated_value: 1000 }).row;
     const v1 = app.pipeline.offers.create({ opportunity_id: o.id, amount: 5000 }).row;
     const v2 = app.save("teklif", { opportunity: "Site", amount: 6000, items: [{ label: "a", amount: 6000 }] }).row;
@@ -93,7 +93,7 @@ describe("pipeline as a module", () => {
 
   it("the team: members are added through the opportunity or the team API, the main contact is refused, a removed member goes to the trash", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const [ada, bob] = [person(h, "Ada"), person(h, "Bob")];
     const o = app.pipeline.opportunities.create({ title: "Site", person_id: ada, source_id: app.get("source", "R10").row.id }).row;
     expect(() => app.pipeline.team.add(o.id, { person_id: ada })).toThrow(/ana muhatap/);
@@ -116,7 +116,7 @@ describe("pipeline as a module", () => {
 
   it("a touch about an opportunity moves its stage the way the touch rules say", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const ada = person(h);
     const o = app.pipeline.opportunities.create({ title: "Site", person_id: ada, source_id: app.get("source", "R10").row.id }).row;
     const touch = (direction: string, kind: string) => h.sqlite.transaction(() => app.ctx.emit("touch.created", {
@@ -138,7 +138,7 @@ describe("pipeline as a module", () => {
     let now = "2026-10-14T10:00:00Z";
     const moving: Clock = { today: () => now.slice(0, 10), now: () => now };
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", moving);
+    const app = appFor(h, "owner", moving);
     const ada = person(h);
     const r10 = app.get("source", "R10").row.id;
     const open = (title: string) => app.pipeline.opportunities.create({ title, person_id: ada, source_id: r10 }).row;
@@ -168,7 +168,7 @@ describe("pipeline as a module", () => {
 
   it("the funnel, the conversion per source and the numbers other modules read", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     const [ada, bob] = [person(h, "Ada"), person(h, "Bob")];
     const r10 = app.get("source", "R10").row.id;
     h.sqlite.prepare("UPDATE people SET source_id = ? WHERE id IN (?, ?)").run(r10, ada, bob);

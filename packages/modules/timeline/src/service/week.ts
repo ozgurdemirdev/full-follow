@@ -34,7 +34,7 @@ export function weekOf(ctx: Ctx, kinds: Record<string, TimelineEventDef>, start?
     .reduce((sum, [type, d]) => sum + (keptRow<{ n: number }>(ctx, approvedDrafts(d.row!.table), type, from, to, `$.${d.row!.key}`, JSON.stringify(DRAFT_APPROVED_STATUSES))?.n ?? 0), 0);
   return {
     start: monday,
-    me: total(now, (_t, by) => by === "ozgur"),
+    me: total(now, (_t, by) => by === "owner"),
     claude: total(now, (_t, by) => by === "claude"),
     touches: total(now, (t) => kind(t) === "temas"),
     collections_amount: collected,

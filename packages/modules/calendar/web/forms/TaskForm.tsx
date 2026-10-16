@@ -26,7 +26,7 @@ export function TaskForm(p: FormProps) {
   const [due, setDue] = useState(pre?.date ?? todayIso());
   const [time, setTime] = useState("");
   const [kind, setKind] = useState<TaskKind>("gorev");
-  const [who, setWho] = useState<TaskAssignee>("ozgur");
+  const [who, setWho] = useState<TaskAssignee>("owner");
   const [target, setTarget] = useState<Ref>(emptyRef);
   const row = existing.data?.row;
   /** The record the task is already tied to (edit) or was opened from (preset) */

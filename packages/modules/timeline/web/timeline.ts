@@ -37,7 +37,7 @@ export const TL_TYPE = Object.fromEntries(TL_TYPES.map((t) => [t.key, t])) as Re
 
 export const ACTOR_PILLS: { value: "all" | Actor; label: string }[] = [
   { value: "all", label: kit.all },
-  { value: "ozgur", label: m.actor.ozgur },
+  { value: "owner", label: m.actor.owner },
   { value: "claude", label: m.actor.claude },
 ];
 
@@ -116,8 +116,8 @@ export function groupDays(rows: TlRow[], counts: Record<string, TlDayCount>, now
   for (const r of rows) {
     let d = days[days.length - 1];
     if (!d || d.key !== r.day) {
-      const c = counts[r.day] ?? { ozgur: 0, claude: 0 };
-      d = { key: r.day, title: dayTitle(r.day, now), sum: m.day.sum(c.ozgur, c.claude), events: [] };
+      const c = counts[r.day] ?? { owner: 0, claude: 0 };
+      d = { key: r.day, title: dayTitle(r.day, now), sum: m.day.sum(c.owner, c.claude), events: [] };
       days.push(d);
     }
     d.events.push(r);

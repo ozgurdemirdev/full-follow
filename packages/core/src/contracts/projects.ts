@@ -18,7 +18,7 @@ export interface ProjectRecord {
   maintenance_fee: number | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** The next unpaid payment of a project (the board shows it) */
@@ -29,7 +29,7 @@ export interface NextPayment {
   due_date: string | null;
 }
 
-/** Who a project waits on: Özgür (sende), the client (musteride) or nobody because something is past due (gecikti) */
+/** Who a project waits on: the owner (sende), the client (musteride) or nobody because something is past due (gecikti) */
 export type ProjectWaiting = "sende" | "musteride" | "gecikti";
 
 /**
@@ -65,7 +65,7 @@ export interface PaymentRecord {
   paid_at: string | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** A payment as listed: the row plus the names and the computed status (the status is never stored) */

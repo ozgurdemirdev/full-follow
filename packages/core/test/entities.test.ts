@@ -33,7 +33,7 @@ function widgets() {
   return { def, store };
 }
 
-const makeCore = (defs: ModuleDef[], off: string[] = []) => createCore(openDb(":memory:"), "ozgur", clock, createRegistry(defs, off));
+const makeCore = (defs: ModuleDef[], off: string[] = []) => createCore(openDb(":memory:"), "owner", clock, createRegistry(defs, off));
 
 describe("registry driven record types", () => {
   it("save, get, find and delete go to the module's handler, by canonical name or alias", () => {
@@ -80,8 +80,8 @@ describe("registry driven record types", () => {
   it("restore takes the module's trash types and labels them; an unregistered type is refused", () => {
     const core = makeCore([widgets().def]);
     const h = openDb(":memory:");
-    const c = createCore(h, "ozgur", clock, createRegistry([widgets().def]));
-    h.db.insert(trash).values({ type: "widget", record_id: 7, label: "alfa", payload: JSON.stringify({ parts: [], links: [] }), created_at: now, updated_at: now, created_by: "ozgur" }).run();
+    const c = createCore(h, "owner", clock, createRegistry([widgets().def]));
+    h.db.insert(trash).values({ type: "widget", record_id: 7, label: "alfa", payload: JSON.stringify({ parts: [], links: [] }), created_at: now, updated_at: now, created_by: "owner" }).run();
     expect(c.find("trash").rows[0]).toMatchObject({ type: "widget", label: "alfa", what: "aparat" });
     expect(c.restore("widget", 7).effects).toEqual(["alfa geri yüklendi"]);
     expect(c.find("trash").total).toBe(0);

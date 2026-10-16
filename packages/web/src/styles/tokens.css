@@ -523,8 +523,8 @@
   --color-chip-success-fg: var(--palette-green-300);
   --color-chip-ask-bg: var(--palette-amber-800);
   --color-chip-ask-fg: var(--palette-amber-300);
-  --color-author-ozgur-bg: var(--palette-ink-700);
-  --color-author-ozgur-fg: var(--palette-bone-50);
+  --color-author-owner-bg: var(--palette-ink-700);
+  --color-author-owner-fg: var(--palette-bone-50);
   --color-tag-aday-bg: var(--palette-ink-700);
   --color-tag-aday-fg: var(--palette-bone-300);
   --color-tag-musteri-bg: var(--palette-green-950);

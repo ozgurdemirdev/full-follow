@@ -26,7 +26,7 @@ packages/modules/<key>/
 
 - A module imports only `@fullfollow/core` (`npm run check:boundaries` fails the build otherwise). Core exports what a service needs:
   `writeEvent`, `parse`, `row(s)`, `keptRow(s)` (the same for a literal SQL text: the statement is prepared once per connection, for reads on hot paths), `stamp`, `Bin`, `announceTrashed`, `requireRow`, `resolveRef`, `schema` (every Drizzle table), `zodKit`, the contracts, `APP_TOKEN`, `intId`, `listOpts`, `withList`,
-  `placeInGroup`, `renumberGroup`, `addTagBySlug`, `readTemplate`, `filesOf`, `requireTarget` (the row a file, link or comment hangs on), `assertOzgur`,
+  `placeInGroup`, `renumberGroup`, `addTagBySlug`, `readTemplate`, `filesOf`, `requireTarget` (the row a file, link or comment hangs on), `assertOwner`,
   and the shared helpers of the features that are not modules (tags and sectors, `sectorMatch`, `sectorInput`, duplicate keys, the recipient helpers `resolveSubject`, `renderTemplate`, `REPLIED_AFTER`, `isColdEmail`, `marketingSettings`, `queriesFor`).
 - Tables stay in core's Drizzle schema. A module owns its tables by convention; removing it never touches data and `db:generate` must produce nothing.
   Reading another module's table directly (an aggregate that joins it: the template statistics over the drafts and touches tables) is fine for a read that must keep working without that module, because every table always exists; writing it, or enforcing its rules, goes through `ctx.mod`.
@@ -79,7 +79,7 @@ export const docs = defineDocs({
 `scripts/gen-modules.mjs` scans this folder and writes `packages/app/src/modules.generated.ts`, `packages/server/src/modules.generated.ts` and, for the web part (below), `packages/web/src/modules.generated.ts` and `packages/web/src/styles/modules.generated.css`.
 `scripts/build.mjs` builds core, every module, app, server and MCP in that order; `scripts/test.mjs` runs the tests of core, app, server and every module.
 Both run from `npm run build` / `npm test` / `npm start`. `npm run check:modules` is the removal check: for each module and for all off, it regenerates the lists, compiles every package, runs the remaining tests, starts the server and the MCP host against a seeded copy of the demo database and requests the core and `smoke` endpoints (the web is typechecked once, all on, and built again for every case with the generated web list of that case; the build must hold the `fullfollow.webMarkers` of exactly the installed modules); run it at the end of a phase and before a merge (take the build lock once around it if others build). `GET /api/modules` lists the installed modules.
-The server gives a module's controller two apps through string tokens: `APP_TOKEN` (actor `ozgur`) and `CLAUDE_APP_TOKEN` (the same app as `claude`, for what Claude writes when the panel asks for it: the follow-up drafts).
+The server gives a module's controller two apps through string tokens: `APP_TOKEN` (actor `owner`) and `CLAUDE_APP_TOKEN` (the same app as `claude`, for what Claude writes when the panel asks for it: the follow-up drafts).
 
 ## Web part
 

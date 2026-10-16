@@ -17,7 +17,7 @@ export function WeekStrip({ week, className, style }: { week: TlWeek; className?
           <span className="grow-x bg-claude" style={{ width: share(week.cl, total) }} />
         </div>
         <div className="tlx-legend">
-          <span><span className="tlx-dot bg-text-primary" />{m.actor.ozgur} {week.me}</span>
+          <span><span className="tlx-dot bg-text-primary" />{m.actor.owner} {week.me}</span>
           <span className="text-claude-soft"><span className="tlx-dot bg-claude" />{m.actor.claude} {week.cl}</span>
         </div>
       </div>

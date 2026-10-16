@@ -24,7 +24,7 @@ describe("calendar as a module", () => {
   });
 
   it("the Today view carries the day plan and the tasks due", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     app.tasks.create({ title: "bugün", due_date: "2026-10-14" });
     const today = app.today();
     expect(today.plan).toMatchObject({ date: "2026-10-14", goals: [] });
@@ -32,7 +32,7 @@ describe("calendar as a module", () => {
   });
 
   it("plan and calendar take short dates and reject garbage at once instead of looping", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     expect(app.goals.plan("bugün").date).toBe("2026-10-14");
     expect(app.goals.plan("+3g").date).toBe("2026-10-17");
     expect(() => app.goals.plan("garbage")).toThrow(/YYYY-MM-DD/);

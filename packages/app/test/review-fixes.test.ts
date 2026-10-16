@@ -14,7 +14,7 @@ suite("the fixes of the service review", () => {
     today = "2026-10-15";
     now = "2026-10-15T10:00:00Z";
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   it("the drafts list looks up the company names in one call, not one company at a time", () => {
@@ -90,7 +90,7 @@ suite("the fixes of the service review", () => {
     app.offers.create({ opportunity_id: o.id, amount: 1000, plan: [{ key: "pesinat", label: "Peşinat", pct: 100 }] });
     expect(pipeline.offers.list({ filter: { opportunity_id: o.id } }).total).toBe(1);
     expect(pipeline.offers.list({ filter: { opportunity_id: o.id + 1 } }).total).toBe(0);
-    const note = sql("INSERT INTO notes(person_id, body, created_by, created_at, updated_at) VALUES (?, 'n1', 'ozgur', ?, ?) RETURNING id", ada.id, now, now)[0];
+    const note = sql("INSERT INTO notes(person_id, body, created_by, created_at, updated_at) VALUES (?, 'n1', 'owner', ?, ?) RETURNING id", ada.id, now, now)[0];
     expect(app.get("note", note.id).row).toMatchObject({ body: "n1", person_name: "Ada" });
     expect(app.find("note", { filter: { person_id: ada.id } }).total).toBe(1);
     expect(app.get("source", src.id).row.id).toBe(src.id);

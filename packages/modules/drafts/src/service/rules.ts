@@ -1,6 +1,6 @@
 import { DRAFT_RULE_CHARS, DRAFT_RULES_MAX, readSetting, settingsService, truncate, type Ctx } from "@fullfollow/core";
 
-/** The rules Claude learned from Özgür's reject notes (setting `draft_rules`), oldest first; a broken stored value reads as none */
+/** The rules Claude learned from the owner's reject notes (setting `draft_rules`), oldest first; a broken stored value reads as none */
 export function draftRules(ctx: Ctx): string[] {
   try {
     const list: unknown = JSON.parse(readSetting(ctx, "draft_rules") ?? "[]");

@@ -1,4 +1,4 @@
-export const ACTORS = ["ozgur", "claude"] as const;
+export const ACTORS = ["owner", "claude"] as const;
 export type Actor = (typeof ACTORS)[number];
 
 /** Paket 3: etiketler veritabanında (tags). Bunlar ilk kurulumda açılan varsayılanların kısa adları (slug). */
@@ -113,7 +113,7 @@ export const QUOTA_NEAR_RATIO = 0.8;
 export const SETTING_KEYS = [
   "bagkur_monthly", "accounting_monthly", "other_fixed_monthly", "target_net_monthly",
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
-  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden",
+  "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden", "owner_name",
 ] as const;
 
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
@@ -189,6 +189,8 @@ export const OFFER_PLAN_PARTS_MAX = MILESTONES.length;
 export const OFFER_PLAN_TOTAL_PCT = 100;
 /** Max length of the pinned notes text that goes into every panel chat */
 export const CHAT_PINNED_MAX = 4_000;
+/** Max length of the owner's name (setting `owner_name`): the UI labels and the panel Claude's system prompt carry it */
+export const OWNER_NAME_MAX = 40;
 export const CHAT_NEW_TITLE = "Yeni sohbet";
 export const CHAT_ROLES = ["user", "assistant"] as const;
 export const CHAT_INPUT_MODES = ["text", "voice"] as const;

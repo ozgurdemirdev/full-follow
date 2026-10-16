@@ -10,7 +10,7 @@ suite("Kendi projelerim", () => {
   let sql: <T = any>(q: string, ...a: unknown[]) => T[];
   beforeEach(() => {
     const h = openDb(":memory:");
-    c = createApp(h, "ozgur", clock);
+    c = createApp(h, "owner", clock);
     sql = (q, ...a) => h.sqlite.prepare(q).all(...a) as any[];
   });
   const pos = (project: number, prio: string) =>

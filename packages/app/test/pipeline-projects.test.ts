@@ -11,7 +11,7 @@ suite("pipeline and projects together", () => {
   const source = () => app.get("source", "R10").row.id;
   beforeEach(() => {
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   it("a won opportunity opens its project and payment plan through the event, in the same transaction, with the same effects and events as before", () => {
@@ -38,7 +38,7 @@ suite("pipeline and projects together", () => {
   it("winning works without the projects module: no project, the customer tag still comes", () => {
     const p = app.people.create({ name: "Ada" }).row;
     const o = app.opportunities.create({ title: "Site", person_id: p.id, source_id: source(), estimated_value: 50000 }).row;
-    const bare = appWithout(["projects"], h, "ozgur", clock);
+    const bare = appWithout(["projects"], h, "owner", clock);
     expect(bare.mod("pipeline")!.opportunities.move(o.id, { stage: "kazanildi" }).effects).toEqual(["müşteri etiketi eklendi"]);
     expect(sql("SELECT COUNT(*) n FROM projects")[0].n).toBe(0);
     expect(bare.get("opportunity", o.id).row).toMatchObject({ stage: "kazanildi", project_id: null });
@@ -50,7 +50,7 @@ suite("pipeline and projects together", () => {
   it("without the pipeline module the other modules refuse an opportunity link clearly and read zero", () => {
     const p = app.people.create({ name: "Ada" }).row;
     const o = app.opportunities.create({ title: "Site", person_id: p.id, source_id: source() }).row;
-    const bare = appWithout(["pipeline"], h, "ozgur", clock);
+    const bare = appWithout(["pipeline"], h, "owner", clock);
     expect(() => bare.save("touch", { person_id: p.id, channel: "email", direction: "giden", summary: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
     expect(() => bare.save("task", { title: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
     expect(() => bare.mod("drafts")!.create({ person_id: p.id, channel: "email", body: "x", opportunity_id: o.id })).toThrow(/"pipeline" modülü kurulu değil/);
@@ -109,6 +109,6 @@ suite("pipeline and projects together", () => {
     app.files.remove(f.id);
     expect(sql("SELECT file_id FROM offers WHERE id = ?", offer.id)[0].file_id).toBeNull();
     expect(() => app.files.create({ target_type: "project", target_id: 999, name: "a", mime: "x", size: 1, stored_name: "y" })).toThrow(FFError);
-    expect(() => appWithout(["pipeline"], h, "ozgur", clock).files.create({ target_type: "opportunity", target_id: o.id, name: "a", mime: "x", size: 1, stored_name: "y" })).toThrow(/"pipeline" modülü kurulu değil/);
+    expect(() => appWithout(["pipeline"], h, "owner", clock).files.create({ target_type: "opportunity", target_id: o.id, name: "a", mime: "x", size: 1, stored_name: "y" })).toThrow(/"pipeline" modülü kurulu değil/);
   });
 });

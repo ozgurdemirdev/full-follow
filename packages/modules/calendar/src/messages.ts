@@ -69,7 +69,7 @@ export const m = defineMessages({
     },
     docs: {
       today: "görevler, ",
-      save: "task: {title,assignee:ozgur|claude|musteri (musteri: müşterinin yapacağı iş, projede Müşteride bekliyor sayılır),due_date,due_time:'14:30',kind:gorusme|takip|gorev (varsayılan gorev),idea:'fikir adı' (fikir için anlatım metni görevi)}. goal: {title,target,days,channel?|metric?:'new_records',note?} (günlük tekrarlı hedef); goal_log: {goal,add|count,date?,note?}.",
+      save: "task: {title,assignee:owner|claude|musteri (musteri: müşterinin yapacağı iş, projede Müşteride bekliyor sayılır),due_date,due_time:'14:30',kind:gorusme|takip|gorev (varsayılan gorev),idea:'fikir adı' (fikir için anlatım metni görevi)}. goal: {title,target,days,channel?|metric?:'new_records',note?} (günlük tekrarlı hedef); goal_log: {goal,add|count,date?,note?}.",
       planTool: "Günün iş planı: hedefler (yapılan/hedef; kanallı hedefte giden mesajlar kendiliğinden sayılır), o günün görevleri, seri, haftalık tutturma oranı. date varsayılan bugün. from+to verilirse takvim (gün gün hedef doluluğu ve görevler, en fazla 92 gün). Hedef: save goal {title,target,days:'her_gun|hafta_ici|hafta_sonu'|[1..7],channel?|metric?,note?}; channel verilirse o kanaldaki giden mesajlar, metric:'new_records' verilirse o gün eklenen yeni kişi ve firmalar kendiliğinden sayılır (çıktıda eklenen ve mükerrer atlanan sayısı görünür; kanal ve metric birlikte verilmez, örn. Perşembe liste yenileme {title:'Liste yenileme',target:50,days:[4],metric:'new_records'}); ilerleme: save goal_log {goal:'ad',add:1|count:10,date?,note?}.",
     },
   },

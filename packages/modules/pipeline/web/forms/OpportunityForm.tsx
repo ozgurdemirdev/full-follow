@@ -133,7 +133,7 @@ function OpportunityCreate(p: FormProps) {
       });
       const oid = res.row!.id;
       // the opportunity is saved: the optional parts must not fail the sheet (a retry would create a second one)
-      if (tasksOn && step.trim()) await optionalStep(() => run("post", "/tasks", { title: step.trim(), assignee: "ozgur", due_date: date || undefined, opportunity_id: oid }, { silent: true }), m.form.stepFailed);
+      if (tasksOn && step.trim()) await optionalStep(() => run("post", "/tasks", { title: step.trim(), assignee: "owner", due_date: date || undefined, opportunity_id: oid }, { silent: true }), m.form.stepFailed);
       if (note.trim()) await optionalStep(() => run("post", "/comments", { target_type: "opportunity", target_id: oid, body: note.trim() }, { silent: true }), m.form.noteFailed);
     },
     () => errorsOf({ person: !person.text.trim() && m.form.pickPerson }),

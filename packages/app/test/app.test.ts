@@ -5,8 +5,8 @@ import { modules, modulesOff } from "../src/modules.generated";
 
 describe("createApp", () => {
   it("with the generated module list it has today's core surface plus the module registry view", () => {
-    const app = createApp(openDb(":memory:"), "ozgur");
-    const core = createCore(openDb(":memory:"), "ozgur");
+    const app = createApp(openDb(":memory:"), "owner");
+    const core = createCore(openDb(":memory:"), "owner");
     expect(Object.keys(app).sort()).toEqual(Object.keys(core).sort());
     expect(app.modules.list().map((m) => m.key)).toEqual(modules.map((m) => m.key));
   });

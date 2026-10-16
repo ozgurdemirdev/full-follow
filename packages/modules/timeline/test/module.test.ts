@@ -8,7 +8,7 @@ const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:0
 describe("timeline as a module", () => {
   it("the feed pages newest first by a (created_at, id) cursor: no gaps, no repeats, ties on one second keep their order", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [feedKinds]);
+    const app = appFor(h, "owner", clock, [feedKinds]);
     // 130 events, two per second (a tie on created_at), written out of order of their time
     for (let i = 0; i < 65; i++) {
       const k = (i * 7) % 65;
@@ -40,11 +40,11 @@ describe("timeline as a module", () => {
 
   it("the feed filters by kind, actor, date and text; rows carry the record chip and the amount of a payment", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [feedKinds]);
+    const app = appFor(h, "owner", clock, [feedKinds]);
     const ada = person(h, "Ada Lovelace");
     const acme = company(h, "Acme");
     event(h, { type: "touch.created", at: "2026-10-10T12:00:00Z", summary: "Giden mesaj", data: { touch_id: touch(h, { company_id: acme }) } });
-    event(h, { type: "payment.paid", at: "2026-10-12T12:00:00Z", by: "ozgur", summary: "Ödeme alındı: %50 indirim", data: { amount: 1500 }, person_id: ada });
+    event(h, { type: "payment.paid", at: "2026-10-12T12:00:00Z", by: "owner", summary: "Ödeme alındı: %50 indirim", data: { amount: 1500 }, person_id: ada });
     event(h, { type: "task.done", at: "2026-10-13T12:00:00Z", by: "claude", summary: "Görev tamamlandı: Kerem" });
     event(h, { type: "person.updated", at: "2026-10-13T13:00:00Z", summary: "not a feed event", person_id: ada });
     const all = app.timeline.feed();
@@ -67,41 +67,41 @@ describe("timeline as a module", () => {
 
   it("a record's feed keeps its own events and those of the rows it owns; day headers count the whole day, whatever the filters", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [feedKinds]);
+    const app = appFor(h, "owner", clock, [feedKinds]);
     const ada = person(h, "Ada");
     const bob = person(h, "Bob");
     const at = "2026-10-13T12:00:00Z";
     event(h, { type: "touch.created", at, data: { touch_id: touch(h, { person_id: ada }) } });
     event(h, { type: "payment.paid", at, person_id: ada, data: { amount: 10 } });
     event(h, { type: "task.done", at, by: "claude", person_id: bob });
-    const page = app.timeline.feed({ record: `person:${ada}`, actor: "ozgur", type: "odeme" });
+    const page = app.timeline.feed({ record: `person:${ada}`, actor: "owner", type: "odeme" });
     expect(page.rows.map((r) => r.type)).toEqual(["odeme"]);
     expect(page.total).toBe(1);
-    expect(app.timeline.feed({ record: `person:${ada}` })).toMatchObject({ total: 2, day_counts: { [page.rows[0].day]: { ozgur: 2, claude: 1 } } });
+    expect(app.timeline.feed({ record: `person:${ada}` })).toMatchObject({ total: 2, day_counts: { [page.rows[0].day]: { owner: 2, claude: 1 } } });
     expect(app.timeline.feed().total).toBeUndefined();
     expect(() => app.timeline.feed({ record: "ada" })).toThrow(FFError);
   });
 
   it("the week strip counts Monday to Sunday against the week before, in SQL", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [feedKinds, fakeProjects]);
+    const app = appFor(h, "owner", clock, [feedKinds, fakeProjects]);
     const noon = (d: string) => `2026-10-${d}T12:00:00Z`;
     // this week: 2026-10-12 to 2026-10-18
-    event(h, { type: "touch.created", at: noon("12"), by: "ozgur" });
+    event(h, { type: "touch.created", at: noon("12"), by: "owner" });
     event(h, { type: "touch.created", at: noon("14"), by: "claude" });
-    event(h, { type: "task.done", at: noon("13"), by: "ozgur" });
-    event(h, { type: "task.done", at: noon("18"), by: "ozgur" });
-    event(h, { type: "payment.paid", at: noon("15"), by: "ozgur", data: { amount: 1500 } });
-    event(h, { type: "payment.paid", at: noon("16"), by: "ozgur", data: { amount: 2500 } });
+    event(h, { type: "task.done", at: noon("13"), by: "owner" });
+    event(h, { type: "task.done", at: noon("18"), by: "owner" });
+    event(h, { type: "payment.paid", at: noon("15"), by: "owner", data: { amount: 1500 } });
+    event(h, { type: "payment.paid", at: noon("16"), by: "owner", data: { amount: 2500 } });
     event(h, { type: "draft.created", at: noon("14"), by: "claude" });
     event(h, { type: "draft.created", at: noon("17"), by: "claude" });
-    event(h, { type: "draft.created", at: noon("17"), by: "ozgur" });
-    event(h, { type: "person.updated", at: noon("14"), by: "ozgur" });
+    event(h, { type: "draft.created", at: noon("17"), by: "owner" });
+    event(h, { type: "person.updated", at: noon("14"), by: "owner" });
     // the week before and the week after
-    event(h, { type: "touch.created", at: noon("11"), by: "ozgur" });
+    event(h, { type: "touch.created", at: noon("11"), by: "owner" });
     event(h, { type: "touch.created", at: noon("06"), by: "claude" });
-    event(h, { type: "task.done", at: noon("08"), by: "ozgur" });
-    event(h, { type: "touch.created", at: noon("19"), by: "ozgur" });
+    event(h, { type: "task.done", at: noon("08"), by: "owner" });
+    event(h, { type: "touch.created", at: noon("19"), by: "owner" });
     const week = app.timeline.week();
     expect(week).toEqual({
       start: "2026-10-12", me: 6, claude: 3, touches: 2, collections_amount: 4000, collections_count: 2, tasks_done: 2, claude_drafts: 2, claude_drafts_approved: 0,
@@ -114,7 +114,7 @@ describe("timeline as a module", () => {
 
   it("a person's own timeline answers by alias or name, oldest first, and refuses other types", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock, [fakePeople]);
+    const app = appFor(h, "owner", clock, [fakePeople]);
     const ada = person(h, "Ada Lovelace");
     for (let i = 1; i <= 3; i++) event(h, { type: "person.updated", at: `2026-10-0${i}T12:00:00Z`, summary: `u${i}`, person_id: ada, data: i === 2 ? { k: 1 } : undefined });
     expect(app.timeline.forRecord("person", ada).map((e) => e.summary)).toEqual(["u1", "u2", "u3"]);
@@ -125,9 +125,9 @@ describe("timeline as a module", () => {
   });
 
   it("without the modules that write events the feed is empty and the week strip is zero; a core without the module has no timeline", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     expect(app.timeline.feed()).toEqual({ rows: [], next_before: null, day_counts: {} });
     expect(app.timeline.week()).toMatchObject({ start: "2026-10-12", me: 0, claude: 0, touches: 0, collections_amount: null, tasks_done: 0 });
-    expect(createCore(openDb(":memory:"), "ozgur", clock).mod("timeline")).toBeUndefined();
+    expect(createCore(openDb(":memory:"), "owner", clock).mod("timeline")).toBeUndefined();
   });
 });

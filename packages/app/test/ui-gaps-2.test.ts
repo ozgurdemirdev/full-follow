@@ -12,11 +12,11 @@ suite("the data the second batch of screens reads", () => {
   beforeEach(() => {
     today = "2026-10-14";
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
     claude = appFor(h, "claude", clock);
   });
 
-  it("Claude's question carries quick answers within the limits; opening the thread marks Claude's comments read, only for Özgür", () => {
+  it("Claude's question carries quick answers within the limits; opening the thread marks Claude's comments read, only for the owner", () => {
     const ada = app.people.create({ name: "Ada" }).row;
     const ask = claude.comments.add({ target_type: "person", target_id: ada.id, body: "Ajans mı?", options: ["Evet", "Hayır"] }).row;
     expect(ask.options).toEqual(["Evet", "Hayır"]);
@@ -26,12 +26,12 @@ suite("the data the second batch of screens reads", () => {
     expect(() => claude.comments.add({ reply_to: ask.id, body: "x", options: ["a".repeat(41)] })).toThrow(/options/);
     const answer = claude.comments.add({ reply_to: ask.id, body: "Etiketledim" }).row;
     const unread = () => app.get("comment", ask.id).row.comments.map((c: any) => [c.created_by, c.read_at]);
-    expect(unread()).toEqual([["claude", null], ["ozgur", null], ["claude", null]]);
-    expect(() => claude.comments.markRead(ask.id)).toThrow(/Özgür/);
-    // opening through any comment of the thread: only Claude's unread comments get the time, Özgür's own stay null, a second open keeps the first time
+    expect(unread()).toEqual([["claude", null], ["owner", null], ["claude", null]]);
+    expect(() => claude.comments.markRead(ask.id)).toThrow(/kullanıcı/);
+    // opening through any comment of the thread: only Claude's unread comments get the time, the owner's own stay null, a second open keeps the first time
     today = "2026-10-15";
     app.comments.markRead(answer.id);
-    expect(unread()).toEqual([["claude", "2026-10-15T10:00:00Z"], ["ozgur", null], ["claude", "2026-10-15T10:00:00Z"]]);
+    expect(unread()).toEqual([["claude", "2026-10-15T10:00:00Z"], ["owner", null], ["claude", "2026-10-15T10:00:00Z"]]);
     today = "2026-10-16";
     app.comments.markRead(ask.id);
     expect(unread().map((c: any[]) => c[1])).toEqual(["2026-10-15T10:00:00Z", null, "2026-10-15T10:00:00Z"]);
@@ -50,7 +50,7 @@ suite("the data the second batch of screens reads", () => {
     expect(app.get("task", pitch.id).row).toMatchObject({ idea_id: null, idea_title: null });
     app.restore("idea", "Klinik botu");
     expect(app.get("task", pitch.id).row.idea_id).toBe(idea.id);
-    expect(() => appWithout(["ideas"], h, "ozgur", clock).mod("calendar")!.tasks.create({ title: "x", idea_id: idea.id })).toThrow(/"ideas" modülü kurulu değil/);
+    expect(() => appWithout(["ideas"], h, "owner", clock).mod("calendar")!.tasks.create({ title: "x", idea_id: idea.id })).toThrow(/"ideas" modülü kurulu değil/);
   });
 
   it("referral lists: thanks go to whoever introduced a recent win (once, newest first), asks to delivered and paid clients who introduced nobody, a late payment dims the row; the state follows the open request and the waiting draft", () => {
@@ -103,10 +103,10 @@ suite("the data the second batch of screens reads", () => {
     app.drafts.create({ person_id: can.id, channel: "email", body: "merhaba" });
     expect(suggestions().asks.find((a) => a.person.name === "Can")!.state).toBe("drafted");
     // without the modules each list reads, it is empty; without the calendar and drafts the state stays idle
-    expect(appWithout(["pipeline"], h, "ozgur", clock).mod("referrals")!.suggestions().thanks).toEqual([]);
-    expect(appWithout(["projects"], h, "ozgur", clock).mod("referrals")!.suggestions().asks).toEqual([]);
-    expect(appWithout(["calendar", "drafts"], h, "ozgur", clock).mod("referrals")!.suggestions().asks[0].state).toBe("idle");
-    expect(appWithout(["people"], h, "ozgur", clock).mod("referrals")!.suggestions()).toEqual({ thanks: [], asks: [] });
+    expect(appWithout(["pipeline"], h, "owner", clock).mod("referrals")!.suggestions().thanks).toEqual([]);
+    expect(appWithout(["projects"], h, "owner", clock).mod("referrals")!.suggestions().asks).toEqual([]);
+    expect(appWithout(["calendar", "drafts"], h, "owner", clock).mod("referrals")!.suggestions().asks[0].state).toBe("idle");
+    expect(appWithout(["people"], h, "owner", clock).mod("referrals")!.suggestions()).toEqual({ thanks: [], asks: [] });
   });
 
   it("the focus project is a setting that must name an own project; it clears itself when that project is deleted", () => {

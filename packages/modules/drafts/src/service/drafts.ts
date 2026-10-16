@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import {
-  assertOzgur, Bin, eventLink as link, FFError, parse, renderTemplate, requireRow, resolveSubject, sameSide, schema, stamp, truncate, writeEvent as emit,
+  assertOwner, Bin, eventLink as link, FFError, parse, renderTemplate, requireRow, resolveSubject, sameSide, schema, stamp, truncate, writeEvent as emit,
   type Ctx, type DraftRecord, type TemplateRecord,
 } from "@fullfollow/core";
 import { m } from "../messages";
@@ -11,8 +11,8 @@ import { draftCreate, draftReject, draftUpdate } from "./schemas";
 const { drafts } = schema;
 
 /**
- * Taslak akışı: Claude (ya da Özgür) taslak bırakır → sadece Özgür onaylar / reddeder / "gönderdim" der.
- * Gönderildi: aynı bilgilerle giden temas oluşur (created_by = ozgur, draft_id dolu).
+ * Taslak akışı: Claude (ya da kullanıcı) taslak bırakır → sadece kullanıcı onaylar / reddeder / "gönderdim" der.
+ * Gönderildi: aynı bilgilerle giden temas oluşur (created_by = owner, draft_id dolu).
  */
 export function draftsService(ctx: Ctx) {
   /** The template row of a draft made from one; the templates module owns them */
@@ -71,14 +71,14 @@ export function draftsService(ctx: Ctx) {
   }
 
   function approve(id: number) {
-    assertOzgur(ctx, m.who.approve);
+    assertOwner(ctx, m.who.approve);
     setStatus(id, ["bekliyor"], "onaylandi", "draft.approved", m.event.approved);
     return { row: requireRow<DraftRecord>(ctx, "drafts", id), effects: [] as string[] };
   }
 
   /** `input` is `{ note }` or `{ no_reason: true }` (a bare text counts as the note); only a real note becomes a learned rule */
   function reject(id: number, input: unknown) {
-    assertOzgur(ctx, m.who.reject);
+    assertOwner(ctx, m.who.reject);
     const { note, no_reason } = parse(draftReject, input);
     const n = note || REJECT_NO_REASON_NOTE;
     ctx.db.transaction(() => {
@@ -90,7 +90,7 @@ export function draftsService(ctx: Ctx) {
 
   /** "Gönderdim": taslak gonderildi olur, giden temas oluşur, fırsat aşaması kuralı çalışır (temas network modülü kuruluysa) */
   function markSent(id: number) {
-    assertOzgur(ctx, m.who.send);
+    assertOwner(ctx, m.who.send);
     return ctx.db.transaction((tx) => {
       const cur = requireRow(ctx, "drafts", id);
       if (cur.status !== "bekliyor" && cur.status !== "onaylandi") throw new FFError("rule", m.error.alreadyStatus(cur.status));

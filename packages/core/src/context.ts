@@ -121,8 +121,15 @@ export function stamp(ctx: Ctx) {
   return { created_at: t, updated_at: t, created_by: ctx.actor };
 }
 
-export function assertOzgur(ctx: Ctx, what: string): void {
-  if (ctx.actor !== "ozgur") throw new FFError("forbidden", m.forbiddenAction(what));
+/** The name the owner gave in the first run setup (setting `owner_name`), null until then */
+export const ownerName = (ctx: Ctx): string | null =>
+  row<{ value: string }>(ctx, "SELECT value FROM settings WHERE key = 'owner_name'")?.value || null;
+
+/** Who wrote a row, as a sentence says it: the owner's name (or the neutral word while there is none) or Claude */
+export const actorName = (ctx: Ctx, actor: Actor): string => (actor === "owner" ? ownerName(ctx) ?? m.actor.owner : m.actor[actor]);
+
+export function assertOwner(ctx: Ctx, what: string): void {
+  if (ctx.actor !== "owner") throw new FFError("forbidden", m.forbiddenAction(what, actorName(ctx, "owner")));
 }
 
 export const money = (n: number) => `${n.toLocaleString(LOCALE)}${m.currency}`;

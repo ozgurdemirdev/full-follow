@@ -18,7 +18,7 @@ describe("companies as a module", () => {
   });
 
   it("the same name, domain or email is one company; a deleted one blocks a duplicate until it is restored", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const c = app.companies.create({ name: "ABC Yazılım Ltd.", website: "https://www.abc.example/hakkimizda", email: "info@abc.example" }).row;
     expect(() => app.companies.create({ name: "ABC Yazılım" })).toThrow(/firma adı zaten kayıtlı/);
     expect(() => app.companies.create({ name: "Başka", website: "abc.example" })).toThrow(/alan adı zaten kayıtlı/);
@@ -27,7 +27,7 @@ describe("companies as a module", () => {
   });
 
   it("the card works without the people and network modules: no people, no touches, no channels", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const c = app.companies.create({ name: "ABC" }).row;
     expect(app.companies.card(c.id)).toMatchObject({ row: { name: "ABC" }, people: [], touches: { rows: [], total: 0 }, channels: [], opportunities: [], drafts: [], source: null });
     expect(() => app.get("company", c.id, ["people"])).toThrow(/geçerli ilişkiler/);
@@ -35,7 +35,7 @@ describe("companies as a module", () => {
   });
 
   it("a person's company status moves forward through bumpStatus and never back; hand set statuses stay", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const c = app.companies.create({ name: "ABC" }).row;
     expect(app.companies.bumpStatus(c.id, "yazildi")).toEqual(["ABC: yazıldı"]);
     expect(app.companies.bumpStatus(c.id, "yazildi")).toEqual([]);
@@ -46,7 +46,7 @@ describe("companies as a module", () => {
   });
 
   it("the city is saved and cleared; only the partner tag makes a partner (Ajans does not), and money reads zero without the projects and pipeline modules", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const abc = app.companies.create({ name: "ABC", city: "İzmir" }).row;
     expect(app.companies.get(abc.id)).toMatchObject({ city: "İzmir", segment: "lead", money: { won: 0, due: 0, open: 0 } });
     expect(app.companies.update(abc.id, { city: null }).row.city).toBeNull();
@@ -57,7 +57,7 @@ describe("companies as a module", () => {
   });
 
   it("comments hang on a company and read its name", () => {
-    const app = appFor(openDb(":memory:"), "ozgur", clock);
+    const app = appFor(openDb(":memory:"), "owner", clock);
     const c = app.companies.create({ name: "ABC" }).row;
     app.save("comment", { target_type: "company", target_id: c.id, body: "selam" });
     expect(app.find("comment").rows[0]).toMatchObject({ target_type: "company", target_label: "ABC" });

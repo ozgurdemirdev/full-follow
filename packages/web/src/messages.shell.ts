@@ -23,12 +23,22 @@ export const shell = defineMessages({
       headlineBottom: "sen değil, liste hatırlar.",
       lead: "Kişiler, fırsatlar, projeler ve tahsilat tek yerde. Claude aynı kayıtları görür, sen onaylarsın.",
     },
+    /** First run setup: shown once, before anything else, while the owner has given no name */
+    setup: {
+      title: "Adın ne?",
+      sub: "Panelde ve Claude’la konuşurken bu adı kullanırız.",
+      label: "Adın",
+      placeholder: "Örneğin Ayşe",
+      failed: "Kaydedilemedi",
+      go: "Devam et",
+      busy: "Kaydediliyor",
+      hint: "Sonra Ayarlar’dan değiştirebilirsin.",
+    },
     sidebar: {
       main: "Ana menü",
       expand: "Menüyü genişlet",
       collapse: "Menüyü daralt",
       settings: kit.settings,
-      userName: kit.owner,
       claudeLast: (when: string) => `Claude: ${when}`,
       claudeLastTitle: "Claude’un MCP ile yaptığı son işlem",
       claudeNever: kit.claudeNever,

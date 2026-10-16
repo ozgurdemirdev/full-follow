@@ -23,7 +23,7 @@ export interface DraftRecord {
   followup_step: number | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** A draft as listed: the row plus the recipient's name */
@@ -89,8 +89,8 @@ export interface QuotaOverDays {
 }
 
 /**
- * Public API of the drafts module (`ctx.mod("drafts")`): drafts Claude (or Özgür) leaves for approval, the follow-up sequence,
- * the daily send limits and the warnings when one is passed. Approving, rejecting and "sent" are Özgür's only. The inputs are the JSON the web and MCP send; they are validated inside.
+ * Public API of the drafts module (`ctx.mod("drafts")`): drafts Claude (or the owner) leaves for approval, the follow-up sequence,
+ * the daily send limits and the warnings when one is passed. Approving, rejecting and "sent" are the owner's only. The inputs are the JSON the web and MCP send; they are validated inside.
  */
 export interface DraftsApi {
   /** the text may be empty when a template is given (it is filled for the recipient); the recipient is a person, a company or an address */

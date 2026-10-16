@@ -10,7 +10,7 @@ const time = z.preprocess((v) => (v === "" ? null : v), z.string().regex(TIME_RE
 
 export const taskCreate = z.strictObject({
   title: text,
-  assignee: z.enum(TASK_ASSIGNEES).default("ozgur"),
+  assignee: z.enum(TASK_ASSIGNEES).default("owner"),
   due_date: date.optional(),
   due_time: time.optional(),
   kind: z.enum(TASK_KINDS).default(DEFAULT_TASK_KIND),
@@ -21,7 +21,7 @@ export const taskCreate = z.strictObject({
   idea_id: id.nullish(),
 });
 /** Calendar quick add: one line of text, the time and kind are read from it */
-export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(TASK_ASSIGNEES).default("ozgur") });
+export const taskQuick = z.strictObject({ text, due_date: date.optional(), assignee: z.enum(TASK_ASSIGNEES).default("owner") });
 export const taskUpdate = patch({
   title: text,
   assignee: z.enum(TASK_ASSIGNEES),

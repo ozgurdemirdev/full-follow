@@ -7,7 +7,7 @@ describe("Görev saati ve türü", () => {
   const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
   let core: TestApp;
   beforeEach(() => {
-    core = appFor(openDb(":memory:"), "ozgur", clock);
+    core = appFor(openDb(":memory:"), "owner", clock);
   });
 
   it("hızlı eklemede saat metnin başından ya da sonundan alınır, tür anahtar kelimeden gelir", () => {
@@ -21,11 +21,11 @@ describe("Görev saati ve türü", () => {
 
   it("görevler projeye göre gruplanır: varsayılan açık olanlar, done ile bitenler de, proje adı projects modülü yokken null", () => {
     const h = openDb(":memory:");
-    const app = appFor(h, "ozgur", clock);
+    const app = appFor(h, "owner", clock);
     h.sqlite.pragma("foreign_keys = OFF");
     const at = "2026-10-14T10:00:00Z";
     const add = (title: string, project: number | null, done: boolean, due: string | null) => h.sqlite.prepare(
-      "INSERT INTO tasks (title, assignee, due_date, done_at, project_id, created_at, updated_at, created_by) VALUES (?, 'ozgur', ?, ?, ?, ?, ?, 'ozgur')",
+      "INSERT INTO tasks (title, assignee, due_date, done_at, project_id, created_at, updated_at, created_by) VALUES (?, 'owner', ?, ?, ?, ?, ?, 'owner')",
     ).run(title, due, done ? at : null, project, at, at);
     add("b", 7, false, "2026-10-20");
     add("a", 7, false, "2026-10-15");

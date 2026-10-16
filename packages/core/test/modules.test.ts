@@ -9,7 +9,7 @@ const mk = (key: string, extra: Partial<ModuleDef> = {}): ModuleDef => defineMod
 function ctxFor(defs: ModuleDef[], off: string[] = []) {
   const handle = openDb(":memory:");
   const registry = createRegistry(defs, off);
-  const ctx = { db: handle.db, sqlite: handle.sqlite, actor: "ozgur", clock: { now: () => "2026-10-14T10:00:00Z", today: () => "2026-10-14" } } as Ctx;
+  const ctx = { db: handle.db, sqlite: handle.sqlite, actor: "owner", clock: { now: () => "2026-10-14T10:00:00Z", today: () => "2026-10-14" } } as Ctx;
   Object.assign(ctx, registry.bind(ctx));
   return { ctx, registry };
 }
@@ -54,9 +54,9 @@ describe("module registry", () => {
   });
 
   it("createCore with no registry has no modules; with one it exposes them", () => {
-    const bare = createCore(openDb(":memory:"), "ozgur");
+    const bare = createCore(openDb(":memory:"), "owner");
     expect(bare.modules.list()).toEqual([]);
-    const withMods = createCore(openDb(":memory:"), "ozgur", undefined, createRegistry([mk("a")]));
+    const withMods = createCore(openDb(":memory:"), "owner", undefined, createRegistry([mk("a")]));
     expect(withMods.modules.has("a")).toBe(true);
     expect(withMods.modules.has("b")).toBe(false);
   });

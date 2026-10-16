@@ -56,4 +56,4 @@ export type TestApp = ReturnType<typeof appFor>;
 export const everyKey = modules.map((m) => m.key);
 
 /** The composed app with some modules switched off (the registry is built from the generated list minus `off`) */
-export const appWithout = (off: string[], handle: DbHandle, actor: Actor = "ozgur", clock?: Clock) => createCore(handle, actor, clock, createRegistry(modules, off));
+export const appWithout = (off: string[], handle: DbHandle, actor: Actor = "owner", clock?: Clock) => createCore(handle, actor, clock, createRegistry(modules, off));
