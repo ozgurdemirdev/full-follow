@@ -14,6 +14,8 @@ const short = (v: unknown) => {
   const t = typeof v === "string" ? v : JSON.stringify(v) ?? "";
   return t.length > PERMISSION_LIMITS.valueChars ? `${t.slice(0, PERMISSION_LIMITS.valueChars)}…` : t;
 };
+/** A long path keeps its end: the folder and the file name are what the owner must see */
+const shortPath = (p: string) => (p.length > PERMISSION_LIMITS.valueChars ? `…${p.slice(-PERMISSION_LIMITS.valueChars)}` : p);
 const cap = (s: string) => s.charAt(0).toLocaleUpperCase("tr") + s.slice(1);
 
 /** The record a delete names: its Turkish noun and, when it can be read, its name */
@@ -93,7 +95,7 @@ function decideFile(tool: string, input: Input, access: ChatAccess): Decision {
   // a new file is created at once; changing one that exists asks
   if (tool === "Write" && !fs.existsSync(target)) return ALLOW;
   if (access.chat_full_access) return ALLOW;
-  return { kind: "ask", summary: (tool === "Edit" ? m.permission.editFile : m.permission.overwriteFile)(short(target)) };
+  return { kind: "ask", summary: (tool === "Edit" ? m.permission.editFile : m.permission.overwriteFile)(shortPath(target)) };
 }
 
 /**

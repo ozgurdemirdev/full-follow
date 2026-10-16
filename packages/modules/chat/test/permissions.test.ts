@@ -61,7 +61,7 @@ describe("what the panel chat may run, refuse or ask", () => {
     expect(decide(ctx, "Read", { file_path: existing }, on)).toEqual({ kind: "allow" });
     expect(decide(ctx, "Write", { file_path: path.join(dir, "yeni.md"), content: "x" }, on)).toEqual({ kind: "allow" });
     expect(decide(ctx, "Write", { file_path: existing, content: "x" }, on)).toEqual({ kind: "ask", summary: expect.stringMatching(/üzerine yazılacak/) });
-    expect(decide(ctx, "Edit", { file_path: existing, old_string: "eski", new_string: "yeni" }, on)).toEqual({ kind: "ask", summary: expect.stringMatching(/Dosya değiştirilecek/) });
+    expect(decide(ctx, "Edit", { file_path: existing, old_string: "eski", new_string: "yeni" }, on)).toEqual({ kind: "ask", summary: expect.stringMatching(/^Dosya değiştirilecek: .*teklif\.md$/) });
     expect(decide(ctx, "Edit", { file_path: path.join(dir, "..", path.basename(other), "a.txt") }, on).kind).toBe("deny");
     expect(decide(ctx, "Edit", { file_path: existing }, { ...on, chat_full_access: true })).toEqual({ kind: "allow" });
     expect(decide(ctx, "Bash", { command: "dir" }, { ...on, chat_full_access: true }).kind).toBe("deny");
