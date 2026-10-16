@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { Core } from "@fullfollow/core";
-import { cleanName, refuse, sniff } from "@fullfollow/core";
+import { assertUploadRoom, cleanName, refuse, sniff, uploadDir } from "@fullfollow/core";
 import { BYTES_PER_MB } from "../constants";
 import { m } from "../messages";
-import { CHAT_ATTACHMENT_TYPES, chatDataDir, CHAT_LIMITS } from "./chat.config";
+import { CHAT_ATTACHMENT_TYPES, CHAT_LIMITS } from "./chat.config";
 
 export function saveUpload(core: Core, sessionId: number, file: { originalname: string; buffer: Buffer; size: number }) {
   core.mod("chat")!.getSession(sessionId);
@@ -13,7 +13,8 @@ export function saveUpload(core: Core, sessionId: number, file: { originalname: 
   const d = sniff(file.buffer, name, CHAT_ATTACHMENT_TYPES);
   if (d.kind === "image" && file.size > CHAT_LIMITS.maxImageBytes) throw refuse(m.errors.imageTooBig(CHAT_LIMITS.maxImageBytes / BYTES_PER_MB), 413);
   if (file.size > CHAT_LIMITS.maxFileBytes) throw refuse(m.errors.fileTooBig(CHAT_LIMITS.maxFileBytes / BYTES_PER_MB), 413);
-  const dir = path.join(chatDataDir(), "uploads", String(sessionId));
+  assertUploadRoom(file.size);
+  const dir = path.join(uploadDir("chat"), String(sessionId));
   fs.mkdirSync(dir, { recursive: true });
   const full = path.join(dir, `${randomUUID()}.${d.ext}`);
   fs.writeFileSync(full, file.buffer);
@@ -36,7 +37,15 @@ export function fileBlock(name: string, text: string): string {
   return `<file name="${safeName}">${text.replace(/<(\/?)file/gi, "&lt;$1file")}</file>`;
 }
 
-type Block ={ type: "text"; text: string } | { type: "image" | "document"; source: { type: "base64"; media_type: string; data: string } };
+/** Deletes the files of attachments that were never sent and are older than CHAT_LIMITS.unsentMaxAgeMs (runs at start); returns how many went */
+export function removeUnsentAttachments(core: Core): number {
+  const before = new Date(Date.parse(core.ctx.clock.now()) - CHAT_LIMITS.unsentMaxAgeMs).toISOString();
+  const gone = core.mod("chat")!.takeUnsentAttachments(before);
+  for (const a of gone) fs.rmSync(a.path, { force: true });
+  return gone.length;
+}
+
+type Block = { type: "text"; text: string } | { type: "image" | "document"; source: { type: "base64"; media_type: string; data: string } };
 
 /** Stdin content blocks of one user message: images and PDF as base64, text files inlined (cut at maxTextAttachmentChars) */
 export function attachmentBlocks(core: Core, messageId: number): Block[] {

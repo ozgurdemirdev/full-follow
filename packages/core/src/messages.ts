@@ -8,6 +8,8 @@ export const m = defineMessages({
     currency: "₺",
     /** "none" in a list of names ("geçerli ilişkiler: yok") */
     none: "yok",
+    /** An upload past UPLOAD_QUOTA_BYTES */
+    uploadQuota: (gb: number) => `yükleme alanı dolu: yüklenen dosyalar toplam ${gb} GB'ı geçemez`,
     /** Names of the records, as the sentences say them ("kişi #3 bulunamadı") */
     noun: {
       person: "kişi", company: "firma", opportunity: "fırsat", project: "proje", task: "görev", draft: "taslak",

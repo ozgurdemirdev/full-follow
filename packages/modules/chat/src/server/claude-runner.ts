@@ -5,7 +5,7 @@ import { APP_TOKEN, ownerName, type ChatSession, type Core } from "@fullfollow/c
 import { LOG_RAW_CHARS } from "../constants";
 import { m } from "../messages";
 import { ChatHub } from "./chat-hub";
-import { attachmentBlocks } from "./chat-uploads";
+import { attachmentBlocks, removeUnsentAttachments } from "./chat-uploads";
 import { notesVersion, readBrief, writeRuntimeFiles } from "./chat-files";
 import { CHAT_ERROR_TEXT, CHAT_LIMITS, CHAT_MODELS, ACK_MARKER, GRACEFUL_EXIT_MS, NOTES_CLEARED, NOTES_UPDATE, VOICE_NOTE, STDERR_LOG_CHARS, type ChatErrorCode } from "./chat.config";
 import { killTree, resolveCli, spawnClaude } from "./claude-cli";
@@ -72,6 +72,8 @@ export class ClaudeRunner implements OnModuleInit, OnModuleDestroy {
     writeRuntimeFiles(this.owner, this.pinned, this.brief);
     const n = this.chat.failDanglingRuns(CHAT_ERROR_TEXT.restart);
     if (n) console.log(m.log.danglingFailed(n));
+    const unsent = removeUnsentAttachments(this.core);
+    if (unsent) console.log(m.log.unsentRemoved(unsent));
   }
 
   onModuleDestroy() {

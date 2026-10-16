@@ -74,6 +74,7 @@ export const m = defineMessages({
     log: {
       noCwd: (want: string, dir: string) => `  Sohbet çalışma klasörü yok (${want}), ${dir} kullanılıyor`,
       danglingFailed: (count: number) => `  ${count} yarım kalan sohbet cevabı hataya çevrildi`,
+      unsentRemoved: (count: number) => `  gönderilmemiş ${count} sohbet eki silindi`,
       mcpDown: "  chat: full-follow MCP bağlanamadı",
       cliError: (code: string, raw: string) => `  chat: CLI hatası (${code}): ${raw}`,
       cliClosed: (stderr: string) => `  chat: CLI sonuçtan önce kapandı: ${stderr}`,

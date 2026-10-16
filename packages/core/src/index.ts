@@ -42,7 +42,7 @@ export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLink
 export { hiddenModules, marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingsService, settingValues } from "./services/settings";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
-export { cleanName, HttpFailure, refuse, sniff, type Detected, type UploadType } from "./services/uploads";
+export { assertUploadRoom, cleanName, HttpFailure, refuse, sniff, uploadDir, type Detected, type UploadType } from "./services/uploads";
 export { normalizeType, resolveId } from "./services/records";
 export { companyKeys, contactKey, domainKey, personKeys } from "./keys";
 export * as schema from "./db/schema";

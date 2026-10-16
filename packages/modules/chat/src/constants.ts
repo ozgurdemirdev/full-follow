@@ -35,6 +35,8 @@ export const CHAT_LIMITS = {
   maxFileBytes: 10 * BYTES_PER_MB,
   /** text attachments longer than this are cut before they reach the CLI (a 10 MB file would fill the context) */
   maxTextAttachmentChars: 100_000,
+  /** an attachment uploaded but never sent with a message is deleted at server start once it is this old */
+  unsentMaxAgeMs: 24 * 60 * 60_000,
 } as const;
 /** The first message becomes the title of a chat: this many characters, cut at a word boundary */
 export const CHAT_TITLE_CHARS = 60;

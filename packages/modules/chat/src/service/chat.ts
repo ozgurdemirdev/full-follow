@@ -197,6 +197,11 @@ export function chatService(ctx: Ctx): ChatApi {
     ctx.db.update(chat_sessions).set({ notes_version: version }).where(eq(chat_sessions.id, sessionId)).run();
   }
 
+  /** Boot cleanup: attachments uploaded but never sent go, the caller deletes their files */
+  function takeUnsentAttachments(before: string) {
+    return ctx.db.delete(chat_attachments).where(and(isNull(chat_attachments.message_id), lt(chat_attachments.created_at, before))).returning().all();
+  }
+
   /** Boot cleanup: a run owned by a dead server can never finish */
   function failDanglingRuns(reason: string) {
     return ctx.db.update(chat_messages).set({ state: "error", error: reason, updated_at: ctx.clock.now() })
@@ -205,6 +210,6 @@ export function chatService(ctx: Ctx): ChatApi {
 
   return {
     createSession, listSessions, getSession: sessionRow, updateSession, deleteSession, restoreSession, listMessages, getMessage: messageRow,
-    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, createAttachment, getAttachment, attachmentsOfMessage, failDanglingRuns,
+    addUserMessage, findSend, startAssistantMessage, appendAssistantText, setAssistantTools, finishAssistantMessage, markCliStarted, setNotesVersion, createAttachment, getAttachment, attachmentsOfMessage, takeUnsentAttachments, failDanglingRuns,
   };
 }
