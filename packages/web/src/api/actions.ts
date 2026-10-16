@@ -59,6 +59,9 @@ export function report(e: unknown) {
   toast(e.message, "error", action);
 }
 
+/** Refreshes the lists a write to a resource changes; also for a write the server made by itself (a background draft run) */
+export const refreshResource = (resource: string) => invalidate(...(AFFECTS[resource] ?? [`/${resource}`]), ...invalidatesFor(resource));
+
 export async function run<T = unknown>(
   method: "post" | "patch" | "put" | "del",
   path: string,
@@ -74,8 +77,7 @@ export async function run<T = unknown>(
     // the same rule as a read: nothing is sent to an endpoint whose module is not installed
     if (!endpointOn(path)) throw new ApiError(m.moduleOff, MODULE_OFF_STATUS, MODULE_OFF_CODE);
     const res = (await (method === "del" ? api.del(path) : api[method](path, body))) as Mutation<T> & Record<string, unknown>;
-    const resource = path.split("/")[1];
-    invalidate(...(AFFECTS[resource] ?? [`/${resource}`]), ...invalidatesFor(resource));
+    refreshResource(path.split("/")[1]);
     const effects = res?.effects?.filter(Boolean) ?? [];
     if (!opts.silent && (opts.ok || effects.length)) {
       const href = typeof opts.open === "function" ? opts.open(res) : opts.open;

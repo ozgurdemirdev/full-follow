@@ -3,10 +3,10 @@ import { remove, run } from "@kit/api/actions";
 import type { Person } from "@kit/api/types";
 import { openSheet } from "@kit/app/ui";
 import { ago } from "@kit/lib/format";
-import { useAskClaude } from "@kit/lib/askClaude";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { draftRequest, STREAM_SHOWN, type PStatus } from "@kit/lib/people";
 import { channelName } from "@kit/lib/network";
-import { useTasksOn } from "@kit/lib/taskAccess";
 import { BoardIcon, type BoardIconName } from "@kit/components/boardIcons";
 import { m } from "../messages";
 import { matchesFilter, STREAM_FILTERS, type StreamFilter, type StreamItem, type StreamKind } from "./streamItems";
@@ -55,8 +55,7 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
 }) {
   const { touch: t, note: n, comment: c, thread: th } = item;
   const [draft, setDraft] = useState<string | null>(null);
-  const tasksOn = useTasksOn();
-  const { asked, ask } = useAskClaude();
+  const canAsk = useCanAsk();
   const claudeBy = (t?.created_by ?? item.note?.created_by) === "claude";
   const who = t
     ? m.stream.who(t.direction === "gelen" ? m.stream.incoming : m.stream.outgoing, channelName(t.channel), t.kind !== "mesaj" ? KIND_LABEL[t.kind] : undefined, claudeBy)
@@ -82,7 +81,7 @@ function Entry({ item, p, lead, status, onAnswer, onReply }: {
         {waiting ? (
           <span className="flex flex-wrap gap-2">
             <button type="button" className="ppl-small" onClick={() => void stopWaiting(t!.id)}>{m.stream.stopWaiting}</button>
-            {tasksOn ? <button type="button" className="ppl-small is-soft" disabled={asked(draftRequest(p))} onClick={() => void ask(draftRequest(p))}>{asked(draftRequest(p)) ? kit.recordActions.draftAsked : m.stream.remind}</button> : null}
+            {canAsk(draftRequest(p)) ? <AskButton request={draftRequest(p)} className="ppl-small is-soft" label={m.stream.remind} askedLabel={kit.recordActions.draftAsked} /> : null}
           </span>
         ) : null}
         {answer ? (

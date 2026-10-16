@@ -86,4 +86,4 @@ export type RequestKind = "thanks" | "ask";
 
 /** The request for Claude to write the draft (the task title is the one the API sent; the draft lands in Taslaklar) */
 export const suggestionRequest = (kind: RequestKind, s: Pick<RefSuggestion, "person" | "request_title">): ClaudeRequest =>
-  ({ title: s.request_title, target: { person_id: s.person.id }, ok: m.requestOk[kind] });
+  ({ title: s.request_title, target: { person_id: s.person.id }, ok: m.requestOk[kind], draft: true });

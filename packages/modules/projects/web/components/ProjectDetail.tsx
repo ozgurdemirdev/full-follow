@@ -6,8 +6,8 @@ import { Slot } from "@kit/app/modules/Slot";
 import { PATHS } from "@kit/app/routes";
 import { lira } from "@kit/lib/format";
 import { MILESTONE } from "@kit/lib/labels";
-import { useTasksOn } from "@kit/lib/taskAccess";
-import { useAskClaude } from "@kit/lib/askClaude";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import type { ProjectView } from "../projects";
 import { remaining } from "@kit/lib/dashboard";
 import { FilesCard } from "@kit/components/FilesCard";
@@ -19,10 +19,8 @@ import { m as kit } from "@kit/messages";
 /** Expanded project: tasks with owner, payments (Alındı), Claude's note with the reminder request, then links, files and admin */
 export function ProjectDetail({ v }: { v: ProjectView }) {
   const { p } = v;
-  const tasksOn = useTasksOn();
-  const { asked, ask } = useAskClaude();
-  const request = { title: v.ask.title, target: { project_id: p.id }, ok: v.ask.ok };
-  const requested = v.ask.requested || asked(request);
+  const canAsk = useCanAsk();
+  const request = { title: v.ask.title, target: { project_id: p.id }, ok: v.ask.ok, draft: v.ask.draft };
   const files = useQuery<Detail<unknown, { files?: FileRow[] }>>(`/projects/${p.id}?with=files`);
   return (
     <div className="prj-detail" id={`prj-detail-${p.id}`}>
@@ -50,12 +48,7 @@ export function ProjectDetail({ v }: { v: ProjectView }) {
         <span className="prj-sec-label">{m.detail.claudeNote}</span>
         {v.note ? <p className="prj-note"><span className="prj-note-dot" /><span>{v.note}</span></p> : null}
         <div className="prj-actions">
-          {tasksOn ? (
-            <button type="button" className="prj-ask" disabled={requested}
-              onClick={() => void ask(request)}>
-              {requested ? m.ask.requested : v.ask.label}
-            </button>
-          ) : null}
+          {canAsk(request) ? <AskButton request={request} className="prj-ask" label={v.ask.label} askedLabel={m.ask.requested} /> : null}
           <Link href={PATHS.comments} className="prj-link">{m.detail.comments(v.comments)}</Link>
           <Slot name="project.detail.actions" props={{ type: "project", id: p.id, className: "prj-link", label: m.detail.timeline }} />
         </div>

@@ -27,7 +27,7 @@ export function dotsOf(i: Pick<Idea, "told" | "interested" | "not_interested" | 
 }
 
 /** The request for Claude to write a short pitch text for the idea (the draft lands in Taslaklar) */
-export const pitchRequest = (i: Pick<Idea, "id">): ClaudeRequest => ({ title: m.pitch.taskTitle, target: { idea_id: i.id }, ok: m.pitch.queued });
+export const pitchRequest = (i: Pick<Idea, "id">): ClaudeRequest => ({ title: m.pitch.taskTitle, target: { idea_id: i.id }, ok: m.pitch.queued, draft: true });
 
 export type Lane = { stage: IdeaStage; ideas: Idea[] };
 

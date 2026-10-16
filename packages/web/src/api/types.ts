@@ -407,6 +407,10 @@ export interface PriceFloor {
   owner_name?: string;
   /** reject rules Claude learned, oldest first (PUT /settings { draft_rules } keeps the ones left in the list); absent when the drafts module is not installed */
   draft_rules?: string[];
+  /** a draft request starts a background Claude run at once (else it becomes Claude's task); with its model and effort */
+  draft_auto: boolean;
+  draft_model: string;
+  draft_effort: string;
 }
 /** One month of the report against the price floor (also the shape of the `month` of `GET /api/report`) */
 export interface MonthReport {

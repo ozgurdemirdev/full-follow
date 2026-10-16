@@ -7,9 +7,9 @@ import { RecordLink } from "@kit/app/modules/RecordLink";
 import { useRegistry } from "@kit/app/modules/registry";
 import { Slot } from "@kit/app/modules/Slot";
 import { openSheet } from "@kit/app/ui";
-import { useAskClaude } from "@kit/lib/askClaude";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { defaultChannel, draftRequest, statusOf } from "@kit/lib/people";
-import { useTasksOn } from "@kit/lib/taskAccess";
 import { STATUS_LABEL } from "../people";
 import { Floating } from "@kit/components/Floating";
 import { usePopover } from "@kit/lib/usePopover";
@@ -63,8 +63,7 @@ function Body({ p, card }: { p: Person; card?: PersonCard }) {
 /** A person as the board's dialog: grows from the clicked row or card, header with the actions, rhythm and facts on the left, composer and stream on the right */
 export function PersonOverlay({ id, from, p, onClose }: { id: number | null; from: DOMRect | null; p: Person | undefined; onClose: () => void }) {
   const d = useQuery<PersonCard>(id ? cardKey(id) : null);
-  const { asked, ask } = useAskClaude();
-  const tasksOn = useTasksOn();
+  const canAsk = useCanAsk();
   const row = d.data?.row ?? p;
   const s = row ? statusOf(row) : "ok";
 
@@ -89,11 +88,8 @@ export function PersonOverlay({ id, from, p, onClose }: { id: number | null; fro
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
-            {tasksOn ? (
-              <button type="button" className="ppl-ask" disabled={asked(draftRequest(row))} onClick={() => void ask(draftRequest(row))}>
-                <BoardIcon name="pen" className="size-icon-chip" />
-                {asked(draftRequest(row)) ? m.actions.draftAsked : m.actions.askDraft}
-              </button>
+            {canAsk(draftRequest(row)) ? (
+              <AskButton request={draftRequest(row)} className="ppl-ask" icon={<BoardIcon name="pen" className="size-icon-chip" />} label={m.actions.askDraft} askedLabel={m.actions.draftAsked} />
             ) : null}
             <HeaderMenu p={row} onClose={onClose} />
             <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>

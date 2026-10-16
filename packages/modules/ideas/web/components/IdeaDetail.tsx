@@ -6,8 +6,8 @@ import { Slot } from "@kit/app/modules/Slot";
 import { ratePct } from "@kit/lib/format";
 import { IDEA_FLOW, pitchRequest } from "../ideas";
 import { IDEA_STAGE } from "@kit/lib/labels";
-import { useAskClaude } from "@kit/lib/askClaude";
-import { useTasksOn } from "@kit/lib/taskAccess";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { IdeaExtras } from "./IdeaExtras";
 import { m } from "../messages";
 import { IdeaMenu } from "./IdeaMenu";
@@ -63,9 +63,7 @@ function MoneyNote({ idea }: { idea: Idea }) {
 
 /** Left panel: stage, stepper, problem, money note, interest ring with the verdict, the two actions */
 export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelated }) {
-  const { asked: isAsked, ask } = useAskClaude();
-  const asked = isAsked(pitchRequest(idea));
-  const tasksOn = useTasksOn();
+  const canAsk = useCanAsk();
   const stageIdx = IDEA_FLOW.indexOf(idea.stage);
   const move = (stage: string) => stage !== idea.stage && run("patch", `/ideas/${idea.id}`, { stage }, { ok: m.detail.stageSet(IDEA_STAGE[stage]) }).catch(() => {});
 
@@ -102,10 +100,8 @@ export function IdeaDetail({ idea, related }: { idea: Idea; related?: IdeaRelate
       </div>
       <div className="ideas-actions">
         <Slot name="idea.actions" props={{ idea }} />
-        {tasksOn ? (
-          <button type="button" className={`ideas-pitch ${asked ? "is-asked" : ""}`} disabled={asked} onClick={() => void ask(pitchRequest(idea))}>
-            {asked ? m.pitch.asked : m.pitch.ask}
-          </button>
+        {canAsk(pitchRequest(idea)) ? (
+          <AskButton request={pitchRequest(idea)} className={(asked) => `ideas-pitch ${asked ? "is-asked" : ""}`} label={m.pitch.ask} askedLabel={m.pitch.asked} />
         ) : null}
       </div>
       <IdeaExtras idea={idea} related={related} />

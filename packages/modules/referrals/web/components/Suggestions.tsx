@@ -1,7 +1,7 @@
 import type { RefSuggestion } from "../types";
 import { RecordLink } from "@kit/app/modules/RecordLink";
-import { useAskClaude } from "@kit/lib/askClaude";
-import { useTasksOn } from "@kit/lib/taskAccess";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { suggestionRequest, type RequestKind } from "../referrals";
 import { Avatar, order } from "@kit/components/ui";
 import { m } from "../messages";
@@ -10,11 +10,9 @@ const LABEL: Record<RequestKind, string> = { thanks: m.suggestions.thanksButton,
 const DONE: Record<RefSuggestion["state"], string> = { idle: "", asked: m.suggestions.asked, drafted: m.suggestions.drafted };
 
 function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
-  const tasksOn = useTasksOn();
-  const { asked, ask } = useAskClaude();
+  const canAsk = useCanAsk();
   const request = suggestionRequest(kind, s);
   const done = s.state !== "idle";
-  const requested = done || asked(request);
   return (
     <div className="ref-sug" data-dim={s.ready ? undefined : ""}>
       <Avatar name={s.person.name} id={s.person.id} size="list" />
@@ -22,10 +20,11 @@ function Row({ kind, s }: { kind: RequestKind; s: RefSuggestion }) {
         <b>{s.person.name}</b>
         <span data-late={s.ready ? undefined : ""}>{s.why}</span>
       </RecordLink>
-      {s.ready && tasksOn ? (
-        <button type="button" className="ref-act" data-claude={kind === "thanks" && !done ? "" : undefined} data-done={requested ? "" : undefined} disabled={requested} onClick={() => void ask(request)}>
-          {done ? DONE[s.state] : requested ? DONE.asked : LABEL[kind]}
-        </button>
+      {s.ready && done ? (
+        <button type="button" className="ref-act" data-done="" disabled>{DONE[s.state]}</button>
+      ) : s.ready && canAsk(request) ? (
+        <AskButton request={request} className="ref-act" attrs={(asked) => ({ "data-claude": kind === "thanks" && !asked ? "" : undefined, "data-done": asked ? "" : undefined })}
+          label={LABEL[kind]} askedLabel={DONE.asked} />
       ) : null}
     </div>
   );

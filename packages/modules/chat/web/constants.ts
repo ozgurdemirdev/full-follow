@@ -19,6 +19,9 @@ export const CHAT_UI = {
   million: 1_000_000,
 } as const;
 
+/** What the mascot is told while a background draft run writes and no chat reply runs: a tool that changes something, so it works */
+export const DRAFT_RUN_LIVE = { phase: "tool", tool: "draft" } as const;
+
 /** How long a template card keeps saying "Kopyalandı" after the copy button (ms) */
 export const COPIED_FEEDBACK_MS = 1_600;
 

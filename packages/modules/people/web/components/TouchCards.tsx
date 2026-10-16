@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { qs } from "@kit/api/client";
 import { useQuery } from "@kit/api/store";
 import type { Person } from "@kit/api/types";
-import { useAskClaude } from "@kit/lib/askClaude";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { draftKind, draftRequest, statusOf, useDayMarks } from "@kit/lib/people";
-import { useTasksOn } from "@kit/lib/taskAccess";
 import { STATUS_LABEL, TOUCH_CARDS, whyText } from "../people";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { toast } from "@kit/components/toast";
@@ -19,8 +19,7 @@ const QUEUE_FETCH = 24;
 /** "Bugün dokun": up to four people to reach out to today; "Yaptım" hides a card for today in this browser */
 export function TouchCards({ today, onOpen }: { today: string; onOpen: (id: number, from: HTMLElement) => void }) {
   const [gone, markGone] = useDayMarks("gone");
-  const { asked: isAsked, ask } = useAskClaude();
-  const tasksOn = useTasksOn();
+  const canAsk = useCanAsk();
   // the server orders the people that need a touch (due follow-ups, awaited replies, cooling relations); the cards take the first ones not done today
   const queue = useQuery<{ rows: Person[] }>(`/people/touch-queue${qs({ limit: QUEUE_FETCH })}`);
   const people = queue.data?.rows;
@@ -36,7 +35,6 @@ export function TouchCards({ today, onOpen }: { today: string; onOpen: (id: numb
         {cards.map((p) => {
           const s = statusOf(p, today);
           const request = draftRequest(p);
-          const asked = isAsked(request);
           return (
             <article key={p.id} className="ppl-tcard" data-s={s}>
               <button type="button" className="ppl-who" aria-label={m.touch.open(p.name)} onClick={(e) => onOpen(p.id, e.currentTarget.closest("article") ?? e.currentTarget)}>
@@ -49,10 +47,8 @@ export function TouchCards({ today, onOpen }: { today: string; onOpen: (id: numb
               <span className="ppl-tag"><i />{STATUS_LABEL[s]}</span>
               <p className="m-0 flex-grow text-base leading-snug text-text-soft">{whyText(p, s)}</p>
               <div className="ppl-acts">
-                {tasksOn ? (
-                  <button type="button" className={`ppl-draft ${asked ? "is-asked" : ""}`} disabled={asked} onClick={() => void ask(request)}>
-                    {asked ? m.touch.drafted : m.touch.claudeWrites(draftKind(p, s))}
-                  </button>
+                {canAsk(request) ? (
+                  <AskButton request={request} className={(asked) => `ppl-draft ${asked ? "is-asked" : ""}`} label={m.touch.claudeWrites(draftKind(p, s))} askedLabel={m.touch.drafted} />
                 ) : null}
                 <button type="button" className="ppl-done" title={m.touch.done} aria-label={m.touch.doneFor(p.name)} onClick={() => { markGone(p.id); toast(m.touch.doneToast(p.name.split(" ")[0])); }}>
                   <BoardIcon name="check" className="size-icon-chip" stroke={STROKE.medium} />

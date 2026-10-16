@@ -124,6 +124,18 @@ export const m = defineMessages({
       // search words, separated by "|" (a word may hold a space)
       keywords: "sohbet|sabit not|kural|bağlam",
     },
+    // the auto draft rows of the "Claude" category
+    autoDraft: {
+      title: "Taslakları Claude hemen yazsın",
+      hint: "Taslak isteyince Claude arka planda hemen yazar; kapalıyken istek Claude’un bir sonraki oturumuna görev olarak kalır",
+      keywords: "taslak|otomatik|hemen|arka plan",
+      model: "Taslak modeli",
+      modelHint: "Arka planda taslak yazan Claude’un modeli",
+      effort: "Taslak düşünme seviyesi",
+      effortHint: "Daha yüksek seviye daha özenli ama daha yavaş yazar",
+      on: "Taslakları Claude hemen yazacak",
+      off: "Taslak istekleri görev olarak kalacak",
+    },
   },
 });
 

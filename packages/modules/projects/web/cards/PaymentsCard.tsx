@@ -7,8 +7,8 @@ import type { List, Payment, Report } from "@kit/api/types";
 import { PAYMENT_GROUPS, SHOWN, lateDays, paymentGroup, remaining, type PaymentGroup } from "@kit/lib/dashboard";
 import { fmtDay, fmtNum, initials, lira, todayIso } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
-import { useAskClaude } from "@kit/lib/askClaude";
-import { useTasksOn } from "@kit/lib/taskAccess";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { MILESTONE } from "@kit/lib/labels";
 import { MIN_PAYMENT } from "../constants";
 import { m } from "../messages";
@@ -60,8 +60,7 @@ export function PaymentsCard() {
   const ex = useExpand();
   const payments = useQuery<List<Payment>>("/payments?unpaid=true", drained);
   const report = useQuery<Report>("/report");
-  const tasksOn = useTasksOn();
-  const { asked, ask } = useAskClaude();
+  const canAsk = useCanAsk();
   const [group, setGroup] = useState<PaymentGroup | null>(null);
   const [paying, setPaying] = useState(false);
   if (isMissing(payments.error)) return null;
@@ -111,7 +110,7 @@ export function PaymentsCard() {
                 <span className={`text-sm ${g === "late" ? "text-danger-soft" : "text-text-secondary"}`}>{MILESTONE[p.milestone] ?? p.milestone} · {dueText(p, today)}</span>
               </div>
               <span className={`flex-none font-mono text-base ${g === "late" ? "text-danger-soft" : ""}`}>{lira(remaining(p))}</span>
-              {g === "late" && tasksOn ? <button type="button" className="dash-btn is-claude is-small flex-none" disabled={asked(reminderRequest(p.project_id, p.project_name))} onClick={() => void ask(reminderRequest(p.project_id, p.project_name))}>{asked(reminderRequest(p.project_id, p.project_name)) ? m.ask.requested : m.card.remind}</button> : null}
+              {g === "late" && canAsk(reminderRequest(p.project_id, p.project_name)) ? <AskButton request={reminderRequest(p.project_id, p.project_name)} className="dash-btn is-claude is-small flex-none" label={m.card.remind} askedLabel={m.ask.requested} /> : null}
             </div>
           ))}
         </div>

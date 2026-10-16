@@ -70,14 +70,15 @@ export interface ProjectView {
   note: string | null;
   comments: number;
   /** the Claude request offered on the row: a payment reminder, or a plan when the work waits on the owner */
-  ask: { title: string; label: string; ok: string; requested: boolean };
+  /** draft: the reminder is a draft (a background run can write it); the plan is a task */
+  ask: { title: string; label: string; ok: string; requested: boolean; draft: boolean };
 }
 
 export const reminderTitle = m.ask.reminderTitle;
 const planTitle = m.ask.planTitle;
 
 /** The request for Claude to write a payment reminder for a project (the draft shows up in Taslaklar) */
-export const reminderRequest = (projectId: number, name: string): ClaudeRequest => ({ title: reminderTitle(name), target: { project_id: projectId }, ok: m.ask.reminderOk });
+export const reminderRequest = (projectId: number, name: string): ClaudeRequest => ({ title: reminderTitle(name), target: { project_id: projectId }, ok: m.ask.reminderOk, draft: true });
 
 /** Claude's own tasks (a requested draft or plan) never put a project on hold for the owner or the client */
 const humanTask = (t: ProjectTask) => t.assignee !== "claude";
@@ -158,7 +159,7 @@ export function buildViews(projects: ProjectRow[], payments: Payment[], tasks: P
       finished: !wait && p.stage === "teslim", next: nextText(pays, open, today), tasks: all,
       pays: pays.map((x) => ({ payment: x, state: stateOf(x), canMark: x.id === mark })),
       note: talk.get(p.id)?.note ?? null, comments: talk.get(p.id)?.count ?? 0,
-      ask: { title, label: requested ? m.ask.requested : wait === "me" ? m.ask.plan : m.ask.reminder, ok: wait === "me" ? m.ask.planOk : m.ask.reminderOk, requested },
+      ask: { title, label: requested ? m.ask.requested : wait === "me" ? m.ask.plan : m.ask.reminder, ok: wait === "me" ? m.ask.planOk : m.ask.reminderOk, requested, draft: wait !== "me" },
     };
   });
 }

@@ -11,8 +11,8 @@ import { openSheet } from "@kit/app/ui";
 import { companyDraftRequest, SEGMENT_LABEL, siteLabel, type CompanyView } from "../companies";
 import { initials } from "@kit/lib/format";
 import { webUrl } from "@kit/lib/network";
-import { useAskClaude } from "@kit/lib/askClaude";
-import { useTasksOn } from "@kit/lib/taskAccess";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { Floating } from "@kit/components/Floating";
 import { usePopover } from "@kit/lib/usePopover";
 import { BoardIcon } from "@kit/components/boardIcons";
@@ -75,10 +75,9 @@ function Body({ v, max, card, claude, onClaude }: { v: CompanyView; max: number;
 /** A company as the board's dialog: grows from the clicked tile, header with the actions, money and facts left, people and stream right */
 export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | null; from: DOMRect | null; v: CompanyView | undefined; max: number; onClose: () => void }) {
   const d = useQuery<CompanyCard>(id ? companyCardKey(id) : null);
-  const { asked, ask } = useAskClaude();
   const [claude, setClaude] = useState<ClaudeMode | null>(null);
   const { quickByKind } = useRegistry();
-  const tasksOn = useTasksOn();
+  const canAsk = useCanAsk();
 
   const site = v?.c.website ? siteLabel(v.c.website) : null;
   const sub = v ? [v.c.sector_path, v.c.city].filter(Boolean).join(m.sep) : "";
@@ -105,11 +104,8 @@ export function CompanyOverlay({ id, from, v, max, onClose }: { id: number | nul
           </div>
           <div className="flex flex-wrap gap-3">
             {quickByKind.has("person") ? <button type="button" className="co-btn" onClick={() => openSheet("person", { company_id: v.c.id })}>{m.overlay.addPerson}</button> : null}
-            {tasksOn ? (
-              <button type="button" className="ppl-ask" disabled={asked(companyDraftRequest(v.c))} onClick={() => void ask(companyDraftRequest(v.c))}>
-                <BoardIcon name="pen" className="size-icon-chip" />
-                {asked(companyDraftRequest(v.c)) ? m.overlay.draftAsked : m.overlay.askDraft}
-              </button>
+            {canAsk(companyDraftRequest(v.c)) ? (
+              <AskButton request={companyDraftRequest(v.c)} className="ppl-ask" icon={<BoardIcon name="pen" className="size-icon-chip" />} label={m.overlay.askDraft} askedLabel={m.overlay.draftAsked} />
             ) : null}
             <HeaderMenu v={v} onClaude={() => setClaude({ id: v.c.id, replyTo: null })} onClose={onClose} />
             <button type="button" className="ppl-round" data-close aria-label={kit.close} onClick={onClose}>

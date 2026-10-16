@@ -4,14 +4,14 @@ import { remove } from "@kit/api/actions";
 import type { Opportunity } from "@kit/api/types";
 import { useLinkTo } from "@kit/app/modules/registry";
 import { openSheet } from "@kit/app/ui";
-import { useAskClaude } from "@kit/lib/askClaude";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { fmtDay, lira } from "@kit/lib/format";
 import { STAGE, type OppStage } from "@kit/lib/labels";
 import { opportunityPath } from "../paths";
 import { m } from "../messages";
 import { ageMeter, isLive, useStageRules } from "../pipeline";
 import { BoardIcon } from "@kit/components/boardIcons";
-import { useTasksOn } from "@kit/lib/taskAccess";
 import { Meter } from "@kit/components/ui";
 import { m as kit } from "@kit/messages";
 import { stroke as STROKE } from "@kit/styles/tokens.json";
@@ -37,8 +37,7 @@ export interface OppCardProps {
 
 /** One deal: company, person, value, age against the stage's stale limit, next step, and expandable details */
 export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, overlay, onToggle, onMove }: OppCardProps) {
-  const { asked: isAsked, ask } = useAskClaude();
-  const tasksOn = useTasksOn();
+  const canAsk = useCanAsk();
   const live = isLive(o);
   const rules = useStageRules();
   const age = live ? ageMeter(o, rules) : null;
@@ -48,8 +47,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
   const title = o.company_name ?? o.title;
   const sub = `${o.company_name ? `${o.title} · ` : ""}${o.person_name}`;
 
-  const request = { title: m.card.claudeTask(title), target: { opportunity_id: o.id }, ok: m.card.draftQueued };
-  const asked = isAsked(request);
+  const request = { title: m.card.claudeTask(title), target: { opportunity_id: o.id }, ok: m.card.draftQueued, draft: true };
 
   return (
     <article data-record={`opportunity-${o.id}`} className={`pipe-card ${overlay ? "is-overlay" : ""}`} data-late={age?.late || undefined} aria-roledescription={m.card.dragLabel}>
@@ -92,7 +90,7 @@ export const OppCard = memo(function OppCard({ o, open, hint, next, mobile, over
             </select>
           ) : null}
           <span className="pipe-actions">
-            {tasksOn ? <button type="button" className="pipe-btn is-claude" disabled={asked} onClick={() => void ask(request)}>{asked ? m.card.asked : m.card.askDraft}</button> : null}
+            {canAsk(request) ? <AskButton request={request} className="pipe-btn is-claude" label={m.card.askDraft} askedLabel={m.card.asked} /> : null}
             {personHref ? <Link href={personHref} className="pipe-btn">{m.card.person}</Link> : null}
           </span>
           <span className="pipe-actions">

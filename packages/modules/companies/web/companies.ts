@@ -68,4 +68,4 @@ export const siteLabel = (url: string) => url.replace(/^https?:\/\//i, "").repla
 
 // ------------------------------------------------------------ overlay
 /** The request for Claude to write a message draft to the right person of the company */
-export const companyDraftRequest = (c: Pick<Company, "id" | "name">): ClaudeRequest => ({ title: m.draftTask(c.name), target: { company_id: c.id }, ok: m.draftAsked });
+export const companyDraftRequest = (c: Pick<Company, "id" | "name">): ClaudeRequest => ({ title: m.draftTask(c.name), target: { company_id: c.id }, ok: m.draftAsked, draft: true });

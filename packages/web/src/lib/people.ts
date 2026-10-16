@@ -53,7 +53,7 @@ const DRAFT_KIND: Partial<Record<PStatus, string>> = { due: m.followDraft, wait:
 export const draftKind = (p: Person, s: PStatus) => (s === "due" && p.last_direction === "gelen" ? m.replyDraft : DRAFT_KIND[s] ?? m.otherDraft);
 
 /** The request for Claude to write a message draft to a person (the draft lands in Taslaklar) */
-export const draftRequest = (p: Pick<Person, "id" | "name">): ClaudeRequest => ({ title: m.draftTask(p.name), target: { person_id: p.id }, ok: m.draftAsked });
+export const draftRequest = (p: Pick<Person, "id" | "name">): ClaudeRequest => ({ title: m.draftTask(p.name), target: { person_id: p.id }, ok: m.draftAsked, draft: true });
 
 // ------------------------------------------------------------ per day memory (this browser only)
 type Kind = "gone";

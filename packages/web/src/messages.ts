@@ -67,6 +67,15 @@ export const m = defineMessages({
       emailInvalid: "Geçerli bir e-posta yaz",
       summary: "Özet",
     },
+    // a draft a background Claude run writes now: the button's states and the toasts
+    draftRun: {
+      writing: "Claude yazıyor…",
+      watch: "Claude yazıyor, izlemek için tıkla",
+      ready: "Taslak hazır",
+      readyToast: (title: string) => `Taslak hazır: ${title}`,
+      queued: "Claude taslağı yazmaya başladı",
+      failed: (reason: string) => `Taslak yazılamadı: ${reason}`,
+    },
     // sidebar groups and quick add groups: a module's manifest names its group with these (`group: m.navGroups.network`),
     // the registry lists them in this order; the text is also the group's label on screen
     navGroups: { network: "Network", marketing: "Pazarlama", salesProjects: "Satış ve projeler" },

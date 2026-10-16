@@ -264,6 +264,14 @@
   border-top-color: var(--color-accent-on);
   animation: ff-spin var(--dur-spin-btn) linear infinite;
 }
+/* an ask button while a background Claude run writes the draft: the disabled look, but a click still opens the run in the chat */
+[data-ask="writing"] {
+  opacity: var(--opacity-disabled);
+  cursor: progress;
+}
+[data-ask="writing"] .ff-spinner {
+  border-top-color: currentColor;
+}
 @keyframes ff-spin {
   to {
     transform: rotate(360deg);

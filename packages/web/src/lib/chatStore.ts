@@ -67,6 +67,8 @@ export const chatPrefs = {
 /** Anything outside the chat window (the mascot) asks it to open here; it never asks to close */
 export const chatBus = new EventTarget();
 export const requestChatOpen = () => chatBus.dispatchEvent(new Event("open"));
+/** Open the chat on one session (a background draft run, to watch Claude write it) */
+export const requestChatSession = (id: number) => chatBus.dispatchEvent(new CustomEvent<number>("session", { detail: id }));
 
 /** What the mascot needs to know about the chat: window open, a reply running (and its status), a finished reply nobody has seen */
 export interface ChatLive {

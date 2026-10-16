@@ -6,8 +6,11 @@ import { statusText, useElapsed } from "./components/StatusLine";
 import { toast } from "@kit/components/toast";
 import { chatBus, chatLive, chatPresence, chatPrefs, IDLE_CHAT_LIVE, useChatOpener, type ChatLive } from "@kit/lib/chatStore";
 import { T } from "./messages";
-import { CHAT_UI } from "./constants";
+import { CHAT_UI, DRAFT_RUN_LIVE } from "./constants";
 import { isDesk } from "@kit/lib/media";
+import { useAutoDraft } from "@kit/lib/askClaude";
+import { useDraftActive } from "@kit/lib/draftRuns";
+import { m as kit } from "@kit/messages";
 import { useOpenRecord } from "./openRecord";
 import { recordCache } from "./recordCache";
 import { useThread } from "./useThread";
@@ -207,16 +210,29 @@ export default function ChatWidget() {
   });
   useEffect(() => {
     const onOpen = () => (openRef.current ? input.current?.focus() : toggle(true));
+    // a draft button opens the run's session to watch Claude write it
+    const onSession = (e: Event) => {
+      autoPicked.current = true;
+      setSessionId((e as CustomEvent<number>).detail);
+      if (!openRef.current) toggle(true);
+    };
     chatBus.addEventListener("open", onOpen);
-    return () => chatBus.removeEventListener("open", onOpen);
+    chatBus.addEventListener("session", onSession);
+    return () => {
+      chatBus.removeEventListener("open", onOpen);
+      chatBus.removeEventListener("session", onSession);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // publish what the mascot shows: open, a running reply with its status, a finished reply nobody saw
-  const status = thread.live ? statusText(thread.live) : null;
+  // publish what the mascot shows: open, a running reply with its status (or a background draft run), a finished reply nobody saw
+  const drafting = useDraftActive(useAutoDraft());
+  const status = thread.live ? statusText(thread.live) : drafting ? kit.draftRun.writing : null;
   const since = thread.live?.since ?? null;
+  const phase = thread.live?.phase ?? (drafting ? DRAFT_RUN_LIVE.phase : null);
+  const tool = thread.live?.tool ?? (drafting ? DRAFT_RUN_LIVE.tool : null);
   useEffect(() => {
-    chatLive.set({ open, running: !!thread.live, ready, status, since, phase: thread.live?.phase ?? null, tool: thread.live?.tool ?? null, outcome });
-  }, [open, thread.live, ready, status, since, outcome]);
+    chatLive.set({ open, running: !!thread.live || drafting, ready, status, since, phase, tool, outcome });
+  }, [open, thread.live, drafting, ready, status, since, phase, tool, outcome]);
   // the old button stays until the mascot is really there: there is always one way to open the chat
   const mascotUsable = useChatOpener();
   const defaults = meta?.defaults;

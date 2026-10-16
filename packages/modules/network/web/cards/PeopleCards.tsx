@@ -3,11 +3,11 @@ import { RecordLink } from "@kit/app/modules/RecordLink";
 import { useRegistry } from "@kit/app/modules/registry";
 import { PATHS } from "@kit/app/routes";
 import { SHOWN } from "@kit/lib/dashboard";
-import { useAskClaude } from "@kit/lib/askClaude";
+import { useCanAsk } from "@kit/lib/askClaude";
+import { AskButton } from "@kit/components/AskButton";
 import { initials } from "@kit/lib/format";
 import { LOCALE } from "@kit/lib/i18n";
 import { channelName } from "@kit/lib/network";
-import { useTasksOn } from "@kit/lib/taskAccess";
 import { BoardIcon } from "@kit/components/boardIcons";
 import { Card } from "@kit/components/ui";
 import { useExpand } from "@kit/components/ExpandOverlay";
@@ -65,8 +65,7 @@ export function AwaitingCard({ list, waitDays }: { list: List<Person>; waitDays:
 export function CoolingCard({ list, coolingDays }: { list: List<Person>; coolingDays: number }) {
   const ex = useExpand();
   const reg = useRegistry();
-  const tasksOn = useTasksOn();
-  const { asked, ask } = useAskClaude();
+  const canAsk = useCanAsk();
   const personHref = (p: Person) => reg.link("person", p.id) ?? PATHS.today;
   const shown = list.rows.slice(0, SHOWN.cooling);
   const rows: ExRow[] = list.rows.map((p) => {
@@ -76,7 +75,7 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
       right: m.daysText.days(p.days_since), tag: cold ? m.cooling.cold : m.cooling.cooling, dot: "bg-entity-opportunity", href: personHref(p),
     };
   });
-  const request = { title: m.cooling.taskTitle(shown.map((p) => p.name).join(", ")), ok: m.common.taskForClaude };
+  const request = { title: m.cooling.taskTitle(shown.map((p) => p.name).join(", ")), ok: m.common.taskForClaude, draft: true };
 
   return (
     <>
@@ -95,11 +94,8 @@ export function CoolingCard({ list, coolingDays }: { list: List<Person>; cooling
             </span>
           </RecordLink>
         ))}
-        {shown.length && tasksOn ? (
-          <button type="button" className="dash-btn is-claude mt-auto" disabled={asked(request)} onClick={() => void ask(request)}>
-            <BoardIcon name="sparkle" className="size-icon-chip" />
-            {asked(request) ? m.cooling.asked : m.cooling.ask}
-          </button>
+        {shown.length && canAsk(request) ? (
+          <AskButton request={request} className="dash-btn is-claude mt-auto" icon={<BoardIcon name="sparkle" className="size-icon-chip" />} label={m.cooling.ask} askedLabel={m.cooling.asked} />
         ) : null}
       </Card>
       <DashOverlay open={ex.key !== null} from={ex.from} onClose={ex.hide}

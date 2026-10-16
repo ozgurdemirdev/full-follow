@@ -287,6 +287,7 @@ File layout under `packages/server/src/chat/`:
   smoke test). Verified 2026-10-11: with this flag auth works and no hook events are
   emitted. Keep the `system/hook_*` filter in the parser anyway.
 - Security: the panel Claude may use `WebSearch` and `WebFetch`, so a page it reads can carry instructions that make it send what it knows about the business to an outside address; keep the panel to questions where that risk is acceptable. The CLI process gets only an allowlisted environment (`CLI_ENV_NAMES` and `CLI_ENV_PREFIXES` in the chat module's `constants.ts`: no `FF_PASSWORD`, no cookie secret), and the pinned notes (`chat_pinned_notes`, part of the system prompt) can only be changed by Özgür through the web, never by Claude through the MCP.
+- Background draft runs (`POST /api/draft-runs`, sessions of kind `draft`) get a restricted tool set: only `get`, `find`, `timeline` and `draft` by name in `--allowedTools`, no built-in tool but `ToolSearch`, and an MCP host started with `FF_MCP_MODE=draft` (`mcp-draft.json`) that registers nothing else (`MCP_MODE_TOOLS` in core), so record data that carries instructions cannot delete, pay, move, change settings or reach the web.
 
 ### 6.2 Resolving the executable on Windows
 
