@@ -1,7 +1,8 @@
 import { BadRequestException, CanActivate, Controller, ExecutionContext, Injectable, Post, Get, Body, Req, Res, UnauthorizedException, HttpException } from "@nestjs/common";
 import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
-import { LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS, SESSION_MAX_AGE_MS } from "./constants";
+import { MIN_PASSWORD_LENGTH, SESSION_MAX_AGE_MS } from "./constants";
+import { LoginThrottle } from "./login-throttle";
 import { m } from "./messages";
 
 const COOKIE = "ff_session";
@@ -19,6 +20,9 @@ export function safeEqual(a: string, b: string) {
 
 /** Şifre tanımlı değilse (sunucu sadece bu bilgisayara açılır) giriş istenmez */
 export const authEnabled = () => password().length > 0;
+
+/** A password is set but shorter than MIN_PASSWORD_LENGTH (start warns when such a server listens beyond this computer) */
+export const weakPassword = () => authEnabled() && [...password()].length < MIN_PASSWORD_LENGTH;
 
 function cookieValue(header: string | undefined, name: string): string | undefined {
   for (const part of (header ?? "").split(";")) {
@@ -47,7 +51,7 @@ export class AuthGuard implements CanActivate {
   }
 }
 
-const attempts = new Map<string, { n: number; reset: number }>();
+const throttle = new LoginThrottle();
 
 @Controller("api")
 export class AuthController {
@@ -61,14 +65,13 @@ export class AuthController {
   login(@Body() b: { password?: string }, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     if (!authEnabled()) return { ok: true };
     const ip = req.ip ?? "?";
-    const a = attempts.get(ip);
-    if (a && a.reset > Date.now() && a.n >= LOGIN_MAX_ATTEMPTS) throw new HttpException(m.auth.tooManyAttempts, 429);
+    if (throttle.locked(ip)) throw new HttpException(m.auth.tooManyAttempts, 429);
     if (typeof b?.password !== "string") throw new BadRequestException(m.auth.passwordRequired);
     if (!safeEqual(b.password, password())) {
-      attempts.set(ip, { n: (a && a.reset > Date.now() ? a.n : 0) + 1, reset: Date.now() + LOGIN_WINDOW_MS });
+      throttle.failed(ip);
       throw new UnauthorizedException(m.auth.wrongPassword);
     }
-    attempts.delete(ip);
+    throttle.succeeded(ip);
     const exp = String(Date.now() + SESSION_MAX_AGE_MS);
     res.setHeader("Set-Cookie", `${COOKIE}=${exp}.${sign(exp)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_MS / 1000}`);
     return { ok: true };

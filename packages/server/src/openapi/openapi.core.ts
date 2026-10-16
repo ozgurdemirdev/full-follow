@@ -16,7 +16,7 @@ export const authDocs: RouteDocs = defineDocs({
   },
   "POST /api/login": {
     summary: "Log in with the app password",
-    description: "Sets the `ff_session` cookie (30 days). After 8 wrong attempts from one address the answer is 429 for a minute.",
+    description: "Sets the `ff_session` cookie (30 days). After 8 wrong attempts from one address every login (the right password too) is 429 for a minute; each further lockout of that address doubles the wait, up to an hour.",
     body: z.object({ password: z.string() }),
     response: ok,
     public: true,

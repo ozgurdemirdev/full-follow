@@ -9,9 +9,17 @@ export const BACKUP_CHECK_MS = 6 * 60 * 60 * 1000;
 
 /** A session cookie lives this long */
 export const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-/** Wrong or repeated logins from one address: this many within the window are refused until it ends */
+/** Wrong logins from one address: this many within the window lock it for the window (every login, the right one too, is a 429) */
 export const LOGIN_MAX_ATTEMPTS = 8;
 export const LOGIN_WINDOW_MS = 60_000;
+/** Each further lockout of one address doubles the lock, up to this */
+export const LOGIN_LOCKOUT_MAX_MS = 60 * 60 * 1000;
+/** How long an address's lockouts are remembered after its last lock ends (afterwards it starts again from one window) */
+export const LOGIN_LOCKOUT_MEMORY_MS = 24 * 60 * 60 * 1000;
+/** Addresses the login throttle remembers at most; past this the oldest are forgotten */
+export const LOGIN_TRACKED_MAX = 10_000;
+/** A password shorter than this draws a warning at start when the server listens beyond this computer */
+export const MIN_PASSWORD_LENGTH = 12;
 
 /** Rows of the "today" screen when the request gives no limit */
 export const TODAY_ROWS_DEFAULT = 50;

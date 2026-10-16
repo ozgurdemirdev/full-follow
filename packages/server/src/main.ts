@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
-import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS, LOOPBACK_HOSTS } from "./constants";
+import { BACKUP_CHECK_MS, DEFAULT_PORT, HEALTH_PROBE_TIMEOUT_MS, LOOPBACK_HOSTS, MIN_PASSWORD_LENGTH } from "./constants";
 import { m } from "./messages.start";
 
 const red = (s: string) => (process.stdout.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
@@ -44,7 +44,7 @@ async function load() {
   const [{ NestFactory }, core, app, auth, setup] = await Promise.all([
     import("@nestjs/core"), import("@fullfollow/core"), import("./app.module"), import("./auth"), import("./setup"),
   ]);
-  return { NestFactory, core, AppModule: app.AppModule, authEnabled: auth.authEnabled, configureApp: setup.configureApp };
+  return { NestFactory, core, AppModule: app.AppModule, authEnabled: auth.authEnabled, weakPassword: auth.weakPassword, configureApp: setup.configureApp };
 }
 
 async function bootstrap() {
@@ -62,6 +62,8 @@ async function bootstrap() {
   const host = process.env.FF_HOST || (mods.authEnabled() ? "0.0.0.0" : "127.0.0.1");
   // without a password nothing but this computer may reach the panel: no setting opens it to the network
   if (!mods.authEnabled() && !LOOPBACK_HOSTS.includes(host)) die(m.openWithoutPassword(host), m.openWithoutPasswordHint);
+  // a warning, not a refusal: an install that already has a short password keeps starting
+  if (mods.weakPassword() && !LOOPBACK_HOSTS.includes(host)) console.warn(red(m.weakPassword(MIN_PASSWORD_LENGTH)));
   const url = `http://localhost:${port}`;
 
   let app: NestExpressApplication;
