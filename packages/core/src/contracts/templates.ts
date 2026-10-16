@@ -14,7 +14,7 @@ export interface TemplateRecord {
   body: string;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** A template as listed: the row plus its sector path and how it did (drafts made from it, sent ones, answered ones) */

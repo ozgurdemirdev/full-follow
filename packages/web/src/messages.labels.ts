@@ -22,11 +22,11 @@ export const labels = defineMessages({
       person: m.nouns.person, company: m.nouns.company, opportunity: m.nouns.opportunity, project: m.nouns.project, task: m.nouns.task, draft: m.nouns.draft,
       payment: m.nouns.payment, post: m.nouns.post, idea: m.nouns.idea, own_project: "Kendi projesi",
     },
-    actor: { ozgur: m.owner, claude: m.claude },
+    actor: { claude: m.claude },
     platform: { r10: "R10", linkedin: m.brands.linkedin, instagram: m.brands.instagram, diger: m.other },
     templateKind: { ilk: "İlk mesaj", takip: m.follow, teklif: "Teklif sonrası", diger: m.other },
     ideaStage: { fikir: m.nouns.idea, dogrulaniyor: "Doğrulanıyor", demo: "Demo", urun: "Ürün" },
-    assignee: { ozgur: m.you, claude: m.claude, musteri: m.customer },
+    assignee: { owner: m.you, claude: m.claude, musteri: m.customer },
     /** Weekday short names (ISO order, Monday first) */
     weekdayShort: { mon: "Pzt", tue: "Sal", wed: "Çar", thu: "Per", fri: "Cum", sat: "Cmt", sun: "Paz" },
   },

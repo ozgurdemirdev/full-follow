@@ -19,14 +19,14 @@ export const docs = defineDocs({
     update: draftUpdate,
     list: { description: "Newest first; `q` searches the text and the recipient." },
   }),
-  "POST /api/drafts/:id/approve": { summary: "Approve a draft", description: "Only Özgür approves; the MCP host has no such tool.", response: saveResult },
+  "POST /api/drafts/:id/approve": { summary: "Approve a draft", description: "Only the owner approves; the MCP host has no such tool.", response: saveResult },
   "POST /api/drafts/:id/reject": {
     summary: "Reject a draft with a note",
-    description: "Send the reason as `note` (it also joins the learned rules Claude reads before the next draft) or `no_reason: true` when Özgür gave none.",
+    description: "Send the reason as `note` (it also joins the learned rules Claude reads before the next draft) or `no_reason: true` when the owner gave none.",
     body: draftReject,
     response: saveResult,
   },
-  "POST /api/drafts/:id/send": { summary: "Mark a draft as sent", description: "Özgür sent it himself: records an outgoing touch and applies the opportunity stage rule (when the network module is installed).", response: saveResult },
+  "POST /api/drafts/:id/send": { summary: "Mark a draft as sent", description: "The owner sent it: records an outgoing touch and applies the opportunity stage rule (when the network module is installed).", response: saveResult },
 
   "GET /api/followups": { summary: "List follow-ups that are due", description: "People whose follow-up step has come and who have no waiting draft yet.", response: object },
   "POST /api/followups/run": { summary: "Prepare the follow-up drafts now", description: "Does at once what the scheduler does each day; the drafts are written as Claude.", response: object },

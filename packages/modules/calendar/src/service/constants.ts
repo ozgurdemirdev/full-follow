@@ -3,8 +3,8 @@ import type { TaskAssignee, TaskKind } from "@fullfollow/core";
 /** Task kinds (payments and follow-ups are derived kinds of the calendar feed, not task kinds) */
 export const TASK_KINDS = ["gorusme", "takip", "gorev"] as const satisfies readonly TaskKind[];
 export const DEFAULT_TASK_KIND: TaskKind = "gorev";
-/** Who a task can be given to: Özgür, Claude, or the client (a task the client owes, such as an approval or material) */
-export const TASK_ASSIGNEES = ["ozgur", "claude", "musteri"] as const satisfies readonly TaskAssignee[];
+/** Who a task can be given to: the owner, Claude, or the client (a task the client owes, such as an approval or material) */
+export const TASK_ASSIGNEES = ["owner", "claude", "musteri"] as const satisfies readonly TaskAssignee[];
 /** Words that make a quick added task a meeting or a follow-up (lower case, matched inside the text); the first matching kind wins */
 export const TASK_KIND_KEYWORDS: readonly { kind: TaskKind; words: readonly string[] }[] = [
   { kind: "gorusme", words: ["görüşme", "toplantı", "call", "arama"] },

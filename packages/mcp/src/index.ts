@@ -7,7 +7,7 @@ import { m } from "./messages";
 import { registerTools } from "./tools";
 
 /**
- * Full Follow MCP sunucusu (stdio). Özgür'ün bilgisayarında Claude Desktop / Claude Code başlatır.
+ * Full Follow MCP sunucusu (stdio). Kullanıcının bilgisayarında Claude Desktop / Claude Code başlatır.
  * Aynı SQLite dosyasını (WAL) web sunucusuyla birlikte açar; her işlem actor = "claude" olarak kaydedilir.
  * stdout protokole ayrılmıştır; günlükler stderr'e yazılır.
  */

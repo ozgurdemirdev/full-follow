@@ -7,7 +7,26 @@ import { stroke as STROKE } from "../styles/tokens.json";
 const HTTP_UNAUTHORIZED = 401;
 const TEXT = shell.login;
 
-/** Login from the design board. The brand panel carries no business numbers: nothing is fetched before the session exists. */
+/** The brand panel of the login board (desktop only), shared with the first run setup. It carries no business numbers: nothing is fetched before the session exists. */
+export function LoginSide() {
+  return (
+    <aside className="login-side" aria-hidden="true">
+      <span className="login-orb" data-tone="accent" />
+      <span className="login-orb" data-tone="claude" />
+      <div className="login-brand">
+        <span className="login-logo">{shell.brandMark}</span>
+        <span className="login-brandname">{shell.brand}</span>
+      </div>
+      <div className="login-pitch">
+        <span className="login-headline">{TEXT.headlineTop}<br />{TEXT.headlineBottom}</span>
+        <span className="login-lead">{TEXT.lead}</span>
+      </div>
+      <span />
+    </aside>
+  );
+}
+
+/** Login from the design board */
 export function Login({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -30,19 +49,7 @@ export function Login({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="login">
-      <aside className="login-side" aria-hidden="true">
-        <span className="login-orb" data-tone="accent" />
-        <span className="login-orb" data-tone="claude" />
-        <div className="login-brand">
-          <span className="login-logo">{shell.brandMark}</span>
-          <span className="login-brandname">{shell.brand}</span>
-        </div>
-        <div className="login-pitch">
-          <span className="login-headline">{TEXT.headlineTop}<br />{TEXT.headlineBottom}</span>
-          <span className="login-lead">{TEXT.lead}</span>
-        </div>
-        <span />
-      </aside>
+      <LoginSide />
       <main className="login-main">
         <form className="login-card" onSubmit={submit}>
           <div className="login-head">

@@ -9,17 +9,19 @@ import { Asks } from "../components/dash/Asks";
 import { DashTools } from "../components/dash/DashTools";
 import { ErrorBox, PageSkeleton } from "../components/ui";
 import { fmtToday } from "../lib/format";
+import { useOwner } from "../lib/owner";
 import { settings } from "../messages.settings";
 
 const m = settings.today;
 const DASH_COLUMNS = 3;
 
 /**
- * Dashboard host: goal strip (a slot), questions waiting for Özgür, then the cards the installed modules registered, in independent
+ * Dashboard host: goal strip (a slot), questions waiting for the owner, then the cards the installed modules registered, in independent
  * masonry columns (global `order` is the order on a phone and inside a column, `column` pins a card to one of the three).
  */
 export default function Today() {
   const today = useQuery<TodayData>(K.today);
+  const owner = useOwner();
   const { dashboard } = useRegistry();
   const d = today.data;
   const shown = d ? dashboard.filter((e) => !e.show || e.show(d)) : [];
@@ -32,7 +34,7 @@ export default function Today() {
   const sub = d ? [fmtToday(d.date), [d.network && m.awaiting(d.network.awaiting.total), waiting && m.waitingOnYou(waiting)].filter(Boolean).join(m.comma)].filter(Boolean).join(m.dot) : "";
 
   return (
-    <Page title={m.greeting} sub={sub} right={<DashTools />} gap="tight" className="flex flex-col gap-9">
+    <Page title={m.greeting(owner.name)} sub={sub} right={<DashTools />} gap="tight" className="flex flex-col gap-9">
       {today.error && !d ? <ErrorBox error={today.error} retry={today.reload} /> : null}
       {!d ? (
         !today.error && <PageSkeleton />

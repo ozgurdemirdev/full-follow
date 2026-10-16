@@ -4,7 +4,7 @@ import type { ListOpts } from "../context";
 /** Where an own project stands on its journey, in order */
 export type OwnProjectStage = "fikir" | "dogrulama" | "demo" | "urun";
 
-/** An own project row as stored: a product Özgür builds for himself, not client work */
+/** An own project row as stored: a product the owner builds for their own use, not client work */
 export interface OwnProjectRecord {
   id: number;
   name: string;
@@ -18,7 +18,7 @@ export interface OwnProjectRecord {
   stage: OwnProjectStage | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** An own project as listed: the row plus its idea counts, interest, next step and sectors */
@@ -38,7 +38,7 @@ export interface OwnProjectStats extends OwnProjectRecord {
 }
 
 /**
- * Public API of the own-projects module (`ctx.mod("own-projects")`): Özgür's own products, their status, sellability and sectors.
+ * Public API of the own-projects module (`ctx.mod("own-projects")`): the owner's own products, their status, sellability and sectors.
  * Their ideas belong to the ideas module. The inputs are the JSON the web and MCP send; they are validated inside.
  */
 export interface OwnProjectsApi {

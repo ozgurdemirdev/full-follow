@@ -3,8 +3,8 @@ import type { ListOpts } from "../context";
 /** Kind of a task: a meeting, a follow-up or a plain task */
 export type TaskKind = "gorusme" | "takip" | "gorev";
 
-/** Who does a task: Özgür, Claude or the client (musteri) */
-export type TaskAssignee = "ozgur" | "claude" | "musteri";
+/** Who does a task: the owner, Claude or the client (musteri) */
+export type TaskAssignee = "owner" | "claude" | "musteri";
 
 /** A task row as stored */
 export interface TaskRecord {
@@ -24,7 +24,7 @@ export interface TaskRecord {
   idea_id: number | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
 /** A task as listed: the row plus the names of the record it hangs on */

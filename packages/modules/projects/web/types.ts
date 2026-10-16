@@ -1,7 +1,7 @@
 // The projects module's own API types (the project task shapes of the calendar endpoint stay in the kit's api/types.ts)
 import type { Project } from "@kit/api/types";
 
-/** Who a project waits on: Özgür, the client, or overdue money or work */
+/** Who a project waits on: the owner, the client, or overdue money or work */
 export type WaitKey = "me" | "client" | "late";
 
 /** Fields the projects module adds to a project row */

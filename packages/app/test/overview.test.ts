@@ -12,7 +12,7 @@ suite("the people and companies screens page through overview, not through a cap
   const sql = (q: string, ...a: unknown[]) => h.sqlite.prepare(q).run(...a);
   beforeEach(() => {
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   /** Ada: a follow-up came due. Dina: a reply is awaited. Bob: new. Cem: nothing special (his record is old). */

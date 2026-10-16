@@ -7,7 +7,7 @@ suite("Weekly contact rhythm", () => {
   const clock: Clock = { today: () => "2026-10-14", now: () => "2026-10-14T10:00:00Z" };
   let core: ReturnType<typeof appFor>;
   beforeEach(() => {
-    core = appFor(openDb(":memory:"), "ozgur", clock);
+    core = appFor(openDb(":memory:"), "owner", clock);
   });
 
   it("counts touches per ISO week, oldest first and the current week last; weeks without touches are 0", () => {

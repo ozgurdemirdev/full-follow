@@ -18,10 +18,10 @@ export interface CompanyRecord {
   city: string | null;
   created_at: string;
   updated_at: string;
-  created_by: "ozgur" | "claude";
+  created_by: "owner" | "claude";
 }
 
-/** What a company is to Özgür: a client (has a project), a partner (carries a partner tag) or a lead (everything else) */
+/** What a company is to the owner: a client (has a project), a partner (carries a partner tag) or a lead (everything else) */
 export type CompanySegment = "client" | "partner" | "lead";
 
 /** Money of a company in TL: paid on its projects, still due on them, and the value of its open opportunities */

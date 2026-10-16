@@ -29,7 +29,7 @@ export function attachmentFile(core: Core, id: number) {
 
 /**
  * A text attachment as Claude reads it. The file's own `<file` and `</file` are escaped, so a text cannot close its block and go
- * on as if Özgür had written the rest; the name loses quotes, angle brackets and line breaks for the same reason.
+ * on as if the owner had written the rest; the name loses quotes, angle brackets and line breaks for the same reason.
  */
 export function fileBlock(name: string, text: string): string {
   const safeName = name.replace(/["<>]/g, "'").replace(/\s+/g, " ");

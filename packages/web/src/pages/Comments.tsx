@@ -19,11 +19,11 @@ const NO_THREADS: Thread[] = [];
 const OPEN_THREADS = "/comments?messages=true";
 const CLOSED_THREADS = "/comments?resolved=true&messages=true";
 
-/** Comments: Özgür and Claude write on records; tabs by who is waited for, a composer for a new thread, the threads in two columns */
+/** Comments: the owner and Claude write on records; tabs by who is waited for, a composer for a new thread, the threads in two columns */
 export default function Comments() {
   // the open threads are read whole; the closed ones (a history that only grows) page in on their own tab, their count is the server's total
   const threads = useQuery<List<Thread>>(OPEN_THREADS, drained);
-  // the dashboard links here with ?f=mine (threads waiting for Özgür), which is the "Sana soruldu" tab
+  // the dashboard links here with ?f=mine (threads waiting for the owner), which is the "Sana soruldu" tab
   const [tab, setTab] = useState<CTab>(() => tabFromQuery(location.search));
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set());
   const [limit, setLimit] = useState(THREADS_SHOWN);

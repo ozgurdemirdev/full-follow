@@ -55,8 +55,8 @@ export const coreDocs: RouteDocs = defineDocs({
     filters: {
       target_type: z.string().optional().describe("Record type the thread hangs on (person, project, ...)"),
       target_id: positiveInt.optional(),
-      unanswered: flag("Open threads whose last comment is Özgür's: waiting for Claude"),
-      last_by: z.enum(["ozgur", "claude"]).optional(),
+      unanswered: flag("Open threads whose last comment is the owner's: waiting for Claude"),
+      last_by: z.enum(["owner", "claude"]).optional(),
       resolved: z.enum(["true", "false", "all"]).optional().describe("true: closed threads, false (default): open ones, all: both"),
       messages: flag("Return every comment of each thread, not only the first"),
     },
@@ -69,7 +69,7 @@ export const coreDocs: RouteDocs = defineDocs({
     body: z.object({ resolved: z.boolean().optional() }),
     response: saveResult,
   },
-  "POST /api/comments/:id/read": { summary: "Mark a thread read", description: "Claude's comments in the thread count as read by Özgür.", response: saveResult },
+  "POST /api/comments/:id/read": { summary: "Mark a thread read", description: "Claude's comments in the thread count as read by the owner.", response: saveResult },
 
   "GET /api/files/:id": { summary: "Download a file", description: "Served with the stored mime type; images and PDF open in the tab, the rest downloads.", contentType: "application/octet-stream" },
   "POST /api/files": {

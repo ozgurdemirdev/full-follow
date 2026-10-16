@@ -46,7 +46,12 @@ export function cut(s: string | null | undefined, n = CUT_CHARS): string {
   const c = t.length > n ? t.slice(0, n - 1) + "…" : t;
   return wrapped && c ? `${DATA_OPEN}${c}${DATA_CLOSE}` : c;
 }
-export const who = (a?: string) => (a === "claude" ? m.who.claude : a === "ozgur" ? m.who.ozgur : a === "musteri" ? m.who.customer : a ?? "");
+/** The owner's name as the database has it now (set by registerTools; read per line, so a name given while the host runs shows at once) */
+let ownerSource: () => string | null = () => null;
+export const useOwnerName = (read: () => string | null) => {
+  ownerSource = read;
+};
+export const who = (a?: string) => (a === "claude" ? m.who.claude : a === "owner" ? ownerSource() ?? m.who.owner : a === "musteri" ? m.who.customer : a ?? "");
 export const join = (...p: (string | number | null | undefined | false)[]) => p.filter((x) => x !== null && x !== undefined && x !== "" && x !== false).join(" · ");
 
 type Row = Record<string, any>;
@@ -59,7 +64,7 @@ const LINE: Record<string, (r: Row) => string> = {
   tag: (r) => join(`#${r.id} ${r.name}`, m.line.people(r.people_count), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
   trash: (r) => join(`${r.type} #${r.id} ${r.label}`, m.line.trashWhat(r.what, d(r.deleted_at))),
   source: (r) => join(`#${r.id} ${r.name}`, r.kind, m.line.opportunities(r.opp_count ?? 0), !!r.people_count && m.line.people(r.people_count), !!r.company_count && m.line.companies(r.company_count), r.deleted_at && m.line.deleted),
-  comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: ${cut(r.root_body, CUT_CHARS)} → ` : ""}${who(r.last_by)} ${d(r.last_at)}: ${cut(r.last_body, CUT_CHARS)}`, r.count > 1 && m.line.commentCount(r.count), r.last_by === "ozgur" && !r.resolved_at && m.line.unanswered, r.resolved_at && m.line.closed),
+  comment: (r) => join(`#${r.id} [${r.target_label}]`, `${r.count > 1 ? `${who(r.root_by)}: ${cut(r.root_body, CUT_CHARS)} → ` : ""}${who(r.last_by)} ${d(r.last_at)}: ${cut(r.last_body, CUT_CHARS)}`, r.count > 1 && m.line.commentCount(r.count), r.last_by === "owner" && !r.resolved_at && m.line.unanswered, r.resolved_at && m.line.closed),
   setting: (r) => `${r.key}=${r.value}`,
 };
 

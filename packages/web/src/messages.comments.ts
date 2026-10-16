@@ -55,7 +55,7 @@ export const comments = defineMessages({
       aboutPlaceholder: "Fırsat, proje, kişi ya da firma ara",
       body: "Yorum",
       bodyPlaceholder: "Not ya da soru yaz",
-      bodyHint: "Özgür olarak yazıyorsun · Claude MCP’den okuyup cevaplar",
+      bodyHint: "Kendi adınla yazıyorsun · Claude MCP’den okuyup cevaplar",
     },
     page: {
       sub: "Sen ve Claude, kayıtların üstünde konuşursunuz. Son söz sendeyse Claude cevaplar.",

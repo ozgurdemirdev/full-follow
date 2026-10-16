@@ -12,7 +12,7 @@ suite("drafts, ideas and the modules around them", () => {
   const count = (table: string) => sql(`SELECT COUNT(*) n FROM ${table}`)[0].n;
   beforeEach(() => {
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   it("a touch tells the modules in key order: the send warnings (drafts), the idea link (ideas), then the opportunity stage (pipeline)", () => {

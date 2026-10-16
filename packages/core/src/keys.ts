@@ -47,7 +47,7 @@ export function instagramKey(s: string | null | undefined): string | null {
   return (v.startsWith("instagram.com/") ? v.slice("instagram.com/".length).split("/")[0] : v.split("/")[0]).replace(/^@/, "") || null;
 }
 
-/** LinkedIn: adres → "in/ozgur" ya da "company/abc"; düz kullanıcı adı "in/" sayılır */
+/** LinkedIn: adres → "in/ayse" ya da "company/abc"; düz kullanıcı adı "in/" sayılır */
 export function linkedinKey(s: string | null | undefined): string | null {
   if (blank(s)) return null;
   const v = bareUrl(String(s)).replace(/^[a-z]{2}\.linkedin\.com\//, "linkedin.com/");

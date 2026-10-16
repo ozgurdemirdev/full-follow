@@ -132,7 +132,7 @@ export function FeedComposer({ type, id, label, openThread }: { type: FeedKind; 
       <textarea id="yorum" className="inp" placeholder={m.feed.commentPlaceholder} value={body} onChange={(e) => setBody(e.target.value)}
         onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === "Enter" && send()} />
       <div className="flex items-center gap-3">
-        <Who actor="ozgur" />
+        <Who actor="owner" />
         <span className="text-sm text-text-muted">{m.feed.writingAs}</span>
         <span className="flex-grow" />
         <button type="button" className="btn btn-pri" disabled={busy || !body.trim()} onClick={send}>{m.feed.addComment}</button>

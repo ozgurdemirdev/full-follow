@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createCore, createRegistry, defineModule, FFError, openDb, type ModuleDef } from "../src";
 
 const clock = { now: () => "2026-10-14T10:00:00Z", today: () => "2026-10-14" };
-const makeCore = (defs: ModuleDef[], off: string[] = []) => createCore(openDb(":memory:"), "ozgur", clock, createRegistry(defs, off));
+const makeCore = (defs: ModuleDef[], off: string[] = []) => createCore(openDb(":memory:"), "owner", clock, createRegistry(defs, off));
 
 /** A module that adds a Today section, a relation on sectors and a meta list */
 const pings = defineModule({

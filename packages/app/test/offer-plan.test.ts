@@ -19,7 +19,7 @@ suite("offer lines, payment plan, project stage and last actor", () => {
   };
   beforeEach(() => {
     h = openDb(":memory:");
-    app = appFor(h, "ozgur", clock);
+    app = appFor(h, "owner", clock);
   });
 
   it("the payment plan of the won offer splits the project's payments, rounding left over on the last part", () => {
@@ -71,7 +71,7 @@ suite("offer lines, payment plan, project stage and last actor", () => {
 
   it("a record read tells who made its latest change", () => {
     const p = app.people.create({ name: "Ada" }).row;
-    expect(app.get("person", p.id).last_actor).toBe("ozgur");
+    expect(app.get("person", p.id).last_actor).toBe("owner");
     const claude = appFor(h, "claude", clock);
     claude.people.update(p.id, { role: "Kurucu" });
     expect(app.get("person", p.id).last_actor).toBe("claude");
@@ -79,7 +79,7 @@ suite("offer lines, payment plan, project stage and last actor", () => {
     const t = claude.tasks.create({ title: "Ara" }).row;
     expect(app.get("task", t.id).last_actor).toBe("claude");
     app.tasks.update(t.id, { title: "Ara bakalım" });
-    expect(app.get("task", t.id).last_actor).toBe("ozgur");
+    expect(app.get("task", t.id).last_actor).toBe("owner");
     // a record nobody has changed through the services has none
     h.sqlite.prepare("DELETE FROM events").run();
     expect(app.get("person", p.id).last_actor).toBeNull();

@@ -4,7 +4,7 @@ import type { Suggest } from "../chatReply";
 import { chatPrefs } from "@kit/lib/chatStore";
 import { T } from "../messages";
 
-/** Two buttons under Özgür's message after "hallettim": the label and "Gerek yok". Only task_done exists; it calls the task endpoint directly, not Claude. */
+/** Two buttons under the owner's message after "hallettim": the label and "Gerek yok". Only task_done exists; it calls the task endpoint directly, not Claude. */
 export function SuggestRow({ suggest, messageId }: { suggest: Suggest; messageId: number }) {
   const [state, setState] = useState(() => chatPrefs.suggest(messageId));
   const [busy, setBusy] = useState(false);

@@ -55,21 +55,21 @@ export interface EventSpec {
 /** An event row written straight into the table */
 export function event(handle: DbHandle, e: EventSpec): number {
   return Number(handle.sqlite.prepare("INSERT INTO events (type, person_id, opportunity_id, project_id, summary, data, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-    .run(e.type, e.person_id ?? null, e.opportunity_id ?? null, e.project_id ?? null, e.summary ?? e.type, e.data === undefined ? null : JSON.stringify(e.data), e.by ?? "ozgur", e.at).lastInsertRowid);
+    .run(e.type, e.person_id ?? null, e.opportunity_id ?? null, e.project_id ?? null, e.summary ?? e.type, e.data === undefined ? null : JSON.stringify(e.data), e.by ?? "owner", e.at).lastInsertRowid);
 }
 
 /** A bare person row (the people module is not installed here) */
 export function person(handle: DbHandle, name = "Ada"): number {
-  return Number(handle.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'ozgur')").run(name, AT, AT).lastInsertRowid);
+  return Number(handle.sqlite.prepare("INSERT INTO people (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'owner')").run(name, AT, AT).lastInsertRowid);
 }
 
 /** A bare company row */
 export function company(handle: DbHandle, name = "Acme"): number {
-  return Number(handle.sqlite.prepare("INSERT INTO companies (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'ozgur')").run(name, AT, AT).lastInsertRowid);
+  return Number(handle.sqlite.prepare("INSERT INTO companies (name, created_at, updated_at, created_by) VALUES (?, ?, ?, 'owner')").run(name, AT, AT).lastInsertRowid);
 }
 
 /** A touch row about a company (the network module is not installed here) */
 export function touch(handle: DbHandle, t: { company_id?: number; person_id?: number }): number {
   return Number(handle.sqlite.prepare(`INSERT INTO touches (person_id, company_id, channel, direction, kind, summary, happened_at, created_at, updated_at, created_by)
-    VALUES (?, ?, 'email', 'giden', 'mesaj', 'x', ?, ?, ?, 'ozgur')`).run(t.person_id ?? null, t.company_id ?? null, AT, AT, AT).lastInsertRowid);
+    VALUES (?, ?, 'email', 'giden', 'mesaj', 'x', ?, ?, ?, 'owner')`).run(t.person_id ?? null, t.company_id ?? null, AT, AT, AT).lastInsertRowid);
 }

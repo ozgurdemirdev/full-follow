@@ -163,7 +163,7 @@ Index: `(deleted_at, last_message_at desc)`.
 
 | column | type | rule |
 |---|---|---|
-| ...common() | | `created_by` = `ozgur` for user rows, `claude` for assistant rows |
+| ...common() | | `created_by` = `owner` for user rows, `claude` for assistant rows |
 | session_id | integer not null → chat_sessions.id | |
 | role | text enum `user`, `assistant` | |
 | body | text not null default `""` | assistant body grows while streaming (§7.3) |

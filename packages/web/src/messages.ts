@@ -132,9 +132,8 @@ export const m = defineMessages({
       description: "Açıklama",
       priority: "Öncelik",
     },
-    // who writes
-    owner: "Özgür",
-    ownerInitials: "ÖD",
+    // who writes; `owner` stands in while the owner has given no name (lib/owner.ts)
+    owner: "Sen",
     claude: "Claude",
     // money and units
     lira: "₺",

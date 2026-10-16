@@ -107,7 +107,7 @@ claude mcp add full-follow -- node C:\Projects\WebProjects\FullFollow\packages\m
 
 Claude Desktop'u yeniden başlat. Kontrol: Claude'a "Full Follow'da bugün ne var?" diye sor; `today` aracı çalışmalı. Web'de sol alttaki "Claude: …" yazısı Claude'un son işlemini gösterir.
 
-MCP ve web sunucusu aynı `data/fullfollow.db` dosyasını aynı anda açabilir. MCP'den yapılan her işlem `claude`, web'den yapılan `ozgur` olarak kaydedilir.
+MCP ve web sunucusu aynı `data/fullfollow.db` dosyasını aynı anda açabilir. MCP'den yapılan her işlem `claude`, web'den yapılan `owner` olarak kaydedilir.
 
 ## Panel sohbeti
 
