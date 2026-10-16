@@ -183,6 +183,13 @@
       "when": 1792120369705,
       "tag": "0025_draft_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1792124264851,
+      "tag": "0026_chat_permissions",
+      "breakpoints": true
     }
   ]
 }

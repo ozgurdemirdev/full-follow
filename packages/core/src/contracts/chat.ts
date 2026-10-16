@@ -1,4 +1,4 @@
-import type { Actor, Channel, ChatSessionKind, DraftRunState } from "../constants";
+import type { Actor, Channel, ChatPermissionState, ChatSessionKind, DraftRunState } from "../constants";
 
 /** A panel chat session as stored */
 export interface ChatSession {
@@ -114,6 +114,39 @@ export interface DraftRunsApi {
   markFailed(id: number, reason: string): DraftRun;
 }
 
+/** A confirmation the panel chat asked the owner for (table chat_permissions) */
+export interface ChatPermission {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: Actor;
+  session_id: number;
+  /** the reply that was running when it was asked */
+  message_id: number | null;
+  tool_name: string;
+  input_json: string;
+  summary: string;
+  state: ChatPermissionState;
+  answered_at: string | null;
+}
+
+/** The confirmations of the panel chat: the MCP host of a chat asks and waits, the owner answers, an unanswered one expires or is cancelled */
+export interface ChatPermissionsApi {
+  /** a pending row on the reply that is running in the session */
+  ask(sessionId: number, toolName: string, input: unknown, summary: string): ChatPermission;
+  get(id: number): ChatPermission;
+  /** the owner only; a row that is no longer pending is refused */
+  answer(id: number, allow: boolean): ChatPermission;
+  /** pending → expired (no answer in time); false when it was already answered */
+  expire(id: number): boolean;
+  /** every pending row, oldest first */
+  pending(): ChatPermission[];
+  /** the newest rows of a session, oldest first (the cards of the chat window) */
+  ofSession(sessionId: number): ChatPermission[];
+  /** pending → cancelled: of one session (its run ended), or of every session (server start); returns the rows changed */
+  cancel(sessionId?: number): ChatPermission[];
+}
+
 /**
  * Public API of the chat module (`ctx.mod("chat")`): sessions, messages and attachments of the panel chat. The inputs are the JSON the web sends;
  * they are validated inside. The Claude runner (server side) writes the assistant messages through it.
@@ -150,4 +183,5 @@ export interface ChatApi {
   /** boot cleanup: a run owned by a dead server can never finish; returns how many rows were closed */
   failDanglingRuns(reason: string): number;
   draftRuns: DraftRunsApi;
+  permissions: ChatPermissionsApi;
 }

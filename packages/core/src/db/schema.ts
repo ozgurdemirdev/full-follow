@@ -6,7 +6,7 @@ import {
   TEMPLATE_KINDS, IDEA_STAGES, INTEREST_LEVELS,
   OPP_ROLES,
   TAG_COLORS, CONTACT_STATUSES, OWN_PROJECT_STATUSES, SELLABLE, IDEA_PRIORITIES,
-  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES, CHAT_SESSION_KINDS, DRAFT_RUN_STATES,
+  CHAT_ROLES, CHAT_STATES, CHAT_NEW_TITLE, CHAT_INPUT_MODES, CHAT_SESSION_KINDS, DRAFT_RUN_STATES, CHAT_PERMISSION_STATES,
 } from "../constants";
 
 /** Her tabloda ortak alanlar */
@@ -513,6 +513,24 @@ export const chat_attachments = sqliteTable("chat_attachments", {
   size: integer("size").notNull(),
   path: text("path").notNull(),
 }, (t) => [index("chat_attachments_message").on(t.message_id), index("chat_attachments_session").on(t.session_id)]);
+
+/**
+ * A confirmation the panel chat asks the owner for before a guarded tool call (delete, pay, a setting, overwriting a file). The MCP host
+ * of the chat writes it and waits; the owner answers in the chat window; no answer in time refuses it. The message is the reply that
+ * was running when it was asked, so the web shows the card under it.
+ */
+export const chat_permissions = sqliteTable("chat_permissions", {
+  ...common(),
+  session_id: integer("session_id").notNull().references(() => chat_sessions.id),
+  message_id: integer("message_id").references(() => chat_messages.id),
+  /** the tool as the Claude CLI names it (mcp__full-follow__delete, Edit) and its input as JSON */
+  tool_name: text("tool_name").notNull(),
+  input_json: text("input_json").notNull(),
+  /** what will happen, in Turkish, built from the input (the record, the amount, the setting and its new value, the file) */
+  summary: text("summary").notNull(),
+  state: text("state", { enum: CHAT_PERMISSION_STATES }).notNull().default("pending"),
+  answered_at: text("answered_at"),
+}, (t) => [index("chat_permissions_session").on(t.session_id, t.id), index("chat_permissions_state").on(t.state)]);
 
 /**
  * A request for a draft that a background Claude run writes at once (the chat module's queue). The record it is about is kept as plain

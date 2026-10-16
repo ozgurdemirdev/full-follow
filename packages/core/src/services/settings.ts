@@ -6,6 +6,7 @@ import { id as idSchema } from "../schemas/kit";
 import { isIsoDate, resolveRelativeDate } from "../dates";
 import type { Q } from "../db/client";
 import { settings } from "../db/schema";
+import { chatAccessSettings, validFolders } from "./chat-access";
 
 export const readSetting = (ctx: Ctx, key: string): string | undefined =>
   row<{ value: string }>(ctx, "SELECT value FROM settings WHERE key = ?", key)?.value;
@@ -159,6 +160,7 @@ export function settingValues(ctx: Ctx) {
     // empty until the first run setup, which the web shows while it is
     owner_name: ownerName(ctx) ?? "",
     ...draftAutoSettings(ctx),
+    ...chatAccessSettings(ctx),
   };
 }
 
@@ -205,8 +207,10 @@ export function settingsService(ctx: Ctx) {
       stored = JSON.stringify(keys);
     } else if (key === "draft_rules") {
       stored = JSON.stringify(parse(draftRulesSchema, value));
-    } else if (key === "draft_auto") {
+    } else if (key === "draft_auto" || key === "chat_full_access" || key === "chat_web_fetch" || key === "chat_local_files") {
       stored = parse(switchSchema, value) ? "1" : "0";
+    } else if (key === "chat_local_folders") {
+      stored = JSON.stringify(validFolders(value));
     } else if (key === "draft_model") {
       stored = parse(draftModelSchema, value);
     } else if (key === "draft_effort") {

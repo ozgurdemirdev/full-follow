@@ -146,6 +146,10 @@ export const m = defineMessages({
       event: (key: string) => `Ayar: ${key}`,
       empty: "ayar verisi boş",
       ownerOnlyAction: (key: string) => `${key} ayarını değiştirmek`,
+      folderNotAbsolute: (dir: string) => `klasör tam yol olmalı (örn. C:\\Belgeler\\Teklifler): ${dir}`,
+      folderMissing: (dir: string) => `klasör bulunamadı: ${dir}`,
+      folderNotDir: (dir: string) => `bu bir klasör değil: ${dir}`,
+      folderData: (dir: string) => `Full Follow'un veri klasörü eklenemez: ${dir}`,
     },
 
     // ---- Trash

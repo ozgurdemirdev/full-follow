@@ -115,15 +115,20 @@ export const SETTING_KEYS = [
   "tax_rate_percent", "payment_template", "reply_wait_days", "cooling_days",
   "followup_days", "weekly_target", "channel_limits", "email_warmup_until", "chat_pinned_notes", "focus_own_project_id", "post_refresh_days", "draft_rules", "modules_hidden", "owner_name",
   "draft_auto", "draft_model", "draft_effort",
+  "chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders",
 ] as const;
 
 /**
  * Settings only the owner may write; Claude (MCP, the panel chat) is refused. Each one feeds Claude's prompts or turns features on
  * and off, so text a page or a record planted in Claude would otherwise persist and steer later chats: the pinned notes and the
  * draft rules are read into the system prompt, the hidden modules take screens away, and the auto draft switch, model and effort
- * decide how much of the owner's Claude usage background draft runs spend.
+ * decide how much of the owner's Claude usage background draft runs spend. The panel chat's access settings (full authority, page
+ * reading, local files and their folders) decide what Claude may do without asking, so Claude must never widen them itself.
  */
-export const OWNER_ONLY_SETTINGS: readonly (typeof SETTING_KEYS)[number][] = ["chat_pinned_notes", "draft_rules", "modules_hidden", "owner_name", "draft_auto", "draft_model", "draft_effort"];
+export const OWNER_ONLY_SETTINGS: readonly (typeof SETTING_KEYS)[number][] = [
+  "chat_pinned_notes", "draft_rules", "modules_hidden", "owner_name", "draft_auto", "draft_model", "draft_effort",
+  "chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders",
+];
 
 /** Days after which a post is due for a refresh when it has no interval of its own (setting `post_refresh_days`), and the longest interval allowed */
 export const POST_REFRESH_DEFAULT_DAYS = 30;
@@ -202,6 +207,14 @@ export const OFFER_PLAN_PARTS_MAX = MILESTONES.length;
 export const OFFER_PLAN_TOTAL_PCT = 100;
 /** Max length of the pinned notes text that goes into every panel chat */
 export const CHAT_PINNED_MAX = 4_000;
+/** Folders the panel chat may read and write while local files are on (setting `chat_local_folders`): how many, and the longest path */
+export const CHAT_LOCAL_FOLDERS_MAX = 20;
+export const CHAT_FOLDER_PATH_MAX = 500;
+/** Where a confirmation the panel chat asked for is: waiting, answered yes or no, no answer in time, or the run ended before an answer */
+export const CHAT_PERMISSION_STATES = ["pending", "allowed", "denied", "expired", "cancelled"] as const;
+export type ChatPermissionState = (typeof CHAT_PERMISSION_STATES)[number];
+/** The MCP host of a panel chat reads its chat session id from this variable; only then does it serve the confirmation tool */
+export const MCP_CHAT_SESSION_ENV = "FF_CHAT_SESSION";
 /** Max length of the owner's name (setting `owner_name`): the UI labels and the panel Claude's system prompt carry it */
 export const OWNER_NAME_MAX = 40;
 export const CHAT_NEW_TITLE = "Yeni sohbet";
@@ -223,6 +236,8 @@ export const MCP_MODE_ENV = "FF_MCP_MODE";
 /** The only tools of the MCP host in mode "draft" (a background draft run): reading records and saving a draft. The Claude CLI's allowlist of that run names the same ones. */
 export const MCP_MODE_TOOLS = { draft: ["get", "find", "timeline", "draft"] } as const satisfies Record<string, readonly string[]>;
 export type McpMode = keyof typeof MCP_MODE_TOOLS;
+/** The generic tools the MCP host itself registers (the installed modules add their own: plan, pay, ...) */
+export const MCP_CORE_TOOLS = ["today", "open", "find", "get", "save", "move", "delete"] as const;
 /** Where a background draft run is: waiting its turn, running, finished with a draft, or failed */
 export const DRAFT_RUN_STATES = ["queued", "running", "done", "failed"] as const;
 export type DraftRunState = (typeof DRAFT_RUN_STATES)[number];

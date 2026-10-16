@@ -8,12 +8,25 @@ import { m } from "./messages";
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
+function failed(e: unknown) {
+  const msg = e instanceof Error ? e.message : String(e);
+  return { content: [{ type: "text" as const, text: m.error(msg) }], isError: true };
+}
+
 function run(fn: () => string) {
   try {
     return text(fn());
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { content: [{ type: "text" as const, text: m.error(msg) }], isError: true };
+    return failed(e);
+  }
+}
+
+/** A module tool may wait (the chat's confirmation): its answer is awaited, a sync one passes through */
+async function runAsync(fn: () => string | Promise<string>) {
+  try {
+    return text(await fn());
+  } catch (e) {
+    return failed(e);
   }
 }
 
@@ -139,7 +152,8 @@ export function registerTools(server: McpServer, core: Core, mode?: McpMode) {
 
   // tools only an installed module has (the calendar's plan, the payments' pay, ...)
   for (const tool of defs.flatMap((d) => d.tools ?? [])) {
+    if (tool.only && !tool.only()) continue;
     const description = typeof tool.description === "string" ? tool.description : describe(tool.name, tool.description.map((x): [number, string] => [x.at, x.text]));
-    register(tool.name, { description, inputSchema: tool.input }, (args: any) => run(() => tool.run(core.ctx, args, mcpFormat)));
+    register(tool.name, { description, inputSchema: tool.input }, (args: any) => runAsync(() => tool.run(core.ctx, args, mcpFormat)));
   }
 }

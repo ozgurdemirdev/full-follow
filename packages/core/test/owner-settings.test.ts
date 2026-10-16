@@ -1,3 +1,4 @@
+import os from "node:os";
 import { describe, expect, it } from "vitest";
 import { createCore, createRegistry, openDb, type Actor } from "../src";
 import { OWNER_ONLY_SETTINGS } from "../src/constants";
@@ -14,11 +15,17 @@ const VALUES: Record<string, unknown> = {
   draft_auto: false,
   draft_model: "claude-opus-5-5",
   draft_effort: "high",
+  chat_full_access: true,
+  chat_web_fetch: true,
+  chat_local_files: true,
+  chat_local_folders: [os.tmpdir()],
 };
 
 describe("owner only settings", () => {
   it("lists the keys that feed Claude's prompts or switch features", () => {
     expect(OWNER_ONLY_SETTINGS).toEqual(expect.arrayContaining(["chat_pinned_notes", "draft_rules", "modules_hidden", "owner_name"]));
+    // the panel chat's access: what Claude may do without asking must never be widened by Claude itself
+    expect(OWNER_ONLY_SETTINGS).toEqual(expect.arrayContaining(["chat_full_access", "chat_web_fetch", "chat_local_files", "chat_local_folders"]));
   });
 
   it("Claude (through the MCP save) is refused every one of them, alone or with other keys, and may still read them", () => {

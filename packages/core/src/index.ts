@@ -40,6 +40,7 @@ export { assertUnique, keyList } from "./services/dupes";
 export { COMPANY_TOUCHES, followUpDone, isColdEmail, opportunityTouches, PERSON_TOUCHES, renderTemplate, REPLIED_AFTER, resolveSubject, sameSide, subjectInfo, subjectWhere, type ResolvedSubject, type Subject } from "./services/subject";
 export { ensureSector, sectorInput, sectorMatch, setSectorLinks, type SectorLinks } from "./services/sectors";
 export { draftAutoSettings, hiddenModules, marketingSettings, networkSettings, postRefreshDays, readSetting, readTemplate, settingsService, settingValues } from "./services/settings";
+export { chatAccessSettings, dataFolder, pathWithin, type ChatAccess } from "./services/chat-access";
 export { queriesFor } from "./services/queries";
 export { listThreads } from "./services/comments";
 export { assertUploadRoom, cleanName, HttpFailure, refuse, sniff, uploadDir, type Detected, type UploadType } from "./services/uploads";

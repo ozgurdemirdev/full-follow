@@ -226,7 +226,10 @@ export interface McpToolDef {
   /** a plain text, or fragments continued by the `docs` fragments the other modules contribute for this tool (the `report` tool) */
   description: string | DocFragment[];
   input: Record<string, z.ZodType>;
-  run(ctx: Ctx, args: any, f: McpFormat): string;
+  /** the tool's text; a tool that waits for something (the chat's confirmation) answers with a promise */
+  run(ctx: Ctx, args: any, f: McpFormat): string | Promise<string>;
+  /** registered only when this returns true at the host's start (the confirmation tool exists only for a panel chat's host) */
+  only?: () => boolean;
 }
 
 /** What a module adds to the MCP server: its record types' output, its own tools, and its parts of the shared texts */
